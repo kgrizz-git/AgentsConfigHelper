@@ -14,15 +14,18 @@ Different AI tools (Claude, Cursor, Opencode, etc.) scatter their configuration 
 ## Requirements
 
 ### Must have
+
 - Abstracted unified configuration model.
 - Safe backup-before-write functionality.
 - Support for JSON, YAML, TOML, and Markdown.
 
 ### Nice to have
+
 - Syntax highlighting for raw config editing.
 - Integration directly with tool CLIs.
 
 ### Non-requirements
+
 - Cloud sync / remote backup.
 
 ## Proposed design

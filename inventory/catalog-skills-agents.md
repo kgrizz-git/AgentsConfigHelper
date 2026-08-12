@@ -34,7 +34,7 @@ writing, and product workflows. Maintained alongside Cursor's `.claude/` directo
 ### Subagents (`agents_and_skills/agents/`)
 
 | Agent | Purpose | When to install |
-|---|---|---|
+| --- | --- | --- |
 | `orchestrator` | Hub agent; reads `plans/orchestration-state.md`, delegates, approves git/cloud proposals, manages iteration guards | Any project using hub-and-spoke multi-agent workflow |
 | `planner` | Writes phased `[ ]` checklist plans with task graphs and gates under `plans/` only | When you want a dedicated planning agent separate from coder |
 | `coder` | Implements plans; updates plan checkboxes; proposes git branch/cloud batch via HANDOFF | Core engineering agent for most projects |
@@ -59,7 +59,7 @@ response and dispatches the next one (`.claude/rules/orchestration-auto-chain.md
 source repo). Any rule that must apply to every turn installs the same way:
 
 | IDE | What to do |
-|---|---|
+| --- | --- |
 | Cursor | Copy to `.cursor/rules/<name>.mdc` (frontmatter: `alwaysApply: true`) |
 | Claude Code | Append the minimal block to `CLAUDE.md` |
 | VS Code Copilot | Append the minimal block to `.github/copilot-instructions.md` |
@@ -69,7 +69,7 @@ source repo). Any rule that must apply to every turn installs the same way:
 #### Engineering workflow
 
 | Skill | What it provides |
-|---|---|
+| --- | --- |
 | `team-orchestration-delegation` | HANDOFF schema, git propose/approve, cloud packets, iteration guards, roster, parallelism, semver/changelog |
 | `plans-folder-authoring` | Plan templates, task graph, gates, checklist conventions |
 | `coder-implementation-standards` | Implementation quality rules, git/cloud proposals, plan checkbox protocol |
@@ -84,7 +84,7 @@ source repo). Any rule that must apply to every turn installs the same way:
 #### Scientific & simulation
 
 | Skill | What it provides |
-|---|---|
+| --- | --- |
 | `derivation-rigor-protocol` | Symbol definitions, assumptions, canonical starting equations, explicit intermediate steps |
 | `derivation-challenge-review` | Skeptical review protocol; step validation; severity classification; adjudication gates |
 | `simulation-software-setup-run` | Simulation tool selection, model/discretization controls, staged runs, reproducibility metadata |
@@ -106,7 +106,7 @@ source repo). Any rule that must apply to every turn installs the same way:
 #### Domain libraries
 
 | Skill | What it provides |
-|---|---|
+| --- | --- |
 | `pydicom` | DICOM read/write/anonymize; pixel extraction; transfer syntax handling; RT objects |
 | `imaging-data-commons` | NCI IDC dataset query (BigQuery) and download workflow |
 | `histolab` | Whole-slide image (WSI) analysis and tissue detection for pathology |
@@ -122,7 +122,7 @@ source repo). Any rule that must apply to every turn installs the same way:
 #### Research & writing tools
 
 | Skill | What it provides |
-|---|---|
+| --- | --- |
 | `research-lookup` | Multi-source academic research query workflow (Semantic Scholar, arXiv, PubMed) |
 | `markdown-mermaid-writing` | Markdown + Mermaid diagram authoring standards |
 | `latex-posters` | LaTeX poster authoring for academic conferences |
@@ -136,7 +136,7 @@ source repo). Any rule that must apply to every turn installs the same way:
 #### Dev & product
 
 | Skill | What it provides |
-|---|---|
+| --- | --- |
 | `python-venv-dependencies` | Venv detection, `python -m` usage, dependency pinning hygiene |
 | `frontend-design` | Frontend component implementation standards with accessibility |
 | `canvas-design` | Canvas-based UI design guidance (Figma/Stitch/tldraw workflows) |
@@ -149,7 +149,7 @@ source repo). Any rule that must apply to every turn installs the same way:
 
 ## K-Dense-AI / claude-scientific-skills
 
-Source: https://github.com/K-Dense-AI/claude-scientific-skills
+Source: <https://github.com/K-Dense-AI/claude-scientific-skills>
 
 A large library of `SKILL.md`-style packages covering scientific research, data analysis,
 domain engineering, and academic writing — organized as Cursor-compatible skill folders.
@@ -158,6 +158,7 @@ domain engineering, and academic writing — organized as Cursor-compatible skil
 > may target specific toolchain versions.
 
 **Installation options:**
+
 - Vendor a subset: copy selected skill folders into `agents_and_skills/skills/<name>/`
 - Submodule: `git submodule add https://github.com/K-Dense-AI/claude-scientific-skills`
   then symlink or copy chosen skills into `.claude/skills/`
@@ -167,6 +168,7 @@ Match Cursor's layout: each skill must be a directory with `SKILL.md` (YAML fron
 `name` + `description` required). Normalize if upstream uses a different structure.
 
 Notable categories in the repo (browse the README for the full list):
+
 - Scientific computing (numpy, scipy, pandas, xarray, JAX)
 - Bioinformatics (BLAST, Biopython, AlphaFold, PyMOL)
 - Chemistry (RDKit, OpenBabel, ASE, VASP)
@@ -175,7 +177,7 @@ Notable categories in the repo (browse the README for the full list):
 - Academic writing and LaTeX
 
 ### Pantheon (K-Dense) — multi-persona brainstorming
-https://pantheon.k-dense.ai/
+<https://pantheon.k-dense.ai/>
 
 Free hosted tool: ask one science/research question and get ~80 AI personas answering
 in parallel (philosophers, scientists, founders, ML researchers), with cited web sources
@@ -191,9 +193,10 @@ Also listed under `inventory/tools-index.md` → Research tools.
 ## Obra Superpowers
 
 Sources:
-- https://github.com/obra/superpowers — main framework + core skills methodology
-- https://github.com/obra/superpowers-skills — community-editable skills companion
-- https://github.com/obra/superpowers-marketplace — plugin marketplace install path
+
+- <https://github.com/obra/superpowers> — main framework + core skills methodology
+- <https://github.com/obra/superpowers-skills> — community-editable skills companion
+- <https://github.com/obra/superpowers-marketplace> — plugin marketplace install path
 
 Composable `SKILL.md` workflows for planning, TDD, debugging, subagent-driven development,
 and two-stage code review. Install per host (Claude Code, Cursor, Codex, OpenCode, etc.);
@@ -206,7 +209,7 @@ evaluate skills individually before adopting into automated workflows.
 
 ## gstack (Garry Tan framework)
 
-Source: https://github.com/garry-tan/gstack (verify current location)
+Source: <https://github.com/garry-tan/gstack> (verify current location)
 
 Reusable agent workflow and tooling patterns. Covers project scaffolding conventions,
 multi-agent coordination patterns, and prompt engineering principles suited to product
@@ -218,14 +221,15 @@ engineering workflows.
 
 ## Official Anthropic / Claude Code
 
-Source: https://docs.anthropic.com/en/docs/claude-code — official documentation only.
+Source: <https://docs.anthropic.com/en/docs/claude-code> — official documentation only.
 
 ### Built-in slash commands (no install needed)
+
 Claude Code ships with built-in commands accessible via `/help`. Key built-ins relevant
 to repo harness work:
 
 | Command | What it does |
-|---|---|
+| --- | --- |
 | `/init` | Creates a CLAUDE.md from the current repo |
 | `/clear` | Clears conversation context |
 | `/compact` | Summarizes conversation to free context |
@@ -234,7 +238,9 @@ to repo harness work:
 | `/mcp` | Lists active MCP server connections |
 
 ### Official skill/agent patterns
+
 Anthropic documents several agent skill patterns in the Claude Code docs:
+
 - Hook-based automation (pre-tool, post-tool, notification, stop hooks)
 - MCP server integration for custom tools
 - Subagent spawning via the Agent tool (Explore, code-reviewer agent types)
@@ -247,18 +253,22 @@ knowledge cutoff — all official guidance lives in the docs.
 
 ## Official OpenAI / Codex
 
-Source: https://platform.openai.com/docs/codex — official documentation only.
+Source: <https://platform.openai.com/docs/codex> — official documentation only.
 
 ### Codex subagent patterns
+
 OpenAI's Codex (in agentic/API mode) supports:
+
 - Tool-calling with function definitions
 - Structured output for plan/code/review steps
 - Subagent composition via multi-agent orchestration (see Symphony)
 
 ### Symphony (OpenAI)
-Source: https://github.com/openai/symphony
+
+Source: <https://github.com/openai/symphony>
 
 OpenAI's orchestration framework for multi-agent workflows. Provides:
+
 - Task graph execution
 - Agent registration and routing
 - Parallelism controls
@@ -272,7 +282,7 @@ Install via pip: `pip install symphony-ai` (verify on PyPI).
 
 ## agentskills.io
 
-Source: https://agentskills.io
+Source: <https://agentskills.io>
 
 Community registry of agent skills for various AI coding tools. Skills listed here
 are community-contributed and vary in quality and maintenance status.
@@ -287,7 +297,7 @@ Browse the registry, inspect the `SKILL.md` of any candidate, then copy to
 
 ## skills.sh
 
-Source: https://skills.sh
+Source: <https://skills.sh>
 
 Another community catalog of agent skills and prompt packs, targeting Claude Code,
 Cursor, and related tools.
@@ -301,7 +311,7 @@ Cursor, and related tools.
 These are provided by Cursor and require no installation:
 
 | Agent | What it does |
-|---|---|
+| --- | --- |
 | Explore | Read-only search agent for code exploration |
 | Bash | Runs shell commands in a subprocess |
 | Browser | Web browsing with Playwright (Cursor Pro) |
@@ -312,7 +322,7 @@ Custom agents you define go in `.cursor/agents/` or `.claude/agents/` (Cursor re
 
 ## VS Code / GitHub Copilot
 
-Source: https://code.visualstudio.com/docs/copilot/overview
+Source: <https://code.visualstudio.com/docs/copilot/overview>
 
 Copilot agents and instructions live in `.github/copilot-instructions.md` and
 `.github/instructions/*.instructions.md`. No separate skill-package ecosystem exists;

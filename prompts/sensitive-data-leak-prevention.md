@@ -35,7 +35,7 @@ every sink below.
 ## Leak surfaces and default controls
 
 | Surface | How it leaks | Default control |
-|---|---|---|
+| --- | --- | --- |
 | Application logs (stdout/stderr, structured, aggregated) | Logging whole objects, request bodies, headers, query strings, or f-string interpolation of user data | Structured logging with an allowlist of safe fields; a redaction filter/formatter on the root logger; never log auth headers, bodies, or full URLs with query strings |
 | Errors & stack traces | Exception messages and local-variable capture echo record values; verbose errors returned to clients | Generic message + opaque error ID to the client; detailed diagnostics only server-side, redacted; disable local-variable capture in prod tracebacks |
 | Temp files / scratch dirs | PHI written to `/tmp`, working files, or `.context/` with default perms, left behind | Avoid if possible; else use a secure temp dir with `0600` perms, delete on exit (`try/finally`), and never derive filenames from patient/user identifiers |

@@ -7,27 +7,32 @@ Quick navigation guide for this template's documentation. Use this to find what 
 ## Quick Start by Role
 
 ### I'm starting a new project
+
 1. Read [`README.md`](../README.md) (2 min)
 2. Run [`scripts/setup.sh`](../scripts/setup.sh) (1 min)
 3. Feed [`prompts/bootstrap-project.md`](../prompts/bootstrap-project.md) to your AI agent
 4. Remove irrelevant content (see setup script cleanup suggestions)
 
 ### I'm returning to an existing project
+
 1. Run [`scripts/health-check.sh`](../scripts/health-check.sh) (30 sec)
 2. Feed [`prompts/new-agent-session.md`](../prompts/new-agent-session.md) to your AI agent
 3. Check `.context/project-profile.md` if it exists
 
 ### I want to understand this template
+
 1. Read [`AGENTS.md`](../AGENTS.md) (3 min)
 2. Browse [`inventory/README.md`](../inventory/README.md) for available tools
 3. Skim [`README.md`](../README.md) sections
 
 ### I'm setting up CI/CD
+
 1. Read [`ci/README.md`](../ci/README.md)
 2. Copy relevant workflows from [`ci/examples/`](../ci/examples/)
 3. Configure per [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md)
 
 ### I'm working with sensitive data
+
 1. Read [`prompts/strict-phi-agent-guidance.md`](../prompts/strict-phi-agent-guidance.md) **before** starting
 2. Read [`inventory/medical-data-security.md`](../inventory/medical-data-security.md)
 3. Configure strict hooks per [`hooks/README.md`](../hooks/README.md)
@@ -35,11 +40,13 @@ Quick navigation guide for this template's documentation. Use this to find what 
 ## Documentation Map
 
 ### Core Navigation (Read These First)
+
 - [`AGENTS.md`](../AGENTS.md) - Single source of truth for AI agents
 - [`README.md`](../README.md) - Project overview and directory map
 - [`inventory/README.md`](../inventory/README.md) - Tool/skill menu (not a checklist)
 
 ### Getting Started
+
 - [`prompts/bootstrap-project.md`](../prompts/bootstrap-project.md) - New project initialization
 - [`prompts/bootstrap-checklist.md`](../prompts/bootstrap-checklist.md) - Tick-list version (phases P0–P8, PS)
 - [`prompts/bootstrap/`](../prompts/bootstrap/) - Decision cards: ask → branch → produce → done when
@@ -50,10 +57,12 @@ Quick navigation guide for this template's documentation. Use this to find what 
 - [`scripts/health-check.sh`](../scripts/health-check.sh) - Project health check
 
 ### Project Configuration
+
 - [`prompts/project-init-profile.md`](../prompts/project-init-profile.md) - Capture project type and stack
 - `.context/project-profile.md` - Generated project profile (fast-load summary; gitignored, so it does not exist in the template itself)
 
 ### Policies & Rules
+
 - [`policies/README.md`](../policies/README.md) - Durable repo rules index
 - [`policies/file-size-and-counts.md`](../policies/file-size-and-counts.md) - File size limits
 - [`policies/plans-and-todos.md`](../policies/plans-and-todos.md) - Plan lifecycle and TODO limits
@@ -62,16 +71,19 @@ Quick navigation guide for this template's documentation. Use this to find what 
 - [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md) - GitHub setup
 
 ### Hooks & Automation
+
 - [`hooks/README.md`](../hooks/README.md) - Pre-commit hooks and policy scripts
 - [`hooks/.pre-commit-config.yaml`](../hooks/.pre-commit-config.yaml) - Example configuration
 - [`scripts/validate-env.sh`](../scripts/validate-env.sh) - Environment validation
 
 ### CI/CD
+
 - [`ci/README.md`](../ci/README.md) - CI selection guidance
 - [`ci/examples/`](../ci/examples/) - Example GitHub Actions workflows
 - [`policies/github-actions-usage.md`](../policies/github-actions-usage.md) - Actions minutes/storage
 
 ### Sensitive Data Handling
+
 - [`prompts/strict-phi-agent-guidance.md`](../prompts/strict-phi-agent-guidance.md) - PII/PHI agent behavior
 - [`prompts/sensitive-data-leak-prevention.md`](../prompts/sensitive-data-leak-prevention.md) - Runtime leak prevention
 - [`inventory/medical-data-security.md`](../inventory/medical-data-security.md) - Medical data security
@@ -79,6 +91,7 @@ Quick navigation guide for this template's documentation. Use this to find what 
 - [`policies/sensitive-data-scan-gates.md`](../policies/sensitive-data-scan-gates.md) - Structural gates
 
 ### Templates & Artifacts
+
 - [`templates/README.md`](../templates/README.md) - Fill-in artifacts index
 - [`templates/project-brief.md`](../templates/project-brief.md) - Project briefs
 - [`templates/plan.md`](../templates/plan.md) - Implementation plans
@@ -88,11 +101,13 @@ Quick navigation guide for this template's documentation. Use this to find what 
 - [`templates/handoff.md`](../templates/handoff.md) - Cross-agent / cross-IDE handoff packet
 
 ### Maintenance & Cleanup
+
 - [`prompts/maintenance-loop.md`](../prompts/maintenance-loop.md) - Periodic repo health checks
 - [`prompts/cleanup-completed-work.md`](../prompts/cleanup-completed-work.md) - Cleanup completed items
 - [`policies/plans-and-todos.md`](../policies/plans-and-todos.md) - Archiving completed plans
 
 ### Inventory Menus (Load Only What You Need)
+
 - [`inventory/tools-index.md`](../inventory/tools-index.md) - General developer tools
 - [`inventory/security-quality.md`](../inventory/security-quality.md) - Security and quality tools
 - [`inventory/python.md`](../inventory/python.md) - Python project defaults
@@ -103,6 +118,7 @@ Quick navigation guide for this template's documentation. Use this to find what 
 - [`catalog-skills-agents.md`](../inventory/catalog-skills-agents.md) - Skills and agents catalog
 
 ### Harness Engineering
+
 - [`inventory/harness-engineering.md`](../inventory/harness-engineering.md) - Agent platform references
 - [`inventory/catalog-skills-agents.md`](../inventory/catalog-skills-agents.md) - Skills/agents installation
 - [`inventory/agent-tooling-efficiency.md`](../inventory/agent-tooling-efficiency.md) - Token-efficient tooling; choosing between overlapping code-intelligence tools
@@ -111,20 +127,26 @@ Quick navigation guide for this template's documentation. Use this to find what 
 ## Decision Trees
 
 ### Choosing Orchestration Tier
+
 → See [`inventory/harness-engineering.md`](../inventory/harness-engineering.md) decision table
+
 - Simple task → No orchestration
 - 3-10 agents, IDE workflow → Hub-and-spoke
 - Complex loops → LangGraph
 - Production API → Symphony
 
 ### Choosing CI Checks
+
 → See [`ci/README.md`](../ci/README.md) tier guidance
+
 - Fast checks (<5 min) → Pre-commit + fast CI lane
 - Slow checks → Scheduled CI or separate workflow
 - Agent reviews → Never gates, always advisory
 
 ### Sensitive Data Classification
+
 → See [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md)
+
 - Public → Basic secret scanning
 - Confidential → + Sensitive data job
 - Regulated/PII/PHI → + Strict gates + approval inventory
@@ -132,7 +154,7 @@ Quick navigation guide for this template's documentation. Use this to find what 
 ## Search by Task
 
 | Task | Documentation |
-|---|---|
+| --- | --- |
 | **Start new project** | `prompts/bootstrap-project.md` + `scripts/setup.sh` |
 | **Add pre-commit hooks** | `hooks/README.md` |
 | **Set up CI** | `ci/README.md` + `ci/examples/` |
@@ -152,6 +174,7 @@ Quick navigation guide for this template's documentation. Use this to find what 
 ## File Size Quick Reference
 
 Per [`policies/file-size-and-counts.md`](../policies/file-size-and-counts.md):
+
 - **Source files**: Soft 600 lines / Hard 1000 lines
 - **Markdown docs**: Soft 1000 lines / Hard 1000 lines  
 - **Binary files**: 5 MB hard limit

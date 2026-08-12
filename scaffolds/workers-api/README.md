@@ -13,11 +13,13 @@ Minimal Cloudflare Workers API template with TypeScript and best practices.
 ## Usage
 
 Copy these files to your project root:
+
 ```bash
 cp -r scaffolds/workers-api/* .
 ```
 
 Then customize:
+
 1. Edit `wrangler.toml` (worker name, routes, variables)
 2. Adjust `src/` for your API logic
 3. Update CI workflow if needed

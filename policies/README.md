@@ -11,7 +11,7 @@ in one place and let [`hooks/`](../hooks/) and [`ci/`](../ci/) enforce them.
 ## Policy files
 
 | Policy | Enforced by |
-|---|---|
+| --- | --- |
 | [file-size-and-counts.md](file-size-and-counts.md) — file/function size & per-dir file counts | `hooks/scripts/check_file_size.py` |
 | [plans-and-todos.md](plans-and-todos.md) — plans lifecycle, archiving, living `to_do` caps | `hooks/scripts/check_todo_limits.py` + convention |
 | [changelog-conventions.md](changelog-conventions.md) — public vs developer changelogs + SemVer | convention / release hygiene |

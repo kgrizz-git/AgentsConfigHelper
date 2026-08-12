@@ -15,11 +15,13 @@ python hooks/scripts/check_doc_freshness.py
 ```
 
 For any file flagged as stale (>180 days: warn, >365 days: error):
+
 - If the content is still accurate: update only the `Last reviewed:` date.
 - If the content needs revision: update the content, then update the date.
 - If the file is obsolete: propose removing it.
 
 Key docs to check manually if the script misses them:
+
 - `AGENTS.md`, `README.md`
 - All files in `policies/`, `templates/`, `inventory/`
 
@@ -28,6 +30,7 @@ Key docs to check manually if the script misses them:
 ## 2. Garbage collection
 
 ### Dead code and unused imports (Python)
+
 ```bash
 vulture . --min-confidence 80          # dead code
 ruff check --select F401 .             # unused imports
@@ -35,26 +38,33 @@ autoflake --check -r .                 # unused imports (alternative)
 ```
 
 ### Unused dependencies
+
 ```bash
 deptry .                               # Python: unused/missing/transitive deps
 ```
+
 For JavaScript/TypeScript:
+
 ```bash
 npx depcheck                           # unused deps
 npx knip                               # unused exports and files
 ```
 
 ### Stale branches
+
 ```bash
 git fetch --prune
 git branch --merged main | grep -v '^* main$' | grep -v '^\s*main$'
 ```
+
 Delete merged branches that are no longer needed.
 
 ### Orphaned TODOs and FIXMEs
+
 ```bash
 grep -rn "TODO\|FIXME\|HACK\|XXX" --include="*.py" --include="*.ts" --include="*.md" .
 ```
+
 Review each one: resolve it, file a proper issue, or delete if obsolete.
 
 ### Cleanup audit
@@ -73,6 +83,7 @@ find .context/ -type f -mtime +7 -ls 2>/dev/null || echo "No old context files"
 ```
 
 For each issue found:
+
 - Completed items in `to_do.md` → Run [`prompts/cleanup-completed-work.md`](cleanup-completed-work.md)
 - Completed plans not archived → Move to `plans/archive/` and log completion
 - Old `.context/` files → Delete or archive valuable content
@@ -88,6 +99,7 @@ pip-audit                              # known CVEs in Python deps
 ```
 
 For JavaScript:
+
 ```bash
 npm audit --audit-level=high
 ```
@@ -139,6 +151,7 @@ Update plan checkboxes to reflect current state.
 ### Cleanup status check
 
 Verify that the cleanup audit from section 2.5 was completed:
+
 - Are completed items properly logged in changelogs?
 - Are completed plans archived to `plans/archive/`?
 - Is `.context/` clean of old scratch files?
@@ -161,6 +174,7 @@ python3 ci/scripts/check_doc_links.py --offline
 ```
 
 Then, for the topic files relevant to this project:
+
 - Did the checker flag a 404 or a redirect? A rename or archive is a prompt to **re-evaluate**
   the entry — not to delete it. A quiet project is not a dead one.
 - Have any tools been deprecated or superseded?
@@ -185,6 +199,7 @@ should be removed.** Update the profile's Agent tooling section either way, incl
 ## 7. Knowledge index (if applicable)
 
 If the project uses a code map (aider repomap, sift-kg, tree-sitter index):
+
 - Re-index if >20% of source files have changed since last index.
 - Update the `Last indexed:` field in `.context/project-profile.md`.
 
@@ -225,13 +240,13 @@ Summarize the session to the user:
 ## Maintenance loop report — YYYY-MM-DD
 
 ### Fixed now
-- 
+-
 
 ### Deferred (filed as TODO / issue)
-- 
+-
 
 ### No action needed
-- 
+-
 
 ### Next run recommended
 - (date or trigger)

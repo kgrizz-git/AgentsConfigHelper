@@ -2,6 +2,7 @@
 
 Last reviewed: 2026-07-09
 Enforced by: convention + [`hooks/scripts/check_todo_limits.py`](../hooks/scripts/check_todo_limits.py)
+
 + [`prompts/todo-plan-audit.md`](../prompts/todo-plan-audit.md).
 
 ## Why
@@ -12,7 +13,7 @@ work, and a clear done/archive path so the repo does not accumulate zombie check
 ## Folders and files
 
 | Path | Purpose |
-|---|---|
+| --- | --- |
 | `plans/` | Implementation plans (`YYYY-MM-DD-slug.md` or stable names). Optional `orchestration-state.md` for multi-agent runs. |
 | `plans/archive/` | Completed or abandoned plans moved out of the active set (keep git history). |
 | `to_do.md` or `TODO.md` (repo root) | Short living backlog for the whole project — not a substitute for issues on large teams. |
@@ -34,28 +35,28 @@ helps the harness.
 
 ### Marking plans done
 
-- Update `Status:` in the plan header to `complete` or `abandoned`.
-- Move the file to `plans/archive/` (or rename with a `DONE-` / `ARCHIVED-` prefix if you
++ Update `Status:` in the plan header to `complete` or `abandoned`.
++ Move the file to `plans/archive/` (or rename with a `DONE-` / `ARCHIVED-` prefix if you
   prefer a flat `plans/` tree).
-- If `plans/orchestration-state.md` exists, set phase to `complete` / `blocked` and point
++ If `plans/orchestration-state.md` exists, set phase to `complete` / `blocked` and point
   “next action” at none / user.
-- Do **not** delete completed plans; archive them so agents can learn from prior work.
++ Do **not** delete completed plans; archive them so agents can learn from prior work.
 
 ### Checklist honesty
 
-- Mark `[ ]` → `[x]` only after the stated task is done **and** confirmed (tests, review,
++ Mark `[ ]` → `[x]` only after the stated task is done **and** confirmed (tests, review,
   or explicit acceptance).
-- If blocked, leave unchecked and add a comment under the item explaining the blocker —
++ If blocked, leave unchecked and add a comment under the item explaining the blocker —
   do not change the goal to something easier.
 
 ## Living `to_do` / `TODO` file
 
-- Keep it short: prioritized bullets or a tiny table, not a novel.
-- Soft line cap: **150** (warn). Hard cap: **300** (block) — see hook env vars.
-- Each item should be actionable; link to a `plans/` file or issue when the work is large.
-- Prune done items into a short "Recently done" section (max ~10) or delete them after
++ Keep it short: prioritized bullets or a tiny table, not a novel.
++ Soft line cap: **150** (warn). Hard cap: **300** (block) — see hook env vars.
++ Each item should be actionable; link to a `plans/` file or issue when the work is large.
++ Prune done items into a short "Recently done" section (max ~10) or delete them after
   they land in the changelog / git history.
-- Stale `TODO`/`FIXME` in **source** are audited via [`prompts/todo-plan-audit.md`](../prompts/todo-plan-audit.md)
++ Stale `TODO`/`FIXME` in **source** are audited via [`prompts/todo-plan-audit.md`](../prompts/todo-plan-audit.md)
   and [`policies/garbage-collection.md`](garbage-collection.md) — not the line-cap hook.
 
 ## TODO completion workflow
@@ -64,9 +65,9 @@ When marking a TODO item complete:
 
 1. **Remove it from `to_do.md`** (or move to "Recently done" section, max 10 items)
 2. **Log the completion** based on work type:
-   - **User-visible changes** → Add to `CHANGELOG.md` (public)
-   - **Internal/harness changes** → Add to `CHANGELOG.dev.md`
-   - **Maintenance/cleanup** → Add to `MAINTENANCE.md` (create if needed)
+   + **User-visible changes** → Add to `CHANGELOG.md` (public)
+   + **Internal/harness changes** → Add to `CHANGELOG.dev.md`
+   + **Maintenance/cleanup** → Add to `MAINTENANCE.md` (create if needed)
 3. **Reference the source** - link to plan, issue, or commit that completed it
 4. **Archive related artifacts** - move scratch notes from `.context/` to deletion
 

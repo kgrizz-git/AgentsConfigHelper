@@ -22,7 +22,7 @@ What is included in this release? Link the plan, issue, PR, or changelog entry.
 ## Compatibility
 
 | Area | Status | Notes |
-|---|---|---|
+| --- | --- | --- |
 | API / schema | unchanged | |
 | Config / env vars | unchanged | |
 | Data migration | n/a | |

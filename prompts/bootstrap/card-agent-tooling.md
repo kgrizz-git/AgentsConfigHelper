@@ -19,7 +19,7 @@ Runs after orchestration (P5), because tools attach to roles. Menu and rationale
 ## Branch
 
 | Answer | Action |
-|---|---|
+| --- | --- |
 | Fresh scaffold, < ~50 files | **Install nothing.** Adopt the handoff practice and the contract only. Revisit at the first maintenance loop. |
 | Repeatedly looking up third-party APIs | Context7, CLI + skill. Confirm security-critical details upstream. |
 | Losing context hunting symbols / doing cross-file refactors | Serena, scoped to the coder/debugger role. Verify on this repo's languages first. |

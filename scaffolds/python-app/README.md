@@ -13,11 +13,13 @@ Minimal Python application/service template with best practices baked in.
 ## Usage
 
 Copy these files to your project root:
+
 ```bash
 cp -r scaffolds/python-app/* .
 ```
 
 Then customize:
+
 1. Edit `pyproject.toml` (project name, dependencies, versions)
 2. Adjust `src/` structure for your needs
 3. Update CI workflow if needed

@@ -25,7 +25,7 @@ Use Linear when work needs durable product/team tracking beyond what an in-repo
 ## Suggested Mapping
 
 | Work type | Best home |
-|---|---|
+| --- | --- |
 | Small TODO | `to_do.md` or direct fix |
 | Non-trivial implementation | `plans/*.md` plus issue link if needed |
 | Team-visible feature | Linear issue/project linking to plan or PR |

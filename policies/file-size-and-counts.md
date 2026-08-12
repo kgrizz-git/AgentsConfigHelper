@@ -14,7 +14,7 @@ Defaults are deliberately generous; tighten per project. Configure via environme
 variables (see [`hooks/README.md`](../hooks/README.md)) or the script defaults.
 
 | Rule | Default | Tier |
-|---|---|---|
+| --- | --- | --- |
 | Max lines per source file | **600** (soft warn), **1000** (hard) | soft→hard gate |
 | Max lines per function/method | 60 (soft), 100 (hard) | advisory → soft gate |
 | Max cyclomatic complexity per function | 10 (soft), 15 (hard) | advisory |

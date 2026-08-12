@@ -19,7 +19,7 @@ customer data). For `public`/`internal` projects it is advisory.
 ## Rules and enforcement tiers
 
 | Rule | Default check | Tier |
-|---|---|---|
+| --- | --- | --- |
 | Runtime artifact dirs (logs, caches, temp/scratch exports) are gitignored | `.gitignore` entries + strict `check_sensitive_data.py` blocks any that get staged | hard gate (via existing guard) |
 | A one-command clear/purge exists for local logs/caches/temp artifacts | `make clean-sensitive` (or documented script) present | soft gate |
 | Sensitive-capable sinks are inventoried | Sinks listed in `.context/project-profile.md` / runbook | advisory |

@@ -14,20 +14,24 @@ Minimal starter configurations for common project types. These are **optional st
 ## Available Scaffolds
 
 ### Python Projects
+
 - `python-lib/` - Python library template
 - `python-app/` - Python application/service template
 - `python-cli/` - Python CLI tool template
 
 ### Web Projects
+
 - `nextjs-app/` - Next.js web application
 - `react-app/` - React SPA with Vite
 - `node-api/` - Node.js API service
 
 ### Data Science
+
 - `python-ml/` - Python ML/modeling project
 - `jupyter-research/` - Jupyter-based research project
 
 ### Cloudflare Workers
+
 - `workers-api/` - Cloudflare Workers API
 - `workers-cron/` - Cloudflare Workers scheduled tasks
 
@@ -42,6 +46,7 @@ Minimal starter configurations for common project types. These are **optional st
 ## Cleanup
 
 After copying a scaffold:
+
 - Remove unrelated scaffolds (don't commit them)
 - Update `.gitignore` if needed
 - Adjust tool versions in configuration files
@@ -50,6 +55,7 @@ After copying a scaffold:
 ## Customization
 
 Each scaffold includes:
+
 - Configuration files (pyproject.toml, package.json, etc.)
 - Basic directory structure
 - Essential tooling configuration
@@ -57,6 +63,7 @@ Each scaffold includes:
 - Documentation pointers
 
 Customize by:
+
 - Adding your project-specific dependencies
 - Adjusting tool configurations
 - Setting up your preferred CI/CD

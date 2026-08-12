@@ -8,7 +8,7 @@ Scope: [module, feature, or full repo]
 ## Coverage summary
 
 | Layer | Tool | Coverage | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Unit tests | pytest / vitest | X% | |
 | Integration tests | | X% | |
 | End-to-end | Playwright / etc. | X% | |
@@ -45,7 +45,7 @@ Scope: [module, feature, or full repo]
 ## Testing strategy recommendations
 
 | Layer | Current | Recommended |
-|---|---|---|
+| --- | --- | --- |
 | Unit | | |
 | Integration | | |
 | E2E | | |

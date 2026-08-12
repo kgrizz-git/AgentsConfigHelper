@@ -10,7 +10,7 @@ Templates: [`templates/plan.md`](../templates/plan.md),
 ## Layout
 
 | Path | Purpose |
-|---|---|
+| --- | --- |
 | `*.md` | Active feature/task plans (prefer `YYYY-MM-DD-slug.md`) |
 | `orchestration-state.md` | Optional hub-and-spoke run state (orchestrator-owned) |
 | `archive/` | Completed or abandoned plans (do not delete; move here) |

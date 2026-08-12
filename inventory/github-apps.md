@@ -12,34 +12,34 @@ For a ruleset, required-check, and PII/PHI/absolute-path gate baseline, see
 
 ## AI-assisted code review
 
-**CodeRabbit** — https://coderabbit.ai
+**CodeRabbit** — <https://coderabbit.ai>
 AI PR reviewer; summarizes changes, flags bugs, suggests improvements, posts inline
 comments. Free tier for public repos. Low friction to try; high signal on large diffs.
 
-**Sourcery** — https://sourcery.ai
+**Sourcery** — <https://sourcery.ai>
 Suggests refactors and simplifications as inline PR comments. Python-focused but
 expanding. Pairs well with ruff for Python projects.
 
-**Qodo (CodiumAI)** — https://qodo.ai
+**Qodo (CodiumAI)** — <https://qodo.ai>
 Generates tests for changed code and reviews PR logic. Useful when test coverage is low.
 
 ## Static analysis & autofix
 
-**SonarQube Community** — https://docs.sonarsource.com/sonarqube-community-build/try-out-sonarqube
+**SonarQube Community** — <https://docs.sonarsource.com/sonarqube-community-build/try-out-sonarqube>
 Self-hosted quality/security gate (bugs, smells, coverage, some vulns). Prefer when you
 want an on-prem dashboard; pair with Semgrep/CodeQL in CI rather than replacing them.
 
-**DeepSource** — https://deepsource.com
+**DeepSource** — <https://deepsource.com>
 Continuous static analysis with autofix PRs. Supports Python, JS/TS, Go, Ruby, Rust,
 Java. Catches anti-patterns and security issues not caught by linters. Free for public
 repos and small teams.
 
-**Aikido** — https://aikido.dev
+**Aikido** — <https://aikido.dev>
 Developer-first security platform: SCA (deps), SAST, DAST, cloud config, container
 scanning. Surfaces findings in GitHub PRs. Free tier available. Good unified view for
 solo devs / small teams who want one dashboard instead of many tools.
 
-**HoundDog.ai** — https://hounddog.ai
+**HoundDog.ai** — <https://hounddog.ai>
 Privacy code scanner that traces sensitive-data flows through code, logs, files, third-party
 SDKs, and AI paths. It offers local CLI/Docker and IDE scanning as well as GitHub/GitLab/Bitbucket
 integrations that can block PRs. For this template, HoundDog is **local CLI/Docker only until
@@ -48,7 +48,7 @@ See [`inventory/medical-data-security.md`](medical-data-security.md).
 
 ## Vulnerability & license scanning
 
-**Snyk** — https://snyk.io
+**Snyk** — <https://snyk.io>
 SCA (open-source dep vulns), SAST, container scanning, IaC. Strong license compliance
 checking. Integrates with GitHub, CI, and IDE extensions. Free tier; paid for teams.
 Use when the project has compliance requirements or ships container images.
@@ -58,21 +58,21 @@ Automated dependency update PRs; free for all repos. Enable via
 `ci/examples/dependabot.yml`. The baseline choice — enable by default.
 
 **GitHub Open Source License Compliance** (public preview) —
-https://github.blog/changelog/2026-06-30-open-source-license-compliance-is-in-public-preview/
+<https://github.blog/changelog/2026-06-30-open-source-license-compliance-is-in-public-preview/>
 
 Enterprise-wide license policy + ruleset gate (“Require license compliance check results
 before merging”). Annotates PRs that add noncompliant deps. Requires GitHub Enterprise
 Cloud + Advanced Security Code Security. Use when legal/compliance owns an allow-list of
 licenses; pair with Snyk/Dependabot for vulns.
 
-**Renovate** — https://renovatebot.com
+**Renovate** — <https://renovatebot.com>
 More configurable than Dependabot: monorepo grouping, custom schedules, semantic
 version ranges, more ecosystems (Helm, Docker, terraform, etc.). Use when Dependabot's
 grouping or scheduling is insufficient.
 
 ## Coverage
 
-**Codecov** — https://codecov.io
+**Codecov** — <https://codecov.io>
 Coverage reports, PR comments showing changed-file coverage delta, trend graphs.
 Free for public repos. Integrates with `pytest --cov` via `codecov/codecov-action`.
 Useful early — coverage delta on PRs catches regressions without enforcing a hard threshold.
@@ -82,7 +82,7 @@ Requires a `CODECOV_TOKEN` secret (Settings → Secrets → Actions) for both pu
 ## Selection guidance
 
 | Need | Recommendation |
-|---|---|
+| --- | --- |
 | Start with zero friction | Dependabot + Codecov |
 | Add AI review | CodeRabbit (best breadth) |
 | Unified security dashboard | Aikido (solo/small team) or Snyk (enterprise) |

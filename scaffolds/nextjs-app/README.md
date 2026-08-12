@@ -13,11 +13,13 @@ Modern Next.js web application template with TypeScript and best practices.
 ## Usage
 
 Copy these files to your project root:
+
 ```bash
 cp -r scaffolds/nextjs-app/* .
 ```
 
 Then customize:
+
 1. Edit `package.json` (project name, dependencies)
 2. Adjust `app/` structure for your needs
 3. Update CI workflow if needed

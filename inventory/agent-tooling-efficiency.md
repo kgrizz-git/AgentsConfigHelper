@@ -22,7 +22,7 @@ Distilled from `kgrizz-git/Notes_and_Ideas` → `reference/tools/token-efficient
 ## Add a tool only to close a recurring information gap
 
 | Need | Default option | Boundary |
-|---|---|---|
+| --- | --- | --- |
 | Unknown third-party API or version-specific usage | [Context7](https://github.com/upstash/context7) (CLI + skill) | Widely adopted for current library docs. Catalog includes community content — confirm security/API critical details upstream. MCP only if its interactive tools beat the persistent schema cost. |
 | One-off browser inspection, traces, audits | [chrome-devtools-mcp](https://github.com/ChromeDevTools/chrome-devtools-mcp) | Official Chrome tooling. MCP earns its cost here because browser state is genuinely persistent. Not a substitute for code intelligence. |
 | Symbol navigation, cross-file edits, refactors | [Serena](https://github.com/oraios/serena) | Mature LSP-backed option. Vendor evaluations are evidence, not proof — verify on this repo's languages. |
@@ -38,7 +38,7 @@ locally, not as promised savings.
 ## Assign tools to roles, not to everyone
 
 | Role | Focus | Output |
-|---|---|---|
+| --- | --- | --- |
 | Planner / researcher | Context7; Graphify **or** TokenSave when topology is the bottleneck | Architecture slice, affected areas, source links |
 | Coder / debugger | Serena; native search and tests | Minimal change + verification |
 | Reviewer | code-review-graph; diff and test results | Blast radius, risks, verdict |
@@ -52,7 +52,7 @@ and MCP schemas, makes tool choice ambiguous, and can erase the savings the tool
 ## CLI + skills, or MCP?
 
 | Situation | Prefer | Why |
-|---|---|---|
+| --- | --- | --- |
 | Bounded lookup, batch task, generated script | CLI + skill | Agent loads focused instructions and one command surface |
 | Interactive loop with retained state | MCP | Persistent browser/editor/service state outweighs schema overhead |
 | Several agents with distinct jobs | Role-scoped tools | Each agent sees a smaller interface |

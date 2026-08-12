@@ -29,7 +29,7 @@ Read:
 When recommending skills, note which local files they should use:
 
 | Need | Local reference |
-|---|---|
+| --- | --- |
 | Planning | `templates/plan.md`, `prompts/backlog-to-plans.md` |
 | Parallel work | `prompts/parallel-plan-review.md`, `templates/orchestration-state.md` |
 | Orchestration | `prompts/orchestrated-implementation.md`, `policies/plans-and-todos.md` |

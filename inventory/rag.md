@@ -11,7 +11,7 @@ cloud), scale, and language ecosystem.
 ## Vector databases
 
 | Store | Best for | Self-hosted | Managed cloud |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **pgvector** | Already on Postgres; simplest path | ✅ (Postgres) | ✅ (Supabase, Neon, RDS) |
 | **Qdrant** | High performance, Rust core, filtering | ✅ Docker | ✅ Qdrant Cloud |
 | **Chroma** | Local-first, Python-native, prototyping | ✅ | ❌ (local only) |
@@ -28,26 +28,26 @@ prototypes. Graduate to Qdrant or LanceDB for production local deployments.
 ## RAG frameworks
 
 ### LlamaIndex
-https://www.llamaindex.ai
+<https://www.llamaindex.ai>
 
 Data connectors (100+ loaders), index types, query pipelines, and agent tooling.
 Best for document Q&A, knowledge bases, and structured RAG workflows. Strong ecosystem.
 
 ### LangChain / LangGraph
-https://python.langchain.com / https://github.com/langchain-ai/langgraph
+<https://python.langchain.com> / <https://github.com/langchain-ai/langgraph>
 
 Broad framework (chains, agents, tools, memory). LangGraph adds stateful graph-based
 workflows. Use LangGraph for complex multi-step agentic RAG; LangChain chains for
 simpler sequential pipelines. Pair with LangSmith for observability.
 
 ### Haystack
-https://haystack.deepset.ai
+<https://haystack.deepset.ai>
 
 Pipeline-based, production-focused. Strong on document processing, hybrid retrieval,
 and evaluation. Good choice when you need structured pipelines you can test and version.
 
 ### MCP Adapters for LangChain
-https://github.com/langchain-ai/langchain-mcp-adapters
+<https://github.com/langchain-ai/langchain-mcp-adapters>
 
 Bridge between LangChain agents and MCP tool servers. Use when your agent needs to call
 tools defined as MCP servers.
@@ -57,7 +57,7 @@ tools defined as MCP servers.
 ## Embeddings
 
 | Model | Provider | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `text-embedding-3-small` | OpenAI | Best cost/quality for English text; 1536 dim |
 | `text-embedding-3-large` | OpenAI | Higher quality; 3072 dim |
 | `voyage-3` / `voyage-3-lite` | Voyage (Anthropic-recommended) | Strong on code + technical text |
@@ -76,7 +76,7 @@ Rerankers improve retrieval precision by scoring retrieved candidates against th
 Apply after initial vector retrieval when recall is high but precision is low.
 
 | Reranker | Provider | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `rerank-english-v3.0` | Cohere | High quality; API-based |
 | `jina-reranker-v2-base-multilingual` | Jina | Free tier; multilingual |
 | `bge-reranker-v2-m3` | BAAI | Open weights; local; cross-lingual |
@@ -87,31 +87,31 @@ Apply after initial vector retrieval when recall is high but precision is low.
 ## Document parsing & chunking
 
 ### Jina Reader
-https://r.jina.ai
+<https://r.jina.ai>
 
 Free URL-to-clean-markdown API. `GET https://r.jina.ai/<url>` returns clean text.
 No key needed. Essential for web-grounded RAG.
 
 ### unstructured
-https://github.com/Unstructured-IO/unstructured
+<https://github.com/Unstructured-IO/unstructured>
 
 Parses PDF, DOCX, PPTX, HTML, images (OCR), email, and more into clean text chunks.
 Broad format support; self-hosted or API. The go-to for messy document pipelines.
 
 ### docling (IBM)
-https://github.com/DS4SD/docling
+<https://github.com/DS4SD/docling>
 
 High-quality PDF and Office document parser; preserves layout, tables, and figures.
 Better than unstructured for complex PDFs with tables and figures.
 
 ### LlamaParse
-https://cloud.llamaindex.ai/parse
+<https://cloud.llamaindex.ai/parse>
 
 LlamaIndex's managed PDF parser. Handles complex layouts; integrates directly with
 LlamaIndex pipelines.
 
 ### lift (Datalab)
-https://github.com/datalab-to/lift
+<https://github.com/datalab-to/lift>
 
 9B open-weights vision model: schema-constrained JSON extraction from PDFs/images.
 Use when a project needs structured document fields (invoices, forms) rather than
@@ -122,7 +122,7 @@ plain text chunks for RAG. Apache-2.0; local (HF) or vLLM.
 ## Chunking strategies (brief)
 
 | Strategy | When to use |
-|---|---|
+| --- | --- |
 | Fixed-size with overlap | Baseline; works for most text |
 | Sentence / paragraph | When semantic boundaries matter |
 | Recursive character | LangChain default; good all-rounder |

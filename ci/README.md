@@ -18,7 +18,7 @@ expand schedules/matrices/artifacts without a rough usage estimate in the PR.
 ## What to gate in CI vs pre-commit vs agent
 
 | Check | Pre-commit | CI (fast lane) | CI (slow lane) | Agent |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Lint, format | ✅ primary | ✅ safety net | — | — |
 | Type checking | optional | ✅ primary | — | — |
 | Secret scanning (gitleaks) | ✅ primary | ✅ safety net | — | — |
@@ -81,14 +81,14 @@ python3 ci/scripts/check_gha_usage.py --days 14 --json
 
 Requires [`gh`](https://cli.github.com/) authenticated. Repo timing needs normal repo
 read. Account billing summary needs billing/admin access on the user or org; if the API
-returns 403, use https://github.com/settings/billing (or org Billing) instead. Legacy
+returns 403, use <https://github.com/settings/billing> (or org Billing) instead. Legacy
 product-specific endpoints (`/settings/billing/actions`, `shared-storage`) are retired —
 this script uses the consolidated usage summary API plus per-run timing.
 
 ## Example files in this directory
 
 | File | Description |
-|---|---|
+| --- | --- |
 | `examples/lint-and-type.yml` | Ruff lint/format, pyright/basedpyright, markdownlint |
 | `examples/security.yml` | gitleaks, pip-audit, Semgrep OWASP, TruffleHog (scheduled) |
 | `examples/ci.yml` | Combined fast-lane: lint + types + tests + dep audit |
@@ -102,10 +102,12 @@ this script uses the consolidated usage summary API plus per-run timing.
 ## Dependency update bots
 
 **Dependabot** (GitHub-native, free):
+
 - Zero setup overhead; files PRs for outdated deps and Actions versions.
 - Pair with auto-merge for patch-level updates after tests pass.
 
 **Renovate** (more configurable):
+
 - Supports monorepos, custom grouping, semantic versioning ranges, more ecosystems.
 - Use when Dependabot's grouping or scheduling isn't flexible enough.
 

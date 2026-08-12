@@ -12,7 +12,7 @@ One paragraph: what happened, who was affected, and current status.
 ## Impact
 
 | Area | Impact |
-|---|---|
+| --- | --- |
 | Users | [who/how many] |
 | Data | [loss, corruption, exposure, or none] |
 | Availability | [duration/degradation] |

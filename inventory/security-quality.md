@@ -16,7 +16,7 @@ check for compliance. The `.cursor/rules/` and `.windsurf/rules/` CodeGuard file
 implement many of these as coding rules — the table below maps them.
 
 | # | Risk | CodeGuard rule | Automated check |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | A01 | Broken Access Control | `codeguard-0-authorization-access-control` | Semgrep `p/owasp-top-ten` |
 | A02 | Cryptographic Failures | `codeguard-0-additional-cryptography`, `codeguard-1-crypto-algorithms`, `codeguard-1-digital-certificates` | Semgrep, Bandit `B3xx` |
 | A03 | Injection (SQL, XSS, cmd, LDAP…) | `codeguard-0-input-validation-injection`, `codeguard-0-client-side-web-security`, `codeguard-0-xml-and-serialization` | Semgrep, Bandit `B6xx`, CodeQL |
@@ -64,7 +64,7 @@ is a detailed checklist (L1/L2/L3) for deeper compliance work. Reference it when
 ## Secret scanning
 
 | Tool | When to use |
-|---|---|
+| --- | --- |
 | **gitleaks** | Pre-commit + CI; fast, low false-positive, good baseline |
 | **TruffleHog** | History scan; detects secrets in past commits, not just current |
 | GitHub Advanced Security secret scanning | If on GitHub; catches pushed secrets automatically |
@@ -92,7 +92,7 @@ inventory, and medical setup instructions, see
 [`inventory/medical-data-security.md`](medical-data-security.md).
 
 | Tool | Best fit | Notes |
-|---|---|---|
+| --- | --- | --- |
 | [Microsoft Presidio](https://microsoft.github.io/presidio/) | Text, structured data, and images; custom PII recognizers | Local/open-source detection and redaction components; add domain-specific recognizers. It explicitly does not guarantee that all sensitive information is found. |
 | [phi-scan](https://pypi.org/project/phi-scan/) | Healthcare/FHIR source, config, and structured-data diffs | Local-first PHI/PII scanner with pre-commit/CI-oriented diff scanning and SARIF output. Pin and test before adoption; its PyPI release is currently marked alpha. |
 
@@ -105,7 +105,7 @@ or burned-in identifiers.
 ## Dependency vulnerability scanning
 
 | Tool | Ecosystem | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `pip-audit` | Python | Fast, uses OSV/PyPI Advisory DB |
 | `npm audit` / `pnpm audit` | JS/TS | Built-in |
 | `cargo audit` | Rust | RustSec advisory DB |
@@ -128,19 +128,19 @@ syft . -o spdx-json > sbom.json && grype sbom:sbom.json
 ## SAST (static analysis)
 
 | Tool | Language | Notes |
-|---|---|---|
+| --- | --- | --- |
 | **Semgrep** | 30+ languages | OSS rules + OWASP rulesets; fast; custom rules |
 | **CodeQL** | 10+ languages | Deep dataflow analysis; built into GitHub Actions |
 | **Bandit** | Python | Quick, maps to CWE/OWASP categories |
 | **Snyk Code** | Multi-language | Integrated with Snyk platform |
-| **SonarQube Community** | Multi-language | Self-hosted quality + security gate; try: https://docs.sonarsource.com/sonarqube-community-build/try-out-sonarqube |
+| **SonarQube Community** | Multi-language | Self-hosted quality + security gate; try: <https://docs.sonarsource.com/sonarqube-community-build/try-out-sonarqube> |
 
 ---
 
 ## Code quality
 
 | Tool | Purpose |
-|---|---|
+| --- | --- |
 | **ruff** | Python lint + format (replaces flake8, isort, black, pyupgrade) |
 | **basedpyright** / pyright | Python type checking |
 | **radon** | Python cyclomatic complexity + maintainability index |
@@ -158,7 +158,7 @@ syft . -o spdx-json > sbom.json && grype sbom:sbom.json
 ## IaC & container security
 
 | Tool | Purpose |
-|---|---|
+| --- | --- |
 | **Checkov** (Bridgecrew) | Terraform, CloudFormation, K8s, ARM, Helm — maps to OWASP A05 |
 | **Trivy** | Container images, filesystems, IaC, SBOM — broad and fast |
 | **Grype** | Vulnerability scanner using SBOM; pairs with syft |
@@ -169,7 +169,7 @@ syft . -o spdx-json > sbom.json && grype sbom:sbom.json
 ## Agent-side security review plugins
 
 ### Codex Security plugin (OpenAI)
-https://openai.com/daybreak/codex-security-plugin/
+<https://openai.com/daybreak/codex-security-plugin/>
 
 Installable Codex plugin that runs a guided security scan over a chosen project folder
 (Desktop Codex or Codex CLI). Use as an **agent-side** review pass alongside (not instead

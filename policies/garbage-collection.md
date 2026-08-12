@@ -11,7 +11,7 @@ slows reviews, and creates latent security surface. Periodic GC keeps repos legi
 ## What counts as garbage
 
 | Category | Examples | Typical tool |
-|---|---|---|
+| --- | --- | --- |
 | Dead code | Unused functions, classes, variables | `vulture` (Python), `ts-prune` / `knip` (TS) |
 | Unused imports | `import os` never referenced | `ruff` (`F401`), `autoflake` |
 | Commented-out code | Blocks of `# old_fn(...)` | Code review / agent prompt |
@@ -26,7 +26,7 @@ slows reviews, and creates latent security surface. Periodic GC keeps repos legi
 ## Cadence
 
 | Activity | Recommended frequency |
-|---|---|
+| --- | --- |
 | Unused imports / ruff `F401` | Every commit (pre-commit hook) |
 | Dead code scan (`vulture`) | Sprint or milestone |
 | TODO audit | Sprint or milestone (use `prompts/todo-plan-audit.md`) |

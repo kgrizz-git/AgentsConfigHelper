@@ -15,10 +15,13 @@ It provides a unified interface for tools like Claude, Codex, Opencode, Paseo, C
 
 1. **Prerequisites**: Install the [Flutter SDK](https://docs.flutter.dev/get-started/install).
 2. **Install Dependencies**:
+
    ```bash
    flutter pub get
    ```
+
 3. **Run the Application**:
+
    ```bash
    flutter run -d macos  # or windows / linux
    ```

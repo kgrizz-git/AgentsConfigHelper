@@ -21,7 +21,7 @@ Capture the intended data classification in `.context/project-profile.md` and ch
 If the answer is unknown, use the more protective tier until it is resolved.
 
 | Tier | Use when | Minimum decision |
-|---|---|---|
+| --- | --- | --- |
 | Standard | Source code and public/synthetic test data only | State that real PII/PHI and production exports are prohibited. |
 | Sensitive | The repo may hold internal identifiers, restricted designs, or de-identified data | Define allowed data, prohibited patterns/paths, an exception owner, and a local+CI content gate. |
 | Regulated | Medical, financial, identity, education, government, or similarly regulated work | Treat all real regulated data as prohibited unless an approved data-handling design says otherwise; complete a threat/risk review and obtain the required contracts, retention, access, audit, and incident-response approvals. |
@@ -49,7 +49,7 @@ for PII or PHI. See GitHub's [available ruleset rules](https://docs.github.com/e
 and [push-ruleset limits](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository).
 
 | Control | Standard | Sensitive / regulated |
-|---|---|---|
+| --- | --- | --- |
 | Pull requests | Require PRs; block direct pushes to the default branch | Same; allow bypass only to a small, named break-glass group. |
 | Reviews | 1 approval; dismiss stale approvals; require resolved conversations | 2 approvals or 1 + required CODEOWNER; require approval of the latest push for high-risk paths. |
 | Checks | Require the fast CI, tests, secret scan, and policy/data gate; require branches up to date or use merge queue | Same, plus required SAST/code scanning and any approved privacy/data gate. |
@@ -106,7 +106,7 @@ commit prose: reject PII/PHI, local paths/usernames/hostnames, private network a
 PACS/DICOM endpoints in the message; refer to a sanitized issue or incident record instead.
 
 | Risk | Local hook | Required CI job | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Credentials | gitleaks + `detect-private-key` | gitleaks and scheduled history scan | Already included in [`hooks/.pre-commit-config.yaml`](../hooks/.pre-commit-config.yaml). |
 | Absolute local paths | A fast staged-diff rule | Re-run against the PR diff | Detect Unix home paths, Windows drive paths, and `file://` URLs; allow only documented portable examples. Prefer project-relative paths, env vars, or config values. |
 | PII / PHI | Project-specific staged-diff rule | Re-run on the PR diff and block | Match known identifiers and high-confidence formats; allow reviewed test fixtures by path and rule ID, never by silently disabling the scanner. |

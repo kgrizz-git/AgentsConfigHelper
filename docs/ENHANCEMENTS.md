@@ -7,6 +7,7 @@ Overview of lightweight enhancements added to improve template setup, integratio
 ## Philosophy
 
 All enhancements follow the template's core principles:
+
 - **Menu, not mandate** - Everything is opt-in
 - **Thin entry, deep docs** - Scripts are simple, documentation is comprehensive
 - **Lightweight** - No over-engineering or heavy dependencies
@@ -17,6 +18,7 @@ All enhancements follow the template's core principles:
 ### 1. Automation Scripts (`scripts/`)
 
 #### `setup.sh` - Project Setup Automation
+
 - Environment file creation from `.env.example`
 - Pre-commit hooks installation
 - Git remote validation (prevents pushing to template)
@@ -25,6 +27,7 @@ All enhancements follow the template's core principles:
 - **Cleanup suggestions** based on project type
 
 #### `health-check.sh` - Project Health Dashboard
+
 - Git configuration validation
 - Environment file checks
 - Pre-commit hooks status
@@ -35,6 +38,7 @@ All enhancements follow the template's core principles:
 - CI configuration status
 
 #### `validate-env.sh` - Environment Validation
+
 - Essential tools availability
 - Project-specific tool detection
 - Environment variable validation
@@ -45,6 +49,7 @@ All enhancements follow the template's core principles:
 ### 2. Devin CLI Configuration (`.devin/`)
 
 #### `config.json` - Devin Configuration
+
 - Project metadata
 - Default session prompts
 - Agent context priority
@@ -53,6 +58,7 @@ All enhancements follow the template's core principles:
 - Environment variable requirements
 
 #### `skills/README.md` - Project Skills Guide
+
 - Guidelines for project-specific skills
 - Distinction from global skills
 - Skill format conventions
@@ -61,6 +67,7 @@ All enhancements follow the template's core principles:
 ### 3. Documentation Navigation (`docs/`)
 
 #### `NAVIGATION.md` - Role-Based Documentation Guide
+
 - Quick start by role (new project, existing project, understanding template)
 - Documentation map with descriptions
 - Decision trees for common choices
@@ -71,6 +78,7 @@ All enhancements follow the template's core principles:
 ### 4. Project Type Scaffolds (`scaffolds/`)
 
 #### Python Application (`scaffolds/python-app/`)
+
 - Modern `pyproject.toml` configuration
 - `src/` layout with tests
 - Ruff, pytest, mypy integration
@@ -78,6 +86,7 @@ All enhancements follow the template's core principles:
 - Example code and tests
 
 #### Next.js Application (`scaffolds/nextjs-app/`)
+
 - TypeScript and Next.js 14 configuration
 - App router structure
 - ESLint, Prettier, Jest integration
@@ -85,6 +94,7 @@ All enhancements follow the template's core principles:
 - Example pages and components
 
 #### Cloudflare Workers API (`scaffolds/workers-api/`)
+
 - Wrangler configuration
 - TypeScript setup
 - Example API handler
@@ -92,6 +102,7 @@ All enhancements follow the template's core principles:
 - GitHub Actions deployment workflow
 
 #### Go Service (`scaffolds/go-service/`)
+
 - Standard Go module structure
 - `cmd/` and `pkg/` layout
 - Makefile with common commands
@@ -99,6 +110,7 @@ All enhancements follow the template's core principles:
 - Example service and package
 
 #### Rust CLI (`scaffolds/rust-cli/`)
+
 - Cargo configuration
 - Standard Rust project layout
 - Clippy, rustfmt integration
@@ -108,11 +120,13 @@ All enhancements follow the template's core principles:
 ### 5. GitHub Integration Templates
 
 #### Issue Templates (`.github/ISSUE_TEMPLATE/`)
+
 - `bug_report.md` - Structured bug reporting
 - `feature_request.md` - Feature proposal template
 - `documentation.md` - Documentation issues and improvements
 
 #### Pull Request Template (`.github/pull_request_template.md`)
+
 - Change type classification
 - Related issues linking
 - Testing checklist
@@ -121,6 +135,7 @@ All enhancements follow the template's core principles:
 - Reviewer focus areas
 
 #### Dependabot Configuration (`.github/dependabot.yml`)
+
 - Python, npm, GitHub Actions, Docker updates
 - Weekly schedules
 - Automatic PR limits
@@ -132,6 +147,7 @@ All enhancements follow the template's core principles:
 ### For New Projects
 
 1. Run setup script:
+
    ```bash
    bash scripts/setup.sh
    ```
@@ -139,6 +155,7 @@ All enhancements follow the template's core principles:
 2. Follow cleanup suggestions to remove irrelevant content
 
 3. Choose and copy a scaffold if applicable:
+
    ```bash
    cp -r scaffolds/python-app/* .  # or other scaffold
    ```
@@ -146,6 +163,7 @@ All enhancements follow the template's core principles:
 4. Configure GitHub templates (copy from `.github/`)
 
 5. Run health check:
+
    ```bash
    bash scripts/health-check.sh
    ```
@@ -153,16 +171,19 @@ All enhancements follow the template's core principles:
 ### For Existing Projects
 
 1. Run health check to assess current state:
+
    ```bash
    bash scripts/health-check.sh
    ```
 
 2. Validate environment:
+
    ```bash
    bash scripts/validate-env.sh
    ```
 
 3. Use navigation guide to find relevant documentation:
+
    ```bash
    cat docs/NAVIGATION.md
    ```
@@ -190,6 +211,7 @@ All enhancements follow the template's core principles:
 ### Removing Components
 
 Any component can be safely removed:
+
 - Delete script files if not needed
 - Remove `.devin/` if not using Devin CLI
 - Skip scaffolds that don't match your project type
@@ -212,24 +234,28 @@ Any component can be safely removed:
 ## Best Practices Applied
 
 ### Template Philosophy
+
 - **Menu, not mandate**: All components are opt-in
 - **Thin entry, deep docs**: Scripts are simple, documentation is comprehensive
 - **Verify, don't guess**: Scripts validate actual state
 - **Policy as code**: Checks encoded in executable scripts
 
 ### Security
+
 - No hardcoded credentials or secrets
 - Git remote validation prevents accidental template pushes
 - Environment variable validation
 - Security configuration checks in health script
 
 ### Maintainability
+
 - Well-documented scripts with clear error messages
 - Consistent structure across scaffolds
 - Standard CI patterns
 - Version-pinned dependencies where appropriate
 
 ### User Experience
+
 - Clear cleanup guidance for irrelevant content
 - Role-based documentation navigation
 - Non-blocking validation (unless configured otherwise)
@@ -249,18 +275,21 @@ These enhancements provide a foundation for potential future improvements:
 ## Impact Assessment
 
 ### Template Weight
+
 - **Minimal**: Scripts are lightweight shell scripts
 - **Scaffolds**: Each scaffold is self-contained and optional
 - **Documentation**: Single navigation file, no major documentation bloat
 - **Configuration**: Minimal Devin config, optional GitHub templates
 
 ### Maintenance
+
 - **Low**: Scripts use standard tools (git, basic commands)
 - **Scaffolds**: Follow standard patterns for each ecosystem
 - **Templates**: Standard GitHub issue/PR template format
 - **Documentation**: Static reference, minimal maintenance required
 
 ### Adoption
+
 - **Easy**: All components are opt-in with clear documentation
 - **Reversible**: Any component can be removed without side effects
 - **Customizable**: Clear extension points and customization guidelines
@@ -277,6 +306,7 @@ These enhancements significantly improve the template's ease of setup and integr
 5. **Best practices** for GitHub integration
 
 All components are designed to be:
+
 - Simple to understand and use
 - Easy to customize or remove
 - Consistent with template philosophy

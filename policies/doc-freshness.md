@@ -12,7 +12,7 @@ review marker plus a staleness window keeps durable docs trustworthy.
 ## Rules & defaults
 
 | Rule | Default | Tier |
-|---|---|---|
+| --- | --- | --- |
 | Durable docs carry a freshness marker | `Last reviewed: YYYY-MM-DD` near the top | soft gate |
 | Staleness window before review is due | 180 days | advisory (warn), CI soft gate |
 | Hard-stale threshold | 365 days | hard gate in CI |
@@ -51,7 +51,7 @@ Catalog reviewed through: 2026-08-11
 ```
 
 | Marker | Asserts | Window | Checked by |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `Last reviewed` | the text is accurate | 180 warn / 365 hard | `hooks/scripts/check_doc_freshness.py` |
 | `Catalog reviewed through` | this is still the right menu | 120 days | `ci/scripts/check_doc_links.py` |
 

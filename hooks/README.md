@@ -17,7 +17,7 @@ pre-commit run --all-files  # first-run check
 ## Files
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `.pre-commit-config.yaml` | Example config: policy checks + secrets + lint |
 | `scripts/check_file_size.py` | Enforces [`policies/file-size-and-counts.md`](../policies/file-size-and-counts.md) (soft **600** / hard **1000** lines) |
 | `scripts/check_doc_freshness.py` | Enforces [`policies/doc-freshness.md`](../policies/doc-freshness.md) |
@@ -37,7 +37,7 @@ pre-commit run --all-files  # first-run check
 The example config already includes (leave them on unless the project cannot use them):
 
 | Hook | Role |
-|---|---|
+| --- | --- |
 | **gitleaks** | Secret scanning (hard gate) |
 | **detect-private-key** | Private key detect (pre-commit-hooks) |
 | **ruff** + **ruff-format** | Python lint/format |
@@ -92,7 +92,7 @@ exists**, so the commented blocks are safe to leave wired. See
 [`policies/sensitive-data-scan-gates.md`](../policies/sensitive-data-scan-gates.md).
 
 | Gate | Config | Blocks |
-|---|---|---|
+| --- | --- | --- |
 | `check-gitignore-protected` | `.gitignore-protected` | Removal of a required `.gitignore` rule (a data dir getting silently un-ignored). |
 | `check-forbidden-paths` | `.forbidden-paths` | Any tracked file under a never-commit path — catches `git add -f` and pre-existing files a `.gitignore` rule can't. |
 | `check-scan-contract` | `.scan-contract.json` + `.scan-ledger.json` | A commit where a required heavy scanner (Presidio text/image, OCR, dicom-phi-scan, phi-scan, HoundDog local, SonarQube CE local) hasn't re-run since its covered files changed. |
@@ -104,7 +104,7 @@ the `*.example` files to enable, and CODEOWNER-protect every config.
 ## When to use pre-commit vs CI vs agent-side checks
 
 | Check type | Best tier | Reasoning |
-|---|---|---|
+| --- | --- | --- |
 | Lint, format, file size, TODO size, secret scanning | **pre-commit** (local) | Fast, catches cheaply before push |
 | SAST (Semgrep/CodeQL), dep audit, OWASP scan | **CI** | Slower; needs full context or network |
 | Doc freshness, TODO comment audit, policy drift | **CI** or **agent** | Doesn't need to run on every commit |
@@ -182,6 +182,7 @@ The optional `check-cleanup-hygiene` hook helps maintain project hygiene by ensu
 ### When to enable
 
 Enable this hook when:
+
 - The project uses `to_do.md` for tracking work
 - Plans are actively used and completed
 - Agents or humans frequently complete work that needs logging

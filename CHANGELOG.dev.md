@@ -6,6 +6,7 @@ Internal / developer-facing changes that do not belong in the public
 ## Unreleased
 
 ### Added
+
 - **Bootstrap follow-through.** The checklist existed but nothing recorded progress, so a
   compacted or resumed session had no way to know where it stopped. Adds stable phase IDs
   (`P0`–`P8`, `PS`); `templates/bootstrap-state.md` → `.context/bootstrap-state.md` for
@@ -87,6 +88,7 @@ Internal / developer-facing changes that do not belong in the public
   caveat cross-linked to the runtime-leak policy and prompt.
 
 ### Changed
+
 - Template CI pins Markdownlint and applies the repository's established style choices;
   gitleaks receives the read-only pull-request permission it needs for PR scans.
 - **References to the private notes repo: cited, not hidden.** The repo stays private, so
@@ -132,6 +134,7 @@ Internal / developer-facing changes that do not belong in the public
 ## [0.4.4] - 2026-07-09
 
 ### Added
+
 - `ci/scripts/check_open_prs.py` — advisory `gh pr list` helper with `--branch`,
   `--once-per-day` stamp under `.context/`, and `--json`.
 - `ci/examples/open-prs-advisory.yml` — optional daily/advisory Actions reminder
@@ -141,12 +144,14 @@ Internal / developer-facing changes that do not belong in the public
 - Smoke tests for `--help` and once-per-day stamp skip.
 
 ### Changed
+
 - Daily open-PR guidance: agents must inspect `.context/open-prs-check.stamp`
   first and skip the script when fresh (token-cheaper than invoking Python/`gh`).
 
 ## [0.4.3] - 2026-07-09
 
 ### Added
+
 - Archon (`coleam00/archon` / archon.diy) under harness + ai-agent-platforms.
 - Pantheon (pantheon.k-dense.ai) under tools-index research + catalog K-Dense section.
 - Cross-IDE handoff options (Passoff, handoff, ai-sync) with Reddit discussion seed.
@@ -155,6 +160,7 @@ Internal / developer-facing changes that do not belong in the public
 ## [0.4.2] - 2026-07-09
 
 ### Added
+
 - `inventory/knowledge-graph-code-mapping.md`: section **AI-generated code wikis & repo
   documentation** — Google Code Wiki, DeepWiki SaaS, deepwiki-open, RepoWiki,
   FSoft CodeWiki, repowise (+ vs-DeepWiki comparison), Ry Walker survey link.
@@ -162,12 +168,14 @@ Internal / developer-facing changes that do not belong in the public
 ## [0.4.1] - 2026-07-09
 
 ### Added
+
 - `policies/github-actions-usage.md` — estimate minutes/storage when changing CI;
   use GHA deliberately (not fearfully, not carelessly).
 - `ci/scripts/check_gha_usage.py` — repo run timing + account billing usage summary
   via `gh` (consolidated billing API; legacy actions/shared-storage endpoints retired).
 
 ### Changed
+
 - `inventory/search-apis.md`: Firecrawl listed as a crawl tool only (removed API-key
   dashboard / Notes_and_Ideas credential wording from that entry).
 - `ci/README.md` / `AGENTS.md`: link usage policy and script.
@@ -175,6 +183,7 @@ Internal / developer-facing changes that do not belong in the public
 ## [0.4.0] - 2026-07-09
 
 ### Added
+
 - Policies: `changelog-conventions.md`, `plans-and-todos.md`; `plans/README.md`.
 - Hook: `check_todo_limits.py` (soft 150 / hard 300 lines); optional `prune_backups.sh`.
 - Smoke tests: `tests/test_policy_hooks_smoke.py` (unittest) for TODO/file-size hooks.
@@ -184,5 +193,6 @@ Internal / developer-facing changes that do not belong in the public
 - Agent stubs (`GEMINI.md`, `QWEN.md`, `CLAUDE.md`) clarified as pointers to `AGENTS.md`.
 
 ### Changed
+
 - File-size soft/hard defaults: 600 / 1000 lines (was 400 / 800).
 - `hooks/README.md` documents existing gitleaks + lint hooks alongside new policy checks.

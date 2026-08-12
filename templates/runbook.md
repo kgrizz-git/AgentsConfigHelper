@@ -11,7 +11,7 @@ What this system or workflow does, and what depends on it.
 ## Quick links
 
 | Resource | Link |
-|---|---|
+| --- | --- |
 | Repo | [url] |
 | Dashboard | [url] |
 | Logs | [url] |

@@ -29,10 +29,12 @@ links and renamed projects — evidence a tool needs re-evaluating.
 ## Topic files
 
 ### Skills & agents
+
 - [catalog-skills-agents.md](catalog-skills-agents.md) — install-on-demand catalog of subagents and skills (Notes_and_Ideas, K-Dense / Pantheon, Obra, gstack, agentskills.io, official Claude/OpenAI patterns)
 - [skills-index.md](skills-index.md) — selection criteria and import guidance for skills and prompts
 
 ### Tools & infrastructure
+
 - [tools-index.md](tools-index.md) — general developer tools, testing, package management, research (incl. Pantheon), docs (Sphinx, Pandoc), ML dev
 - [security-quality.md](security-quality.md) — security, linting, SAST, dependency audit, OWASP Top 10 mapping
 - [mcp-servers.md](mcp-servers.md) — MCP and agent tool server candidates
@@ -41,26 +43,32 @@ links and renamed projects — evidence a tool needs re-evaluating.
 - [linear-workflows.md](linear-workflows.md) — when to use Linear vs in-repo plans and TODOs
 
 ### Cloud & platforms
+
 - [cloud-and-infra.md](cloud-and-infra.md) — Cloudflare, Google Cloud/Colab/AI Studio, serverless GPU (Modal, HF Spaces), VPS options
 - [ai-agent-platforms.md](ai-agent-platforms.md) — orchestration (LangGraph, Symphony, Archon, Conductor), browser agents, local model runners, IDE platforms
 
 ### AI / ML building blocks
+
 - [rag.md](rag.md) — vector databases, RAG frameworks, embeddings, rerankers, document parsers, chunking, evaluation
 - [search-apis.md](search-apis.md) — free and paid web search APIs, academic search (Semantic Scholar, arXiv, PubMed), Jina Reader/Search
 - [knowledge-graph-code-mapping.md](knowledge-graph-code-mapping.md) — code knowledge graphs (sift-kg, GraphRAG), AI code wikis (DeepWiki, CodeWiki, repowise), symbol parsing, LLM context maps
 
 ### Domain libraries
+
 - [python.md](python.md) — Python project defaults, formatting, testing, type checking
 - [scientific-domain.md](scientific-domain.md) — medical imaging (pydicom, SimpleITK), EM/FDTD simulation (meep, openEMS, gprMax), general scientific stack
 - [financial-modeling.md](financial-modeling.md) — market data (yfinance, FRED), quant libraries (QuantLib, PyPortfolioOpt, empyrical), backtesting (backtrader, vectorbt), modeling patterns
 - [medical-data-security.md](medical-data-security.md) — strict PII/PHI guard setup, human approval inventory, and medical-data scanning options
 
 ### Design & frontend
+
 - [frontend-design-ux.md](frontend-design-ux.md) — Claude Design, Google Stitch, Figma, Penpot, shadcn/ui, Radix UI, Open Props, Shopify Polaris, frontend tooling
 
 ### Harness engineering
+
 - [harness-engineering.md](harness-engineering.md) — harness reading; Archon; cross-IDE handoffs; agent standards (agents.md, skills.sh)
 - [agent-tooling-efficiency.md](agent-tooling-efficiency.md) — token-efficient tooling: choosing *between* overlapping code-intelligence tools (Context7, Serena, code-review-graph, Graphify, TokenSave), CLI-vs-MCP, evidence standard. **Default: install nothing.**
 
 ### References
+
 - [source-repos-to-review.md](source-repos-to-review.md) — repos worth inspecting for reusable skills, conventions, and tools

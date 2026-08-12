@@ -33,7 +33,7 @@ Ordered by leverage (high-impact, low-risk changes first).
 ## Metrics snapshot
 
 | Metric | Value | Tool |
-|---|---|---|
+| --- | --- | --- |
 | Files scanned | | |
 | Total lines | | `wc -l` |
 | Files > 400 lines (soft cap) | | `check_file_size.py` |

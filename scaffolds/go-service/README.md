@@ -13,11 +13,13 @@ Minimal Go service/library template with best practices.
 ## Usage
 
 Copy these files to your project root:
+
 ```bash
 cp -r scaffolds/go-service/* .
 ```
 
 Then customize:
+
 1. Edit `go.mod` (module name, Go version)
 2. Adjust `cmd/` and `pkg/` structure for your needs
 3. Update CI workflow if needed

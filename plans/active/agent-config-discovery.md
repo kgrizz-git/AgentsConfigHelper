@@ -11,7 +11,7 @@ Build a comprehensive, auto-discoverable database of config file locations, form
 ## Targets
 
 | Tool | Config format | Known paths | CLI available |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Claude Code | JSON, Markdown | `~/.claude/settings.json`, `CLAUDE.md`, `.claude/` | Yes (`claude` CLI) |
 | OpenAI Codex | TOML, JSON | `~/.codex/config.toml`, `AGENTS.md` | Yes (`codex` CLI) |
 | Opencode | JSON/JSONC | `~/.config/opencode/opencode.json`, `.opencode/` | Yes (`opencode` CLI) |

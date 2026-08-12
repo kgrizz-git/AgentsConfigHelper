@@ -16,7 +16,7 @@ not replace, [`github-repository-hygiene.md`](github-repository-hygiene.md),
 ## The three gates
 
 | Gate | Script | Config (repo root) | What it blocks |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Protected ignores | `check_gitignore_protected.py` | `.gitignore-protected` | Removal of a required `.gitignore` rule (a data/export/log dir getting silently un-ignored). |
 | Forbidden paths | `check_forbidden_paths.py` | `.forbidden-paths` | Any tracked file under a directory/glob that must never be committed (catches `git add -f` and files added before a `.gitignore` rule existed). |
 | Scan contract | `check_scan_contract.py` | `.scan-contract.json` + `.scan-ledger.json` | A commit where a required heavy scanner has not been re-run since the files it covers changed. |

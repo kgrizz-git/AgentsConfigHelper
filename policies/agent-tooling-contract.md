@@ -34,7 +34,7 @@ contributor uses.
 ## Supporting rules
 
 | Rule | Default | Tier |
-|---|---|---|
+| --- | --- | --- |
 | Generated indexes and agent state live in `.agent-state/` | gitignored; rebuild documented in `AGENTS.md` | hard gate (`.gitignore`) |
 | Each installed tool has a smoke test | index a fixture, run one query, remove the state | soft gate |
 | Native fallback keeps working | `rg`, language server, source docs, and tests suffice when an optional service is down | advisory |

@@ -16,7 +16,7 @@ Gates everything else. Run it in Phase 0, before any scaffolding, and never infe
 ## Branch
 
 | Answer | Classification | Action |
-|---|---|---|
+| --- | --- | --- |
 | Code only, synthetic fixtures, rule is explicit | `public` / `internal` | Standard tier. Baseline pre-commit (gitleaks, private-key, file-size). Continue to P1. |
 | No real data today, but no rule against it | `internal` → treat as `confidential` | Write the rule into `AGENTS.md` now, then standard tier + `.forbidden-paths`. |
 | Customer data, credentials, or business-confidential | `confidential` | Standard tier **plus** the structural gates in [`policies/sensitive-data-scan-gates.md`](../../policies/sensitive-data-scan-gates.md). |

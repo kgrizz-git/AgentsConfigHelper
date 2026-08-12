@@ -90,8 +90,8 @@ git remote rename origin template
 git remote add origin <new-project-remote-url>
 ```
 
-6. Verify again with `git remote -v`.
-7. Only push after the user confirms the new remote is correct.
+1. Verify again with `git remote -v`.
+2. Only push after the user confirms the new remote is correct.
 
 ## 3. Read The Template Inventories
 
@@ -231,6 +231,7 @@ Report:
 - The next 3 practical steps.
 
 Tell the user:
+
 - Future agent sessions should start with `prompts/new-agent-session.md`.
 - Periodic repo health checks use `prompts/maintenance-loop.md` (weekly or monthly).
 - The project profile lives at `.context/project-profile.md`; update it when the stack

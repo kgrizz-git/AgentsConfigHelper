@@ -151,10 +151,12 @@ repos:
     hooks:
       - id: markdownlint
         name: "docs: markdownlint"
+        exclude: "(inventory|templates|\\.windsurf)/|CHANGELOG"
         args:
           - --disable
           - MD013   # line length (incompatible with wide tables)
           - MD033   # inline HTML (sometimes useful)
+          - --fix
           - --
 
   # ── Shell ──────────────────────────────────────────────────────────────────

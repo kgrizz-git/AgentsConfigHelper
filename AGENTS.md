@@ -17,7 +17,7 @@ entrypoints (`CLAUDE.md`, `GEMINI.md`, `QWEN.md`, `.github/copilot-instructions.
 Do not load everything. Start here, then open only what the task needs.
 
 | If you are… | Read |
-|---|---|
+| --- | --- |
 | Starting a new session on this project | `.context/project-profile.md`, then [`prompts/new-agent-session.md`](prompts/new-agent-session.md) |
 | Moving work between agents or IDEs | [`templates/handoff.md`](templates/handoff.md) → `.context/handoff.md` |
 | Running periodic repo health checks | [`prompts/maintenance-loop.md`](prompts/maintenance-loop.md) |
@@ -37,7 +37,7 @@ Do not load everything. Start here, then open only what the task needs.
 ## Key files and directories
 
 | Path | Purpose |
-|---|---|
+| --- | --- |
 | `.context/project-profile.md` | Project identity, stack, decisions (fast-load summary) |
 | `lib/` | Flutter source (models, parsers, services, screens, widgets) |
 | `test/` | Unit and widget tests |
@@ -59,6 +59,8 @@ flutter build macos --release   # build release binary
 
 ## Conventions
 
+- **Never bypass pre-commit hooks (e.g., `--no-verify`) without explicit user permission. If hooks fail, fix the issues.**
+- **Never disable linters, rules, or checks (e.g., in `.pre-commit-config.yaml` or `.gitignore`) without explicit user permission.**
 - Follow Dart/Flutter style (dart format enforced in CI)
 - No comments unless they add non-obvious context
 - Keep widgets small and focused; business logic in services/models

@@ -5,33 +5,39 @@ Run this when completing significant work or at session end to ensure proper log
 ## Checklist
 
 ### TODO cleanup
+
 - [ ] Remove completed items from `to_do.md`
 - [ ] Move items to "Recently done" section (max 10) if useful for reference
 - [ ] Verify no completed items remain in main TODO list
 
 ### Completion logging
+
 - [ ] Log user-visible changes in `CHANGELOG.md`
 - [ ] Log internal/harness changes in `CHANGELOG.dev.md`
 - [ ] Log maintenance/security work in `MAINTENANCE.md` (create if needed)
 - [ ] Reference the source (plan, issue, or commit) for each logged item
 
 ### Plan archival
+
 - [ ] Move completed plans to `plans/archive/`
 - [ ] Update plan status to `complete` or `abandoned`
 - [ ] Update `orchestration-state.md` if present
 - [ ] Verify no active plans remain in main `plans/` directory
 
 ### Scratch file cleanup
+
 - [ ] Review `.context/` directory for old scratch files
 - [ ] Delete scratch files older than 7 days (unless explicitly needed)
 - [ ] Archive valuable research notes to appropriate docs location
 
 ### Source code cleanup
+
 - [ ] Check for resolved TODOs/FIXMEs in source code
 - [ ] Remove or update resolved markers
 - [ ] Verify no orphaned TODO comments remain
 
 ### Verification
+
 - [ ] Run `python hooks/scripts/check_todo_limits.py` to verify cleanup
 - [ ] Run `python hooks/scripts/check_file_size.py` to check for bloat
 - [ ] Verify git status shows only intended changes

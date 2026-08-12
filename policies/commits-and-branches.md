@@ -42,17 +42,21 @@ Agents and humans should **notice** open PRs so a push updates the right review
 thread instead of spawning a duplicate. This is **not** a blocking git hook.
 
 1. After pushing a feature branch, run:
+
    ```bash
    python3 ci/scripts/check_open_prs.py --branch
    ```
+
 2. About once a day (session start is enough):
    - **First** inspect `.context/open-prs-check.stamp` (gitignored). If it exists
      and its mtime is within 24 hours, **do not run the script** — that avoids
      a Python/`gh` round-trip and saves tokens.
    - Only if the stamp is missing or older than 24 hours, run:
+
      ```bash
      python3 ci/scripts/check_open_prs.py --once-per-day
      ```
+
      The script refreshes the stamp (and also skips internally if the stamp is
      still fresh — defense in depth, not the preferred path).
 3. If an open PR already covers the branch or task: update that PR (push more

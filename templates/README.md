@@ -10,7 +10,7 @@ For the *prompts* that instruct an agent to produce these outputs, see [`prompts
 ## Available templates
 
 | Template | Use when |
-|---|---|
+| --- | --- |
 | [plan.md](plan.md) | Starting a non-trivial task; need a reviewable plan before coding |
 | [bootstrap-state.md](bootstrap-state.md) | Bootstrapping a new project — tracks phase status across sessions and context resets |
 | [handoff.md](handoff.md) | Moving work between agents, IDEs, or sessions without inheriting a transcript |

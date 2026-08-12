@@ -12,11 +12,13 @@ Minimal Rust CLI tool template with best practices.
 ## Usage
 
 Copy these files to your project root:
+
 ```bash
 cp -r scaffolds/rust-cli/* .
 ```
 
 Then customize:
+
 1. Edit `Cargo.toml` (project name, dependencies)
 2. Adjust `src/` structure for your needs
 3. Update CI workflow if needed

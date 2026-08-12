@@ -26,7 +26,7 @@ matrix explosions, or huge artifacts.
 ## What burns minutes
 
 | Pattern | Risk | Prefer |
-|---|---|---|
+| --- | --- | --- |
 | `schedule:` every hour / many cron workflows | High continuous burn | Daily/weekly; combine jobs |
 | Large OS/version matrices on every PR | Multiplicative minutes | Matrix only on main/nightly; subset on PR |
 | macOS / Windows / larger runners | Higher billable multipliers | Linux for default; other OS on schedule or manual |
@@ -41,7 +41,7 @@ schedules. Private repos: minutes and storage both count against the account quo
 ## What burns storage
 
 | Pattern | Risk | Prefer |
-|---|---|---|
+| --- | --- | --- |
 | Artifacts kept 90 days by default | Accumulates GB | Short `retention-days:` (e.g. 3–14) |
 | Uploading build trees / datasets as artifacts | Large blobs | Upload only needed reports; use releases/LFS for big binaries |
 | Unbounded caches | Cache storage quota | Narrow cache keys; delete stale caches |
@@ -69,12 +69,14 @@ When editing `.github/workflows/` or `ci/examples/`:
 - Do **not** add frequent crons, broad matrices, or long retention without an estimate.
 - Prefer extending an existing workflow over adding a new always-on schedule.
 - After non-trivial CI changes, suggest running:
+
   ```bash
   python3 ci/scripts/check_gha_usage.py --repo
   python3 ci/scripts/check_gha_usage.py --account
   ```
+
 - If usage APIs are forbidden (token scope), say so and point to
-  https://github.com/settings/billing (user) or org billing settings.
+  <https://github.com/settings/billing> (user) or org billing settings.
 
 ## Remediation when usage is high
 

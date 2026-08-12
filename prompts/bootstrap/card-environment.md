@@ -10,7 +10,7 @@
 ## Branch
 
 | Answer | Action |
-|---|---|
+| --- | --- |
 | Any project | Recommend `direnv`. Commit `.envrc.example`; gitignore `.envrc`. One-time setup: `brew install direnv` + shell hook, then `direnv allow`. |
 | Python | Add `pyenv` + `.python-version`; use `layout uv` (or `layout python3`) in `.envrc` so the venv auto-activates. Pick one dependency manager — default `uv`. |
 | Node / TypeScript | Pin via `.nvmrc` or `packageManager` in `package.json`. Default `pnpm` unless a convention exists. |

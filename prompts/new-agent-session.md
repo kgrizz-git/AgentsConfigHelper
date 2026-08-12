@@ -10,11 +10,13 @@ It gives you the project context you need in under two minutes without loading e
 Read `.context/project-profile.md`.
 
 If the file does not exist:
+
 1. Tell the user it's missing.
 2. Run `prompts/project-init-profile.md` to create it.
 3. Return here once written.
 
 From the profile, report to the user in a single short paragraph:
+
 - Project name, purpose, and primary type
 - Stack (language + framework)
 - Orchestration tier and any active subagents/skills
@@ -50,14 +52,17 @@ bash scripts/check-bootstrap.sh
 Check for a plans folder. If `plans/orchestration-state.md` exists, read it.
 
 Report: is there an active plan, open task, or in-flight branch?
+
 - If yes: summarize the next action and ask if the user wants to continue it.
 - If no: proceed to step 3.
 
 Also run:
+
 ```bash
 git log --oneline -5
 git status --short
 ```
+
 Surface any uncommitted work or recent commits relevant to the current task.
 
 **Open PRs (advisory, ~once a day):** if `gh` is available and this is a GitHub
@@ -67,9 +72,11 @@ remote:
    `.context/open-prs-check.stamp`. If it exists and was modified within the last
    24 hours, **skip** — do not run the script.
 2. Otherwise run:
+
    ```bash
    python3 ci/scripts/check_open_prs.py --once-per-day
    ```
+
    (`--once-per-day` is a safety net if the stamp check was skipped.)
 
 Report any open PRs that overlap the current branch or task. Prefer updating an
@@ -99,6 +106,7 @@ Read the inventory files listed in the profile's **Relevant inventory** section.
 Do **not** load all 18 inventory files — load only what this project uses.
 
 If the project profile lists no inventory files yet, default to:
+
 - `inventory/README.md` (scan the table, choose what applies)
 - `inventory/security-quality.md` (always relevant)
 
@@ -123,11 +131,13 @@ Ask the user what they want to accomplish this session, or read the issue, PR, o
 they have pointed you to.
 
 Before writing code or making broad changes:
+
 1. Confirm your understanding of the goal in one sentence.
 2. If the task is non-trivial, propose a brief plan and wait for approval.
 3. If the task is a quick fix, state what you will change and do it.
 
 Check the profile's orchestration tier:
+
 - `none` or `hub-and-spoke` — proceed as a single agent.
 - `hub-and-spoke` — check if the orchestrator subagent should be invoked
   (see `inventory/catalog-skills-agents.md` → orchestrator agent).

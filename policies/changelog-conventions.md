@@ -13,7 +13,7 @@ public release note. Split audiences so neither document lies by omission or noi
 ## Dual-track model (recommended)
 
 | Track | File (default) | Audience | Contents |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Public / user-facing** | `CHANGELOG.md` | Users, operators, release notes | User-visible features, fixes, breaking changes, migrations |
 | **Developer / internal** | `CHANGELOG.dev.md` (optional) | Maintainers, agents | Tests added, CI/hooks, inventory, docs-only, refactors with no user impact |
 
@@ -43,7 +43,7 @@ Never put secrets, tokens, or private URLs in either changelog.
 Bump [`VERSION`](../VERSION) with the public changelog:
 
 | Bump | When |
-|---|---|
+| --- | --- |
 | **MAJOR** | Breaking public API / CLI / config / data format |
 | **MINOR** | Backward-compatible user-visible feature or capability |
 | **PATCH** | Bugfix, security patch, or docs/tooling that does not change product behavior |

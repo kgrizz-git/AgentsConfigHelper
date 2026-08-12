@@ -10,11 +10,11 @@ analysis, algorithmic strategy testing, and financial data pipelines.
 ## Market data sources
 
 | Source | Cost | Notes |
-|---|---|---|
+| --- | --- | --- |
 | **yfinance** | Free | Yahoo Finance; OHLCV, fundamentals, options, crypto; easiest start |
 | **pandas-datareader** | Free | FRED, Quandl, Stooq, World Bank via unified interface |
 | **FRED API** | Free | Federal Reserve Economic Data; macroeconomic time series; no key required for basic |
-| **OpenBB** | Free (OSS) | Open-source "Bloomberg terminal" — data, charting, research; https://openbb.co |
+| **OpenBB** | Free (OSS) | Open-source "Bloomberg terminal" — data, charting, research; <https://openbb.co> |
 | **Alpha Vantage** | Free tier | Fundamental data, forex, crypto, indicators; 25 req/day free |
 | **Polygon.io** | Free tier | Real-time + historical equities, options, forex; better data quality than yfinance |
 
@@ -31,38 +31,38 @@ gdp = web.DataReader("GDP", "fred", "2000-01-01")
 ## Core analysis libraries
 
 ### QuantLib
-https://www.quantlib.org / https://github.com/lballabio/quantlib
+<https://www.quantlib.org> / <https://github.com/lballabio/quantlib>
 
 Industry-standard library for pricing derivatives, building yield curves, and modeling
 interest rates. Python bindings via `QuantLib-Python`. Use for: bond pricing, options
 valuation, swap curves, risk measures.
 
 ### numpy-financial
-https://github.com/numpy/numpy-financial
+<https://github.com/numpy/numpy-financial>
 
 Time-value-of-money functions (NPV, IRR, PMT, FV, PV). Extracted from numpy.
 Lightweight; use for DCF, loan calculations, and basic financial math.
 
 ### statsmodels
-https://www.statsmodels.org
+<https://www.statsmodels.org>
 
 Econometrics: OLS/GLS regression, ARIMA/SARIMA, VAR, cointegration tests, GARCH.
 Use for: factor model estimation, time-series forecasting, event studies.
 
 ### PyPortfolioOpt
-https://github.com/robertmartin8/PyPortfolioOpt
+<https://github.com/robertmartin8/PyPortfolioOpt>
 
 Mean-variance optimization, Black-Litterman, risk parity, efficient frontier.
 Built on `cvxpy`. Use for portfolio construction and rebalancing.
 
 ### empyrical
-https://github.com/quantopian/empyrical
+<https://github.com/quantopian/empyrical>
 
 Performance and risk metrics: Sharpe, Sortino, Calmar, max drawdown, alpha/beta,
 rolling statistics. Pairs with pyfolio; use for strategy evaluation.
 
 ### pyfolio
-https://github.com/quantopian/pyfolio
+<https://github.com/quantopian/pyfolio>
 
 Portfolio and risk analytics with tear-sheet reports. Works with Zipline returns.
 Good for visualizing backtest performance.
@@ -72,19 +72,19 @@ Good for visualizing backtest performance.
 ## Backtesting frameworks
 
 ### backtrader
-https://www.backtrader.com
+<https://www.backtrader.com>
 
 Event-driven backtesting with live trading support. Good documentation; flexible
 data feeds; supports multiple assets, timeframes, and indicators.
 
 ### zipline-reloaded
-https://github.com/stefan-jansen/zipline-reloaded
+<https://github.com/stefan-jansen/zipline-reloaded>
 
 Community-maintained fork of Quantopian's zipline. Integrates with pyfolio and
 alphalens. More opinionated than backtrader; good for systematic equity strategies.
 
 ### vectorbt
-https://github.com/polakowo/vectorbt
+<https://github.com/polakowo/vectorbt>
 
 Vectorized (numpy/pandas) backtesting — much faster than event-driven for parameter
 sweeps. Use when you need to test thousands of strategy variants.
@@ -126,6 +126,6 @@ Black-Scholes in `numpy`; full Greeks and exotics via `QuantLib`.
 
 ## References
 
-- Damodaran on Valuation: https://pages.stern.nyu.edu/~adamodar/
-- Quantitative Finance resources: https://github.com/wilsonfreitas/awesome-quant
-- FRED (macro data): https://fred.stlouisfed.org
+- Damodaran on Valuation: <https://pages.stern.nyu.edu/~adamodar/>
+- Quantitative Finance resources: <https://github.com/wilsonfreitas/awesome-quant>
+- FRED (macro data): <https://fred.stlouisfed.org>

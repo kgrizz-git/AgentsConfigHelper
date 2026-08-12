@@ -11,7 +11,7 @@
 ## Branch
 
 | Situation | Tier | Wire |
-|---|---|---|
+| --- | --- | --- |
 | Solo, private, early | **minimal** | Pre-commit only + one `ci / test` workflow on PR. No scheduled jobs. |
 | Small team, private | **standard** | `ci / test`, lint/type, `security / secret scan`. Dependabot weekly. Branch ruleset requiring those checks. |
 | Public or external contributors | **full** | Standard + CodeQL, `CODEOWNERS`, `SECURITY.md`, required review, least-privilege workflow permissions. |

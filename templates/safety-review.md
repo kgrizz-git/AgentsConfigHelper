@@ -18,7 +18,7 @@ What does the system do? Who uses it? What actions can it take autonomously?
 For each category, mark: ✅ mitigated | ⚠️ partial | ❌ unmitigated | N/A.
 
 | Category | Status | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Incorrect / hallucinated outputs | — | |
 | Harmful content generation | — | |
 | Privacy / PII exposure | — | |

@@ -67,7 +67,7 @@ sanitized issue or incident reference.
 ## Tools to evaluate after the guard is in place
 
 | Tool | Use | Setup / caution |
-|---|---|---|
+| --- | --- | --- |
 | [HoundDog.ai](https://docs.hounddog.ai/cloud/overview) | **Preferred next evaluation:** privacy code/data-flow scanning across code, logs, files, third-party SDKs, and AI/LLM paths; HIPAA-oriented privacy analysis | **Local CLI/Docker only until further user authorization.** Do not create a cloud account, use an IDE plug-in, provide an API key, connect GitHub/SCM, upload reports, or make it a required check. Any later cloud/SCM use needs a separate privacy/security approval for code access, retention, subprocessors, and any required BAA/DPA. |
 | [phi-scan](https://pypi.org/project/phi-scan/) | Local-first PHI/PII scanning for source, config, structured data, and Git diffs | Install with `pipx install phi-scan`; evaluate its pre-commit/CI output against synthetic fixtures. Pin the version and test before gating because its current PyPI release is alpha. |
 | [Microsoft Presidio](https://microsoft.github.io/presidio/) | Custom PII recognizers and text/structured/image redaction workflows | Run locally or on an approved isolated runner; add domain-specific recognizers. Its documentation warns that it cannot find all sensitive information. |

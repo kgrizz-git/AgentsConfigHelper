@@ -11,7 +11,7 @@ Classification: routine | elevated | critical
 Mark each as ✅ checked-clean | ⚠️ finding | N/A not applicable | — not checked.
 
 | # | Risk | Status | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | A01 | Broken Access Control | — | |
 | A02 | Security Misconfiguration | — | |
 | A03 | Software Supply Chain Failures | — | |
@@ -26,7 +26,7 @@ Mark each as ✅ checked-clean | ⚠️ finding | N/A not applicable | — not c
 ## Automated scan results
 
 | Tool | Command run | Result summary |
-|---|---|---|
+| --- | --- | --- |
 | gitleaks | `gitleaks detect --source .` | |
 | pip-audit / npm audit | | |
 | Semgrep | `semgrep --config=p/owasp-top-ten .` | |

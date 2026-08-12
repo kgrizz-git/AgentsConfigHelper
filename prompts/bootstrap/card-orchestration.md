@@ -10,7 +10,7 @@
 ## Branch
 
 | Situation | Tier | Reasoning |
-|---|---|---|
+| --- | --- | --- |
 | Single agent, IDE workflow | `none` | No framework overhead is justified. Most projects land here. |
 | 3–10 roles, file-based handoffs, IDE | `hub-and-spoke` | Lightest thing that works; no server. See [`../../inventory/catalog-skills-agents.md`](../../inventory/catalog-skills-agents.md). |
 | Cyclical plan→act→observe, stateful branching | `langgraph` | Graphs handle cycles that linear pipelines cannot. |
