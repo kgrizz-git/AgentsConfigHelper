@@ -59,7 +59,7 @@ flutter build macos --release   # build release binary
 
 ## Conventions
 
-- **Never bypass pre-commit hooks (e.g., `--no-verify`) without explicit user permission. If hooks fail, fix the issues.**
+- **Never bypass pre-commit hooks (e.g., `--no-verify`) or force add files (e.g., `git add -f`) without explicit user permission. If hooks fail, fix the issues.**
 - **Never disable linters, rules, or checks (e.g., in `.pre-commit-config.yaml` or `.gitignore`) without explicit user permission.**
 - Follow Dart/Flutter style (dart format enforced in CI)
 - No comments unless they add non-obvious context
