@@ -147,7 +147,7 @@ writable_roots = ["/tmp"]
 
 | Scope | Path |
 | --- | --- |
-| Global | `~/.config/opencode/opencode.json` (or `.jsonc`) |
+| Global | `~/.config/opencode/opencode.json` |
 | Project | `opencode.json` in project root |
 | Project (.opencode) | `.opencode/opencode.json` |
 | Custom | `OPENCODE_CONFIG` env var |
@@ -530,7 +530,6 @@ rules:
 | JSON | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, agy-acp | `dart:convert` |
 | TOML | Codex | `toml` Dart package |
 | YAML | Kiro | `yaml` Dart package |
-| Markdown | All (rules files) | Parse frontmatter + body |
 
 ## Permissions model taxonomy
 
