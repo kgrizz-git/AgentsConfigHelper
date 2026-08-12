@@ -14,7 +14,7 @@ enum TokenType {
   NUMBER, //
   TRUE, // true
   FALSE, // false
-  NULL // null
+  NULL, // null
 }
 
 final Map<String, TokenType> punctuatorTokensMap = {
@@ -23,13 +23,13 @@ final Map<String, TokenType> punctuatorTokensMap = {
   '[': TokenType.LEFT_BRACKET,
   ']': TokenType.RIGHT_BRACKET,
   ':': TokenType.COLON,
-  ',': TokenType.COMMA
+  ',': TokenType.COMMA,
 };
 
 final Map<String, TokenType> keywordTokensMap = {
   'true': TokenType.TRUE,
   'false': TokenType.FALSE,
-  'null': TokenType.NULL
+  'null': TokenType.NULL,
 };
 
 enum _StringState { _START_, START_QUOTE_OR_CHAR, ESCAPE }
@@ -43,7 +43,7 @@ final Map<String, int> escapes = {
   'n': 5, // New line
   'r': 6, // Carriage return
   't': 7, // Horizontal tab
-  'u': 8 // 4 hexadecimal digits
+  'u': 8, // 4 hexadecimal digits
 };
 
 enum _NumberState {
@@ -54,7 +54,7 @@ enum _NumberState {
   POINT,
   DIGIT_FRACTION,
   EXP,
-  EXP_DIGIT_OR_SIGN
+  EXP_DIGIT_OR_SIGN,
 }
 
 bool _compareDynamicList(List l, List other) {
@@ -252,7 +252,12 @@ Token? parseKeyword(String input, int index, int line, int column) {
     final lastIndex = nextLen > input.length ? input.length : nextLen;
     if (safeSubstring(input, index, lastIndex) == entry.key) {
       return new Token(
-          entry.value, line, column + keyLen, lastIndex, entry.key);
+        entry.value,
+        line,
+        column + keyLen,
+        lastIndex,
+        entry.key,
+      );
     }
   }
 
@@ -288,11 +293,12 @@ Token? parseString(String input, int index, int line, int column) {
           } else if (char == '"') {
             index++;
             return new Token(
-                TokenType.STRING,
-                line,
-                column + index - startIndex,
-                index,
-                safeSubstring(input, startIndex, index));
+              TokenType.STRING,
+              line,
+              column + index - startIndex,
+              index,
+              safeSubstring(input, startIndex, index),
+            );
           } else {
             // buffer.write(char);
             index++;
@@ -445,11 +451,12 @@ Token? parseNumber(String input, int index, int line, int column) {
 
   if (passedValueIndex > 0) {
     return new Token(
-        TokenType.NUMBER,
-        line,
-        column + passedValueIndex - startIndex,
-        passedValueIndex,
-        safeSubstring(input, startIndex, passedValueIndex));
+      TokenType.NUMBER,
+      line,
+      column + passedValueIndex - startIndex,
+      passedValueIndex,
+      safeSubstring(input, startIndex, passedValueIndex),
+    );
   }
 
   return null;
@@ -461,7 +468,7 @@ List<_tokenParser> _parsers = [
   parseChar,
   parseKeyword,
   parseString,
-  parseNumber
+  parseNumber,
 ];
 
 Token? _parseToken(String input, int index, int line, int column) {
@@ -494,7 +501,14 @@ List<Token> tokenize(String input, Settings settings) {
     if (token != null) {
       final src = settings.source ?? "";
       token.loc = Location.create(
-          line, column, index, token.line, token.column, token.index, src);
+        line,
+        column,
+        index,
+        token.line,
+        token.column,
+        token.index,
+        src,
+      );
       tokens.add(token);
       index = token.index;
       line = token.line;
@@ -502,7 +516,11 @@ List<Token> tokenize(String input, Settings settings) {
     } else {
       final src = settings.source ?? "";
       final msg = unexpectedSymbol(
-          substring(input, index, index + 1), src, line, column);
+        substring(input, index, index + 1),
+        src,
+        line,
+        column,
+      );
       throw new JSONASTException(msg, input, src, line, column);
     }
   }

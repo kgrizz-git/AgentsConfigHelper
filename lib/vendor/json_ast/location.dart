@@ -9,7 +9,7 @@ class Segment extends Loc {
   final int offset;
 
   Segment(int line, int column, this.offset)
-      : super(line: line, column: column);
+    : super(line: line, column: column);
 
   bool operator ==(dynamic other) =>
       other is Segment &&
@@ -31,9 +31,15 @@ class Location {
       end == other.end &&
       source == other.source;
 
-  static Location create(int startLine, int startColumn, int startOffset,
-      int endLine, int endColumn, int endOffset,
-      [String source = ""]) {
+  static Location create(
+    int startLine,
+    int startColumn,
+    int startOffset,
+    int endLine,
+    int endColumn,
+    int endOffset, [
+    String source = "",
+  ]) {
     final startSegment = new Segment(startLine, startColumn, startOffset);
     final endSegment = new Segment(endLine, endColumn, endOffset);
     return new Location(startSegment, endSegment, source);
