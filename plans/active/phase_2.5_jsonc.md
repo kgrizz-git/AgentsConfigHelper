@@ -8,18 +8,19 @@ Standard `dart:convert` `jsonDecode` fails on comments (`//`, `/* */`). Naive re
 
 ## Implementation Steps
 
-1. **Package Evaluation**
-   - Research and test robust JSONC Dart packages that can parse JSONC into a map, and serialize a map back into JSONC *while preserving the original comments*.
-   - Potential packages to evaluate: `json5`, `commented_json`, or building a small AST-based comment-preserving tokenizer if no suitable package exists that handles serialization.
+1. **Tokenizer & AST Design**
+   - The Dart ecosystem lacks a drop-in replacement for Node's `jsonc-parser`. Packages like `json5` parse into a `Map`, which completely discards comments and whitespace metadata.
+   - We cannot use a `String -> Map -> String` workflow.
+   - We must build a lightweight Tokenizer that produces a list of tokens (`whitespace`, `lineComment`, `blockComment`, `string`, `bracket`) with exact string offsets.
 
 2. **Domain Updates**
    - Re-introduce `ConfigFormat.jsonc` to the `ConfigFormat` enum.
    - Update `ConfigService._getParserForPath` to map `.jsonc` to the new parser (and potentially intercept `.json` files that are known to be JSONC, like Opencode configs).
 
-3. **Parser Implementation**
+3. **Parser Implementation (String Patching)**
    - Create `JsoncConfigParser` that implements our standard parser interface.
-   - Ensure the parser reads the file safely.
-   - Ensure `serialize` merges the new values back into the original AST/string structure without dropping comments.
+   - **Parse**: Strip comments temporarily *only* for the purpose of loading into `rawSettings` (so the UI has a standard Map to read).
+   - **Serialize**: Instead of serializing `rawSettings` back into a string, build a Path Resolver to find the exact token offset of the value being changed, and perform a direct substring replacement on the original raw JSONC string. This leaves all other comments and whitespace untouched.
 
 4. **Testing**
    - Create test fixtures with `https://` URLs and various block/line comments.
