@@ -1,0 +1,67 @@
+import 'package:agents_config_helper/models/tool_config.dart';
+import 'package:agents_config_helper/parsers/config_parser.dart';
+import 'package:agents_config_helper/parsers/toml_config_parser.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:toml/toml.dart';
+
+void main() {
+  group('TomlConfigParser', () {
+    late TomlConfigParser parser;
+    const testPath = '/path/to/.config.toml';
+    const testTool = 'TestAgent';
+
+    setUp(() {
+      parser = TomlConfigParser();
+    });
+
+    test('parses empty string to default config', () {
+      final config = parser.parse('', filePath: testPath, toolName: testTool);
+      expect(config.rules, isEmpty);
+      expect(config.rawSettings, isEmpty);
+    });
+
+    test('throws ConfigParseException on invalid TOML syntax', () {
+      expect(
+        () => parser.parse(
+          'bad = = toml',
+          filePath: testPath,
+          toolName: testTool,
+        ),
+        throwsA(isA<ConfigParseException>()),
+      );
+    });
+
+    test('safely extracts rules', () {
+      const tomlStr = '''
+rules = ["rule1", "rule2"]
+[nested]
+key = "value"
+''';
+
+      final config = parser.parse(
+        tomlStr,
+        filePath: testPath,
+        toolName: testTool,
+      );
+      expect(config.rules, equals(['rule1', 'rule2']));
+
+      final nested = config.rawSettings['nested'];
+      expect(nested, isA<Map<String, Object?>>());
+    });
+
+    test('serializes ToolConfig correctly', () {
+      final config = ToolConfig(
+        toolName: testTool,
+        filePath: testPath,
+        format: ConfigFormat.toml,
+        rules: const ['rule1'],
+        rawSettings: const {'extra_key': 'value'},
+      );
+
+      final tomlOutput = parser.serialize(config);
+      final parsed = TomlDocument.parse(tomlOutput).toMap();
+      expect(parsed['extra_key'], equals('value'));
+      expect(parsed['rules'], equals(['rule1']));
+    });
+  });
+}
