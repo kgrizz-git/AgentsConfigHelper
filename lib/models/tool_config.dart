@@ -2,7 +2,13 @@ import 'dart:collection';
 
 import 'package:equatable/equatable.dart';
 
-enum ConfigFormat { json, yaml, toml, markdown, unknown }
+enum ConfigFormat {
+  json,
+  yaml,
+  toml,
+  markdown, // Reserved for future use (Phase N)
+  unknown, // Fallback for unsupported config types
+}
 
 class ToolConfig extends Equatable {
   ToolConfig({

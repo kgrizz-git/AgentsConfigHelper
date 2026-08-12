@@ -104,5 +104,31 @@ rules:
       expect(output, contains('rules:'));
       expect(output, contains('- rule1'));
     });
+    test('round-trip parse -> serialize -> parse preserves comments', () {
+      const originalYaml = '''
+# Main config
+rules:
+  - rule1 # inline comment
+extra_key: value
+''';
+      final parsedConfig = parser.parse(
+        originalYaml,
+        filePath: 'test.yaml',
+        toolName: 'test',
+      );
+      final serializedYaml = parser.serialize(
+        parsedConfig,
+        originalContent: originalYaml,
+      );
+      expect(serializedYaml, contains('# Main config'));
+      expect(serializedYaml, contains('# inline comment'));
+
+      final roundTrippedConfig = parser.parse(
+        serializedYaml,
+        filePath: 'test.yaml',
+        toolName: 'test',
+      );
+      expect(roundTrippedConfig, equals(parsedConfig));
+    });
   });
 }

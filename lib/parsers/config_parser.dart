@@ -23,8 +23,24 @@ abstract class ConfigParser {
   });
 
   /// Serializes a [ToolConfig] back into raw file content.
-  ///
-  /// [originalContent] can be provided for formats that support preserving
-  /// user comments and formatting (e.g., YAML, TOML).
+  /// This method is responsible for taking a [ToolConfig] and turning it back
+  /// into a string format. Implementations should strive to preserve formatting
+  /// and comments from [originalContent] if the format allows it.
   String serialize(ToolConfig config, {String? originalContent});
+}
+
+/// A mixin with common helper methods for [ConfigParser] implementations.
+mixin ConfigParserMixin {
+  /// Extracts a list of strings from an untyped object, safely discarding
+  /// non-string elements.
+  List<String> extractStringList(Object? value) {
+    if (value == null) return const [];
+    if (value is! List) return const [];
+    return value.whereType<String>().toList();
+  }
+
+  /// Returns true if the [content] is null, empty, or entirely whitespace.
+  bool isContentEmpty(String content) {
+    return content.trim().isEmpty;
+  }
 }

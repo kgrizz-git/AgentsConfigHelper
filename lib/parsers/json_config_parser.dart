@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 
-class JsonConfigParser implements ConfigParser {
+class JsonConfigParser with ConfigParserMixin implements ConfigParser {
   @override
   ToolConfig parse(
     String content, {
     required String filePath,
     required String toolName,
   }) {
-    if (content.trim().isEmpty) {
+    if (isContentEmpty(content)) {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
@@ -38,8 +38,8 @@ class JsonConfigParser implements ConfigParser {
       );
     }
 
-    final rules = _extractStringList(decoded['rules']);
-    final permissions = _extractStringList(decoded['permissions']);
+    final rules = extractStringList(decoded['rules']);
+    final permissions = extractStringList(decoded['permissions']);
 
     return ToolConfig(
       toolName: toolName,
@@ -73,11 +73,5 @@ class JsonConfigParser implements ConfigParser {
 
     const encoder = JsonEncoder.withIndent('  ');
     return '${encoder.convert(outputMap)}\n';
-  }
-
-  List<String> _extractStringList(Object? value) {
-    if (value == null) return [];
-    if (value is! List) return [];
-    return value.whereType<String>().toList();
   }
 }

@@ -63,5 +63,23 @@ key = "value"
       expect(parsed['extra_key'], equals('value'));
       expect(parsed['rules'], equals(['rule1']));
     });
+    test('round-trip parse -> serialize -> parse', () {
+      const originalToml = '''
+extra_key = "value"
+rules = ["rule1"]
+''';
+      final parsedConfig = parser.parse(
+        originalToml,
+        filePath: 'test.toml',
+        toolName: 'test',
+      );
+      final serializedToml = parser.serialize(parsedConfig);
+      final roundTrippedConfig = parser.parse(
+        serializedToml,
+        filePath: 'test.toml',
+        toolName: 'test',
+      );
+      expect(roundTrippedConfig, equals(parsedConfig));
+    });
   });
 }

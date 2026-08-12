@@ -108,5 +108,29 @@ void main() {
       expect(jsonOutput, contains('"read_files"'));
       expect(jsonOutput, isNot(contains('"rules"')));
     });
+    test('round-trip parse -> serialize -> parse', () {
+      const originalJson = '''
+{
+  "rules": [
+    "rule1"
+  ],
+  "permissions": [
+    "perm1"
+  ],
+  "extra_key": "value"
+}''';
+      final parsedConfig = parser.parse(
+        originalJson,
+        filePath: 'test.json',
+        toolName: 'test',
+      );
+      final serializedJson = parser.serialize(parsedConfig);
+      final roundTrippedConfig = parser.parse(
+        serializedJson,
+        filePath: 'test.json',
+        toolName: 'test',
+      );
+      expect(roundTrippedConfig, equals(parsedConfig));
+    });
   });
 }
