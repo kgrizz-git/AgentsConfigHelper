@@ -1,4 +1,4 @@
-import 'package:json_ast/json_ast.dart' as json_ast;
+import 'lib/vendor/json_ast/json_ast.dart' as json_ast;
 import 'dart:convert';
 import 'lib/parsers/jsonc_cleaner.dart';
 

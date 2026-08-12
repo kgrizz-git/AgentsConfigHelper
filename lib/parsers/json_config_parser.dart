@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/parsers/jsonc_cleaner.dart';
-import 'package:json_ast/json_ast.dart' as json_ast;
+import 'package:agents_config_helper/vendor/json_ast/json_ast.dart' as json_ast;
 
 class _Edit {
   _Edit(this.start, this.end, this.replacement);

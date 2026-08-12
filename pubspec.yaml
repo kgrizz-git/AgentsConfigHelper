@@ -32,7 +32,7 @@ dependencies:
   equatable: ^2.1.0
   flutter:
     sdk: flutter
-  json_ast: ^1.0.6
+  grapheme_splitter: ^1.0.1
   path: ^1.9.1
   path_provider: ^2.1.6
   toml: ^0.18.0
