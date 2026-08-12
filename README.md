@@ -1,35 +1,44 @@
-# Repo Harness Template
+# AgentsConfigHelper
 
-Last reviewed: 2026-07-13
+AgentsConfigHelper is a cross-platform desktop application designed to visualize, edit, sync, and manage configuration settings, rules, and permissions for various AI agents and IDEs.
 
-A project seed for AI-assisted development — policies, hooks, CI examples, templates, and curated tool inventories baked in from day one.
+It provides a unified interface for tools like Claude, Codex, Opencode, Paseo, Cursor, Kiro, Devin, and Antigravity.
 
-**To start a new project:** clone this repo, open it in your AI coding environment, and feed the agent [`prompts/bootstrap-project.md`](prompts/bootstrap-project.md). The agent interviews you, captures a project profile, and scaffolds only what you need.
+## Features
 
-**Returning to an existing project:** run [`prompts/new-agent-session.md`](prompts/new-agent-session.md) at the start of each session.
+- **Config Discovery**: Automatically detects common configuration paths on first launch (e.g. `~/.claude/settings.json`, `.cursorrules`, etc.).
+- **Unified Interface**: Abstracted data models handle JSON, YAML, TOML, and Markdown config formats natively.
+- **Edit Safety**: Local-only file operations with a strict backup-before-write policy. Includes diff previews and undo mechanisms.
+- **Cross-Platform**: Built in Flutter/Dart, targeting macOS, Windows, and Linux from a single codebase.
 
----
+## Getting Started
 
-## What's here and why
+1. **Prerequisites**: Install the [Flutter SDK](https://docs.flutter.dev/get-started/install).
+2. **Install Dependencies**:
+   ```bash
+   flutter pub get
+   ```
+3. **Run the Application**:
+   ```bash
+   flutter run -d macos  # or windows / linux
+   ```
 
-| Directory | What it is |
-|---|---|
-| [`prompts/`](prompts/) | Reusable agent prompts: bootstrap, session-start, maintenance, reviews, audits |
-| [`templates/`](templates/) | Fill-in artifacts: briefs, plans, designs, ADRs, runbooks, release checklists, reviews, assessments |
-| [`policies/`](policies/) | Durable repo rules: file size, plans/todos, changelogs, doc freshness, commits, security, GC |
-| [`hooks/`](hooks/) | Pre-commit config + policy scripts (file size, TODO limits, secrets, lint) |
-| [`ci/`](ci/) | CI selection guidance and example GitHub Actions workflows |
-| [`inventory/`](inventory/) | Curated menus of tools, skills, platforms, libraries, and references — load what you need |
-| [`plans/`](plans/) | Optional active plans + archive convention (see policies) |
+## Development and Contributions
 
-Full contents: see [`inventory/README.md`](inventory/README.md) for the tool/skill menu and [`AGENTS.md`](AGENTS.md) for agent navigation.
+This project uses a strict pre-commit and CI setup to enforce line limits, code complexity (`very_good_analysis`), and secret scanning (`gitleaks`).
 
-Changelogs: user-facing [`CHANGELOG.md`](CHANGELOG.md); developer/internal [`CHANGELOG.dev.md`](CHANGELOG.dev.md) — see [`policies/changelog-conventions.md`](policies/changelog-conventions.md).
+- **Formatting**: `dart format .`
+- **Linting**: `flutter analyze`
+- **Testing**: `flutter test`
 
-GitHub setup and sensitive-data controls: [`policies/github-repository-hygiene.md`](policies/github-repository-hygiene.md) scales default-branch rules, required checks, scanning, hooks, and PII/PHI/absolute-path gates to the project’s data classification.
+### Key Files
 
-## Template Development Notes
+- `lib/` - Main Flutter application source code.
+- `AGENTS.md` - Rules and guidelines for AI coding agents working in this repository.
+- `docs/supported-tools.md` - Internal research mapping out supported AI agents and their configuration formats.
+- `ARCHITECTURE.md` - High-level system architecture overview.
 
-Use `.context/` for temporary artifacts while developing this template, such as scratch plans, research notes, draft inventories, and evaluation checklists. In Conductor workspaces this directory is ignored by Git and should not become part of the reusable template.
+## Data Privacy
 
-Keep committed content small and durable. Prefer adding a focused inventory entry or reusable prompt over adding a complete framework scaffold that future projects may need to delete. Personal API key pages and exploratory dumps belong in Notes_and_Ideas, not here.
+**Data Classification: Internal.**
+Config files may contain tokens or sensitive local paths. All file parsing and visualization happens strictly locally on the machine. Nothing is ever transmitted to the cloud or committed to the repository (beyond synthetic fixtures for testing).

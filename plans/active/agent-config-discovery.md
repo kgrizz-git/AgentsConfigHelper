@@ -1,6 +1,6 @@
 # Plan: Agent Config Discovery
 
-Status: draft
+Status: complete
 Created: 2026-08-11
 Profile: `.context/project-profile.md`
 

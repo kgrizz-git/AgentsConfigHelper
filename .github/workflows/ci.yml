@@ -37,6 +37,11 @@ jobs:
 
       - run: flutter pub get
       - run: flutter test --coverage
+      - name: Check coverage
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: coverage/lcov.info
+          min_coverage: 80
 
   secrets:
     name: Secret scan

@@ -24,7 +24,7 @@ Do not load everything. Start here, then open only what the task needs.
 | Looking for a tool / library / service | [`inventory/README.md`](inventory/README.md) (a menu, not a checklist) |
 | Adding/enforcing repo rules | [`policies/README.md`](policies/README.md) |
 | Wiring local checks | [`hooks/README.md`](hooks/README.md) |
-| Working with supported agent configs | `docs/supported-tools.md` (after P6 research) |
+| Working with supported agent configs | `docs/supported-tools.md` |
 
 ## Project essentials
 
@@ -64,3 +64,13 @@ flutter build macos --release   # build release binary
 - Keep widgets small and focused; business logic in services/models
 - Config parsers are pure functions — easy to test
 - New tools (agent/IDE) get a parser + entry in `docs/supported-tools.md`
+
+## Agent tooling policy
+
+- Search and read targeted files before requesting broad repository context.
+- Use one primary code-intelligence/indexing tool per role or task.
+- Prefer a CLI plus task-specific skill for batch work; use MCP when persistent,
+  interactive state materially helps.
+- Record decisions, changed files, verification, and next steps in a handoff before
+  changing agents or IDEs.
+- Keep credentials, generated indexes, and local agent state out of version control.
