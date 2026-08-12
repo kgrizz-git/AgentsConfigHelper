@@ -14,7 +14,8 @@ void main() {
     });
 
     tearDown(() async {
-      if (mockHome.existsSync()) {
+      // ignore: avoid_slow_async_io
+      if (await mockHome.exists()) {
         await mockHome.delete(recursive: true);
       }
     });

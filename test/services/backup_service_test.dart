@@ -22,7 +22,8 @@ void main() {
     });
 
     tearDown(() async {
-      if (tempDir.existsSync()) {
+      // ignore: avoid_slow_async_io
+      if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
       }
     });
@@ -31,7 +32,8 @@ void main() {
       final backupPath = await backupService.createBackup(originalFile.path);
 
       final backupFile = File(backupPath);
-      expect(backupFile.existsSync(), isTrue);
+      // ignore: avoid_slow_async_io
+      expect(await backupFile.exists(), isTrue);
 
       final content = await backupFile.readAsString();
       expect(content, equals('{"key": "value"}'));

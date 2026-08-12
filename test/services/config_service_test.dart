@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,7 +19,8 @@ void main() {
     });
 
     tearDown(() async {
-      if (tempDir.existsSync()) {
+      // ignore: avoid_slow_async_io
+      if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
       }
     });
@@ -58,6 +60,47 @@ void main() {
 
       final backupContent = await File(backups.first.path).readAsString();
       expect(backupContent, contains('"old"'));
+    });
+
+    test('loadConfig throws FileSystemException if file does not exist', () {
+      final missingFile = p.join(tempDir.path, 'missing.json');
+      expect(
+        () => configService.loadConfig(missingFile),
+        throwsA(isA<FileSystemException>()),
+      );
+    });
+
+    test('loadConfig maps YAML correctly', () async {
+      final yamlFile = File(
+        p.join(tempDir.path, '.kiro', 'settings', 'permissions.yaml'),
+      );
+      await yamlFile.create(recursive: true);
+      await yamlFile.writeAsString('rules:\n  - r1');
+
+      final config = await configService.loadConfig(yamlFile.path);
+      expect(config.toolName, equals('Kiro'));
+    });
+
+    test('loadConfig maps TOML correctly', () async {
+      final tomlFile = File(p.join(tempDir.path, '.codex', 'config.toml'));
+      await tomlFile.create(recursive: true);
+      await tomlFile.writeAsString('rules = ["r1"]');
+
+      final config = await configService.loadConfig(tomlFile.path);
+      expect(config.toolName, equals('Codex'));
+    });
+
+    test('saveConfig creates parent directory for new file', () async {
+      final newFile = File(p.join(tempDir.path, 'newdir', 'config.json'));
+      final config = ToolConfig(
+        toolName: 'Unknown',
+        format: ConfigFormat.json,
+        filePath: newFile.path,
+        rawSettings: const <String, dynamic>{},
+      );
+
+      await configService.saveConfig(config);
+      expect(newFile.existsSync(), isTrue);
     });
   });
 }

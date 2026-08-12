@@ -11,7 +11,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | JSON | `~/.claude/settings.json` | `.claude/settings.json` | `CLAUDE.md` | allow/ask/deny arrays |
 | Codex CLI | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `AGENTS.md` | sandbox + permission profiles |
-| Opencode | JSON/JSONC | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `AGENTS.md` | per-tool allow/ask/deny |
+| Opencode | JSON | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `AGENTS.md` | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
 | Cursor | JSON | `~/.cursor/permissions.json` | `.cursor/rules/*.mdc` | `.mdc` + `AGENTS.md` | allowlist + classifier |
 | Kiro | YAML | `~/.kiro/settings/permissions.yaml` | `.kiro/steering/*.md` | steering + `AGENTS.md` | capability-based |
@@ -149,7 +149,7 @@ writable_roots = ["/tmp"]
 | --- | --- |
 | Global | `~/.config/opencode/opencode.json` (or `.jsonc`) |
 | Project | `opencode.json` in project root |
-| Project (.opencode) | `.opencode/opencode.json(c)` |
+| Project (.opencode) | `.opencode/opencode.json` |
 | Custom | `OPENCODE_CONFIG` env var |
 | Managed | `/Library/Application Support/opencode/` (macOS), `/etc/opencode/` (Linux) |
 | Auth | `~/.local/share/opencode/auth.json` |
@@ -158,9 +158,9 @@ writable_roots = ["/tmp"]
 
 ### Opencode Config format
 
-JSON/JSONC. Schema at `https://opencode.ai/config.json`.
+JSON. Schema at `https://opencode.ai/config.json`.
 
-```jsonc
+```json
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "anthropic/claude-sonnet-4-5",
@@ -528,7 +528,6 @@ rules:
 | Format | Tools | Parser approach |
 | --- | --- | --- |
 | JSON | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, agy-acp | `dart:convert` |
-| JSONC | Opencode | Strip comments, then `dart:convert` |
 | TOML | Codex | `toml` Dart package |
 | YAML | Kiro | `yaml` Dart package |
 | Markdown | All (rules files) | Parse frontmatter + body |

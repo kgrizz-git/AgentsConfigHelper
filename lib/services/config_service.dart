@@ -25,7 +25,8 @@ class ConfigService {
   /// Throws a [ConfigParseException] if parsing fails.
   Future<ToolConfig> loadConfig(String path) async {
     final file = File(path);
-    if (!file.existsSync()) {
+    // ignore: avoid_slow_async_io
+    if (!await file.exists()) {
       throw FileSystemException('File not found', path);
     }
 
@@ -44,12 +45,14 @@ class ConfigService {
     final file = File(config.filePath);
 
     // Backup before write if the file already exists
-    if (file.existsSync()) {
+    // ignore: avoid_slow_async_io
+    if (await file.exists()) {
       await backupService.createBackup(config.filePath);
     } else {
       // Ensure directory exists if we are creating a brand new config
       final parentDir = file.parent;
-      if (!parentDir.existsSync()) {
+      // ignore: avoid_slow_async_io
+      if (!await parentDir.exists()) {
         await parentDir.create(recursive: true);
       }
     }
@@ -67,7 +70,6 @@ class ConfigService {
     final ext = p.extension(path).toLowerCase();
     switch (ext) {
       case '.json':
-      case '.jsonc':
         return _jsonParser;
       case '.yaml':
       case '.yml':
@@ -89,7 +91,6 @@ class ConfigService {
         return _yamlParser;
       case ConfigFormat.toml:
         return _tomlParser;
-      case ConfigFormat.markdown:
       case ConfigFormat.unknown:
         throw UnsupportedError('Unsupported config format: $format');
     }

@@ -6,7 +6,6 @@ enum ConfigFormat {
   json,
   yaml,
   toml,
-  markdown, // Reserved for future use (Phase N)
   unknown, // Fallback for unsupported config types
 }
 

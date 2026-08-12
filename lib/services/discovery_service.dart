@@ -44,7 +44,8 @@ class DiscoveryService {
       final absolutePath = p.join(homeDirectory, relPath);
       final file = File(absolutePath);
 
-      if (file.existsSync()) {
+      // ignore: avoid_slow_async_io
+      if (await file.exists()) {
         discoveredPaths.add(absolutePath);
       }
     }

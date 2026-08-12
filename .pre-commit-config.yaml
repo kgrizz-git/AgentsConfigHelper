@@ -52,3 +52,10 @@ repos:
     hooks:
       - id: shellcheck
         name: "shell: shellcheck"
+
+  - repo: local
+    hooks:
+      - id: check-absolute-paths
+        name: "security: check absolute paths"
+        entry: hooks/scripts/check_absolute_paths.sh
+        language: script
