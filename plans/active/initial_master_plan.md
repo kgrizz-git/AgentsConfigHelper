@@ -28,6 +28,14 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Integrate CLI hooks for agents that expose configuration commands.
 * **Detailed Plan:** *[Link to be created]*
 
+## Phase 2.5: Advanced Parsers (JSONC)
+
+**Goal:** Safely parse and write JSONC (JSON with Comments) without losing user annotations.
+
+* Evaluate and integrate a comment-preserving JSONC parser.
+* Implement `JsoncConfigParser` supporting `.jsonc` and Opencode configurations.
+* **Detailed Plan:** `plans/active/phase_2.5_jsonc.md`
+
 ## Phase 3: UI/UX Design System & Prototyping
 
 **Goal:** Define the visual language, typography, and aesthetic layout of the application to ensure a premium, modern feel.
