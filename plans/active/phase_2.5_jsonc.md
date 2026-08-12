@@ -1,30 +1,39 @@
 # Phase 2.5: Advanced Parsers (JSONC)
 
-**Goal:** Safely parse and write JSONC (JSON with Comments) configuration files, specifically supporting Opencode (`opencode.json` / `opencode.jsonc`) and other IDE tools that rely heavily on comment-annotated configurations.
+**Status:** Active
+**Dependency:** Phase 2 (Completed)
+
+**Goal:** Fix the currently broken `.jsonc` mapping by safely parsing and writing JSONC (JSON with Comments/Trailing Commas) configuration files, specifically supporting Opencode (`opencode.json`) and other IDE tools.
 
 ## The Problem
 
-Standard `dart:convert` `jsonDecode` fails on comments (`//`, `/* */`). Naive regex stripping breaks string literals that contain these sequences (like `$schema: "https://opencode.ai/config.json"`). Furthermore, simply stripping comments before parsing means we delete the user's comments when we reserialize and save the file, destroying their annotations.
+Standard `dart:convert` `jsonDecode` fails on comments (`//`, `/* */`) AND trailing commas. Naive regex stripping breaks string literals that contain these sequences. Furthermore, simply stripping comments before parsing means we delete the user's comments when we reserialize and save the file, destroying their annotations.
 
 ## Implementation Steps
 
-1. **Tokenizer & AST Design**
-   - The Dart ecosystem lacks a drop-in replacement for Node's `jsonc-parser`. Packages like `json5` parse into a `Map`, which completely discards comments and whitespace metadata.
-   - We cannot use a `String -> Map -> String` workflow.
-   - We must build a lightweight Tokenizer that produces a list of tokens (`whitespace`, `lineComment`, `blockComment`, `string`, `bracket`) with exact string offsets.
+1. **Trailing Comma & Comment Neutralization (Parse Phase)**
+   - Before passing the string to `jsonDecode` to build the UI's `rawSettings`, we must neutralize trailing commas and comments.
+   - We must build or adopt a strict Tokenizer that understands string boundaries to avoid mangling URLs (like `https://...`) or strings containing `//`, `/*`, or commas.
 
-2. **Domain Updates**
+2. **AST-Based Editing (Serialize Phase)**
+   - A bespoke substring-offset patcher is too fragile (key collisions, multi-edit shifting).
+   - We must adopt a robust AST-patching approach (similar to how `yaml_edit` works in `YamlConfigParser`). We will either find a JSONC AST editor package or build a lightweight AST that supports querying by path and emitting multi-edit patches.
+   - **Diff Computation:** The serialize step must compute a diff between `rawSettings` (the edited state) and the original AST to know what nodes to patch.
+   - **Fallback Strategy:** If the AST patcher fails or cannot handle a complex structural change (e.g., adding a new key), it should safely fall back to a full from-scratch serialization, warning the UI/user that comments may be lost, rather than corrupting the file.
+
+3. **Domain Updates & Plumbing**
+   - Update `ConfigService.saveConfig` to actually read and pass `originalContent` to the parsers' `serialize` methods. Currently, it does not do this, which breaks the patching workflow.
    - Re-introduce `ConfigFormat.jsonc` to the `ConfigFormat` enum.
-   - Update `ConfigService._getParserForPath` to map `.jsonc` to the new parser (and potentially intercept `.json` files that are known to be JSONC, like Opencode configs).
-
-3. **Parser Implementation (String Patching)**
-   - Create `JsoncConfigParser` that implements our standard parser interface.
-   - **Parse**: Strip comments temporarily *only* for the purpose of loading into `rawSettings` (so the UI has a standard Map to read).
-   - **Serialize**: Instead of serializing `rawSettings` back into a string, build a Path Resolver to find the exact token offset of the value being changed, and perform a direct substring replacement on the original raw JSONC string. This leaves all other comments and whitespace untouched.
+   - Define strict `.json` vs `.jsonc` detection: attempt strict `jsonDecode`; on failure, retry as JSONC; only then treat as JSONC.
 
 4. **Testing**
-   - Create test fixtures with `https://` URLs and various block/line comments.
-   - Ensure round-trip serialization (`parse` -> mutate -> `serialize`) successfully preserves the original comments.
+   - **Trailing Commas:** Arrays and objects.
+   - **String Literals:** `https://` and `"a // b"` survive untouched.
+   - **Comments:** Line, block, and comments as values.
+   - **Round-Trip:** Unchanged spans remain byte-for-byte identical.
+   - **Mutations:** Single-value changes, key addition, key deletion, and identical-value disambiguation.
+   - **Fallback:** Verify the fallback mechanism triggers on un-patchable states without corrupting the file.
 
 5. **Documentation**
-   - Update `ARCHITECTURE.md` and `docs/supported-tools.md` to reflect full JSONC support.
+   - Update `ARCHITECTURE.md` to correct the false claim that JSONC is handled by `dart:convert`; describe the actual AST patcher approach.
+   - Update `docs/supported-tools.md` to document the trailing comma support and comment preservation.
