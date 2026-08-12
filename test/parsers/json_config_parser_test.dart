@@ -93,5 +93,20 @@ void main() {
       // Should not contain permissions if empty
       expect(jsonOutput, isNot(contains('permissions')));
     });
+
+    test('serializes ToolConfig with permissions correctly', () {
+      final config = ToolConfig(
+        toolName: testTool,
+        filePath: testPath,
+        format: ConfigFormat.json,
+        permissions: const ['read_files'],
+        rawSettings: const {'extra_key': 'value'},
+      );
+
+      final jsonOutput = parser.serialize(config);
+      expect(jsonOutput, contains('"permissions": ['));
+      expect(jsonOutput, contains('"read_files"'));
+      expect(jsonOutput, isNot(contains('"rules"')));
+    });
   });
 }

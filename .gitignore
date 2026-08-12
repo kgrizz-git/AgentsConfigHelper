@@ -16,8 +16,6 @@ wheels/
 sdist/
 develop-eggs/
 .eggs/
-lib/
-lib64/
 parts/
 var/
 .installed.cfg
