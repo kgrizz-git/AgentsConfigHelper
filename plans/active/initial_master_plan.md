@@ -44,7 +44,7 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Mockup the core layout (Sidebar, main content area, empty states).
 * Choose a component library strategy (e.g., custom Material 3, or a native-feeling desktop library like `macos_ui` / `fluent_ui`).
 * Prototype micro-interactions (hover states, diff transitions).
-* **Detailed Plan:** *[Link to be created]*
+* **Detailed Plan:** `plans/active/phase_3_design.md`
 
 ## Phase 4: Application State & UI Shell
 
