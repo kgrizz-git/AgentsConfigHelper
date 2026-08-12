@@ -10,7 +10,8 @@ class _Edit {
 }
 
 void main() {
-  final originalContent = '{ "a": 1, /* comment */ "rules": [1, 2, ], // tail\n "b": 2 }';
+  final originalContent =
+      '{ "a": 1, /* comment */ "rules": [1, 2, ], // tail\n "b": 2 }';
   final cleanContent = JsoncCleaner.clean(originalContent);
   final ast = json_ast.parse(cleanContent, json_ast.Settings());
 
@@ -26,7 +27,13 @@ void main() {
     }
 
     if (rulesNode != null) {
-      edits.add(_Edit(rulesNode.value!.loc!.start.offset, rulesNode.value!.loc!.end.offset, '["new"]'));
+      edits.add(
+        _Edit(
+          rulesNode.value!.loc!.start.offset,
+          rulesNode.value!.loc!.end.offset,
+          '["new"]',
+        ),
+      );
     }
 
     if (permissionsNode == null) {

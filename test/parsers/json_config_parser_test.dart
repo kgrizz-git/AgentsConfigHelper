@@ -133,8 +133,10 @@ void main() {
       expect(roundTrippedConfig, equals(parsedConfig));
     });
 
-    test('parses JSONC with comments, trailing commas, and string literals', () {
-      const input = '''
+    test(
+      'parses JSONC with comments, trailing commas, and string literals',
+      () {
+        const input = '''
 {
   // A line comment
   "schema": "https://opencode.ai/config.json", /* block */
@@ -144,12 +146,17 @@ void main() {
   ],
 }
 ''';
-      final config = parser.parse(input, filePath: 'opencode.json', toolName: 'Opencode');
+        final config = parser.parse(
+          input,
+          filePath: 'opencode.json',
+          toolName: 'Opencode',
+        );
 
-      expect(config.rules, ['a', 'b']);
-      expect(config.permissions, ['read']);
-      expect(config.rawSettings['schema'], 'https://opencode.ai/config.json');
-    });
+        expect(config.rules, ['a', 'b']);
+        expect(config.permissions, ['read']);
+        expect(config.rawSettings['schema'], 'https://opencode.ai/config.json');
+      },
+    );
 
     test('serializes and preserves JSONC comments and trailing commas', () {
       const original = '''
@@ -162,7 +169,11 @@ void main() {
   ],
 }
 ''';
-      final config = parser.parse(original, filePath: 'test.json', toolName: 'Test');
+      final config = parser.parse(
+        original,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
 
       // Mutate
       final mutated = config.copyWith(
@@ -180,7 +191,11 @@ void main() {
       expect(serialized, contains('// Rule array'));
 
       // Parse it back to verify it's still valid
-      final roundTrip = parser.parse(serialized, filePath: 'test.json', toolName: 'Test');
+      final roundTrip = parser.parse(
+        serialized,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
       expect(roundTrip.rules, ['a', 'c']);
       expect(roundTrip.permissions, []);
     });
@@ -191,7 +206,11 @@ void main() {
   "schema": "https://opencode.ai"
 }
 ''';
-      final config = parser.parse(original, filePath: 'test.json', toolName: 'Test');
+      final config = parser.parse(
+        original,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
       final mutated = config.copyWith(rules: ['new']);
       final serialized = parser.serialize(mutated, originalContent: original);
 

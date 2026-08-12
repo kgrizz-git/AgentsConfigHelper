@@ -78,7 +78,8 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
 
           final newFields = <String, dynamic>{};
           if (config.rules.isNotEmpty) newFields['rules'] = config.rules;
-          if (config.permissions.isNotEmpty) newFields['permissions'] = config.permissions;
+          if (config.permissions.isNotEmpty)
+            newFields['permissions'] = config.permissions;
 
           json_ast.PropertyNode? rulesNode;
           json_ast.PropertyNode? permissionsNode;
@@ -92,17 +93,41 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
 
           if (rulesNode != null) {
             if (newFields.containsKey('rules')) {
-              edits.add(_Edit(rulesNode.value!.loc!.start.offset, rulesNode.value!.loc!.end.offset, encoder.convert(newFields['rules'])));
+              edits.add(
+                _Edit(
+                  rulesNode.value!.loc!.start.offset,
+                  rulesNode.value!.loc!.end.offset,
+                  encoder.convert(newFields['rules']),
+                ),
+              );
             } else {
-              edits.add(_Edit(rulesNode.value!.loc!.start.offset, rulesNode.value!.loc!.end.offset, '[]'));
+              edits.add(
+                _Edit(
+                  rulesNode.value!.loc!.start.offset,
+                  rulesNode.value!.loc!.end.offset,
+                  '[]',
+                ),
+              );
             }
           }
 
           if (permissionsNode != null) {
             if (newFields.containsKey('permissions')) {
-              edits.add(_Edit(permissionsNode.value!.loc!.start.offset, permissionsNode.value!.loc!.end.offset, encoder.convert(newFields['permissions'])));
+              edits.add(
+                _Edit(
+                  permissionsNode.value!.loc!.start.offset,
+                  permissionsNode.value!.loc!.end.offset,
+                  encoder.convert(newFields['permissions']),
+                ),
+              );
             } else {
-              edits.add(_Edit(permissionsNode.value!.loc!.start.offset, permissionsNode.value!.loc!.end.offset, '[]'));
+              edits.add(
+                _Edit(
+                  permissionsNode.value!.loc!.start.offset,
+                  permissionsNode.value!.loc!.end.offset,
+                  '[]',
+                ),
+              );
             }
           }
 
@@ -112,7 +137,9 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
             additions.add('"rules": ${encoder.convert(newFields['rules'])}');
           }
           if (permissionsNode == null && newFields.containsKey('permissions')) {
-            additions.add('"permissions": ${encoder.convert(newFields['permissions'])}');
+            additions.add(
+              '"permissions": ${encoder.convert(newFields['permissions'])}',
+            );
           }
 
           if (additions.isNotEmpty) {
@@ -122,7 +149,8 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
             var hasTrailingComma = false;
             for (var i = insertPos - 1; i >= 0; i--) {
               final char = originalContent[i];
-              if (char == ' ' || char == '\n' || char == '\r' || char == '\t') continue;
+              if (char == ' ' || char == '\n' || char == '\r' || char == '\t')
+                continue;
               if (char == ',') hasTrailingComma = true;
               break;
             }
@@ -137,7 +165,11 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
           // Apply edits (sort by offset descending so they don't affect each other)
           edits.sort((a, b) => b.start.compareTo(a.start));
           for (final edit in edits) {
-            result = result.replaceRange(edit.start, edit.end, edit.replacement);
+            result = result.replaceRange(
+              edit.start,
+              edit.end,
+              edit.replacement,
+            );
           }
 
           return result;

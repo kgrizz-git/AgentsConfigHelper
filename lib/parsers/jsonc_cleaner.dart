@@ -9,13 +9,25 @@ class JsoncCleaner {
 
     for (var i = 0; i < input.length; i++) {
       if (inString) {
-        if (escape) { escape = false; continue; }
-        if (input[i] == '\\') { escape = true; continue; }
-        if (input[i] == '"') { inString = false; continue; }
+        if (escape) {
+          escape = false;
+          continue;
+        }
+        if (input[i] == '\\') {
+          escape = true;
+          continue;
+        }
+        if (input[i] == '"') {
+          inString = false;
+          continue;
+        }
       } else {
-        if (input[i] == '"') { inString = true; continue; }
+        if (input[i] == '"') {
+          inString = true;
+          continue;
+        }
         // line comment
-        if (i + 1 < input.length && input[i] == '/' && input[i+1] == '/') {
+        if (i + 1 < input.length && input[i] == '/' && input[i + 1] == '/') {
           while (i < input.length && input[i] != '\n') {
             out[i++] = ' ';
           }
@@ -23,10 +35,11 @@ class JsoncCleaner {
           continue;
         }
         // block comment
-        if (i + 1 < input.length && input[i] == '/' && input[i+1] == '*') {
+        if (i + 1 < input.length && input[i] == '/' && input[i + 1] == '*') {
           out[i++] = ' ';
           out[i++] = ' ';
-          while (i + 1 < input.length && !(input[i] == '*' && input[i+1] == '/')) {
+          while (i + 1 < input.length &&
+              !(input[i] == '*' && input[i + 1] == '/')) {
             if (input[i] != '\n') out[i] = ' ';
             i++;
           }
@@ -44,15 +57,31 @@ class JsoncCleaner {
     escape = false;
     for (var i = 0; i < out.length; i++) {
       if (inString) {
-        if (escape) { escape = false; continue; }
-        if (out[i] == '\\') { escape = true; continue; }
-        if (out[i] == '"') { inString = false; continue; }
+        if (escape) {
+          escape = false;
+          continue;
+        }
+        if (out[i] == '\\') {
+          escape = true;
+          continue;
+        }
+        if (out[i] == '"') {
+          inString = false;
+          continue;
+        }
       } else {
-        if (out[i] == '"') { inString = true; continue; }
+        if (out[i] == '"') {
+          inString = true;
+          continue;
+        }
         if (out[i] == '}' || out[i] == ']') {
           // Look backwards for a comma before this closing bracket
           var j = i - 1;
-          while (j >= 0 && (out[j] == ' ' || out[j] == '\n' || out[j] == '\r' || out[j] == '\t')) {
+          while (j >= 0 &&
+              (out[j] == ' ' ||
+                  out[j] == '\n' ||
+                  out[j] == '\r' ||
+                  out[j] == '\t')) {
             j--;
           }
           if (j >= 0 && out[j] == ',') {
