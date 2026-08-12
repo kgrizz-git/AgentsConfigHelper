@@ -106,12 +106,6 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
             }
           }
 
-          // Apply edits (sort by offset descending so they don't affect each other)
-          edits.sort((a, b) => b.start.compareTo(a.start));
-          for (final edit in edits) {
-            result = result.replaceRange(edit.start, edit.end, edit.replacement);
-          }
-
           // Handle additions (keys that did not exist)
           final additions = <String>[];
           if (rulesNode == null && newFields.containsKey('rules')) {
@@ -123,11 +117,27 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
 
           if (additions.isNotEmpty) {
             final insertPos = ast.loc!.end.offset - 1; // Before the closing }
-            final needsComma = ast.children.isNotEmpty;
+
+            // Check if there is a trailing comma before insertPos
+            var hasTrailingComma = false;
+            for (var i = insertPos - 1; i >= 0; i--) {
+              final char = originalContent[i];
+              if (char == ' ' || char == '\n' || char == '\r' || char == '\t') continue;
+              if (char == ',') hasTrailingComma = true;
+              break;
+            }
+
+            final needsComma = ast.children.isNotEmpty && !hasTrailingComma;
             final prefix = needsComma ? ',\n  ' : '\n  ';
             const suffix = '\n';
             final insertion = prefix + additions.join(',\n  ') + suffix;
-            result = result.replaceRange(insertPos, insertPos, insertion);
+            edits.add(_Edit(insertPos, insertPos, insertion));
+          }
+
+          // Apply edits (sort by offset descending so they don't affect each other)
+          edits.sort((a, b) => b.start.compareTo(a.start));
+          for (final edit in edits) {
+            result = result.replaceRange(edit.start, edit.end, edit.replacement);
           }
 
           return result;
