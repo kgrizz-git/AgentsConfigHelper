@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "project": {
+    "name": "template-repo-v1",
+    "description": "Project seed for AI-assisted development with policies, hooks, CI examples, templates, and curated tool inventories",
+    "type": "template"
+  },
+  "agent": {
+    "default_session_prompt": "prompts/new-agent-session.md",
+    "bootstrap_prompt": "prompts/bootstrap-project.md",
+    "context_priority": [
+      "AGENTS.md",
+      ".context/project-profile.md",
+      "README.md"
+    ]
+  },
+  "hooks": {
+    "pre_session": [
+      "scripts/health-check.sh"
+    ],
+    "post_session": []
+  },
+  "skills": {
+    "enabled": [],
+    "disabled": []
+  },
+  "tools": {
+    "allowed_patterns": [
+      "scripts/*",
+      "hooks/scripts/*",
+      "prompts/*",
+      "templates/*"
+    ],
+    "blocked_patterns": [
+      "*.env",
+      "*.key",
+      "*.pem",
+      "secrets/*"
+    ]
+  },
+  "environment": {
+    "required_vars": [],
+    "optional_vars": [
+      "APP_ENV",
+      "LOG_LEVEL"
+    ]
+  }
+}

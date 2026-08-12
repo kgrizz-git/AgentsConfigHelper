@@ -1,0 +1,34 @@
+# Ruff configuration — one place to tune Python lint for this template.
+#
+# Both the pre-commit hook (hooks/.pre-commit-config.yaml) and the CI lint step read this
+# file, so local and CI results agree. Keep the version pinned in both places in sync;
+# a version skew is the usual reason "it passed locally" stops being true.
+#
+# Rule set is Ruff's default (pyflakes + a subset of pycodestyle errors) stated explicitly
+# so it is visible and tunable rather than implicit. Widen `select` deliberately — each
+# added rule family is a commitment the whole tree has to meet.
+
+target-version = "py39"
+line-length = 100
+
+# Generated, vendored, and scratch trees are not ours to lint.
+extend-exclude = [
+    ".context",
+    "notes_and_ideas",
+    "worktrees",
+]
+
+[lint]
+select = [
+    "E4",  # pycodestyle: imports
+    "E7",  # pycodestyle: statement errors
+    "E9",  # pycodestyle: runtime/syntax errors
+    "F",   # pyflakes: unused imports/variables, undefined names, f-string bugs
+]
+
+[format]
+# `ruff format` is available locally via pre-commit but is NOT a CI gate: 11 of 14 existing
+# files predate it, and reformatting them is a separate, reviewable decision rather than
+# something a lint gate should force.
+quote-style = "double"
+indent-style = "space"

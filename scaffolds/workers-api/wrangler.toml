@@ -1,0 +1,27 @@
+name = "your-worker-name"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "development"
+
+# Environment-specific configuration
+[env.production]
+name = "your-worker-name-prod"
+vars = { ENVIRONMENT = "production" }
+
+# Routes (uncomment and configure for your domain)
+# routes = [
+#   { pattern = "your-domain.com/*", zone_name = "your-domain.com" }
+# ]
+
+# KV Namespaces (uncomment and configure if needed)
+# [[kv_namespaces]]
+# binding = "KV_NAMESPACE"
+# id = "your-kv-namespace-id"
+
+# D1 Databases (uncomment and configure if needed)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "your-database-name"
+# database_id = "your-database-id"

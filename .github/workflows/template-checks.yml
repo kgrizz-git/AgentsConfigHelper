@@ -1,0 +1,121 @@
+name: Template checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "AGENTS.md"
+      - "README.md"
+      - "CHANGELOG*.md"
+      - "ci/**"
+      - "hooks/**"
+      - "inventory/**"
+      - "policies/**"
+      - "prompts/**"
+      - "templates/**"
+      - "docs/**"
+      - "scripts/**"
+      - "tests/**"
+      - "scaffolds/**"
+      - "ruff.toml"
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "AGENTS.md"
+      - "README.md"
+      - "CHANGELOG*.md"
+      - "ci/**"
+      - "hooks/**"
+      - "inventory/**"
+      - "policies/**"
+      - "prompts/**"
+      - "templates/**"
+      - "docs/**"
+      - "scripts/**"
+      - "tests/**"
+      - "scaffolds/**"
+      - "ruff.toml"
+
+permissions:
+  contents: read
+
+jobs:
+  template-checks:
+    name: Validate template assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate GitHub Actions workflows
+        uses: raven-actions/actionlint@v2
+        with:
+          files: >-
+            .github/workflows/*.yml, ci/examples/ci.yml, ci/examples/codeql.yml,
+            ci/examples/open-prs-advisory.yml, ci/examples/security.yml,
+            ci/examples/strict-sensitive-data.yml
+
+      - name: Check shell scripts
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          scandir: hooks/scripts
+          severity: warning
+
+      - name: Check Python policy scripts compile
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m compileall -q hooks/scripts ci/scripts
+
+      - name: Lint Python (ruff)
+        # compileall only proves the files parse. These scripts are policy gates other
+        # repos inherit, so a real linter is worth the ~5s. The pre-commit hook alone is
+        # not enough: it only protects contributors who ran `pre-commit install`.
+        # Version pinned to match hooks/.pre-commit-config.yaml — a skew is why
+        # "it passed locally" stops being true. Rules live in ruff.toml.
+        run: |
+          pip install ruff==0.11.13
+          ruff check .
+
+      - name: Check documentation links resolve
+        # Offline and mechanical: every relative markdown link must point at a file that
+        # exists. External-link liveness stays out of CI — it is network-dependent and
+        # advisory, so it belongs in the maintenance loop, not a gate.
+        run: python ci/scripts/check_doc_links.py --internal-only --strict
+
+      - name: Lint maintained Markdown
+        run: >-
+          npx --yes markdownlint-cli2@0.23.0
+          "AGENTS.md" "README.md" "CHANGELOG.md" "CHANGELOG.dev.md"
+          "ci/**/*.md" "hooks/**/*.md" "inventory/**/*.md" "policies/**/*.md"
+          "prompts/**/*.md" "templates/**/*.md"
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    permissions:
+      # `pull-requests: read` was only needed by gitleaks-action's PR commenting.
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Runs gitleaks directly rather than via gitleaks-action@v2. The action derives a
+      # commit range from the push event and shells out to `git log <before>^..<after>`,
+      # which fails with "ambiguous argument" whenever a push contains the repository's
+      # root commit — exactly what happens on the first push of a freshly bootstrapped
+      # project. `gitleaks detect` with no range scans the full history instead, so it is
+      # both more thorough and immune to that edge case.
+      - name: Secret scan (gitleaks)
+        env:
+          GITLEAKS_VERSION: 8.24.3
+          GITLEAKS_SHA256: 9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
+        run: |
+          set -euo pipefail
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "/tmp/${tarball}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
+          echo "${GITLEAKS_SHA256}  /tmp/${tarball}" | sha256sum -c -
+          mkdir -p /tmp/gitleaks && tar xzf "/tmp/${tarball}" -C /tmp/gitleaks gitleaks
+          /tmp/gitleaks/gitleaks detect --redact --no-banner --exit-code 1 --verbose
