@@ -20,7 +20,8 @@ AgentsConfigHelper is a local-only, cross-platform Flutter desktop app. It abstr
 
 3. **Parser / Domain Layer**
    - Pure Dart functions that handle format-specific parsing and serialization.
-   - Formats handled: `JSON`, `YAML`, `TOML`.
+   - Formats handled: `JSON`, `JSONC`, `YAML`, `TOML`.
+   - **Comment Preservation:** `JSONC` and `YAML` parsers utilize AST-based string patching (`json_ast`, `yaml_edit`) to mutate specific values in the raw text, guaranteeing that user comments, trailing commas, and formatting are completely preserved when saving.
    - Normalizes disparate schemas into a single `ToolConfig` entity.
 
 ## Data Flow (Read/Write)

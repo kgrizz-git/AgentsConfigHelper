@@ -132,5 +132,70 @@ void main() {
       );
       expect(roundTrippedConfig, equals(parsedConfig));
     });
+
+    test('parses JSONC with comments, trailing commas, and string literals', () {
+      const input = '''
+{
+  // A line comment
+  "schema": "https://opencode.ai/config.json", /* block */
+  "rules": ["a", "b",], // Trailing comma in array
+  "permissions": [
+    "read",
+  ],
+}
+''';
+      final config = parser.parse(input, filePath: 'opencode.json', toolName: 'Opencode');
+
+      expect(config.rules, ['a', 'b']);
+      expect(config.permissions, ['read']);
+      expect(config.rawSettings['schema'], 'https://opencode.ai/config.json');
+    });
+
+    test('serializes and preserves JSONC comments and trailing commas', () {
+      const original = '''
+{
+  // A line comment
+  "schema": "https://opencode.ai/config.json", /* block */
+  "rules": ["a"], // Rule array
+  "permissions": [
+    "read",
+  ],
+}
+''';
+      final config = parser.parse(original, filePath: 'test.json', toolName: 'Test');
+
+      // Mutate
+      final mutated = config.copyWith(
+        rules: ['a', 'c'],
+        permissions: const [],
+      );
+
+      final serialized = parser.serialize(mutated, originalContent: original);
+
+      // Expected to preserve comments and layout as much as possible
+      expect(serialized, contains('// A line comment'));
+      expect(serialized, contains('https://opencode.ai/config.json'));
+      expect(serialized, contains('/* block */'));
+      expect(serialized, contains('"rules": ["a","c"]'));
+      expect(serialized, contains('// Rule array'));
+
+      // Parse it back to verify it's still valid
+      final roundTrip = parser.parse(serialized, filePath: 'test.json', toolName: 'Test');
+      expect(roundTrip.rules, ['a', 'c']);
+      expect(roundTrip.permissions, []);
+    });
+
+    test('handles missing fields gracefully on serialize', () {
+      const original = '''
+{
+  "schema": "https://opencode.ai"
+}
+''';
+      final config = parser.parse(original, filePath: 'test.json', toolName: 'Test');
+      final mutated = config.copyWith(rules: ['new']);
+      final serialized = parser.serialize(mutated, originalContent: original);
+
+      expect(serialized, contains('"rules": ["new"]'));
+    });
   });
 }

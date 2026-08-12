@@ -527,7 +527,7 @@ rules:
 
 | Format | Tools | Parser approach |
 | --- | --- | --- |
-| JSON | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, agy-acp | `dart:convert` |
+| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, agy-acp | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
 | TOML | Codex | `toml` Dart package |
 | YAML | Kiro | `yaml` Dart package |
 

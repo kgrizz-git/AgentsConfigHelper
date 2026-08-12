@@ -41,12 +41,14 @@ class ConfigService {
   ///
   /// Automatically creates a backup of the existing file using [BackupService],
   /// then overwrites the file with the serialized config.
-  Future<void> saveConfig(ToolConfig config, {String? originalContent}) async {
+  Future<void> saveConfig(ToolConfig config) async {
     final file = File(config.filePath);
+    String? originalContent;
 
     // Backup before write if the file already exists
     // ignore: avoid_slow_async_io
     if (await file.exists()) {
+      originalContent = await file.readAsString();
       await backupService.createBackup(config.filePath);
     } else {
       // Ensure directory exists if we are creating a brand new config

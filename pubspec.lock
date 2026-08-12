@@ -107,6 +107,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  grapheme_splitter:
+    dependency: transitive
+    description:
+      name: grapheme_splitter
+      sha256: "5a1e352826609e0526f82c3bde82f502d210170f0a035ffa1c3ee74d9dee46bd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   hooks:
     dependency: transitive
     description:
@@ -139,6 +147,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  json_ast:
+    dependency: "direct main"
+    description:
+      name: json_ast
+      sha256: "063d54da7b2b0145163e4b0b033f57f02bac7d3cef734ed5afa11ff5bc6cc3d8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.6"
   leak_tracker:
     dependency: transitive
     description:
