@@ -64,6 +64,97 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
+  /// Saves the current configuration to disk.
+  Future<void> _saveChanges() async {
+    final updatedConfig = _currentConfig.copyWith(
+      rules: _rules,
+      permissions: _permissions,
+    );
+
+    try {
+      debugPrint('Saving config...');
+      await widget.configService.saveConfig(updatedConfig);
+      debugPrint('Save completed! mounted: $mounted');
+      if (mounted) {
+        setState(() {
+          _currentConfig = updatedConfig;
+          _initLocalState(_currentConfig);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Settings saved successfully.')),
+        );
+        debugPrint('Snackbar shown!');
+      }
+    } catch (e) {
+      debugPrint('Save failed! $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  /// Shows a modal comparing the original configuration with the unsaved changes.
+  void _showDiffModal() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.backgroundDark,
+          title: const Text('Review Changes', style: AppTextStyles.uiHeader),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                _buildDiffSection('Rules', _currentConfig.rules, _rules),
+                const SizedBox(height: 16),
+                _buildDiffSection('Permissions', _currentConfig.permissions, _permissions),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(foregroundColor: AppColors.textPrimaryDark),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _saveChanges();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryAccent,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Confirm & Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Builds a visual diff section for a list of strings, showing additions in green and removals in red.
+  Widget _buildDiffSection(String title, List<String> original, List<String> updated) {
+    final added = updated.where((item) => !original.contains(item)).toList();
+    final removed = original.where((item) => !updated.contains(item)).toList();
+    if (added.isEmpty && removed.isEmpty) {
+      return Text('$title: No changes', style: AppTextStyles.uiSecondary);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTextStyles.uiSubheader.copyWith(color: AppColors.primaryAccent)),
+        const SizedBox(height: 8),
+        ...added.map((item) => Text('+ $item', style: const TextStyle(color: Colors.green))),
+        ...removed.map((item) => Text('- $item', style: const TextStyle(color: Colors.red))),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -240,7 +331,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     ),
                     const SizedBox(width: 16),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: _showDiffModal,
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.primaryAccent,
                       ),
@@ -248,35 +339,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     ),
                     const SizedBox(width: 8),
                       ElevatedButton(
-                      onPressed: () async {
-                        final updatedConfig = _currentConfig.copyWith(
-                          rules: _rules,
-                          permissions: _permissions,
-                        );
-
-                        try {
-                          print('Saving config...');
-                          await widget.configService.saveConfig(updatedConfig);
-                          print('Save completed! mounted: $mounted');
-                          if (mounted) {
-                            setState(() {
-                              _currentConfig = updatedConfig;
-                              _initLocalState(_currentConfig);
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Settings saved successfully.')),
-                            );
-                            print('Snackbar shown!');
-                          }
-                        } catch (e) {
-                          print('Save failed! $e');
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error saving: $e'), backgroundColor: Colors.red),
-                            );
-                          }
-                        }
-                      },
+                      onPressed: _saveChanges,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryAccent,
                         foregroundColor: Colors.white,

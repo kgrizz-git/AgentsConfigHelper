@@ -21,7 +21,7 @@ void main() {
   group('ConfigEditor', () {
     testWidgets('renders config and calls save', (WidgetTester tester) async {
       final tempDir = Directory.systemTemp;
-      final configPath = '\${tempDir.path}/test_config.json';
+      final configPath = '${tempDir.path}/test_config.json';
       final configService = FakeConfigService(BackupService(backupDirectory: tempDir));
       final config = ToolConfig(
         toolName: 'Test Tool',
@@ -53,6 +53,47 @@ void main() {
       await tester.tap(find.text('Save Changes'));
       await tester.pump(); // Start async operation
       await tester.pumpAndSettle(); // Wait for snackbar
+
+      expect(find.textContaining('Settings saved successfully.'), findsOneWidget);
+    });
+
+    testWidgets('diff viewer modal opens and can save', (WidgetTester tester) async {
+      final tempDir = Directory.systemTemp;
+      final configPath = '${tempDir.path}/test_config2.json';
+      final configService = FakeConfigService(BackupService(backupDirectory: tempDir));
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: configPath,
+        format: ConfigFormat.json,
+        rules: ['rule1'],
+        permissions: ['perm1'],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ConfigEditor(
+              config: config,
+              configService: configService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Add Item').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'new rule');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Changes'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Review Changes'), findsWidgets);
+      expect(find.text('+ new rule'), findsOneWidget);
+
+      await tester.tap(find.text('Confirm & Save'));
+      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.textContaining('Settings saved successfully.'), findsOneWidget);
     });

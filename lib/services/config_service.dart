@@ -18,16 +18,27 @@ class ConfigService {
   final _yamlParser = YamlConfigParser();
   final _tomlParser = TomlConfigParser();
 
+  String _expandHome(String path) {
+    if (path.startsWith('~/')) {
+      final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      if (home != null) {
+        return p.join(home, path.substring(2));
+      }
+    }
+    return path;
+  }
+
   /// Reads a config file from [path], determines the appropriate parser,
   /// and returns a structured [ToolConfig].
   ///
   /// Throws a [FileSystemException] if the file cannot be read.
   /// Throws a [ConfigParseException] if parsing fails.
   Future<ToolConfig> loadConfig(String path) async {
-    final file = File(path);
+    final expandedPath = _expandHome(path);
+    final file = File(expandedPath);
     // ignore: avoid_slow_async_io
     if (!await file.exists()) {
-      throw FileSystemException('File not found', path);
+      throw FileSystemException('File not found', expandedPath);
     }
 
     final content = await file.readAsString();
@@ -42,7 +53,8 @@ class ConfigService {
   /// Automatically creates a backup of the existing file using [BackupService],
   /// then overwrites the file with the serialized config.
   Future<void> saveConfig(ToolConfig config) async {
-    final file = File(config.filePath);
+    final expandedPath = _expandHome(config.filePath);
+    final file = File(expandedPath);
     String? originalContent;
 
     // Backup before write if the file already exists
