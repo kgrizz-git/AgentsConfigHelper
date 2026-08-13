@@ -335,71 +335,71 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     child: Opacity(
                       opacity: _saving ? 0.6 : 1,
                       child: ListView(
-                    padding: const EdgeInsets.only(
-                      bottom: 80,
-                    ), // padding for floating bar
-                    children: [
-                      _buildSectionHeader('Rules'),
-                      const Text(
-                        'Define custom rules for this agent.',
-                        style: AppTextStyles.uiSecondary,
-                      ),
-                      const SizedBox(height: 12),
-                      StringListEditor(
-                        values: _rules,
-                        hintText: 'e.g., Always use type hints...',
-                        onChanged: (newValues) {
-                          setState(() {
-                            _rules = newValues;
-                          });
-                          _notifyDirtyChanged();
-                        },
-                      ),
+                        padding: const EdgeInsets.only(
+                          bottom: 80,
+                        ), // padding for floating bar
+                        children: [
+                          _buildSectionHeader('Rules'),
+                          const Text(
+                            'Define custom rules for this agent.',
+                            style: AppTextStyles.uiSecondary,
+                          ),
+                          const SizedBox(height: 12),
+                          StringListEditor(
+                            values: _rules,
+                            hintText: 'e.g., Always use type hints...',
+                            onChanged: (newValues) {
+                              setState(() {
+                                _rules = newValues;
+                              });
+                              _notifyDirtyChanged();
+                            },
+                          ),
 
-                      _buildSectionHeader('Permissions'),
-                      if (_hasUnsupportedPermissions)
-                        const Text(
-                          'Nested permissions are preserved but not editable '
-                          'here yet.',
-                          style: AppTextStyles.uiSecondary,
-                        )
-                      else ...[
-                        const Text(
-                          'Allowed directories or commands for this agent.',
-                          style: AppTextStyles.uiSecondary,
-                        ),
-                        const SizedBox(height: 12),
-                        StringListEditor(
-                          values: _permissions,
-                          hintText: 'e.g., ~/Projects',
-                          onChanged: (newValues) {
-                            setState(() {
-                              _permissions = newValues;
-                            });
-                            _notifyDirtyChanged();
-                          },
-                        ),
-                      ],
+                          _buildSectionHeader('Permissions'),
+                          if (_hasUnsupportedPermissions)
+                            const Text(
+                              'Nested permissions are preserved but '
+                              'not editable here yet.',
+                              style: AppTextStyles.uiSecondary,
+                            )
+                          else ...[
+                            const Text(
+                              'Allowed directories or commands for this agent.',
+                              style: AppTextStyles.uiSecondary,
+                            ),
+                            const SizedBox(height: 12),
+                            StringListEditor(
+                              values: _permissions,
+                              hintText: 'e.g., ~/Projects',
+                              onChanged: (newValues) {
+                                setState(() {
+                                  _permissions = newValues;
+                                });
+                                _notifyDirtyChanged();
+                              },
+                            ),
+                          ],
 
-                      _buildSectionHeader('Advanced'),
-                      const Text(
-                        'Raw configuration overrides.',
-                        style: AppTextStyles.uiSecondary,
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.sidebarDark,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.borderDark),
-                        ),
-                        child: const Text(
-                          'Raw JSON/YAML Editor Coming Soon...',
-                          style: AppTextStyles.codeBase,
-                        ),
-                      ),
-                    ],
+                          _buildSectionHeader('Advanced'),
+                          const Text(
+                            'Raw configuration overrides.',
+                            style: AppTextStyles.uiSecondary,
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.sidebarDark,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.borderDark),
+                            ),
+                            child: const Text(
+                              'Raw JSON/YAML Editor Coming Soon...',
+                              style: AppTextStyles.codeBase,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
