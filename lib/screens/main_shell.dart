@@ -26,7 +26,8 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     // For now, we simulate loading a real config.
     // In Phase 4, we will wire up DiscoveryService.
-    _loadConfig('~/.claudecode/config.json');
+    // Using a safe tmp path to prevent demo saves from polluting the real home directory.
+    _loadConfig('/tmp/agents_config_demo/config.json');
   }
 
   Future<void> _loadConfig(String path) async {

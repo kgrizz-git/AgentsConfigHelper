@@ -61,7 +61,7 @@ class ConfigService {
     // ignore: avoid_slow_async_io
     if (await file.exists()) {
       originalContent = await file.readAsString();
-      await backupService.createBackup(config.filePath);
+      await backupService.createBackup(expandedPath);
     } else {
       // Ensure directory exists if we are creating a brand new config
       final parentDir = file.parent;
