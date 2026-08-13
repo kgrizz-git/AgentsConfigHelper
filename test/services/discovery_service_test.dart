@@ -14,6 +14,7 @@ void main() {
     });
 
     tearDown(() async {
+      // Synchronous existence checks keep this filesystem assertion concise.
       // ignore: avoid_slow_async_io
       if (await mockHome.exists()) {
         await mockHome.delete(recursive: true);

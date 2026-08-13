@@ -4,7 +4,10 @@ import 'package:path/path.dart' as p;
 
 /// A service responsible for backing up and restoring configuration files.
 class BackupService {
+  /// Creates backups in [backupDirectory].
   const BackupService({required this.backupDirectory});
+
+  /// The application-managed directory that stores backups.
   final Directory backupDirectory;
 
   /// Creates a backup of the file at [originalPath].
@@ -17,6 +20,7 @@ class BackupService {
   /// Throws a [FileSystemException] if the original file does not exist.
   Future<String> createBackup(String originalPath) async {
     final originalFile = File(originalPath);
+    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await originalFile.exists()) {
       throw FileSystemException(
@@ -25,6 +29,7 @@ class BackupService {
       );
     }
 
+    // Checking backup storage asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await backupDirectory.exists()) {
       await backupDirectory.create(recursive: true);
@@ -56,6 +61,7 @@ class BackupService {
   /// Throws a [FileSystemException] if the backup file does not exist.
   Future<void> restoreBackup(String backupPath, String targetPath) async {
     final backupFile = File(backupPath);
+    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await backupFile.exists()) {
       throw FileSystemException(
@@ -67,6 +73,7 @@ class BackupService {
     final targetFile = File(targetPath);
     // Ensure the target directory exists before restoring
     final targetDir = targetFile.parent;
+    // The asynchronous check avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await targetDir.exists()) {
       await targetDir.create(recursive: true);

@@ -1,11 +1,10 @@
+/// Removes JSONC syntax while keeping character offsets stable for AST patches.
 class JsoncCleaner {
-  /// Neutralizes comments and trailing commas in a JSONC string by replacing them
-  /// with spaces. This preserves exact string offsets so AST nodes map 1:1 back
-  /// to the original string.
+  /// Replaces comments and trailing commas without changing string length.
   static String clean(String input) {
-    var out = input.split('');
-    bool inString = false;
-    bool escape = false;
+    final out = input.split('');
+    var inString = false;
+    var escape = false;
 
     for (var i = 0; i < input.length; i++) {
       if (inString) {
@@ -13,7 +12,7 @@ class JsoncCleaner {
           escape = false;
           continue;
         }
-        if (input[i] == '\\') {
+        if (input[i] == r'\') {
           escape = true;
           continue;
         }
@@ -61,7 +60,7 @@ class JsoncCleaner {
           escape = false;
           continue;
         }
-        if (out[i] == '\\') {
+        if (out[i] == r'\') {
           escape = true;
           continue;
         }
@@ -91,6 +90,6 @@ class JsoncCleaner {
       }
     }
 
-    return out.join('');
+    return out.join();
   }
 }

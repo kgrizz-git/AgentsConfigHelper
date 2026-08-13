@@ -2,8 +2,10 @@ import 'package:agents_config_helper/models/tool_config.dart';
 
 /// Base exception for configuration parsing errors.
 class ConfigParseException implements Exception {
+  /// Creates a parsing exception with a user-facing [message].
   const ConfigParseException(this.message);
 
+  /// The reason parsing or serialization failed.
   final String message;
 
   @override
@@ -23,16 +25,14 @@ abstract class ConfigParser {
   });
 
   /// Serializes a [ToolConfig] back into raw file content.
-  /// This method is responsible for taking a [ToolConfig] and turning it back
-  /// into a string format. Implementations should strive to preserve formatting
-  /// and comments from [originalContent] if the format allows it.
+  /// Implementations preserve formatting and comments from [originalContent]
+  /// when their format supports safe in-place updates.
   String serialize(ToolConfig config, {String? originalContent});
 }
 
 /// A mixin with common helper methods for [ConfigParser] implementations.
 mixin ConfigParserMixin {
-  /// Extracts a list of strings from an untyped object, safely discarding
-  /// non-string elements.
+  /// Extracts string values from an untyped list.
   List<String> extractStringList(Object? value) {
     if (value == null) return const [];
     if (value is! List) return const [];

@@ -19,6 +19,7 @@ void main() {
     });
 
     tearDown(() async {
+      // Synchronous existence checks keep this filesystem assertion concise.
       // ignore: avoid_slow_async_io
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
@@ -101,6 +102,74 @@ void main() {
 
       await configService.saveConfig(config);
       expect(newFile.existsSync(), isTrue);
+    });
+    test('loadConfig identifies JSONC and parses', () async {
+      final jsoncPath = '${tempDir.path}/test_config.jsonc';
+      final jsoncFile = File(jsoncPath);
+      await jsoncFile.writeAsString('{"rules": ["test"]} // a comment\n');
+
+      final config = await configService.loadConfig(jsoncPath);
+      expect(
+        config.format,
+        ConfigFormat.json,
+      ); // Parses as JSON format under the hood
+      expect(config.rules, ['test']);
+    });
+
+    test('saveConfig throws UnsupportedError for unknown format', () async {
+      final config = ToolConfig(
+        toolName: 'Unknown Tool',
+        filePath: '${tempDir.path}/unknown_config.txt',
+        format: ConfigFormat.unknown,
+      );
+
+      expect(() => configService.saveConfig(config), throwsUnsupportedError);
+    });
+
+    test('saveConfig expands bare ~ and saves correctly', () async {
+      final homeStr =
+          Platform.environment['HOME'] ??
+          Platform.environment['USERPROFILE'] ??
+          tempDir.path;
+      final fileName =
+          'config_service_expand_${DateTime.now().microsecondsSinceEpoch}.json';
+      final configPath = '~/$fileName';
+      final file = File(p.join(homeStr, fileName));
+      addTearDown(() async {
+        // Synchronous existence checks keep this cleanup concise.
+        // ignore: avoid_slow_async_io
+        if (await file.exists()) {
+          await file.delete();
+        }
+      });
+
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        format: ConfigFormat.json,
+        filePath: configPath,
+        rawSettings: const <String, dynamic>{},
+      );
+
+      await configService.saveConfig(config);
+      expect(file.existsSync(), isTrue);
+    });
+
+    test('rejects a home-relative path when home cannot be resolved', () {
+      final serviceWithoutHome = ConfigService(
+        backupService: backupService,
+        homeDirectoryResolver: () => null,
+      );
+
+      expect(
+        () => serviceWithoutHome.resolvePath('~/.claude/settings.json'),
+        throwsA(
+          isA<FileSystemException>().having(
+            (error) => error.message,
+            'message',
+            contains('Cannot resolve home directory'),
+          ),
+        ),
+      );
     });
   });
 }
