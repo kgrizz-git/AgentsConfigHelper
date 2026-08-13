@@ -292,8 +292,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                             widget.resolvePath(widget.config.filePath),
                           );
                           final uri = Uri.directory(dir);
-                          launched =
-                              await canLaunchUrl(uri) && await launchUrl(uri);
+                          launched = await launchUrl(uri);
                         } on Object {
                           launched = false;
                         }
