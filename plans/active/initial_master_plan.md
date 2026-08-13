@@ -72,3 +72,10 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Finalize macOS, Windows, and Linux build settings (icons, permissions).
 * Draft user release notes.
 * **Detailed Plan:** *[Link to be created]*
+
+## Backlog & Future Enhancements
+
+**Goal:** Track future feature requests that are currently deferred.
+
+* **User Config Presets:** Allow users to save and load custom named "presets" for various configs, rather than just restoring automated system backups.
+* **Git-style Merging & Diffing:** Show a rich diff (like Git) between the current configuration file and a saved preset/backup. Allow users to selectively merge changes from the current file into the saved preset.
