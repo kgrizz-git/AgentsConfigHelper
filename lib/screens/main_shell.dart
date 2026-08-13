@@ -1,16 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:multi_split_view/multi_split_view.dart';
+import 'package:agents_config_helper/models/tool_config.dart';
+import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
-import 'package:agents_config_helper/widgets/sidebar_item.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
-import 'package:agents_config_helper/models/tool_config.dart';
-
-import 'package:agents_config_helper/services/config_service.dart';
+import 'package:agents_config_helper/widgets/sidebar_item.dart';
+import 'package:flutter/material.dart';
+import 'package:multi_split_view/multi_split_view.dart';
 
 class MainShell extends StatefulWidget {
+  const MainShell({required this.configService, super.key});
   final ConfigService configService;
-  const MainShell({super.key, required this.configService});
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -42,8 +41,8 @@ class _MainShellState extends State<MainShell> {
         toolName: 'Claude Code',
         filePath: path,
         format: ConfigFormat.json,
-        rules: ['Always use type hints', 'Follow clean architecture'],
-        permissions: ['~/Projects'],
+        rules: const ['Always use type hints', 'Follow clean architecture'],
+        permissions: const ['~/Projects'],
       );
     } catch (e) {
       _error = e.toString();
@@ -68,7 +67,7 @@ class _MainShellState extends State<MainShell> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Padding(
-                  padding: EdgeInsets.all(20.0),
+                  padding: EdgeInsets.all(20),
                   child: Text(
                     'Agents Config',
                     style: AppTextStyles.uiHeader,
@@ -83,7 +82,6 @@ class _MainShellState extends State<MainShell> {
                 SidebarItem(
                   title: 'Cursor',
                   icon: Icons.edit,
-                  isActive: false,
                   onTap: () {},
                 ),
               ],
@@ -98,10 +96,17 @@ class _MainShellState extends State<MainShell> {
             return const Center(child: CircularProgressIndicator());
           }
           if (_error != null) {
-            return Center(child: Text('Error: \$_error', style: const TextStyle(color: Colors.red)));
+            return const Center(
+              child: Text(
+                r'Error: $_error',
+                style: TextStyle(color: Colors.red),
+              ),
+            );
           }
           if (_activeConfig == null) {
-            return const Center(child: Text('Select a configuration from the sidebar.'));
+            return const Center(
+              child: Text('Select a configuration from the sidebar.'),
+            );
           }
 
           return ConfigEditor(

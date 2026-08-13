@@ -19,10 +19,11 @@ class ConfigService {
   final _tomlParser = TomlConfigParser();
 
   String _expandHome(String path) {
-    if (path.startsWith('~/')) {
-      final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    if (path == '~' || path.startsWith('~/')) {
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
       if (home != null) {
-        return p.join(home, path.substring(2));
+        return path == '~' ? home : p.join(home, path.substring(2));
       }
     }
     return path;

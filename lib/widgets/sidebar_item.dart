@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
+import 'package:flutter/material.dart';
 
 class SidebarItem extends StatelessWidget {
   const SidebarItem({
-    super.key,
     required this.title,
     required this.icon,
+    super.key,
     this.isActive = false,
     this.onTap,
   });
@@ -30,7 +30,7 @@ class SidebarItem extends StatelessWidget {
             ),
           ),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Row(
           children: [
             Icon(

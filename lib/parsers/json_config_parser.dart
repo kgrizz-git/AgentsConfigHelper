@@ -1,9 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/parsers/jsonc_cleaner.dart';
 import 'package:agents_config_helper/vendor/json_ast/json_ast.dart' as json_ast;
+import 'package:flutter/foundation.dart';
 
 class _Edit {
   _Edit(this.start, this.end, this.replacement);
@@ -75,12 +76,13 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
         final ast = json_ast.parse(cleanContent, json_ast.Settings());
 
         if (ast is json_ast.ObjectNode) {
-          String result = originalContent;
+          var result = originalContent;
 
           final newFields = <String, dynamic>{};
           if (config.rules.isNotEmpty) newFields['rules'] = config.rules;
-          if (config.permissions.isNotEmpty)
+          if (config.permissions.isNotEmpty) {
             newFields['permissions'] = config.permissions;
+          }
 
           json_ast.PropertyNode? rulesNode;
           json_ast.PropertyNode? permissionsNode;
@@ -93,19 +95,27 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
           const encoder = JsonEncoder();
 
           void deleteNode(json_ast.PropertyNode node) {
-            int start = node.loc!.start.offset;
-            int end = node.loc!.end.offset;
-            int precedingComma = -1;
-            for (int i = start - 1; i >= 0; i--) {
-              if (originalContent![i] == ' ' || originalContent[i] == '\n' || originalContent[i] == '\r' || originalContent[i] == '\t') continue;
+            var start = node.loc!.start.offset;
+            var end = node.loc!.end.offset;
+            var precedingComma = -1;
+            for (var i = start - 1; i >= 0; i--) {
+              if (originalContent[i] == ' ' ||
+                  originalContent[i] == '\n' ||
+                  originalContent[i] == '\r' ||
+                  originalContent[i] == '\t')
+                continue;
               if (originalContent[i] == ',') precedingComma = i;
               break;
             }
             if (precedingComma != -1) {
               start = precedingComma;
             } else {
-              for (int i = end; i < originalContent!.length; i++) {
-                if (originalContent[i] == ' ' || originalContent[i] == '\n' || originalContent[i] == '\r' || originalContent[i] == '\t') continue;
+              for (var i = end; i < originalContent.length; i++) {
+                if (originalContent[i] == ' ' ||
+                    originalContent[i] == '\n' ||
+                    originalContent[i] == '\r' ||
+                    originalContent[i] == '\t')
+                  continue;
                 if (originalContent[i] == ',') {
                   end = i + 1;
                 }
@@ -161,8 +171,9 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
             var hasTrailingComma = false;
             for (var i = insertPos - 1; i >= 0; i--) {
               final char = originalContent[i];
-              if (char == ' ' || char == '\n' || char == '\r' || char == '\t')
+              if (char == ' ' || char == '\n' || char == '\r' || char == '\t') {
                 continue;
+              }
               if (char == ',') hasTrailingComma = true;
               break;
             }
@@ -187,7 +198,9 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
           return result;
         }
       } catch (e, st) {
-        debugPrint('JSON AST patch failed, falling back to scratch serialize: $e\n$st');
+        debugPrint(
+          'JSON AST patch failed, falling back to scratch serialize: $e\n$st',
+        );
         // Fallback to building from scratch
       }
     }

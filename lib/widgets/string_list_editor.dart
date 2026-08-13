@@ -1,14 +1,14 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 class StringListEditor extends StatefulWidget {
   const StringListEditor({
-    super.key,
     required this.values,
     required this.onChanged,
     required this.hintText,
+    super.key,
   });
 
   final List<String> values;
@@ -42,7 +42,9 @@ class _StringListEditorState extends State<StringListEditor> {
   }
 
   void _initControllers() {
-    _controllers = widget.values.map((v) => TextEditingController(text: v)).toList();
+    _controllers = widget.values
+        .map((v) => TextEditingController(text: v))
+        .toList();
   }
 
   void _disposeControllers() {
@@ -85,7 +87,7 @@ class _StringListEditorState extends State<StringListEditor> {
           final index = entry.key;
           final controller = entry.value;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
                 Expanded(

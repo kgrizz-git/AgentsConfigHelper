@@ -1,10 +1,10 @@
+import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:agents_config_helper/widgets/string_list_editor.dart';
 
 void main() {
   group('StringListEditor', () {
-    testWidgets('renders list and allows typing', (WidgetTester tester) async {
+    testWidgets('renders list and allows typing', (tester) async {
       final items = ['initial'];
       await tester.pumpWidget(
         MaterialApp(

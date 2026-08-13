@@ -108,18 +108,48 @@ void main() {
       await jsoncFile.writeAsString('{"rules": ["test"]} // a comment\n');
 
       final config = await configService.loadConfig(jsoncPath);
-      expect(config.format, ConfigFormat.json); // Parses as JSON format under the hood
+      expect(
+        config.format,
+        ConfigFormat.json,
+      ); // Parses as JSON format under the hood
       expect(config.rules, ['test']);
     });
 
     test('saveConfig throws UnsupportedError for unknown format', () async {
       final config = ToolConfig(
         toolName: 'Unknown Tool',
-        filePath: '\${tempDir.path}/unknown_config.txt',
+        filePath: r'${tempDir.path}/unknown_config.txt',
         format: ConfigFormat.unknown,
       );
 
       expect(() => configService.saveConfig(config), throwsUnsupportedError);
+    });
+
+    test('saveConfig expands bare ~ and saves correctly', () async {
+      final homeStr = Platform.environment['HOME'] ??
+          Platform.environment['USERPROFILE'] ??
+          tempDir.path;
+      const configPath = '~/test_expand.json';
+      final file = File(p.join(homeStr, 'test_expand.json'));
+      // ignore: avoid_slow_async_io
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        format: ConfigFormat.json,
+        filePath: configPath,
+        rawSettings: const <String, dynamic>{},
+      );
+
+      await configService.saveConfig(config);
+      expect(file.existsSync(), isTrue);
+
+      // ignore: avoid_slow_async_io
+      if (await file.exists()) {
+        await file.delete();
+      }
     });
   });
 }

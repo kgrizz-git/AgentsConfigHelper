@@ -68,7 +68,8 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
 
             // Only update if changed or missing to avoid unnecessary diffs
             if (!normalizedDoc.containsKey(entry.key) ||
-                jsonEncode(normalizedDoc[entry.key]) != jsonEncode(entry.value)) {
+                jsonEncode(normalizedDoc[entry.key]) !=
+                    jsonEncode(entry.value)) {
               editor.update([entry.key], entry.value);
             }
           }

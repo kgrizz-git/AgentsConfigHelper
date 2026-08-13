@@ -1,18 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 
 class ConfigEditor extends StatefulWidget {
   const ConfigEditor({
-    super.key,
     required this.config,
     required this.configService,
+    super.key,
   });
 
   final ToolConfig config;
@@ -49,12 +49,12 @@ class _ConfigEditorState extends State<ConfigEditor> {
 
   bool get _hasUnsavedChanges {
     return !listEquals(_rules, _currentConfig.rules) ||
-           !listEquals(_permissions, _currentConfig.permissions);
+        !listEquals(_permissions, _currentConfig.permissions);
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24.0, bottom: 12.0),
+      padding: const EdgeInsets.only(top: 24, bottom: 12),
       child: Text(
         title,
         style: AppTextStyles.uiSubheader.copyWith(
@@ -89,7 +89,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
       debugPrint('Save failed! $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error saving: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -110,14 +113,20 @@ class _ConfigEditorState extends State<ConfigEditor> {
               children: [
                 _buildDiffSection('Rules', _currentConfig.rules, _rules),
                 const SizedBox(height: 16),
-                _buildDiffSection('Permissions', _currentConfig.permissions, _permissions),
+                _buildDiffSection(
+                  'Permissions',
+                  _currentConfig.permissions,
+                  _permissions,
+                ),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(foregroundColor: AppColors.textPrimaryDark),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textPrimaryDark,
+              ),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -138,7 +147,11 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   /// Builds a visual diff section for a list of strings, showing additions in green and removals in red.
-  Widget _buildDiffSection(String title, List<String> original, List<String> updated) {
+  Widget _buildDiffSection(
+    String title,
+    List<String> original,
+    List<String> updated,
+  ) {
     final added = updated.where((item) => !original.contains(item)).toList();
     final removed = original.where((item) => !updated.contains(item)).toList();
     if (added.isEmpty && removed.isEmpty) {
@@ -147,22 +160,32 @@ class _ConfigEditorState extends State<ConfigEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppTextStyles.uiSubheader.copyWith(color: AppColors.primaryAccent)),
+        Text(
+          title,
+          style: AppTextStyles.uiSubheader.copyWith(
+            color: AppColors.primaryAccent,
+          ),
+        ),
         const SizedBox(height: 8),
-        ...added.map((item) => Text('+ $item', style: const TextStyle(color: Colors.green))),
-        ...removed.map((item) => Text('- $item', style: const TextStyle(color: Colors.red))),
+        ...added.map(
+          (item) =>
+              Text('+ $item', style: const TextStyle(color: Colors.green)),
+        ),
+        ...removed.map(
+          (item) => Text('- $item', style: const TextStyle(color: Colors.red)),
+        ),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ColoredBox(
       color: AppColors.backgroundDark,
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.all(32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -180,9 +203,15 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     ),
                     const SizedBox(width: 16),
                     OutlinedButton.icon(
-                      onPressed: () {}, // TODO: Open History/Backups Modal
                       icon: const Icon(Icons.history),
                       label: const Text('History & Backups'),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('History & Backups coming soon!'),
+                          ),
+                        );
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimaryDark,
                         side: const BorderSide(color: AppColors.borderDark),
@@ -193,7 +222,11 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.folder_open, color: AppColors.textSecondaryDark, size: 16),
+                    const Icon(
+                      Icons.folder_open,
+                      color: AppColors.textSecondaryDark,
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Flexible(
                       child: SelectableText.rich(
@@ -239,7 +272,9 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 // Form Body
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.only(bottom: 80.0), // padding for floating bar
+                    padding: const EdgeInsets.only(
+                      bottom: 80,
+                    ), // padding for floating bar
                     children: [
                       _buildSectionHeader('Rules'),
                       const Text(
@@ -305,7 +340,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
               left: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
                 decoration: const BoxDecoration(
                   color: AppColors.sidebarDark,
                   border: Border(top: BorderSide(color: AppColors.borderDark)),
@@ -314,7 +352,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       color: Colors.black26,
                       blurRadius: 10,
                       offset: Offset(0, -2),
-                    )
+                    ),
                   ],
                 ),
                 child: Row(
@@ -326,7 +364,9 @@ class _ConfigEditorState extends State<ConfigEditor> {
                           _initLocalState(_currentConfig);
                         });
                       },
-                      style: TextButton.styleFrom(foregroundColor: AppColors.textPrimaryDark),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textPrimaryDark,
+                      ),
                       child: const Text('Discard Changes'),
                     ),
                     const SizedBox(width: 16),
@@ -338,12 +378,15 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       child: const Text('Review Changes'),
                     ),
                     const SizedBox(width: 8),
-                      ElevatedButton(
+                    ElevatedButton(
                       onPressed: _saveChanges,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryAccent,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
                       ),
                       child: const Text('Save Changes'),
                     ),
