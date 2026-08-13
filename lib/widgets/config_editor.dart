@@ -122,14 +122,13 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       tooltip: 'Open Directory',
                       onPressed: () async {
                         final dir = p.dirname(widget.config.filePath);
-                        // Using Uri.file handles spaces and special chars properly.
-                        // On desktop, this opens the folder in the default file manager.
-                        final uri = Uri.file(dir);
+                        final uri = Uri.directory(dir);
                         if (await canLaunchUrl(uri)) {
                           await launchUrl(uri);
                         } else {
                           // Fallback for mocked tilde paths or unsupported systems
-                          debugPrint('Could not launch \$uri');
+                          if (!context.mounted) return;
+                          debugPrint('Could not launch $uri');
                         }
                       },
                     ),
