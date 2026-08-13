@@ -3,45 +3,53 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
+import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 
 class ConfigEditor extends StatefulWidget {
-  const ConfigEditor({super.key, required this.config});
+  const ConfigEditor({
+    super.key,
+    required this.config,
+    required this.configService,
+  });
 
   final ToolConfig config;
+  final ConfigService configService;
 
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
 }
 
 class _ConfigEditorState extends State<ConfigEditor> {
+  late ToolConfig _currentConfig;
   late List<String> _rules;
   late List<String> _permissions;
 
   @override
   void initState() {
     super.initState();
-    _initLocalState();
+    _initLocalState(widget.config);
   }
 
   @override
   void didUpdateWidget(covariant ConfigEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.config != widget.config) {
-      _initLocalState();
+      _initLocalState(widget.config);
     }
   }
 
-  void _initLocalState() {
-    _rules = List.from(widget.config.rules);
-    _permissions = List.from(widget.config.permissions);
+  void _initLocalState(ToolConfig config) {
+    _currentConfig = config;
+    _rules = List.from(_currentConfig.rules);
+    _permissions = List.from(_currentConfig.permissions);
   }
 
   bool get _hasUnsavedChanges {
-    return !listEquals(_rules, widget.config.rules) ||
-           !listEquals(_permissions, widget.config.permissions);
+    return !listEquals(_rules, _currentConfig.rules) ||
+           !listEquals(_permissions, _currentConfig.permissions);
   }
 
   Widget _buildSectionHeader(String title) {
@@ -224,22 +232,57 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     TextButton(
                       onPressed: () {
                         setState(() {
-                          _initLocalState();
+                          _initLocalState(_currentConfig);
                         });
                       },
                       style: TextButton.styleFrom(foregroundColor: AppColors.textPrimaryDark),
                       child: const Text('Discard Changes'),
                     ),
                     const SizedBox(width: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {}, // TODO: Trigger Diff Viewer
-                      icon: const Icon(Icons.compare_arrows),
-                      label: const Text('Review Changes'),
+                    TextButton(
+                      onPressed: () {},
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryAccent,
+                      ),
+                      child: const Text('Review Changes'),
+                    ),
+                    const SizedBox(width: 8),
+                      ElevatedButton(
+                      onPressed: () async {
+                        final updatedConfig = _currentConfig.copyWith(
+                          rules: _rules,
+                          permissions: _permissions,
+                        );
+
+                        try {
+                          print('Saving config...');
+                          await widget.configService.saveConfig(updatedConfig);
+                          print('Save completed! mounted: $mounted');
+                          if (mounted) {
+                            setState(() {
+                              _currentConfig = updatedConfig;
+                              _initLocalState(_currentConfig);
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Settings saved successfully.')),
+                            );
+                            print('Snackbar shown!');
+                          }
+                        } catch (e) {
+                          print('Save failed! $e');
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error saving: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryAccent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       ),
+                      child: const Text('Save Changes'),
                     ),
                   ],
                 ),

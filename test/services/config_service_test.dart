@@ -102,5 +102,24 @@ void main() {
       await configService.saveConfig(config);
       expect(newFile.existsSync(), isTrue);
     });
+    test('loadConfig identifies JSONC and parses', () async {
+      final jsoncPath = '${tempDir.path}/test_config.jsonc';
+      final jsoncFile = File(jsoncPath);
+      await jsoncFile.writeAsString('{"rules": ["test"]} // a comment\n');
+
+      final config = await configService.loadConfig(jsoncPath);
+      expect(config.format, ConfigFormat.json); // Parses as JSON format under the hood
+      expect(config.rules, ['test']);
+    });
+
+    test('saveConfig throws UnsupportedError for unknown format', () async {
+      final config = ToolConfig(
+        toolName: 'Unknown Tool',
+        filePath: '\${tempDir.path}/unknown_config.txt',
+        format: ConfigFormat.unknown,
+      );
+
+      expect(() => configService.saveConfig(config), throwsUnsupportedError);
+    });
   });
 }

@@ -6,15 +6,56 @@ import 'package:agents_config_helper/widgets/sidebar_item.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 
+import 'package:agents_config_helper/services/config_service.dart';
+
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final ConfigService configService;
+  const MainShell({super.key, required this.configService});
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  final MultiSplitViewController _controller = MultiSplitViewController(
+  ToolConfig? _activeConfig;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // For now, we simulate loading a real config.
+    // In Phase 4, we will wire up DiscoveryService.
+    _loadConfig('~/.claudecode/config.json');
+  }
+
+  Future<void> _loadConfig(String path) async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      // Create a dummy config if file doesn't exist, just for UI demonstration
+      // since the path is fake right now.
+      _activeConfig = ToolConfig(
+        toolName: 'Claude Code',
+        filePath: path,
+        format: ConfigFormat.json,
+        rules: ['Always use type hints', 'Follow clean architecture'],
+        permissions: ['~/Projects'],
+      );
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  late final MultiSplitViewController _controller = MultiSplitViewController(
     areas: [
       Area(
         size: 250,
@@ -52,15 +93,20 @@ class _MainShellState extends State<MainShell> {
       Area(
         flex: 1,
         builder: (context, area) {
-          final dummyConfig = ToolConfig(
-            toolName: 'Claude Code',
-            filePath: '~/.claudecode/config.json',
-            format: ConfigFormat.json,
-            rules: ['Always use type hints', 'Follow clean architecture'],
-            permissions: ['~/Projects'],
-          );
+          if (_isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (_error != null) {
+            return Center(child: Text('Error: \$_error', style: const TextStyle(color: Colors.red)));
+          }
+          if (_activeConfig == null) {
+            return const Center(child: Text('Select a configuration from the sidebar.'));
+          }
 
-          return ConfigEditor(config: dummyConfig);
+          return ConfigEditor(
+            config: _activeConfig!,
+            configService: widget.configService,
+          );
         },
       ),
     ],
