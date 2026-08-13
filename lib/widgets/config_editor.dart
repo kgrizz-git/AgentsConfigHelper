@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -90,9 +92,48 @@ class _ConfigEditorState extends State<ConfigEditor> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  widget.config.filePath,
-                  style: AppTextStyles.uiSecondary,
+                Row(
+                  children: [
+                    const Icon(Icons.folder_open, color: AppColors.uiSecondary, size: 16),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: SelectableText.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '${p.dirname(widget.config.filePath)}/',
+                              style: AppTextStyles.uiSecondary,
+                            ),
+                            TextSpan(
+                              text: p.basename(widget.config.filePath),
+                              style: AppTextStyles.uiSecondary.copyWith(
+                                color: AppColors.textPrimaryDark,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      color: AppColors.primaryAccent,
+                      tooltip: 'Open Directory',
+                      onPressed: () async {
+                        final dir = p.dirname(widget.config.filePath);
+                        // Using Uri.file handles spaces and special chars properly.
+                        // On desktop, this opens the folder in the default file manager.
+                        final uri = Uri.file(dir);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        } else {
+                          // Fallback for mocked tilde paths or unsupported systems
+                          debugPrint('Could not launch \$uri');
+                        }
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 const Divider(color: AppColors.borderDark),
