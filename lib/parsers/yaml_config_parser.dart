@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:yaml/yaml.dart';
@@ -59,13 +60,15 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
         final currentDoc = loadYaml(originalContent);
 
         if (currentDoc is YamlMap) {
+          final normalizedDoc = _deepConvertMap(currentDoc);
+
           // Update raw settings
           for (final entry in config.rawSettings.entries) {
             if (entry.key == 'rules' || entry.key == 'permissions') continue;
 
             // Only update if changed or missing to avoid unnecessary diffs
-            if (!currentDoc.containsKey(entry.key) ||
-                currentDoc[entry.key] != entry.value) {
+            if (!normalizedDoc.containsKey(entry.key) ||
+                jsonEncode(normalizedDoc[entry.key]) != jsonEncode(entry.value)) {
               editor.update([entry.key], entry.value);
             }
           }

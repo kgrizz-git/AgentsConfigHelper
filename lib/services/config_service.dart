@@ -72,6 +72,7 @@ class ConfigService {
     final ext = p.extension(path).toLowerCase();
     switch (ext) {
       case '.json':
+      case '.jsonc':
         return _jsonParser;
       case '.yaml':
       case '.yml':

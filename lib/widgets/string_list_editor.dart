@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -31,9 +32,12 @@ class _StringListEditorState extends State<StringListEditor> {
   void didUpdateWidget(covariant StringListEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.values != oldWidget.values) {
-      // Re-init controllers if the underlying values were reset externally
-      _disposeControllers();
-      _initControllers();
+      final currentTexts = _controllers.map((c) => c.text).toList();
+      if (!listEquals(widget.values, currentTexts)) {
+        // Re-init controllers if the underlying values were reset externally
+        _disposeControllers();
+        _initControllers();
+      }
     }
   }
 
@@ -94,32 +98,42 @@ class _StringListEditorState extends State<StringListEditor> {
                       hintStyle: AppTextStyles.uiSecondary,
                       filled: true,
                       fillColor: AppColors.sidebarDark,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.borderDark, width: 1),
+                        borderSide: const BorderSide(
+                          color: AppColors.borderDark,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.primaryAccent, width: 1),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryAccent,
+                        ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
+                  icon: const Icon(
+                    Icons.remove_circle_outline,
+                    color: AppColors.error,
+                  ),
                   onPressed: () => _removeField(index),
                   tooltip: 'Remove',
                 ),
               ],
             ),
           );
-        }).toList(),
+        }),
         const SizedBox(height: 4),
         TextButton.icon(
           onPressed: _addField,

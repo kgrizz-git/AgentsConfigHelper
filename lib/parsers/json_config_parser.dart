@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/parsers/jsonc_cleaner.dart';
@@ -91,6 +92,29 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
           final edits = <_Edit>[];
           const encoder = JsonEncoder();
 
+          void deleteNode(json_ast.PropertyNode node) {
+            int start = node.loc!.start.offset;
+            int end = node.loc!.end.offset;
+            int precedingComma = -1;
+            for (int i = start - 1; i >= 0; i--) {
+              if (originalContent![i] == ' ' || originalContent[i] == '\n' || originalContent[i] == '\r' || originalContent[i] == '\t') continue;
+              if (originalContent[i] == ',') precedingComma = i;
+              break;
+            }
+            if (precedingComma != -1) {
+              start = precedingComma;
+            } else {
+              for (int i = end; i < originalContent!.length; i++) {
+                if (originalContent[i] == ' ' || originalContent[i] == '\n' || originalContent[i] == '\r' || originalContent[i] == '\t') continue;
+                if (originalContent[i] == ',') {
+                  end = i + 1;
+                }
+                break;
+              }
+            }
+            edits.add(_Edit(start, end, ''));
+          }
+
           if (rulesNode != null) {
             if (newFields.containsKey('rules')) {
               edits.add(
@@ -101,13 +125,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
                 ),
               );
             } else {
-              edits.add(
-                _Edit(
-                  rulesNode.value!.loc!.start.offset,
-                  rulesNode.value!.loc!.end.offset,
-                  '[]',
-                ),
-              );
+              deleteNode(rulesNode);
             }
           }
 
@@ -121,13 +139,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
                 ),
               );
             } else {
-              edits.add(
-                _Edit(
-                  permissionsNode.value!.loc!.start.offset,
-                  permissionsNode.value!.loc!.end.offset,
-                  '[]',
-                ),
-              );
+              deleteNode(permissionsNode);
             }
           }
 
@@ -174,7 +186,8 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
 
           return result;
         }
-      } catch (_) {
+      } catch (e, st) {
+        debugPrint('JSON AST patch failed, falling back to scratch serialize: $e\n$st');
         // Fallback to building from scratch
       }
     }
