@@ -126,7 +126,8 @@ void main() {
     });
 
     test('saveConfig expands bare ~ and saves correctly', () async {
-      final homeStr = Platform.environment['HOME'] ??
+      final homeStr =
+          Platform.environment['HOME'] ??
           Platform.environment['USERPROFILE'] ??
           tempDir.path;
       const configPath = '~/test_expand.json';

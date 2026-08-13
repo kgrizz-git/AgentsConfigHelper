@@ -42,7 +42,7 @@ jobs:
         with:
           path: coverage/lcov.info
           min_coverage: 80
-          exclude: "**vendor**"
+          exclude: "**/vendor/**"
 
   secrets:
     name: Secret scan
