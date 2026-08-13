@@ -330,7 +330,11 @@ class _ConfigEditorState extends State<ConfigEditor> {
 
                 // Form Body
                 Expanded(
-                  child: ListView(
+                  child: AbsorbPointer(
+                    absorbing: _saving,
+                    child: Opacity(
+                      opacity: _saving ? 0.6 : 1,
+                      child: ListView(
                     padding: const EdgeInsets.only(
                       bottom: 80,
                     ), // padding for floating bar
@@ -396,6 +400,8 @@ class _ConfigEditorState extends State<ConfigEditor> {
                         ),
                       ),
                     ],
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -428,12 +434,14 @@ class _ConfigEditorState extends State<ConfigEditor> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _initLocalState(_currentConfig);
-                        });
-                        _notifyDirtyChanged();
-                      },
+                      onPressed: _saving
+                          ? null
+                          : () {
+                              setState(() {
+                                _initLocalState(_currentConfig);
+                              });
+                              _notifyDirtyChanged();
+                            },
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.textPrimaryDark,
                       ),
