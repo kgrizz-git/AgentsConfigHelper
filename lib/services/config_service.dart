@@ -11,27 +11,50 @@ import 'package:path/path.dart' as p;
 /// backing them up, and safely serializing them back to disk.
 class ConfigService {
   /// Creates a configuration service that backs up files before writes.
-  ConfigService({required this.backupService});
+  ConfigService({
+    required this.backupService,
+    String? Function()? homeDirectoryResolver,
+  }) : _homeDirectoryResolver = homeDirectoryResolver ?? _resolveHomeDirectory;
 
   /// Creates backups of existing configs before overwriting them.
   final BackupService backupService;
+  final String? Function() _homeDirectoryResolver;
 
   // Internal parsers
   final _jsonParser = JsonConfigParser();
   final _yamlParser = YamlConfigParser();
   final _tomlParser = TomlConfigParser();
 
+  static String? _resolveHomeDirectory() {
+    final home =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    if (home != null) {
+      return home;
+    }
+    if (Platform.isWindows) {
+      final drive = Platform.environment['HOMEDRIVE'];
+      final path = Platform.environment['HOMEPATH'];
+      if (drive != null && path != null) {
+        return '$drive$path';
+      }
+    }
+    return null;
+  }
+
   /// Resolves a user-supplied path to an absolute local filesystem path.
   String resolvePath(String path) {
     if (path == '~' ||
         path.startsWith('~/') ||
         (Platform.isWindows && path.startsWith(r'~\'))) {
-      final home =
-          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
-      if (home != null) {
-        final relativePath = path == '~' ? '' : path.substring(2);
-        return p.normalize(p.absolute(p.join(home, relativePath)));
+      final home = _homeDirectoryResolver();
+      if (home == null) {
+        throw FileSystemException(
+          'Cannot resolve home directory for a path starting with ~',
+          path,
+        );
       }
+      final relativePath = path == '~' ? '' : path.substring(2);
+      return p.normalize(p.absolute(p.join(home, relativePath)));
     }
     return p.normalize(p.absolute(path));
   }

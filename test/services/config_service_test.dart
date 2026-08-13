@@ -153,5 +153,23 @@ void main() {
       await configService.saveConfig(config);
       expect(file.existsSync(), isTrue);
     });
+
+    test('rejects a home-relative path when home cannot be resolved', () {
+      final serviceWithoutHome = ConfigService(
+        backupService: backupService,
+        homeDirectoryResolver: () => null,
+      );
+
+      expect(
+        () => serviceWithoutHome.resolvePath('~/.claude/settings.json'),
+        throwsA(
+          isA<FileSystemException>().having(
+            (error) => error.message,
+            'message',
+            contains('Cannot resolve home directory'),
+          ),
+        ),
+      );
+    });
   });
 }
