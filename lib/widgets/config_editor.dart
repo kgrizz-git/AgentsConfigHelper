@@ -94,7 +94,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.folder_open, color: AppColors.uiSecondary, size: 16),
+                    const Icon(Icons.folder_open, color: AppColors.textSecondaryDark, size: 16),
                     const SizedBox(width: 8),
                     Flexible(
                       child: SelectableText.rich(
