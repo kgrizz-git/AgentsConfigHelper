@@ -25,6 +25,6 @@ void main() {
 
     // Verify that our app shell renders.
     expect(find.text('Agents Config'), findsOneWidget);
-    expect(find.text('Claude Code'), findsWidgets);
+    expect(find.text('Claude Code'), findsOneWidget);
   });
 }

@@ -4,7 +4,6 @@ import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/parsers/jsonc_cleaner.dart';
 import 'package:agents_config_helper/vendor/json_ast/json_ast.dart' as json_ast;
-import 'package:flutter/foundation.dart';
 
 class _Edit {
   _Edit(this.start, this.end, this.replacement);
@@ -13,6 +12,7 @@ class _Edit {
   final String replacement;
 }
 
+/// Parses and serializes JSON and JSONC configuration files.
 class JsonConfigParser with ConfigParserMixin implements ConfigParser {
   @override
   ToolConfig parse(
@@ -80,6 +80,9 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
 
           final newFields = <String, dynamic>{};
           if (config.rules.isNotEmpty) newFields['rules'] = config.rules;
+          final originalPermissions = config.rawSettings['permissions'];
+          final preservesNestedPermissions =
+              originalPermissions != null && originalPermissions is! List;
           if (config.permissions.isNotEmpty) {
             newFields['permissions'] = config.permissions;
           }
@@ -99,25 +102,39 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
             var end = node.loc!.end.offset;
             var precedingComma = -1;
             for (var i = start - 1; i >= 0; i--) {
-              if (originalContent[i] == ' ' ||
-                  originalContent[i] == '\n' ||
-                  originalContent[i] == '\r' ||
-                  originalContent[i] == '\t')
+              if (originalContent[i] == ',') {
+                precedingComma = i;
+                break;
+              }
+              if (cleanContent[i] == ' ' ||
+                  cleanContent[i] == '\n' ||
+                  cleanContent[i] == '\r' ||
+                  cleanContent[i] == '\t') {
                 continue;
-              if (originalContent[i] == ',') precedingComma = i;
+              }
               break;
             }
-            if (precedingComma != -1) {
+            final commentFollowsPrecedingComma =
+                precedingComma != -1 &&
+                (originalContent
+                        .substring(precedingComma + 1, start)
+                        .contains('//') ||
+                    originalContent
+                        .substring(precedingComma + 1, start)
+                        .contains('/*'));
+            if (precedingComma != -1 && !commentFollowsPrecedingComma) {
               start = precedingComma;
             } else {
               for (var i = end; i < originalContent.length; i++) {
-                if (originalContent[i] == ' ' ||
-                    originalContent[i] == '\n' ||
-                    originalContent[i] == '\r' ||
-                    originalContent[i] == '\t')
-                  continue;
                 if (originalContent[i] == ',') {
                   end = i + 1;
+                  break;
+                }
+                if (cleanContent[i] == ' ' ||
+                    cleanContent[i] == '\n' ||
+                    cleanContent[i] == '\r' ||
+                    cleanContent[i] == '\t') {
+                  continue;
                 }
                 break;
               }
@@ -139,7 +156,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
             }
           }
 
-          if (permissionsNode != null) {
+          if (permissionsNode != null && !preservesNestedPermissions) {
             if (newFields.containsKey('permissions')) {
               edits.add(
                 _Edit(
@@ -185,7 +202,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
             edits.add(_Edit(insertPos, insertPos, insertion));
           }
 
-          // Apply edits (sort by offset descending so they don't affect each other)
+          // Descending offsets preserve edit locations in the original string.
           edits.sort((a, b) => b.start.compareTo(a.start));
           for (final edit in edits) {
             result = result.replaceRange(
@@ -195,13 +212,11 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
             );
           }
 
+          jsonDecode(JsoncCleaner.clean(result));
           return result;
         }
-      } catch (e, st) {
-        debugPrint(
-          'JSON AST patch failed, falling back to scratch serialize: $e\n$st',
-        );
-        // Fallback to building from scratch
+      } on Object catch (_) {
+        // A failed in-place patch uses the full serialization fallback below.
       }
     }
 
@@ -214,9 +229,12 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       outputMap.remove('rules');
     }
 
+    final originalPermissions = config.rawSettings['permissions'];
+    final preservesNestedPermissions =
+        originalPermissions != null && originalPermissions is! List;
     if (config.permissions.isNotEmpty) {
       outputMap['permissions'] = config.permissions;
-    } else {
+    } else if (!preservesNestedPermissions) {
       outputMap.remove('permissions');
     }
 

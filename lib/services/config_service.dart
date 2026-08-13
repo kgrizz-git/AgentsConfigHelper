@@ -10,7 +10,10 @@ import 'package:path/path.dart' as p;
 /// A facade service that orchestrates reading configs, parsing them,
 /// backing them up, and safely serializing them back to disk.
 class ConfigService {
+  /// Creates a configuration service that backs up files before writes.
   ConfigService({required this.backupService});
+
+  /// Creates backups of existing configs before overwriting them.
   final BackupService backupService;
 
   // Internal parsers
@@ -18,15 +21,19 @@ class ConfigService {
   final _yamlParser = YamlConfigParser();
   final _tomlParser = TomlConfigParser();
 
-  String _expandHome(String path) {
-    if (path == '~' || path.startsWith('~/')) {
+  /// Resolves a user-supplied path to an absolute local filesystem path.
+  String resolvePath(String path) {
+    if (path == '~' ||
+        path.startsWith('~/') ||
+        (Platform.isWindows && path.startsWith(r'~\'))) {
       final home =
           Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
       if (home != null) {
-        return path == '~' ? home : p.join(home, path.substring(2));
+        final relativePath = path == '~' ? '' : path.substring(2);
+        return p.normalize(p.absolute(p.join(home, relativePath)));
       }
     }
-    return path;
+    return p.normalize(p.absolute(path));
   }
 
   /// Reads a config file from [path], determines the appropriate parser,
@@ -35,8 +42,9 @@ class ConfigService {
   /// Throws a [FileSystemException] if the file cannot be read.
   /// Throws a [ConfigParseException] if parsing fails.
   Future<ToolConfig> loadConfig(String path) async {
-    final expandedPath = _expandHome(path);
+    final expandedPath = resolvePath(path);
     final file = File(expandedPath);
+    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await file.exists()) {
       throw FileSystemException('File not found', expandedPath);
@@ -54,11 +62,12 @@ class ConfigService {
   /// Automatically creates a backup of the existing file using [BackupService],
   /// then overwrites the file with the serialized config.
   Future<void> saveConfig(ToolConfig config) async {
-    final expandedPath = _expandHome(config.filePath);
+    final expandedPath = resolvePath(config.filePath);
     final file = File(expandedPath);
     String? originalContent;
 
     // Backup before write if the file already exists
+    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (await file.exists()) {
       originalContent = await file.readAsString();
@@ -66,6 +75,7 @@ class ConfigService {
     } else {
       // Ensure directory exists if we are creating a brand new config
       final parentDir = file.parent;
+      // The asynchronous check avoids blocking the UI thread.
       // ignore: avoid_slow_async_io
       if (!await parentDir.exists()) {
         await parentDir.create(recursive: true);

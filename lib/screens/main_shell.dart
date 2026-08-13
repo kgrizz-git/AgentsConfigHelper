@@ -7,8 +7,12 @@ import 'package:agents_config_helper/widgets/sidebar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 
+/// The split-pane shell for selecting and editing configurations.
 class MainShell extends StatefulWidget {
+  /// Creates the shell with the service used to load configurations.
   const MainShell({required this.configService, super.key});
+
+  /// Reads configurations selected in the sidebar.
   final ConfigService configService;
 
   @override
@@ -23,29 +27,18 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    // For now, we simulate loading a real config.
-    // In Phase 4, we will wire up DiscoveryService.
-    // Using a safe tmp path to prevent demo saves from polluting the real home directory.
-    _loadConfig('/tmp/agents_config_demo/config.json');
   }
 
   Future<void> _loadConfig(String path) async {
     setState(() {
       _isLoading = true;
       _error = null;
+      _activeConfig = null;
     });
     try {
-      // Create a dummy config if file doesn't exist, just for UI demonstration
-      // since the path is fake right now.
-      _activeConfig = ToolConfig(
-        toolName: 'Claude Code',
-        filePath: path,
-        format: ConfigFormat.json,
-        rules: const ['Always use type hints', 'Follow clean architecture'],
-        permissions: const ['~/Projects'],
-      );
-    } catch (e) {
-      _error = e.toString();
+      _activeConfig = await widget.configService.loadConfig(path);
+    } on Object catch (error) {
+      _error = error.toString();
     } finally {
       if (mounted) {
         setState(() {
@@ -76,13 +69,18 @@ class _MainShellState extends State<MainShell> {
                 SidebarItem(
                   title: 'Claude Code',
                   icon: Icons.code,
-                  isActive: true,
-                  onTap: () {},
+                  isActive: _activeConfig?.toolName == 'Claude',
+                  onTap: () async {
+                    await _loadConfig('~/.claude/settings.json');
+                  },
                 ),
                 SidebarItem(
                   title: 'Cursor',
                   icon: Icons.edit,
-                  onTap: () {},
+                  isActive: _activeConfig?.toolName == 'Cursor',
+                  onTap: () async {
+                    await _loadConfig('~/.cursor/permissions.json');
+                  },
                 ),
               ],
             ),
@@ -96,10 +94,10 @@ class _MainShellState extends State<MainShell> {
             return const Center(child: CircularProgressIndicator());
           }
           if (_error != null) {
-            return const Center(
+            return Center(
               child: Text(
-                r'Error: $_error',
-                style: TextStyle(color: Colors.red),
+                'Error: $_error',
+                style: const TextStyle(color: Colors.red),
               ),
             );
           }
@@ -111,7 +109,8 @@ class _MainShellState extends State<MainShell> {
 
           return ConfigEditor(
             config: _activeConfig!,
-            configService: widget.configService,
+            onSave: widget.configService.saveConfig,
+            resolvePath: widget.configService.resolvePath,
           );
         },
       ),

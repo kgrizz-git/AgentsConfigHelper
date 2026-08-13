@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/parsers/json_config_parser.dart';
@@ -197,7 +199,7 @@ void main() {
         toolName: 'Test',
       );
       expect(roundTrip.rules, ['a', 'c']);
-      expect(roundTrip.permissions, []);
+      expect(roundTrip.permissions, <String>[]);
     });
 
     test('handles missing fields gracefully on serialize', () {
@@ -215,6 +217,62 @@ void main() {
       final serialized = parser.serialize(mutated, originalContent: original);
 
       expect(serialized, contains('"rules": ["new"]'));
+    });
+
+    test('preserves nested permissions when serializing unrelated edits', () {
+      const original = '''
+{
+  "rules": ["old"],
+  "permissions": {"allow": ["Bash"], "deny": ["rm -rf"]}
+}
+''';
+      final config = parser.parse(
+        original,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
+
+      final serialized = parser.serialize(
+        config.copyWith(rules: ['new']),
+        originalContent: original,
+      );
+      final decoded = jsonDecode(serialized) as Map<String, dynamic>;
+
+      expect(decoded['rules'], ['new']);
+      expect(decoded['permissions'], {
+        'allow': ['Bash'],
+        'deny': ['rm -rf'],
+      });
+    });
+
+    test('deletes JSONC properties with comments before their commas', () {
+      const originals = <String>[
+        '''
+{"rules": [] /* note */, "other": true}''',
+        '''
+{"rules": [] // note
+, "other": true}''',
+      ];
+
+      for (final original in originals) {
+        final config = parser.parse(
+          original,
+          filePath: 'test.jsonc',
+          toolName: 'Test',
+        );
+        final serialized = parser.serialize(
+          config,
+          originalContent: original,
+        );
+        final reparsed = parser.parse(
+          serialized,
+          filePath: 'test.jsonc',
+          toolName: 'Test',
+        );
+
+        expect(reparsed.rawSettings['other'], isTrue);
+        expect(reparsed.rawSettings.containsKey('rules'), isFalse);
+      }
     });
   });
 }

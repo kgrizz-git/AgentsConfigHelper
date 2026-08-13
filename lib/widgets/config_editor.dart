@@ -1,5 +1,6 @@
+import 'dart:async';
+
 import 'package:agents_config_helper/models/tool_config.dart';
-import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
@@ -8,15 +9,24 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 
+/// Edits the supported flat configuration fields and confirms saves.
 class ConfigEditor extends StatefulWidget {
+  /// Creates an editor with callbacks supplied by its owner.
   const ConfigEditor({
     required this.config,
-    required this.configService,
+    required this.onSave,
+    required this.resolvePath,
     super.key,
   });
 
+  /// The configuration shown by the editor.
   final ToolConfig config;
-  final ConfigService configService;
+
+  /// Persists a confirmed edited configuration.
+  final Future<void> Function(ToolConfig config) onSave;
+
+  /// Resolves the configuration path before opening its directory.
+  final String Function(String path) resolvePath;
 
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
@@ -52,6 +62,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
         !listEquals(_permissions, _currentConfig.permissions);
   }
 
+  bool get _hasUnsupportedPermissions =>
+      _currentConfig.rawSettings['permissions'] is! List &&
+      _currentConfig.rawSettings.containsKey('permissions');
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 12),
@@ -64,7 +78,6 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
-  /// Saves the current configuration to disk.
   Future<void> _saveChanges() async {
     final updatedConfig = _currentConfig.copyWith(
       rules: _rules,
@@ -72,9 +85,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
 
     try {
-      debugPrint('Saving config...');
-      await widget.configService.saveConfig(updatedConfig);
-      debugPrint('Save completed! mounted: $mounted');
+      await widget.onSave(updatedConfig);
       if (mounted) {
         setState(() {
           _currentConfig = updatedConfig;
@@ -83,14 +94,12 @@ class _ConfigEditorState extends State<ConfigEditor> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Settings saved successfully.')),
         );
-        debugPrint('Snackbar shown!');
       }
-    } catch (e) {
-      debugPrint('Save failed! $e');
+    } on Object catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving: $e'),
+            content: Text('Error saving: $error'),
             backgroundColor: Colors.red,
           ),
         );
@@ -98,63 +107,77 @@ class _ConfigEditorState extends State<ConfigEditor> {
     }
   }
 
-  /// Shows a modal comparing the original configuration with the unsaved changes.
+  /// Shows the review modal for unsaved changes.
   void _showDiffModal() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.backgroundDark,
-          title: const Text('Review Changes', style: AppTextStyles.uiHeader),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                _buildDiffSection('Rules', _currentConfig.rules, _rules),
-                const SizedBox(height: 16),
-                _buildDiffSection(
-                  'Permissions',
-                  _currentConfig.permissions,
-                  _permissions,
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: AppColors.backgroundDark,
+            title: const Text('Review Changes', style: AppTextStyles.uiHeader),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  _buildDiffSection('Rules', _currentConfig.rules, _rules),
+                  const SizedBox(height: 16),
+                  _buildDiffSection(
+                    'Permissions',
+                    _currentConfig.permissions,
+                    _permissions,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textPrimaryDark,
                 ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textPrimaryDark,
+                child: const Text('Cancel'),
               ),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _saveChanges();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryAccent,
-                foregroundColor: Colors.white,
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  unawaited(_saveChanges());
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryAccent,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Confirm & Save'),
               ),
-              child: const Text('Confirm & Save'),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
-  /// Builds a visual diff section for a list of strings, showing additions in green and removals in red.
+  /// Builds one list section in the visual diff.
   Widget _buildDiffSection(
     String title,
     List<String> original,
     List<String> updated,
   ) {
-    final added = updated.where((item) => !original.contains(item)).toList();
-    final removed = original.where((item) => !updated.contains(item)).toList();
+    final unmatchedOriginal = List<String>.from(original);
+    final added = <String>[];
+    for (final item in updated) {
+      final matchingIndex = unmatchedOriginal.indexOf(item);
+      if (matchingIndex == -1) {
+        added.add(item);
+      } else {
+        unmatchedOriginal.removeAt(matchingIndex);
+      }
+    }
+    final removed = unmatchedOriginal;
     if (added.isEmpty && removed.isEmpty) {
+      if (!listEquals(original, updated)) {
+        return Text('$title: Reordered', style: AppTextStyles.uiSecondary);
+      }
       return Text('$title: No changes', style: AppTextStyles.uiSecondary);
     }
     return Column(
@@ -253,14 +276,22 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       color: AppColors.primaryAccent,
                       tooltip: 'Open Directory',
                       onPressed: () async {
-                        final dir = p.dirname(widget.config.filePath);
+                        final dir = p.dirname(
+                          widget.resolvePath(widget.config.filePath),
+                        );
                         final uri = Uri.directory(dir);
                         if (await canLaunchUrl(uri)) {
                           await launchUrl(uri);
                         } else {
-                          // Fallback for mocked tilde paths or unsupported systems
                           if (!context.mounted) return;
-                          debugPrint('Could not launch $uri');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Could not open the config directory.',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
                         }
                       },
                     ),
@@ -293,20 +324,28 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       ),
 
                       _buildSectionHeader('Permissions'),
-                      const Text(
-                        'Allowed directories or commands for this agent.',
-                        style: AppTextStyles.uiSecondary,
-                      ),
-                      const SizedBox(height: 12),
-                      StringListEditor(
-                        values: _permissions,
-                        hintText: 'e.g., ~/Projects',
-                        onChanged: (newValues) {
-                          setState(() {
-                            _permissions = newValues;
-                          });
-                        },
-                      ),
+                      if (_hasUnsupportedPermissions)
+                        const Text(
+                          'Nested permissions are preserved but not editable '
+                          'here yet.',
+                          style: AppTextStyles.uiSecondary,
+                        )
+                      else ...[
+                        const Text(
+                          'Allowed directories or commands for this agent.',
+                          style: AppTextStyles.uiSecondary,
+                        ),
+                        const SizedBox(height: 12),
+                        StringListEditor(
+                          values: _permissions,
+                          hintText: 'e.g., ~/Projects',
+                          onChanged: (newValues) {
+                            setState(() {
+                              _permissions = newValues;
+                            });
+                          },
+                        ),
+                      ],
 
                       _buildSectionHeader('Advanced'),
                       const Text(
@@ -379,7 +418,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: _saveChanges,
+                      onPressed: _showDiffModal,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryAccent,
                         foregroundColor: Colors.white,

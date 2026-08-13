@@ -2,6 +2,7 @@ import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:toml/toml.dart';
 
+/// Parses and serializes TOML configuration files.
 class TomlConfigParser with ConfigParserMixin implements ConfigParser {
   @override
   ToolConfig parse(

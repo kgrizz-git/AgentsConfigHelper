@@ -19,6 +19,7 @@ void main() {
     });
 
     tearDown(() async {
+      // Synchronous existence checks keep this filesystem assertion concise.
       // ignore: avoid_slow_async_io
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
@@ -118,7 +119,7 @@ void main() {
     test('saveConfig throws UnsupportedError for unknown format', () async {
       final config = ToolConfig(
         toolName: 'Unknown Tool',
-        filePath: r'${tempDir.path}/unknown_config.txt',
+        filePath: '${tempDir.path}/unknown_config.txt',
         format: ConfigFormat.unknown,
       );
 
@@ -130,12 +131,17 @@ void main() {
           Platform.environment['HOME'] ??
           Platform.environment['USERPROFILE'] ??
           tempDir.path;
-      const configPath = '~/test_expand.json';
-      final file = File(p.join(homeStr, 'test_expand.json'));
-      // ignore: avoid_slow_async_io
-      if (await file.exists()) {
-        await file.delete();
-      }
+      final fileName =
+          'config_service_expand_${DateTime.now().microsecondsSinceEpoch}.json';
+      final configPath = '~/$fileName';
+      final file = File(p.join(homeStr, fileName));
+      addTearDown(() async {
+        // Synchronous existence checks keep this cleanup concise.
+        // ignore: avoid_slow_async_io
+        if (await file.exists()) {
+          await file.delete();
+        }
+      });
 
       final config = ToolConfig(
         toolName: 'Test Tool',
@@ -146,11 +152,6 @@ void main() {
 
       await configService.saveConfig(config);
       expect(file.existsSync(), isTrue);
-
-      // ignore: avoid_slow_async_io
-      if (await file.exists()) {
-        await file.delete();
-      }
     });
   });
 }

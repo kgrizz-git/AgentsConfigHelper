@@ -15,7 +15,7 @@ AgentsConfigHelper is a local-only, cross-platform Flutter desktop app. It abstr
 
 2. **Service Layer**
    - **Discovery Service**: Scans the user's system on start up (standard OS directories and project folders) to discover agents and IDs to configure. It also provides the ability for users to manually add custom configuration paths.
-   - **Config Validation Service**: Performs strict format verification and schema validation to ensure a config is completely valid before saving it, preventing corrupted or malformed settings.
+   - **Config Validation Service (planned)**: Will perform strict format verification and schema validation before saving, preventing corrupted or malformed settings.
    - **Backup & Restore Service**: Responsible for copying the original file to a `.bak` or app-data folder before writes are executed. Handles rollbacks.
    - **CLI Integration Service**: Interfaces with agent CLIs (e.g., `claude config`, `opencode set`) when file-based edits aren't sufficient.
 

@@ -1,7 +1,9 @@
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
+/// Builds the app's Material themes.
 class AppTheme {
+  /// The default dark Material theme.
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
@@ -41,6 +43,7 @@ class AppTheme {
     );
   }
 
+  /// The optional light Material theme.
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

@@ -11,10 +11,12 @@ class FakeConfigService extends ConfigService {
   FakeConfigService(BackupService backupService)
     : super(backupService: backupService);
 
+  final savedConfigs = <ToolConfig>[];
+
   @override
   Future<void> saveConfig(ToolConfig config) async {
-    // Simulate quick save
-    await Future.delayed(Duration.zero);
+    savedConfigs.add(config);
+    await Future<void>.delayed(Duration.zero);
   }
 }
 
@@ -39,7 +41,8 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              configService: configService,
+              onSave: configService.saveConfig,
+              resolvePath: configService.resolvePath,
             ),
           ),
         ),
@@ -50,10 +53,12 @@ void main() {
 
       await tester.tap(find.text('Add Item').first);
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, 'new rule');
+      await tester.enterText(find.byType(TextField).at(1), 'new rule');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirm & Save'));
       await tester.pump(); // Start async operation
       await tester.pumpAndSettle(); // Wait for snackbar
 
@@ -61,6 +66,7 @@ void main() {
         find.textContaining('Settings saved successfully.'),
         findsOneWidget,
       );
+      expect(configService.savedConfigs.single.rules, contains('new rule'));
     });
 
     testWidgets('diff viewer modal opens and can save', (tester) async {
@@ -82,7 +88,8 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              configService: configService,
+              onSave: configService.saveConfig,
+              resolvePath: configService.resolvePath,
             ),
           ),
         ),
@@ -90,7 +97,7 @@ void main() {
 
       await tester.tap(find.text('Add Item').first);
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, 'new rule');
+      await tester.enterText(find.byType(TextField).at(1), 'new rule');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Review Changes'));
@@ -107,6 +114,39 @@ void main() {
         find.textContaining('Settings saved successfully.'),
         findsOneWidget,
       );
+      expect(configService.savedConfigs.single.rules, contains('new rule'));
+    });
+
+    testWidgets('shows a removed duplicate in the review diff', (tester) async {
+      final tempDir = Directory.systemTemp;
+      final configService = FakeConfigService(
+        BackupService(backupDirectory: tempDir),
+      );
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: '${tempDir.path}/duplicate_rules.json',
+        format: ConfigFormat.json,
+        rules: const ['duplicate', 'duplicate'],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ConfigEditor(
+              config: config,
+              onSave: configService.saveConfig,
+              resolvePath: configService.resolvePath,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byTooltip('Remove').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Review Changes'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('- duplicate'), findsOneWidget);
     });
   });
 }

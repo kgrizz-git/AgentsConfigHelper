@@ -22,6 +22,7 @@ void main() {
     });
 
     tearDown(() async {
+      // Synchronous existence checks keep this filesystem assertion concise.
       // ignore: avoid_slow_async_io
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
@@ -32,6 +33,7 @@ void main() {
       final backupPath = await backupService.createBackup(originalFile.path);
 
       final backupFile = File(backupPath);
+      // Synchronous existence checks keep this filesystem assertion concise.
       // ignore: avoid_slow_async_io
       expect(await backupFile.exists(), isTrue);
 

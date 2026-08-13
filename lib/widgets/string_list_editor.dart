@@ -3,7 +3,9 @@ import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// An editable list of text values.
 class StringListEditor extends StatefulWidget {
+  /// Creates a list editor with current values and a change callback.
   const StringListEditor({
     required this.values,
     required this.onChanged,
@@ -11,8 +13,13 @@ class StringListEditor extends StatefulWidget {
     super.key,
   });
 
+  /// Values currently rendered by the editor.
   final List<String> values;
+
+  /// Receives the complete list after any change.
   final ValueChanged<List<String>> onChanged;
+
+  /// Placeholder text for new entries.
   final String hintText;
 
   @override
@@ -72,8 +79,7 @@ class _StringListEditorState extends State<StringListEditor> {
 
   void _removeField(int index) {
     setState(() {
-      final c = _controllers.removeAt(index);
-      c.dispose();
+      _controllers.removeAt(index).dispose();
       _notifyChanged();
     });
   }

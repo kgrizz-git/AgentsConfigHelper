@@ -4,6 +4,7 @@ import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+/// Parses and serializes YAML configuration files.
 class YamlConfigParser with ConfigParserMixin implements ConfigParser {
   @override
   ToolConfig parse(

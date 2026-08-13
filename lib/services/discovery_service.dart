@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 /// Service responsible for discovering AI agent configuration files
 /// on the local filesystem.
 class DiscoveryService {
+  /// Creates a discovery service rooted at [customHome] or the user's home.
   DiscoveryService({String? customHome})
     : homeDirectory = customHome ?? _resolveHomeDirectory();
 
@@ -44,6 +45,7 @@ class DiscoveryService {
       final absolutePath = p.join(homeDirectory, relPath);
       final file = File(absolutePath);
 
+      // Checking file existence asynchronously avoids blocking the UI thread.
       // ignore: avoid_slow_async_io
       if (await file.exists()) {
         discoveredPaths.add(absolutePath);

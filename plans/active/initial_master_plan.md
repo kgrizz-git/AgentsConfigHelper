@@ -77,5 +77,5 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 
 **Goal:** Track future feature requests that are currently deferred.
 
-* **User Config Presets:** Allow users to save and load custom named "presets" for various configs, rather than just restoring automated system backups.
+* **User Config Presets:** Allow users to save and load custom-named "presets" for various configs, rather than just restoring automated system backups.
 * **Git-style Merging & Diffing:** Show a rich diff (like Git) between the current configuration file and a saved preset/backup. Allow users to selectively merge changes from the current file into the saved preset.
