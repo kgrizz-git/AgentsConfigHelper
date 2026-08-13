@@ -40,6 +40,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late ToolConfig _currentConfig;
   late List<String> _rules;
   late List<String> _permissions;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -88,10 +89,16 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   Future<void> _saveChanges() async {
+    if (_saving) return;
+
     final updatedConfig = _currentConfig.copyWith(
       rules: _rules,
       permissions: _permissions,
     );
+
+    setState(() {
+      _saving = true;
+    });
 
     try {
       await widget.onSave(updatedConfig);
@@ -113,6 +120,12 @@ class _ConfigEditorState extends State<ConfigEditor> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
       }
     }
   }
@@ -150,10 +163,12 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  unawaited(_saveChanges());
-                },
+                onPressed: _saving
+                    ? null
+                    : () {
+                        Navigator.of(context).pop();
+                        unawaited(_saveChanges());
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryAccent,
                   foregroundColor: Colors.white,
@@ -426,7 +441,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     ),
                     const SizedBox(width: 16),
                     TextButton(
-                      onPressed: _showDiffModal,
+                      onPressed: _saving ? null : _showDiffModal,
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.primaryAccent,
                       ),
@@ -434,7 +449,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: _showDiffModal,
+                      onPressed: _saving ? null : _showDiffModal,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryAccent,
                         foregroundColor: Colors.white,
