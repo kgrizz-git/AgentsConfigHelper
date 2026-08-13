@@ -32,8 +32,8 @@ dependencies:
   equatable: ^2.1.0
   flutter:
     sdk: flutter
-  google_fonts: ^8.2.1
   grapheme_splitter: ^1.0.1
+  multi_split_view: ^3.6.2
   path: ^1.9.1
   path_provider: ^2.1.6
   toml: ^0.18.0
@@ -57,8 +57,20 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  assets:
+    - assets/fonts/
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.otf
+        - asset: assets/fonts/Inter-SemiBold.otf
+          weight: 600
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
