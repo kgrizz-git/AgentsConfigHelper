@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
+import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/parsers/json_config_parser.dart';
@@ -59,25 +61,47 @@ class ConfigService {
     return p.normalize(p.absolute(path));
   }
 
-  /// Reads a config file from [path], determines the appropriate parser,
-  /// and returns a structured [ToolConfig].
+  /// Loads a configuration explicitly discovered by the app.
+  Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
+    final file = File(config.filePath);
+    // ignore: avoid_slow_async_io
+    if (!await file.exists()) {
+      throw FileSystemException('File not found', config.filePath);
+    }
+    final content = await file.readAsString();
+    final parser = _getParserForFormat(config.format);
+    return parser.parse(
+      content,
+      filePath: config.filePath,
+      toolName: config.sourceLabel,
+    );
+  }
+
+  /// Reads a config file from a manual [path], determines the appropriate parser
+  /// using the ToolDescriptorRegistry, and returns a structured [ToolConfig].
   ///
   /// Throws a [FileSystemException] if the file cannot be read.
-  /// Throws a [ConfigParseException] if parsing fails.
+  /// Throws a [ValidationException] if the file type is unsupported.
   Future<ToolConfig> loadConfig(String path) async {
     final expandedPath = resolvePath(path);
     final file = File(expandedPath);
-    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await file.exists()) {
       throw FileSystemException('File not found', expandedPath);
     }
 
     final content = await file.readAsString();
-    final parser = _getParserForPath(path);
-    final toolName = _guessToolNameFromPath(path);
 
-    return parser.parse(content, filePath: path, toolName: toolName);
+    // We import ToolDescriptorRegistry to validate the manual path
+    // The home resolver might be used to see if it matches a known user target
+    final home = _homeDirectoryResolver();
+    final match = ToolDescriptorRegistry.matchPath(
+      expandedPath,
+      normalizedHomePath: home,
+    );
+
+    final parser = _getParserForFormat(match.format);
+    return parser.parse(content, filePath: path, toolName: match.sourceLabel);
   }
 
   /// Safely saves [config] to disk.
@@ -90,7 +114,6 @@ class ConfigService {
     String? originalContent;
 
     // Backup before write if the file already exists
-    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (await file.exists()) {
       originalContent = await file.readAsString();
@@ -98,7 +121,6 @@ class ConfigService {
     } else {
       // Ensure directory exists if we are creating a brand new config
       final parentDir = file.parent;
-      // The asynchronous check avoids blocking the UI thread.
       // ignore: avoid_slow_async_io
       if (!await parentDir.exists()) {
         await parentDir.create(recursive: true);
@@ -114,24 +136,6 @@ class ConfigService {
     await file.writeAsString(serialized);
   }
 
-  ConfigParser _getParserForPath(String path) {
-    final ext = p.extension(path).toLowerCase();
-    switch (ext) {
-      case '.json':
-      case '.jsonc':
-        return _jsonParser;
-      case '.yaml':
-      case '.yml':
-        return _yamlParser;
-      case '.toml':
-        return _tomlParser;
-      default:
-        // Default to JSON if we can't tell, or throw?
-        // Some tools might use files with no extension. We'll default to JSON.
-        return _jsonParser;
-    }
-  }
-
   ConfigParser _getParserForFormat(ConfigFormat format) {
     switch (format) {
       case ConfigFormat.json:
@@ -143,37 +147,5 @@ class ConfigService {
       case ConfigFormat.unknown:
         throw UnsupportedError('Unsupported config format: $format');
     }
-  }
-
-  String _guessToolNameFromPath(String path) {
-    final lowerPath = path.toLowerCase();
-    if (lowerPath.contains('claude')) {
-      return 'Claude';
-    }
-    if (lowerPath.contains('codex')) {
-      return 'Codex';
-    }
-    if (lowerPath.contains('opencode')) {
-      return 'Opencode';
-    }
-    if (lowerPath.contains('paseo')) {
-      return 'Paseo';
-    }
-    if (lowerPath.contains('cursor')) {
-      return 'Cursor';
-    }
-    if (lowerPath.contains('kiro')) {
-      return 'Kiro';
-    }
-    if (lowerPath.contains('devin')) {
-      return 'Devin';
-    }
-    if (lowerPath.contains('gemini') || lowerPath.contains('antigravity')) {
-      return 'Antigravity';
-    }
-    if (lowerPath.contains('agy-acp')) {
-      return 'agy-acp';
-    }
-    return 'Unknown';
   }
 }

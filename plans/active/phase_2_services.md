@@ -39,3 +39,10 @@ Orchestrates the parsers from Phase 1 alongside discovery and backups.
 - **Behavior**:
   - `Future<ToolConfig> loadConfig(String path)`: Discovers format by extension/tool, invokes parser.
   - `Future<void> saveConfig(ToolConfig config)`: Calls `BackupService.createBackup` on existing file -> Calls `parser.serialize` -> Writes safely to disk.
+
+## Follow-up suggestions (added 2026-08-13)
+
+- **CLI integration omitted.** Master plan Phase 2 listed "Integrate CLI hooks for agents that expose configuration commands," but this plan and the implementation contain no CLI layer. `ConfigService` is file-only. Decide explicitly whether v1 stays file-only (consistent with `project-profile.md` "No cloud sync in v1 — local-only file operations") or adds read-only CLI status checks.
+- **Single source of truth for paths.** `DiscoveryService.defaultRelativePaths` and the "Detection priority" list in `docs/supported-tools.md` duplicate the same 9 paths; they have already drifted (the Markdown docs `CLAUDE.md`/`.cursorrules`/`AGENTS.md` appear in `supported-tools.md` but not in `DiscoveryService`). Extract one declarative `ToolDescriptor` table (tool -> display name, icon, paths, format, parser) consumed by both discovery and `ConfigService._guessToolNameFromPath` (which currently uses fragile substring heuristics).
+- **`saveConfig` reads `originalContent` and passes it to `parser.serialize`** — good, this satisfies the Phase 2.5 requirement that patching needs the original. Verify each parser actually uses `originalContent` for comment/offset preservation (JSONC especially), not just JSON round-trip.
+- **Backup location is centralized** in app support dir (`path_provider.getApplicationSupportDirectory()`), matching this plan. `BackupService` is implemented and tested. The History/Backups UI to consume it is still stubbed (see `phase_3_design.md` / master plan Phase 5 notes).

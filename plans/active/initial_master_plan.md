@@ -55,6 +55,13 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Set up dark/light theme switching based on the OS.
 * **Detailed Plan:** *[Link to be created]*
 
+> **Suggestion (2026-08-13):** Phase 4 is the highest-leverage next step. Two concrete, well-scoped pieces:
+>
+> 1. **Wire `DiscoveryService` into the shell.** `main_shell.dart` currently hardcodes two sidebar entries; replace with a Riverpod-provided list from `DiscoveryService.discoverConfigs()` plus user-added paths. This turns the hardcoded demo into the real app.
+> 2. **Add state management (Riverpod).** Everything is currently local widget state, which blocks scaling to a discovery-driven UI. Introduce a `DiscoveryProvider`/`ConfigProvider` before building History/Backups or the raw editor.
+>
+> Reconcile the "Detection priority" list in `docs/supported-tools.md` and `DiscoveryService.defaultRelativePaths` into one declarative `ToolDescriptor` table (see notes in `agent-config-discovery.md`).
+
 ## Phase 5: Editors & Diff Viewers
 
 **Goal:** Allow users to actually edit and save configurations safely.
@@ -64,6 +71,13 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Implement a Diff Viewer widget to preview changes before confirming a save.
 * **Detailed Plan:** *[Link to be created]*
 
+> **Suggestion (2026-08-13):** Two editor features are already stubbed in the shipped `ConfigEditor` and should be promoted to real work items:
+>
+> * **History & Backups view** — the "History & Backups" button currently shows a "coming soon" snackbar, but `BackupService` (centralized `.bak` store in app support dir, restore support) is already built. This is high-value, low-risk, and should be done right after Phase 4 wiring.
+> * **Raw text editor fallback** — the "Raw JSON/YAML Editor Coming Soon" panel. Needed so the many `rawSettings` fields (models, env, nested permissions) that `ToolConfig` does not normalize are still user-editable without redesigning the model.
+>
+> The existing diff modal (`ConfigEditor._buildDiffSection`) is a list-level add/remove view; consider upgrading it to a true line-level diff for the raw editor and for the History/Backups comparison (ties into the master-plan backlog "Git-style Merging & Diffing").
+
 ## Phase 6: Polish, Error Handling & Release
 
 **Goal:** Get it ready for a local machine release.
@@ -72,6 +86,8 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Finalize macOS, Windows, and Linux build settings (icons, permissions).
 * Draft user release notes.
 * **Detailed Plan:** *[Link to be created]*
+
+> **Suggestion (2026-08-13):** Current parse-error handling is a single generic error string in `main_shell.dart`. Phase 6 should define per-format recovery (offer raw-editor open, show line/col of syntax error, never auto-overwrite a corrupted file) and formalize the JSONC fallback-warning path described in `phase_2.5_jsonc.md`.
 
 ## Backlog & Future Enhancements
 

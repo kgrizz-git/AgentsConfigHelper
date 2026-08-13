@@ -641,16 +641,18 @@ When `--permission-prompts` is enabled:
 
 ---
 
-## Detection priority
+## Detection and Registry
 
-For auto-discovery, check these paths on first launch:
+For auto-discovery, the app uses a pure-Dart `ToolDescriptor` registry located in `lib/catalog/tool_descriptor_registry.dart`.
 
-1. `~/.claude/settings.json` → Claude Code
-2. `~/.codex/config.toml` → Codex
-3. `~/.config/opencode/opencode.json` → Opencode
-4. `~/.paseo/config.json` → Paseo
-5. `~/.cursor/permissions.json` → Cursor
-6. `~/.kiro/settings/permissions.yaml` → Kiro
-7. `~/.config/devin/config.json` → Devin
-8. `~/.gemini/antigravity-cli/settings.json` → Antigravity
-9. `~/.openab/agy-acp/sessions.json` → agy-acp
+### V1 Boundary
+
+In Phase 1, only exact parser-supported structured config files are automatically discovered:
+
+- **JSON/JSONC**
+- **YAML**
+- **TOML**
+
+### Deferred Sources
+
+Markdown rules, system prompts, glob-matched directories, and instruction sources (like `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.mdc` files) are explicitly deferred. They will not appear in sidebar discovery until a dedicated raw-text editor exists.

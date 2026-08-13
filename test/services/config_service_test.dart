@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
+import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,16 +28,28 @@ void main() {
       }
     });
 
-    test('loadConfig correctly identifies JSON and parses', () async {
-      final jsonFile = File(p.join(tempDir.path, '.claude', 'settings.json'));
-      await jsonFile.create(recursive: true);
-      await jsonFile.writeAsString('{"rules": ["r1"]}');
+    test(
+      'loadConfig correctly identifies JSON and parses based on known target',
+      () async {
+        final homeStr =
+            Platform.environment['HOME'] ??
+            Platform.environment['USERPROFILE'] ??
+            tempDir.path;
+        final jsonFile = File(p.join(homeStr, '.claude', 'settings.json'));
+        await jsonFile.parent.create(recursive: true);
+        await jsonFile.writeAsString('{"rules": ["r1"]}');
 
-      final config = await configService.loadConfig(jsonFile.path);
+        final serviceWithHome = ConfigService(
+          backupService: backupService,
+          homeDirectoryResolver: () => homeStr,
+        );
 
-      expect(config.toolName, equals('Claude'));
-      expect(config.rules, equals(['r1']));
-    });
+        final config = await serviceWithHome.loadConfig(jsonFile.path);
+
+        expect(config.toolName, equals('Claude Code'));
+        expect(config.rules, equals(['r1']));
+      },
+    );
 
     test('saveConfig creates backup and writes to disk', () async {
       final jsonFile = File(
@@ -71,25 +85,75 @@ void main() {
       );
     });
 
-    test('loadConfig maps YAML correctly', () async {
+    test('loadConfig maps YAML correctly based on known target', () async {
+      final homeStr =
+          Platform.environment['HOME'] ??
+          Platform.environment['USERPROFILE'] ??
+          tempDir.path;
       final yamlFile = File(
-        p.join(tempDir.path, '.kiro', 'settings', 'permissions.yaml'),
+        p.join(homeStr, '.kiro', 'settings', 'permissions.yaml'),
       );
-      await yamlFile.create(recursive: true);
+      await yamlFile.parent.create(recursive: true);
       await yamlFile.writeAsString('rules:\n  - r1');
 
-      final config = await configService.loadConfig(yamlFile.path);
+      final serviceWithHome = ConfigService(
+        backupService: backupService,
+        homeDirectoryResolver: () => homeStr,
+      );
+
+      final config = await serviceWithHome.loadConfig(yamlFile.path);
       expect(config.toolName, equals('Kiro'));
     });
 
-    test('loadConfig maps TOML correctly', () async {
-      final tomlFile = File(p.join(tempDir.path, '.codex', 'config.toml'));
-      await tomlFile.create(recursive: true);
+    test('loadConfig maps TOML correctly based on known target', () async {
+      final homeStr =
+          Platform.environment['HOME'] ??
+          Platform.environment['USERPROFILE'] ??
+          tempDir.path;
+      final tomlFile = File(p.join(homeStr, '.codex', 'config.toml'));
+      await tomlFile.parent.create(recursive: true);
       await tomlFile.writeAsString('rules = ["r1"]');
 
-      final config = await configService.loadConfig(tomlFile.path);
+      final serviceWithHome = ConfigService(
+        backupService: backupService,
+        homeDirectoryResolver: () => homeStr,
+      );
+
+      final config = await serviceWithHome.loadConfig(tomlFile.path);
       expect(config.toolName, equals('Codex'));
     });
+
+    test('loadConfig falls back to manual unknown configuration', () async {
+      final manualFile = File(p.join(tempDir.path, 'some_manual.json'));
+      await manualFile.writeAsString('{"rules": ["r1"]}');
+
+      final config = await configService.loadConfig(manualFile.path);
+      expect(config.toolName, equals('Unknown configuration'));
+    });
+
+    test(
+      'loadDiscoveredConfig loads configuration using explicitly passed DiscoveredConfig',
+      () async {
+        final jsonFile = File(p.join(tempDir.path, 'some_config.json'));
+        await jsonFile.writeAsString('{"rules": ["r1"]}');
+
+        final discoveredConfig = DiscoveredConfig(
+          id: 'test',
+          filePath: jsonFile.path,
+          descriptor: null,
+          scope: ConfigLocationScope.manual,
+          kind: ConfigSourceKind.structuredConfig,
+          format: ConfigFormat.json,
+          sourceLabel: 'My Label',
+        );
+
+        final config = await configService.loadDiscoveredConfig(
+          discoveredConfig,
+        );
+        expect(config.toolName, equals('My Label'));
+        expect(config.rules, equals(['r1']));
+      },
+    );
 
     test('saveConfig creates parent directory for new file', () async {
       final newFile = File(p.join(tempDir.path, 'newdir', 'config.json'));
