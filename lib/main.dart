@@ -14,9 +14,7 @@ class AgentsConfigHelperApp extends StatelessWidget {
     return MaterialApp(
       title: 'Agents Config Helper',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark, // Default to dark, but supports matching system if changed
+      theme: AppTheme.darkTheme,
       home: const MainShell(),
     );
   }

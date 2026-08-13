@@ -24,8 +24,10 @@ abstract class ConfigParser {
 
   /// Serializes a [ToolConfig] back into raw file content.
   /// This method is responsible for taking a [ToolConfig] and turning it back
-  /// into a string format. Implementations should strive to preserve formatting
-  /// and comments from [originalContent] if the format allows it.
+  /// into a string format. Implementations should strive to preserve formatting and comments from
+  /// the `originalContent` if the format and parser allow it (e.g., JSONC and YAML).
+  /// Note that some formats (like TOML) or fallback paths may not support comment
+  /// preservation and will serialize from scratch.
   String serialize(ToolConfig config, {String? originalContent});
 }
 

@@ -45,3 +45,5 @@ This project uses a strict pre-commit and CI setup to enforce line limits, code 
 
 **Data Classification: Internal.**
 Config files may contain tokens or sensitive local paths. All file parsing and visualization happens strictly locally on the machine. Nothing is ever transmitted to the cloud or committed to the repository (beyond synthetic fixtures for testing).
+
+**Note on Backups and Secrets:** When the application saves a configuration file, it first creates a `.bak` copy of the original file. If your configuration files contain secrets within comments (e.g., `// API key: sk-...`), those comments are preserved exactly as they are in both the updated file and the backup file. Ensure that your local machine is secure, as these backups are stored alongside the original files.
