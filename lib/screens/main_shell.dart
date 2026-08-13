@@ -3,6 +3,8 @@ import 'package:multi_split_view/multi_split_view.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/sidebar_item.dart';
+import 'package:agents_config_helper/widgets/config_editor.dart';
+import 'package:agents_config_helper/models/tool_config.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -50,15 +52,15 @@ class _MainShellState extends State<MainShell> {
       Area(
         flex: 1,
         builder: (context, area) {
-          return ColoredBox(
-            color: AppColors.backgroundDark,
-            child: const Center(
-              child: Text(
-                'Configuration Area (WIP)',
-                style: AppTextStyles.uiSubheader,
-              ),
-            ),
+          final dummyConfig = ToolConfig(
+            toolName: 'Claude Code',
+            filePath: '~/.claudecode/config.json',
+            format: ConfigFormat.json,
+            rules: ['Always use type hints', 'Follow clean architecture'],
+            permissions: ['~/Projects'],
           );
+
+          return ConfigEditor(config: dummyConfig);
         },
       ),
     ],
