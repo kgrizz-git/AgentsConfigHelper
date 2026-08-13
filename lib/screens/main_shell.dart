@@ -22,7 +22,9 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   ToolConfig? _activeConfig;
   bool _isLoading = false;
+  bool _hasUnsavedChanges = false;
   String? _error;
+  var _loadGeneration = 0;
 
   @override
   void initState() {
@@ -30,22 +32,63 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _loadConfig(String path) async {
+    final generation = ++_loadGeneration;
+    if (_hasUnsavedChanges) {
+      final shouldDiscard = await _confirmDiscardChanges();
+      if (!shouldDiscard || generation != _loadGeneration) {
+        return;
+      }
+    }
     setState(() {
       _isLoading = true;
       _error = null;
       _activeConfig = null;
+      _hasUnsavedChanges = false;
     });
     try {
-      _activeConfig = await widget.configService.loadConfig(path);
+      final config = await widget.configService.loadConfig(path);
+      if (!mounted || generation != _loadGeneration) {
+        return;
+      }
+      setState(() {
+        _activeConfig = config;
+      });
     } on Object catch (error) {
-      _error = error.toString();
+      if (mounted && generation == _loadGeneration) {
+        setState(() {
+          _error = error.toString();
+        });
+      }
     } finally {
-      if (mounted) {
+      if (mounted && generation == _loadGeneration) {
         setState(() {
           _isLoading = false;
         });
       }
     }
+  }
+
+  Future<bool> _confirmDiscardChanges() async {
+    final shouldDiscard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard unsaved changes?'),
+        content: const Text(
+          'Loading another configuration will discard your unsaved changes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Discard & Load'),
+          ),
+        ],
+      ),
+    );
+    return shouldDiscard ?? false;
   }
 
   late final MultiSplitViewController _controller = MultiSplitViewController(
@@ -111,6 +154,13 @@ class _MainShellState extends State<MainShell> {
             config: _activeConfig!,
             onSave: widget.configService.saveConfig,
             resolvePath: widget.configService.resolvePath,
+            onDirtyChanged: (hasUnsavedChanges) {
+              if (mounted) {
+                setState(() {
+                  _hasUnsavedChanges = hasUnsavedChanges;
+                });
+              }
+            },
           );
         },
       ),

@@ -148,5 +148,34 @@ void main() {
 
       expect(find.text('- duplicate'), findsOneWidget);
     });
+
+    testWidgets('allows editing when permissions is explicitly null', (
+      tester,
+    ) async {
+      final tempDir = Directory.systemTemp;
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: '${tempDir.path}/null_permissions.json',
+        format: ConfigFormat.json,
+        rawSettings: const {'permissions': null},
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ConfigEditor(
+              config: config,
+              onSave: (_) async {},
+              resolvePath: (path) => path,
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.text('Allowed directories or commands for this agent.'),
+        findsOneWidget,
+      );
+    });
   });
 }

@@ -16,6 +16,7 @@ class ConfigEditor extends StatefulWidget {
     required this.config,
     required this.onSave,
     required this.resolvePath,
+    this.onDirtyChanged,
     super.key,
   });
 
@@ -27,6 +28,9 @@ class ConfigEditor extends StatefulWidget {
 
   /// Resolves the configuration path before opening its directory.
   final String Function(String path) resolvePath;
+
+  /// Notifies the owner when editor changes become dirty or clean.
+  final ValueChanged<bool>? onDirtyChanged;
 
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
@@ -57,12 +61,17 @@ class _ConfigEditorState extends State<ConfigEditor> {
     _permissions = List.from(_currentConfig.permissions);
   }
 
+  void _notifyDirtyChanged() {
+    widget.onDirtyChanged?.call(_hasUnsavedChanges);
+  }
+
   bool get _hasUnsavedChanges {
     return !listEquals(_rules, _currentConfig.rules) ||
         !listEquals(_permissions, _currentConfig.permissions);
   }
 
   bool get _hasUnsupportedPermissions =>
+      _currentConfig.rawSettings['permissions'] != null &&
       _currentConfig.rawSettings['permissions'] is! List &&
       _currentConfig.rawSettings.containsKey('permissions');
 
@@ -91,6 +100,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
           _currentConfig = updatedConfig;
           _initLocalState(_currentConfig);
         });
+        _notifyDirtyChanged();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Settings saved successfully.')),
         );
@@ -276,14 +286,18 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       color: AppColors.primaryAccent,
                       tooltip: 'Open Directory',
                       onPressed: () async {
-                        final dir = p.dirname(
-                          widget.resolvePath(widget.config.filePath),
-                        );
-                        final uri = Uri.directory(dir);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri);
-                        } else {
-                          if (!context.mounted) return;
+                        var launched = false;
+                        try {
+                          final dir = p.dirname(
+                            widget.resolvePath(widget.config.filePath),
+                          );
+                          final uri = Uri.directory(dir);
+                          launched =
+                              await canLaunchUrl(uri) && await launchUrl(uri);
+                        } on Object {
+                          launched = false;
+                        }
+                        if (!launched && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -320,6 +334,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                           setState(() {
                             _rules = newValues;
                           });
+                          _notifyDirtyChanged();
                         },
                       ),
 
@@ -343,6 +358,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                             setState(() {
                               _permissions = newValues;
                             });
+                            _notifyDirtyChanged();
                           },
                         ),
                       ],
@@ -402,6 +418,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                         setState(() {
                           _initLocalState(_currentConfig);
                         });
+                        _notifyDirtyChanged();
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.textPrimaryDark,
