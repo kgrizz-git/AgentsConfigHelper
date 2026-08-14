@@ -96,26 +96,36 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     var prefs = DiscoveryPreferences.fromJson(json);
 
     // Normalize and deduplicate
-    final dedupedManualPaths = prefs.manualFilePaths
+    final dedupedManualPathsRaw = prefs.manualFilePaths
         .map((fp) => fp.trim())
         .where((fp) => fp.isNotEmpty)
         .map(p.normalize)
-        .where(p.isAbsolute)
         .toSet()
         .toList();
-    if (dedupedManualPaths.length != prefs.manualFilePaths.length) {
+    if (dedupedManualPathsRaw.length != prefs.manualFilePaths.length) {
       warnings.add("Removed duplicate or empty paths from 'manualFilePaths'.");
     }
 
-    final dedupedProjectRoots = prefs.projectRoots
+    final dedupedManualPaths =
+        dedupedManualPathsRaw.where(p.isAbsolute).toList();
+    for (final bad in dedupedManualPathsRaw.where((fp) => !p.isAbsolute(fp))) {
+      warnings.add("Ignored non-absolute path: '$bad'");
+    }
+
+    final dedupedProjectRootsRaw = prefs.projectRoots
         .map((fp) => fp.trim())
         .where((fp) => fp.isNotEmpty)
         .map(p.normalize)
-        .where(p.isAbsolute)
         .toSet()
         .toList();
-    if (dedupedProjectRoots.length != prefs.projectRoots.length) {
+    if (dedupedProjectRootsRaw.length != prefs.projectRoots.length) {
       warnings.add("Removed duplicate or empty paths from 'projectRoots'.");
+    }
+
+    final dedupedProjectRoots =
+        dedupedProjectRootsRaw.where(p.isAbsolute).toList();
+    for (final bad in dedupedProjectRootsRaw.where((fp) => !p.isAbsolute(fp))) {
+      warnings.add("Ignored non-absolute path: '$bad'");
     }
 
     prefs = prefs.copyWith(

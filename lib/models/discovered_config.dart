@@ -13,6 +13,7 @@ class DiscoveredConfig extends Equatable {
     required this.kind,
     required this.format,
     required this.sourceLabel,
+    this.isManual = false,
   });
 
   /// Factory that automatically derives the [id] from the normalized absolute path and source kind.
@@ -23,6 +24,7 @@ class DiscoveredConfig extends Equatable {
     required ConfigFormat format,
     required String sourceLabel,
     ToolDescriptor? descriptor,
+    bool isManual = false,
   }) {
     final normalizedPath = p.normalize(filePath);
     return DiscoveredConfig(
@@ -33,6 +35,7 @@ class DiscoveredConfig extends Equatable {
       kind: kind,
       format: format,
       sourceLabel: sourceLabel,
+      isManual: isManual,
     );
   }
 
@@ -59,6 +62,9 @@ class DiscoveredConfig extends Equatable {
   /// "Unknown configuration".
   final String sourceLabel;
 
+  /// True if this source was explicitly added manually by the user.
+  final bool isManual;
+
   /// Returns a copy of this object with updated fields.
   DiscoveredConfig copyWith({
     String? id,
@@ -68,6 +74,7 @@ class DiscoveredConfig extends Equatable {
     ConfigSourceKind? kind,
     ConfigFormat? format,
     String? sourceLabel,
+    bool? isManual,
   }) {
     return DiscoveredConfig(
       id: id ?? this.id,
@@ -79,6 +86,7 @@ class DiscoveredConfig extends Equatable {
       kind: kind ?? this.kind,
       format: format ?? this.format,
       sourceLabel: sourceLabel ?? this.sourceLabel,
+      isManual: isManual ?? this.isManual,
     );
   }
 
@@ -91,5 +99,6 @@ class DiscoveredConfig extends Equatable {
     kind,
     format,
     sourceLabel,
+    isManual,
   ];
 }
