@@ -268,9 +268,26 @@ class _ConfigEditorState extends State<ConfigEditor> {
             border: Border.all(color: AppColors.borderDark),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: const SelectableText(
-            'Raw content has been modified.',
-            style: TextStyle(color: Colors.orange),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Before:', style: AppTextStyles.uiSecondary.copyWith(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+              const SizedBox(height: 4),
+              SelectableText(
+                original.isEmpty ? '(Empty)' : original,
+                style: AppTextStyles.codeBase.copyWith(color: AppColors.textSecondaryDark),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Divider(color: AppColors.borderDark),
+              ),
+              Text('After:', style: AppTextStyles.uiSecondary.copyWith(fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+              const SizedBox(height: 4),
+              SelectableText(
+                updated.isEmpty ? '(Empty)' : updated,
+                style: AppTextStyles.codeBase.copyWith(color: AppColors.textPrimaryDark),
+              ),
+            ],
           ),
         ),
       ],
