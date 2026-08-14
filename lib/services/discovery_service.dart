@@ -21,11 +21,13 @@ class DiscoveryService {
     }) async {
       if (seenPaths.contains(config.filePath)) {
         if (isManual) {
-          final existingIndex =
-              items.indexWhere((i) => i.filePath == config.filePath);
+          final existingIndex = items.indexWhere(
+            (i) => i.filePath == config.filePath,
+          );
           if (existingIndex != -1) {
-            items[existingIndex] =
-                items[existingIndex].copyWith(isManual: true);
+            items[existingIndex] = items[existingIndex].copyWith(
+              isManual: true,
+            );
           }
         }
         return;

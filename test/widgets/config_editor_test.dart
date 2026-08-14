@@ -14,7 +14,10 @@ class FakeConfigService extends ConfigService {
   final savedConfigs = <ToolConfig>[];
 
   @override
-  Future<ToolConfig?> saveConfig(ToolConfig config, [String? rawContent]) async {
+  Future<ToolConfig?> saveConfig(
+    ToolConfig config, [
+    String? rawContent,
+  ]) async {
     savedConfigs.add(config);
     await Future<void>.delayed(Duration.zero);
     return config;

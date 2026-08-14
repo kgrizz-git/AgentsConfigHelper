@@ -105,12 +105,21 @@ class _MainShellState extends ConsumerState<MainShell> {
           config: _activeConfig!,
           backupService: configService.backupService,
           onRestore: (backupPath) async {
-            final targetPath = configService.resolvePath(_activeConfig!.filePath);
-            await configService.backupService.restoreBackup(backupPath, targetPath);
-            // Reload the config after restoring
-            final configItem = ref.read(discoveryControllerProvider).value?.items.firstWhere(
-              (item) => item.id == _activeConfigId,
+            final targetPath = configService.resolvePath(
+              _activeConfig!.filePath,
             );
+            await configService.backupService.restoreBackup(
+              backupPath,
+              targetPath,
+            );
+            // Reload the config after restoring
+            final configItem = ref
+                .read(discoveryControllerProvider)
+                .value
+                ?.items
+                .firstWhere(
+                  (item) => item.id == _activeConfigId,
+                );
             if (configItem != null && mounted) {
               await _loadConfig(configItem);
             }
@@ -173,7 +182,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                       IconButton(
                         icon: const Icon(Icons.refresh, size: 16),
                         onPressed: () {
-                          ref.read(discoveryControllerProvider.notifier).refresh();
+                          ref
+                              .read(discoveryControllerProvider.notifier)
+                              .refresh();
                         },
                       ),
                     ],
@@ -195,22 +206,36 @@ class _MainShellState extends ConsumerState<MainShell> {
                           return SidebarItem(
                             title: configItem.sourceLabel,
                             subtitle: configItem.filePath,
-                            icon: configItem.descriptor != null ? _getIconForTool(configItem.descriptor!.id.name) : Icons.insert_drive_file,
+                            icon: configItem.descriptor != null
+                                ? _getIconForTool(
+                                    configItem.descriptor!.id.name,
+                                  )
+                                : Icons.insert_drive_file,
                             isActive: _activeConfigId == configItem.id,
                             onTap: () async {
                               await _loadConfig(configItem);
                             },
-                            onRemove: configItem.isManual ? () {
-                              ref.read(discoveryControllerProvider.notifier).removeManualPath(configItem.filePath);
-                            } : null,
+                            onRemove: configItem.isManual
+                                ? () {
+                                    ref
+                                        .read(
+                                          discoveryControllerProvider.notifier,
+                                        )
+                                        .removeManualPath(configItem.filePath);
+                                  }
+                                : null,
                           );
                         },
                       );
                     },
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
                     error: (e, st) => Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Text('Error: $e', style: const TextStyle(color: Colors.red)),
+                      child: Text(
+                        'Error: $e',
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
                   ),
                 ),
@@ -244,7 +269,10 @@ class _MainShellState extends ConsumerState<MainShell> {
             config: _activeConfig!,
             onSave: (config, [rawContent]) async {
               if (rawContent != null) {
-                final updated = await configService.saveRawConfig(config, rawContent);
+                final updated = await configService.saveRawConfig(
+                  config,
+                  rawContent,
+                );
                 if (mounted) {
                   setState(() {
                     _activeConfig = updated;

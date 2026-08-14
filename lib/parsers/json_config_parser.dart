@@ -29,6 +29,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
         toolName: toolName,
         filePath: filePath,
         format: format,
+        originalContent: content,
       );
     }
 
@@ -50,6 +51,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
         toolName: toolName,
         filePath: filePath,
         format: format,
+        originalContent: content,
       );
     }
 
@@ -68,7 +70,8 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       format: format,
       rules: rules,
       permissions: permissions,
-      originalContent: content, rawSettings: decoded,
+      originalContent: content,
+      rawSettings: decoded,
     );
   }
 

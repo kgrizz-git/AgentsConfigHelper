@@ -35,7 +35,8 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
       format: ConfigFormat.toml,
       rules: rules,
       permissions: permissions,
-      originalContent: content, rawSettings: rawMap,
+      originalContent: content,
+      rawSettings: rawMap,
     );
   }
 

@@ -63,7 +63,9 @@ class SidebarItem extends StatelessWidget {
                   Text(
                     title,
                     style: AppTextStyles.uiBase.copyWith(
-                      color: isActive ? Colors.white : AppColors.textPrimaryDark,
+                      color: isActive
+                          ? Colors.white
+                          : AppColors.textPrimaryDark,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                     ),
                     overflow: TextOverflow.ellipsis,

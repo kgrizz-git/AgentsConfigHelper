@@ -100,13 +100,10 @@ class BackupService {
     final prefix = '${safeOriginalPath}_';
 
     final allEntities = await backupDirectory.list().toList();
-    final backupFiles = allEntities
-        .whereType<File>()
-        .where((file) {
-          final name = p.basename(file.path);
-          return name.startsWith(prefix) && name.endsWith('.bak');
-        })
-        .toList();
+    final backupFiles = allEntities.whereType<File>().where((file) {
+      final name = p.basename(file.path);
+      return name.startsWith(prefix) && name.endsWith('.bak');
+    }).toList();
 
     // Sort descending by filename (which includes the timestamp)
     backupFiles.sort((a, b) => b.path.compareTo(a.path));

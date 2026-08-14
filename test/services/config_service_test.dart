@@ -178,6 +178,58 @@ void main() {
       await configService.saveConfig(config);
       expect(newFile.existsSync(), isTrue);
     });
+
+    test(
+      'saveRawConfig throws on invalid raw content and does not write',
+      () async {
+        final jsonFile = File(p.join(tempDir.path, 'raw_config.json'));
+        await jsonFile.create(recursive: true);
+        const originalContent = '{"rules": ["old"]}';
+        await jsonFile.writeAsString(originalContent);
+
+        final config = await configService.loadConfig(jsonFile.path);
+
+        await expectLater(
+          () => configService.saveRawConfig(config, '{ invalid json'),
+          throwsA(isA<Exception>()),
+        );
+
+        // Verify file is untouched
+        final content = await jsonFile.readAsString();
+        expect(content, equals(originalContent));
+
+        // Verify no backup was created because validation failed early
+        if (backupService.backupDirectory.existsSync()) {
+          final backups = backupService.backupDirectory.listSync();
+          expect(backups, isEmpty);
+        }
+      },
+    );
+
+    test('saveRawConfig creates backup and writes on valid content', () async {
+      final jsonFile = File(p.join(tempDir.path, 'raw_config_2.json'));
+      await jsonFile.create(recursive: true);
+      const originalContent = '{"rules": ["old"]}';
+      await jsonFile.writeAsString(originalContent);
+
+      final config = await configService.loadConfig(jsonFile.path);
+
+      const validContent = '{"rules": ["new"]}';
+      final updatedConfig = await configService.saveRawConfig(
+        config,
+        validContent,
+      );
+
+      expect(updatedConfig.rules, equals(['new']));
+
+      // Verify file was updated
+      final content = await jsonFile.readAsString();
+      expect(content, equals(validContent));
+
+      // Verify backup was created
+      final backups = backupService.backupDirectory.listSync();
+      expect(backups.length, equals(1));
+    });
     test('loadConfig identifies JSONC and parses', () async {
       final jsoncPath = '${tempDir.path}/test_config.jsonc';
       final jsoncFile = File(jsoncPath);

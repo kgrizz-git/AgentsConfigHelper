@@ -145,6 +145,16 @@ class ConfigService {
   /// Automatically creates a backup of the existing file using [BackupService],
   /// then overwrites the file with the raw content and re-parses it.
   Future<ToolConfig> saveRawConfig(ToolConfig config, String rawContent) async {
+    final parser = _getParserForFormat(config.format);
+
+    // Validate the raw content by attempting to parse it before writing.
+    // Throws an exception (e.g. ConfigParseException) if invalid.
+    final parsedConfig = parser.parse(
+      rawContent,
+      filePath: config.filePath,
+      toolName: config.toolName,
+    );
+
     final expandedPath = resolvePath(config.filePath);
     final file = File(expandedPath);
 
@@ -161,12 +171,7 @@ class ConfigService {
 
     await file.writeAsString(rawContent);
 
-    final parser = _getParserForFormat(config.format);
-    return parser.parse(
-      rawContent,
-      filePath: config.filePath,
-      toolName: config.toolName,
-    );
+    return parsedConfig;
   }
 
   ConfigParser _getParserForFormat(ConfigFormat format) {

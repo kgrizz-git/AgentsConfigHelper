@@ -25,7 +25,8 @@ class ConfigEditor extends StatefulWidget {
   final ToolConfig config;
 
   /// Persists a confirmed edited configuration.
-  final Future<ToolConfig?> Function(ToolConfig config, [String? rawContent]) onSave;
+  final Future<ToolConfig?> Function(ToolConfig config, [String? rawContent])
+  onSave;
 
   /// Resolves the configuration path before opening its directory.
   final String Function(String path) resolvePath;
@@ -120,7 +121,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
 
     try {
       final rawChanged = _rawContent != _currentConfig.originalContent;
-      final savedConfig = await widget.onSave(updatedConfig, rawChanged ? _rawContent : null);
+      final savedConfig = await widget.onSave(
+        updatedConfig,
+        rawChanged ? _rawContent : null,
+      );
       if (mounted) {
         setState(() {
           _currentConfig = savedConfig ?? updatedConfig;
@@ -172,7 +176,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
                   ),
                   if (_rawContent != _currentConfig.originalContent) ...[
                     const SizedBox(height: 16),
-                    _buildRawDiffSection(_currentConfig.originalContent, _rawContent),
+                    _buildRawDiffSection(
+                      _currentConfig.originalContent,
+                      _rawContent,
+                    ),
                   ],
                 ],
               ),
@@ -271,21 +278,37 @@ class _ConfigEditorState extends State<ConfigEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Before:', style: AppTextStyles.uiSecondary.copyWith(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+              Text(
+                'Before:',
+                style: AppTextStyles.uiSecondary.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
+              ),
               const SizedBox(height: 4),
               SelectableText(
                 original.isEmpty ? '(Empty)' : original,
-                style: AppTextStyles.codeBase.copyWith(color: AppColors.textSecondaryDark),
+                style: AppTextStyles.codeBase.copyWith(
+                  color: AppColors.textSecondaryDark,
+                ),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Divider(color: AppColors.borderDark),
               ),
-              Text('After:', style: AppTextStyles.uiSecondary.copyWith(fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+              Text(
+                'After:',
+                style: AppTextStyles.uiSecondary.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.greenAccent,
+                ),
+              ),
               const SizedBox(height: 4),
               SelectableText(
                 updated.isEmpty ? '(Empty)' : updated,
-                style: AppTextStyles.codeBase.copyWith(color: AppColors.textPrimaryDark),
+                style: AppTextStyles.codeBase.copyWith(
+                  color: AppColors.textPrimaryDark,
+                ),
               ),
             ],
           ),
@@ -293,7 +316,6 @@ class _ConfigEditorState extends State<ConfigEditor> {
       ],
     );
   }
-
 
   @override
   Widget build(BuildContext context) {

@@ -106,8 +106,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
       warnings.add("Removed duplicate or empty paths from 'manualFilePaths'.");
     }
 
-    final dedupedManualPaths =
-        dedupedManualPathsRaw.where(p.isAbsolute).toList();
+    final dedupedManualPaths = dedupedManualPathsRaw
+        .where(p.isAbsolute)
+        .toList();
     for (final bad in dedupedManualPathsRaw.where((fp) => !p.isAbsolute(fp))) {
       warnings.add("Ignored non-absolute path: '$bad'");
     }
@@ -122,8 +123,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
       warnings.add("Removed duplicate or empty paths from 'projectRoots'.");
     }
 
-    final dedupedProjectRoots =
-        dedupedProjectRootsRaw.where(p.isAbsolute).toList();
+    final dedupedProjectRoots = dedupedProjectRootsRaw
+        .where(p.isAbsolute)
+        .toList();
     for (final bad in dedupedProjectRootsRaw.where((fp) => !p.isAbsolute(fp))) {
       warnings.add("Ignored non-absolute path: '$bad'");
     }

@@ -28,8 +28,11 @@ IDiscoveryPreferencesStore discoveryPreferencesStore(Ref ref) {
 
 @riverpod
 class DiscoveryController extends _$DiscoveryController {
+  int _generation = 0;
+
   @override
   FutureOr<DiscoveryResult> build() async {
+    _generation++;
     return _runDiscovery();
   }
 
@@ -40,7 +43,8 @@ class DiscoveryController extends _$DiscoveryController {
     final prefsResult = await prefsStore.load();
     final prefs = prefsResult.preferences;
 
-    final homeDirRaw = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    final homeDirRaw =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
     final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
 
     final request = DiscoveryRequest(
@@ -54,7 +58,12 @@ class DiscoveryController extends _$DiscoveryController {
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(_runDiscovery);
+    _generation++;
+    final currentGen = _generation;
+    final result = await AsyncValue.guard(_runDiscovery);
+    if (_generation == currentGen) {
+      state = result;
+    }
   }
 
   Future<void> addManualPath(String path) async {

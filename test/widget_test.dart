@@ -49,8 +49,6 @@ class _FakeConfigService extends ConfigService {
   }
 }
 
-
-
 class _FakeDiscoveryService extends DiscoveryService {
   @override
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
@@ -71,7 +69,6 @@ class _FakeDiscoveryService extends DiscoveryService {
           sourceLabel: 'Cursor',
         ),
       ],
-
     );
   }
 }
@@ -79,7 +76,9 @@ class _FakeDiscoveryService extends DiscoveryService {
 class _FakePreferencesStore implements IDiscoveryPreferencesStore {
   @override
   Future<DiscoveryPreferencesResult> load() async {
-    return const DiscoveryPreferencesResult(preferences: DiscoveryPreferences());
+    return const DiscoveryPreferencesResult(
+      preferences: DiscoveryPreferences(),
+    );
   }
 
   @override
@@ -103,7 +102,9 @@ void main() {
         overrides: [
           configServiceProvider.overrideWithValue(configService),
           discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
-          discoveryPreferencesStoreProvider.overrideWithValue(_FakePreferencesStore()),
+          discoveryPreferencesStoreProvider.overrideWithValue(
+            _FakePreferencesStore(),
+          ),
         ],
         child: const AgentsConfigHelperApp(),
       ),
@@ -114,7 +115,9 @@ void main() {
     expect(find.text('Claude Code'), findsOneWidget);
   });
 
-  testWidgets('confirms before discarding edits to load another config', (tester) async {
+  testWidgets('confirms before discarding edits to load another config', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(1200, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final configService = _FakeConfigService(
@@ -125,7 +128,9 @@ void main() {
         overrides: [
           configServiceProvider.overrideWithValue(configService),
           discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
-          discoveryPreferencesStoreProvider.overrideWithValue(_FakePreferencesStore()),
+          discoveryPreferencesStoreProvider.overrideWithValue(
+            _FakePreferencesStore(),
+          ),
         ],
         child: const MaterialApp(home: MainShell()),
       ),

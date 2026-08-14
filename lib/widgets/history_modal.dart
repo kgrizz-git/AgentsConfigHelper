@@ -47,7 +47,10 @@ class _HistoryModalState extends State<HistoryModal> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to restore backup: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to restore backup: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -74,33 +77,56 @@ class _HistoryModalState extends State<HistoryModal> {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+              return Center(
+                child: Text(
+                  'Error: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
             }
             final backups = snapshot.data ?? [];
             if (backups.isEmpty) {
-              return const Center(child: Text('No backups found for this file.'));
+              return const Center(
+                child: Text('No backups found for this file.'),
+              );
             }
             return ListView.builder(
               itemCount: backups.length,
               itemBuilder: (context, index) {
                 final backup = backups[index];
                 // Extract timestamp from filename
-                final parts = backup.path.split('_');
+                final match = RegExp(
+                  r'_(\d+)_\d+\.bak$',
+                ).firstMatch(backup.path);
                 DateTime? date;
-                if (parts.length >= 3) {
-                  final timestampStr = parts[parts.length - 2];
-                  final timestamp = int.tryParse(timestampStr);
+                if (match != null) {
+                  final timestamp = int.tryParse(match.group(1)!);
                   if (timestamp != null) {
                     date = DateTime.fromMicrosecondsSinceEpoch(timestamp);
                   }
                 }
-                final dateStr = date != null ? date.toString().split('.')[0] : 'Unknown Date';
+                final dateStr = date != null
+                    ? date.toString().split('.')[0]
+                    : 'Unknown Date';
                 return ListTile(
-                  title: Text(dateStr, style: AppTextStyles.uiSecondary.copyWith(color: AppColors.textPrimaryDark)),
-                  subtitle: Text(backup.path.split('/').last, style: AppTextStyles.uiSecondary, overflow: TextOverflow.ellipsis),
+                  title: Text(
+                    dateStr,
+                    style: AppTextStyles.uiSecondary.copyWith(
+                      color: AppColors.textPrimaryDark,
+                    ),
+                  ),
+                  subtitle: Text(
+                    backup.path.split('/').last,
+                    style: AppTextStyles.uiSecondary,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: ElevatedButton(
-                    onPressed: _isRestoring ? null : () => _restoreBackup(backup),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryAccent),
+                    onPressed: _isRestoring
+                        ? null
+                        : () => _restoreBackup(backup),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryAccent,
+                    ),
                     child: const Text('Restore'),
                   ),
                 );
@@ -112,7 +138,9 @@ class _HistoryModalState extends State<HistoryModal> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          style: TextButton.styleFrom(foregroundColor: AppColors.textPrimaryDark),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.textPrimaryDark,
+          ),
           child: const Text('Close'),
         ),
       ],
