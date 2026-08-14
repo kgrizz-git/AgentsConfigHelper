@@ -97,8 +97,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
 
     // Normalize and deduplicate
     final dedupedManualPaths = prefs.manualFilePaths
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
+        .map((fp) => fp.trim())
+        .where((fp) => fp.isNotEmpty)
+        .map(p.normalize)
         .toSet()
         .toList();
     if (dedupedManualPaths.length != prefs.manualFilePaths.length) {
@@ -106,8 +107,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     }
 
     final dedupedProjectRoots = prefs.projectRoots
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
+        .map((fp) => fp.trim())
+        .where((fp) => fp.isNotEmpty)
+        .map(p.normalize)
         .toSet()
         .toList();
     if (dedupedProjectRoots.length != prefs.projectRoots.length) {
@@ -134,13 +136,15 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
 
     // Normalize and deduplicate before saving
     final dedupedManualPaths = preferences.manualFilePaths
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
+        .map((fp) => fp.trim())
+        .where((fp) => fp.isNotEmpty)
+        .map(p.normalize)
         .toSet()
         .toList();
     final dedupedProjectRoots = preferences.projectRoots
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
+        .map((fp) => fp.trim())
+        .where((fp) => fp.isNotEmpty)
+        .map(p.normalize)
         .toSet()
         .toList();
 
@@ -172,8 +176,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   Future<void> removeManualPath(String path) async {
     final result = await load();
     final prefs = result.preferences;
+    final normalizedToRemove = p.normalize(path.trim());
     final updatedPaths = prefs.manualFilePaths
-        .where((p) => p.trim() != path.trim())
+        .where((fp) => p.normalize(fp.trim()) != normalizedToRemove)
         .toList();
     await _save(prefs.copyWith(manualFilePaths: updatedPaths));
   }
@@ -192,8 +197,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   Future<void> removeProjectRoot(String path) async {
     final result = await load();
     final prefs = result.preferences;
+    final normalizedToRemove = p.normalize(path.trim());
     final updatedRoots = prefs.projectRoots
-        .where((p) => p.trim() != path.trim())
+        .where((fp) => p.normalize(fp.trim()) != normalizedToRemove)
         .toList();
     await _save(prefs.copyWith(projectRoots: updatedRoots));
   }
