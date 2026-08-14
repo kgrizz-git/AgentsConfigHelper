@@ -4,8 +4,11 @@ import 'package:equatable/equatable.dart';
 
 /// The file format used for a tool configuration.
 enum ConfigFormat {
-  /// JSON or JSONC configuration.
+  /// JSON configuration.
   json,
+
+  /// JSONC configuration (JSON with comments).
+  jsonc,
 
   /// YAML configuration.
   yaml,

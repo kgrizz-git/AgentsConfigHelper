@@ -101,7 +101,11 @@ class ConfigService {
     );
 
     final parser = _getParserForFormat(match.format);
-    return parser.parse(content, filePath: path, toolName: match.sourceLabel);
+    return parser.parse(
+      content,
+      filePath: expandedPath,
+      toolName: match.sourceLabel,
+    );
   }
 
   /// Safely saves [config] to disk.
@@ -139,6 +143,7 @@ class ConfigService {
   ConfigParser _getParserForFormat(ConfigFormat format) {
     switch (format) {
       case ConfigFormat.json:
+      case ConfigFormat.jsonc:
         return _jsonParser;
       case ConfigFormat.yaml:
         return _yamlParser;

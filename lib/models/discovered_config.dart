@@ -1,6 +1,7 @@
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:equatable/equatable.dart';
+import 'package:path/path.dart' as p;
 
 /// A configuration source discovered by the app.
 class DiscoveredConfig extends Equatable {
@@ -13,6 +14,27 @@ class DiscoveredConfig extends Equatable {
     required this.format,
     required this.sourceLabel,
   });
+
+  /// Factory that automatically derives the [id] from the normalized absolute path and source kind.
+  factory DiscoveredConfig.fromPath({
+    required String filePath,
+    required ConfigLocationScope scope,
+    required ConfigSourceKind kind,
+    required ConfigFormat format,
+    required String sourceLabel,
+    ToolDescriptor? descriptor,
+  }) {
+    final normalizedPath = p.normalize(filePath);
+    return DiscoveredConfig(
+      id: '${kind.name}:$normalizedPath',
+      filePath: normalizedPath,
+      descriptor: descriptor,
+      scope: scope,
+      kind: kind,
+      format: format,
+      sourceLabel: sourceLabel,
+    );
+  }
 
   /// A stable identifier derived from the normalized absolute path and source kind.
   /// Keeps duplicate configurations for one tool independently selectable.

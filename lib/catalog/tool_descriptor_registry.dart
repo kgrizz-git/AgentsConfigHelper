@@ -175,7 +175,7 @@ class ToolDescriptorRegistry {
     ),
     ToolDescriptor(
       id: ToolId.agyAcp,
-      displayName: 'agy-acp',
+      displayName: 'Agy-ACP',
       targets: [
         ConfigTarget(
           relativePath: '.openab/agy-acp/sessions.json',
@@ -246,8 +246,9 @@ class ToolDescriptorRegistry {
     ConfigFormat format;
     switch (ext) {
       case '.json':
-      case '.jsonc':
         format = ConfigFormat.json;
+      case '.jsonc':
+        format = ConfigFormat.jsonc;
       case '.yaml':
       case '.yml':
         format = ConfigFormat.yaml;

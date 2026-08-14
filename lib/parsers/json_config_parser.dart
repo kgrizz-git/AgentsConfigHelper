@@ -20,11 +20,15 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
     required String filePath,
     required String toolName,
   }) {
+    final format = filePath.toLowerCase().endsWith('.jsonc')
+        ? ConfigFormat.jsonc
+        : ConfigFormat.json;
+
     if (isContentEmpty(content)) {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
-        format: ConfigFormat.json,
+        format: format,
       );
     }
 
@@ -45,7 +49,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
-        format: ConfigFormat.json,
+        format: format,
       );
     }
 
@@ -61,7 +65,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
     return ToolConfig(
       toolName: toolName,
       filePath: filePath,
-      format: ConfigFormat.json,
+      format: format,
       rules: rules,
       permissions: permissions,
       rawSettings: decoded,

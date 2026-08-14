@@ -137,10 +137,8 @@ void main() {
         final jsonFile = File(p.join(tempDir.path, 'some_config.json'));
         await jsonFile.writeAsString('{"rules": ["r1"]}');
 
-        final discoveredConfig = DiscoveredConfig(
-          id: 'test',
+        final discoveredConfig = DiscoveredConfig.fromPath(
           filePath: jsonFile.path,
-          descriptor: null,
           scope: ConfigLocationScope.manual,
           kind: ConfigSourceKind.structuredConfig,
           format: ConfigFormat.json,
@@ -152,8 +150,21 @@ void main() {
         );
         expect(config.toolName, equals('My Label'));
         expect(config.rules, equals(['r1']));
+        expect(p.isAbsolute(config.filePath), isTrue);
       },
     );
+
+    test('loadConfig successfully loads .jsonc manual path', () async {
+      final jsoncFile = File(p.join(tempDir.path, 'manual_config.jsonc'));
+      await jsoncFile.writeAsString('// comment\n{"rules": ["r2"]}');
+
+      final config = await configService.loadConfig(jsoncFile.path);
+
+      expect(config.toolName, equals('Unknown configuration'));
+      expect(config.rules, equals(['r2']));
+      expect(config.format, equals(ConfigFormat.jsonc));
+      expect(p.isAbsolute(config.filePath), isTrue);
+    });
 
     test('saveConfig creates parent directory for new file', () async {
       final newFile = File(p.join(tempDir.path, 'newdir', 'config.json'));
@@ -175,8 +186,8 @@ void main() {
       final config = await configService.loadConfig(jsoncPath);
       expect(
         config.format,
-        ConfigFormat.json,
-      ); // Parses as JSON format under the hood
+        ConfigFormat.jsonc,
+      ); // Parses as JSONC format under the hood
       expect(config.rules, ['test']);
     });
 
