@@ -89,9 +89,29 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 
 > **Suggestion (2026-08-13):** Current parse-error handling is a single generic error string in `main_shell.dart`. Phase 6 should define per-format recovery (offer raw-editor open, show line/col of syntax error, never auto-overwrite a corrupted file) and formalize the JSONC fallback-warning path described in `phase_2.5_jsonc.md`.
 
+## Phase 7: Templates & Intelligent Merging
+
+**Goal:** Allow users to save, load, and selectively merge configuration templates, moving beyond automated backups to intentional preset management.
+
+* **Structured Template Library:** Allow saving templates for various configs and agent instructions in a structured folder (defaulting to `~/AgentsConfigHelper/` but configurable by the user).
+* **Live Location Syncing:** Allow loading templates from the library directly to live agent locations, and saving live locations back to the template library.
+* **Semantic Parsing & Granular Copying:** Interpret and parse the configs so the user can visually choose to copy a specific setting or rule from one config/template to another, rather than copying the entire file.
+
+## Phase 8: Visual Editing & Rule Guidance
+
+**Goal:** Move away from raw JSON/YAML editing to an intuitive, visual, and guided experience that helps users write safe and effective agent rules.
+
+* **Visual Editor:** Make the app more intuitive and visual, abstracting away the underlying file formats (JSON, YAML, etc.) with rich UI controls (toggles, dropdowns, specialized rule builders).
+* **Rule Guidance & Safety:** Provide active guidance to help users write or interpret rules, including:
+  * Suggesting safe defaults and best practices.
+  * Providing guidance on common read-only commands.
+  * Offering templates or wizards for allowing/restricting commands within specific folders or workspaces.
+
 ## Backlog & Future Enhancements
 
 **Goal:** Track future feature requests that are currently deferred.
 
-* **User Config Presets:** Allow users to save and load custom-named "presets" for various configs, rather than just restoring automated system backups.
+* **User Config Presets:** (Superseded by Phase 7 Templates).
 * **Git-style Merging & Diffing:** Show a rich diff (like Git) between the current configuration file and a saved preset/backup. Allow users to selectively merge changes from the current file into the saved preset.
+
+> **Note:** For long-term vision, broader ecosystem ideas (like IDE extensions and integrated AI assistants), please see [`future_enhancements.md`](future_enhancements.md).
