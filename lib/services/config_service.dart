@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
@@ -77,37 +76,6 @@ class ConfigService {
       content,
       filePath: config.filePath,
       toolName: config.sourceLabel,
-    );
-  }
-
-  /// Reads a config file from a manual [path], determines the appropriate parser
-  /// using the ToolDescriptorRegistry, and returns a structured [ToolConfig].
-  ///
-  /// Throws a [FileSystemException] if the file cannot be read.
-  /// Throws a [ValidationException] if the file type is unsupported.
-  Future<ToolConfig> loadConfig(String path) async {
-    final expandedPath = resolvePath(path);
-    final file = File(expandedPath);
-    // ignore: avoid_slow_async_io
-    if (!await file.exists()) {
-      throw FileSystemException('File not found', expandedPath);
-    }
-
-    final content = await file.readAsString();
-
-    // We import ToolDescriptorRegistry to validate the manual path
-    // The home resolver might be used to see if it matches a known user target
-    final home = _homeDirectoryResolver();
-    final match = ToolDescriptorRegistry.matchPath(
-      expandedPath,
-      normalizedHomePath: home,
-    );
-
-    final parser = _getParserForFormat(match.format);
-    return parser.parse(
-      content,
-      filePath: expandedPath,
-      toolName: match.sourceLabel,
     );
   }
 

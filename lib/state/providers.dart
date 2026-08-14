@@ -67,6 +67,19 @@ class DiscoveryController extends _$DiscoveryController {
   }
 
   Future<void> addManualPath(String path) async {
+    final homeDirRaw =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
+    if (homeDir != null) {
+      final normalizedPath = p.normalize(p.absolute(path));
+      if (!p.isWithin(homeDir, normalizedPath) &&
+          !p.equals(homeDir, normalizedPath)) {
+        throw ArgumentError(
+          'Manual path must be within the user home directory.',
+        );
+      }
+    }
+
     final prefsStore = ref.read(discoveryPreferencesStoreProvider);
     await prefsStore.addManualPath(path);
     await refresh();

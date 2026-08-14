@@ -78,24 +78,29 @@ void main() {
       expect(result.warnings, isEmpty);
     });
 
-    test('discoverConfigs deduplicates based on DiscoveredConfig.id', () async {
-      final manualFile = File(
-        p.join(mockHome.path, '.claude', 'settings.json'),
-      );
-      await manualFile.create(recursive: true);
+    test(
+      'discoverConfigs deduplicates and sets isManual if manual path matches existing',
+      () async {
+        final manualFile = File(
+          p.join(mockHome.path, '.claude', 'settings.json'),
+        );
+        await manualFile.create(recursive: true);
 
-      final request = DiscoveryRequest(
-        normalizedHomePath: mockHome.path,
-        manualPaths: [manualFile.path],
-      );
+        final request = DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+          manualPaths: [manualFile.path],
+        );
 
-      final result = await discoveryService.discoverConfigs(request);
+        final result = await discoveryService.discoverConfigs(request);
 
-      // Should only appear once, prioritized as user target (since it is first)
-      expect(result.items.length, equals(1));
-      expect(result.items.first.scope, equals(ConfigLocationScope.user));
-      expect(result.warnings, isEmpty);
-    });
+        // Should only appear once, prioritized as user target (since it is first)
+        expect(result.items.length, equals(1));
+        expect(result.items.first.scope, equals(ConfigLocationScope.user));
+        // But it should retain manual provenance because the user added it manually
+        expect(result.items.first.isManual, isTrue);
+        expect(result.warnings, isEmpty);
+      },
+    );
 
     test(
       'discoverConfigs classifies manual paths and adds warnings for unsupported',

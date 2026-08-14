@@ -32,6 +32,40 @@ class _HistoryModalState extends State<HistoryModal> {
     _backupsFuture = widget.backupService.listBackups(widget.config.filePath);
   }
 
+  Future<void> _confirmAndRestore(File backupFile) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.backgroundDark,
+        title: const Text('Confirm Restore', style: AppTextStyles.uiHeader),
+        content: const Text(
+          'Are you sure you want to restore this backup? This will overwrite the current live configuration file.',
+          style: AppTextStyles.uiSecondary,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textPrimaryDark,
+            ),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryAccent,
+            ),
+            child: const Text('Confirm & Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      await _restoreBackup(backupFile);
+    }
+  }
+
   Future<void> _restoreBackup(File backupFile) async {
     setState(() {
       _isRestoring = true;
@@ -123,7 +157,7 @@ class _HistoryModalState extends State<HistoryModal> {
                   trailing: ElevatedButton(
                     onPressed: _isRestoring
                         ? null
-                        : () => _restoreBackup(backup),
+                        : () => _confirmAndRestore(backup),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryAccent,
                     ),

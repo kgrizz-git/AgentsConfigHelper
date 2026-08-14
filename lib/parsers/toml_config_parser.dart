@@ -40,6 +40,13 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
     );
   }
 
+  /// Serializes a [ToolConfig] into a TOML string.
+  ///
+  /// **WARNING:** Unlike JSON and YAML, the current Dart TOML package does not
+  /// support lossless AST editing. This method works by converting the raw
+  /// settings into a Dart Map and re-serializing it from scratch.
+  /// As a result, **all original comments, whitespace, and structural layout
+  /// (like arrays of tables) will be discarded or reformatted.**
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
     final outputMap = Map<String, Object?>.from(config.rawSettings);

@@ -61,6 +61,12 @@ class _MainShellState extends ConsumerState<MainShell> {
         setState(() {
           _error = error.toString();
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading config: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted && generation == _loadGeneration) {
@@ -259,8 +265,31 @@ class _MainShellState extends ConsumerState<MainShell> {
             );
           }
           if (_activeConfig == null) {
-            return const Center(
-              child: Text('Select a configuration from the sidebar.'),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.tune,
+                    size: 64,
+                    color: AppColors.textSecondaryDark,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No configuration selected',
+                    style: AppTextStyles.uiHeader.copyWith(
+                      color: AppColors.textSecondaryDark,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Select a configuration from the sidebar to start editing.',
+                    style: AppTextStyles.uiBase.copyWith(
+                      color: AppColors.textSecondaryDark,
+                    ),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -268,25 +297,48 @@ class _MainShellState extends ConsumerState<MainShell> {
           return ConfigEditor(
             config: _activeConfig!,
             onSave: (config, [rawContent]) async {
-              if (rawContent != null) {
-                final updated = await configService.saveRawConfig(
-                  config,
-                  rawContent,
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                if (rawContent != null) {
+                  final updated = await configService.saveRawConfig(
+                    config,
+                    rawContent,
+                  );
+                  if (mounted) {
+                    setState(() {
+                      _activeConfig = updated;
+                    });
+                  }
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Saved successfully.'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  return updated;
+                } else {
+                  await configService.saveConfig(config);
+                  if (mounted) {
+                    setState(() {
+                      _activeConfig = config;
+                    });
+                  }
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Saved successfully.'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  return config;
+                }
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Error saving config: $e'),
+                    backgroundColor: Colors.red,
+                  ),
                 );
-                if (mounted) {
-                  setState(() {
-                    _activeConfig = updated;
-                  });
-                }
-                return updated;
-              } else {
-                await configService.saveConfig(config);
-                if (mounted) {
-                  setState(() {
-                    _activeConfig = config;
-                  });
-                }
-                return config;
+                rethrow;
               }
             },
             resolvePath: configService.resolvePath,

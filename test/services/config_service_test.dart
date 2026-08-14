@@ -1,4 +1,6 @@
 import 'dart:io';
+
+import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
@@ -44,7 +46,7 @@ void main() {
           homeDirectoryResolver: () => homeStr,
         );
 
-        final config = await serviceWithHome.loadConfig(jsonFile.path);
+        final config = await _load(serviceWithHome, jsonFile.path);
 
         expect(config.toolName, equals('Claude Code'));
         expect(config.rules, equals(['r1']));
@@ -58,7 +60,7 @@ void main() {
       await jsonFile.create(recursive: true);
       await jsonFile.writeAsString('{"rules": ["old"]}');
 
-      final config = await configService.loadConfig(jsonFile.path);
+      final config = await _load(configService, jsonFile.path);
       final updatedConfig = config.copyWith(rules: ['new']);
 
       await configService.saveConfig(updatedConfig);
@@ -77,14 +79,6 @@ void main() {
       expect(backupContent, contains('"old"'));
     });
 
-    test('loadConfig throws FileSystemException if file does not exist', () {
-      final missingFile = p.join(tempDir.path, 'missing.json');
-      expect(
-        () => configService.loadConfig(missingFile),
-        throwsA(isA<FileSystemException>()),
-      );
-    });
-
     test('loadConfig maps YAML correctly based on known target', () async {
       final homeStr =
           Platform.environment['HOME'] ??
@@ -101,7 +95,7 @@ void main() {
         homeDirectoryResolver: () => homeStr,
       );
 
-      final config = await serviceWithHome.loadConfig(yamlFile.path);
+      final config = await _load(serviceWithHome, yamlFile.path);
       expect(config.toolName, equals('Kiro'));
     });
 
@@ -119,7 +113,7 @@ void main() {
         homeDirectoryResolver: () => homeStr,
       );
 
-      final config = await serviceWithHome.loadConfig(tomlFile.path);
+      final config = await _load(serviceWithHome, tomlFile.path);
       expect(config.toolName, equals('Codex'));
     });
 
@@ -127,7 +121,7 @@ void main() {
       final manualFile = File(p.join(tempDir.path, 'some_manual.json'));
       await manualFile.writeAsString('{"rules": ["r1"]}');
 
-      final config = await configService.loadConfig(manualFile.path);
+      final config = await _load(configService, manualFile.path);
       expect(config.toolName, equals('Unknown configuration'));
     });
 
@@ -158,7 +152,7 @@ void main() {
       final jsoncFile = File(p.join(tempDir.path, 'manual_config.jsonc'));
       await jsoncFile.writeAsString('// comment\n{"rules": ["r2"]}');
 
-      final config = await configService.loadConfig(jsoncFile.path);
+      final config = await _load(configService, jsoncFile.path);
 
       expect(config.toolName, equals('Unknown configuration'));
       expect(config.rules, equals(['r2']));
@@ -187,7 +181,7 @@ void main() {
         const originalContent = '{"rules": ["old"]}';
         await jsonFile.writeAsString(originalContent);
 
-        final config = await configService.loadConfig(jsonFile.path);
+        final config = await _load(configService, jsonFile.path);
 
         await expectLater(
           () => configService.saveRawConfig(config, '{ invalid json'),
@@ -212,7 +206,7 @@ void main() {
       const originalContent = '{"rules": ["old"]}';
       await jsonFile.writeAsString(originalContent);
 
-      final config = await configService.loadConfig(jsonFile.path);
+      final config = await _load(configService, jsonFile.path);
 
       const validContent = '{"rules": ["new"]}';
       final updatedConfig = await configService.saveRawConfig(
@@ -235,7 +229,7 @@ void main() {
       final jsoncFile = File(jsoncPath);
       await jsoncFile.writeAsString('{"rules": ["test"]} // a comment\n');
 
-      final config = await configService.loadConfig(jsoncPath);
+      final config = await _load(configService, jsoncPath);
       expect(
         config.format,
         ConfigFormat.jsonc,
@@ -299,4 +293,24 @@ void main() {
       );
     });
   });
+}
+
+Future<ToolConfig> _load(ConfigService service, String path) async {
+  final home =
+      Platform.environment['HOME'] ??
+      Platform.environment['USERPROFILE'] ??
+      Directory.systemTemp.path;
+  final match = ToolDescriptorRegistry.matchPath(
+    path,
+    normalizedHomePath: home,
+  );
+  return service.loadDiscoveredConfig(
+    DiscoveredConfig.fromPath(
+      filePath: path,
+      sourceLabel: match.sourceLabel,
+      format: match.format,
+      scope: ConfigLocationScope.manual,
+      kind: ConfigSourceKind.structuredConfig,
+    ),
+  );
 }

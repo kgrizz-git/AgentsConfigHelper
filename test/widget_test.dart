@@ -29,16 +29,6 @@ class _FakeConfigService extends ConfigService {
     : super(backupService: backupService);
 
   @override
-  Future<ToolConfig> loadConfig(String path) async {
-    return ToolConfig(
-      toolName: path.contains('cursor') ? 'Cursor' : 'Claude',
-      filePath: path,
-      format: ConfigFormat.json,
-      rules: const ['original rule'],
-    );
-  }
-
-  @override
   Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
     return ToolConfig(
       toolName: config.filePath.contains('cursor') ? 'Cursor' : 'Claude',

@@ -81,5 +81,34 @@ rules = ["rule1"]
       );
       expect(roundTrippedConfig, equals(parsedConfig));
     });
+
+    test(
+      'explicitly discards comments and reorders during serialization (known limitation)',
+      () {
+        const originalToml = '''
+# This is a comment
+rules = ["rule1"]
+[nested]
+key = "value"
+''';
+        final parsedConfig = parser.parse(
+          originalToml,
+          filePath: 'test.toml',
+          toolName: 'test',
+        );
+        // Pass the original content to serialize, simulating a structured save
+        final serializedToml = parser.serialize(
+          parsedConfig,
+          originalContent: originalToml,
+        );
+
+        // Assert that comments are lost
+        expect(serializedToml.contains('# This is a comment'), isFalse);
+
+        // And the structure is reformatted
+        expect(serializedToml, contains("rules = ['rule1']"));
+        expect(serializedToml, contains('[nested]'));
+      },
+    );
   });
 }
