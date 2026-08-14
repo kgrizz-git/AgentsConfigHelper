@@ -1,26 +1,26 @@
+import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
-import 'package:agents_config_helper/services/config_service.dart';
+import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/sidebar_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 
 /// The split-pane shell for selecting and editing configurations.
-class MainShell extends StatefulWidget {
-  /// Creates the shell with the service used to load configurations.
-  const MainShell({required this.configService, super.key});
-
-  /// Reads configurations selected in the sidebar.
-  final ConfigService configService;
+class MainShell extends ConsumerStatefulWidget {
+  /// Creates the shell.
+  const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends ConsumerState<MainShell> {
   ToolConfig? _activeConfig;
+  String? _activeConfigId;
   bool _isLoading = false;
   bool _hasUnsavedChanges = false;
   String? _error;
@@ -31,7 +31,7 @@ class _MainShellState extends State<MainShell> {
     super.initState();
   }
 
-  Future<void> _loadConfig(String path) async {
+  Future<void> _loadConfig(DiscoveredConfig configItem) async {
     final generation = ++_loadGeneration;
     if (_hasUnsavedChanges) {
       final shouldDiscard = await _confirmDiscardChanges();
@@ -43,10 +43,12 @@ class _MainShellState extends State<MainShell> {
       _isLoading = true;
       _error = null;
       _activeConfig = null;
+      _activeConfigId = configItem.id;
       _hasUnsavedChanges = false;
     });
     try {
-      final config = await widget.configService.loadConfig(path);
+      final configService = ref.read(configServiceProvider);
+      final config = await configService.loadConfig(configItem.filePath);
       if (!mounted || generation != _loadGeneration) {
         return;
       }
@@ -91,39 +93,99 @@ class _MainShellState extends State<MainShell> {
     return shouldDiscard ?? false;
   }
 
+  IconData _getIconForTool(String toolId) {
+    switch (toolId) {
+      case 'claudeCode':
+        return Icons.code;
+      case 'cursor':
+        return Icons.edit;
+      case 'opencode':
+        return Icons.open_in_browser;
+      case 'paseo':
+        return Icons.directions_walk;
+      case 'kiro':
+        return Icons.keyboard;
+      case 'devin':
+        return Icons.developer_mode;
+      case 'antigravity':
+        return Icons.rocket_launch;
+      case 'codex':
+        return Icons.book;
+      case 'agyAcp':
+        return Icons.api;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
   late final MultiSplitViewController _controller = MultiSplitViewController(
     areas: [
       Area(
         size: 250,
         min: 200,
         builder: (context, area) {
+          final discoveryState = ref.watch(discoveryControllerProvider);
+
           return Material(
             color: AppColors.sidebarDark,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    'Agents Config',
-                    style: AppTextStyles.uiHeader,
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Agents Config',
+                          style: AppTextStyles.uiHeader,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh, size: 16),
+                        onPressed: () {
+                          ref.read(discoveryControllerProvider.notifier).refresh();
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                SidebarItem(
-                  title: 'Claude Code',
-                  icon: Icons.code,
-                  isActive: _activeConfig?.toolName == 'Claude',
-                  onTap: () async {
-                    await _loadConfig('~/.claude/settings.json');
-                  },
-                ),
-                SidebarItem(
-                  title: 'Cursor',
-                  icon: Icons.edit,
-                  isActive: _activeConfig?.toolName == 'Cursor',
-                  onTap: () async {
-                    await _loadConfig('~/.cursor/permissions.json');
-                  },
+                Expanded(
+                  child: discoveryState.when(
+                    data: (result) {
+                      if (result.items.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text('No configurations found.'),
+                        );
+                      }
+                      return ListView.builder(
+                        itemCount: result.items.length,
+                        itemBuilder: (context, index) {
+                          final configItem = result.items[index];
+                          return SidebarItem(
+                            title: configItem.sourceLabel,
+                            subtitle: configItem.filePath,
+                            icon: configItem.descriptor != null ? _getIconForTool(configItem.descriptor!.id.name) : Icons.insert_drive_file,
+                            isActive: _activeConfigId == configItem.id,
+                            onTap: () async {
+                              await _loadConfig(configItem);
+                            },
+                            onRemove: configItem.isManual ? () {
+                              ref.read(discoveryControllerProvider.notifier).removeManualPath(configItem.filePath);
+                            } : null,
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, st) => Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text('Error: $e', style: const TextStyle(color: Colors.red)),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -150,10 +212,11 @@ class _MainShellState extends State<MainShell> {
             );
           }
 
+          final configService = ref.read(configServiceProvider);
           return ConfigEditor(
             config: _activeConfig!,
-            onSave: widget.configService.saveConfig,
-            resolvePath: widget.configService.resolvePath,
+            onSave: configService.saveConfig,
+            resolvePath: configService.resolvePath,
             onDirtyChanged: (hasUnsavedChanges) {
               if (mounted) {
                 setState(() {

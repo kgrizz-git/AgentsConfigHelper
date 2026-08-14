@@ -9,12 +9,17 @@ class SidebarItem extends StatelessWidget {
     required this.title,
     required this.icon,
     super.key,
+    this.subtitle,
     this.isActive = false,
     this.onTap,
+    this.onRemove,
   });
 
   /// The entry label.
   final String title;
+
+  /// An optional subtitle (e.g. file path).
+  final String? subtitle;
 
   /// The entry icon.
   final IconData icon;
@@ -24,6 +29,9 @@ class SidebarItem extends StatelessWidget {
 
   /// Called when the entry is selected.
   final VoidCallback? onTap;
+
+  /// Called when the remove icon is selected.
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -48,13 +56,40 @@ class SidebarItem extends StatelessWidget {
               color: isActive ? Colors.white : AppColors.textSecondaryDark,
             ),
             const SizedBox(width: 12),
-            Text(
-              title,
-              style: AppTextStyles.uiBase.copyWith(
-                color: isActive ? Colors.white : AppColors.textPrimaryDark,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.uiBase.copyWith(
+                      color: isActive ? Colors.white : AppColors.textPrimaryDark,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: AppTextStyles.uiSecondary.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
             ),
+            if (onRemove != null) ...[
+              IconButton(
+                icon: const Icon(Icons.close, size: 16),
+                color: AppColors.textSecondaryDark,
+                onPressed: onRemove,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ],
         ),
       ),
