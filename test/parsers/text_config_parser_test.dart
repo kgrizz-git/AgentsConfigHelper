@@ -45,7 +45,8 @@ void main() {
     });
 
     test('parse handles .mdc files correctly', () {
-      const content = '''---
+      const content = '''
+---
 description: Test
 ---
 Some random plain text rules.''';

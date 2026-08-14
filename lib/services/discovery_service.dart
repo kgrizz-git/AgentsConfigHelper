@@ -57,23 +57,67 @@ class DiscoveryService {
       }
     }
 
+    Future<void> processTarget(
+      String expectedPattern,
+      ConfigTarget target,
+      ToolDescriptor descriptor,
+      ConfigLocationScope scope,
+    ) async {
+      if (!expectedPattern.contains('*')) {
+        // Exact match
+        final config = DiscoveredConfig.fromPath(
+          filePath: expectedPattern,
+          scope: scope,
+          kind: target.kind,
+          format: target.format,
+          sourceLabel: descriptor.displayName,
+          descriptor: descriptor,
+        );
+        await addIfValid(config);
+      } else {
+        // Bounded glob enumeration
+        final dirPath = p.dirname(expectedPattern);
+        final dir = Directory(dirPath);
+        // ignore: avoid_slow_async_io
+        if (!await dir.exists()) return;
+
+        var count = 0;
+        const maxEntries = 100;
+
+        await for (final entity in dir.list()) {
+          if (entity is File) {
+            if (ToolDescriptorRegistry.isMatch(expectedPattern, entity.path)) {
+              final config = DiscoveredConfig.fromPath(
+                filePath: entity.path,
+                scope: scope,
+                kind: target.kind,
+                format: target.format,
+                sourceLabel: descriptor.displayName,
+                descriptor: descriptor,
+              );
+              await addIfValid(config);
+              count++;
+              if (count >= maxEntries) break;
+            }
+          }
+        }
+      }
+    }
+
     // 1. User targets
     if (request.normalizedHomePath != null) {
       for (final descriptor in ToolDescriptorRegistry.catalog) {
         for (final target in descriptor.targets) {
           if (target.scope == ConfigLocationScope.user) {
-            final absolutePath = p.normalize(
+            final expectedPattern = p.normalize(
               p.join(request.normalizedHomePath!, target.relativePath),
             );
-            final config = DiscoveredConfig.fromPath(
-              filePath: absolutePath,
-              scope: ConfigLocationScope.user,
-              kind: target.kind,
-              format: target.format,
-              sourceLabel: descriptor.displayName,
-              descriptor: descriptor,
+            await processTarget(
+              expectedPattern,
+              target,
+              descriptor,
+              ConfigLocationScope.user,
             );
-            await addIfValid(config);
           }
         }
       }
@@ -84,16 +128,15 @@ class DiscoveryService {
       for (final descriptor in ToolDescriptorRegistry.catalog) {
         for (final target in descriptor.targets) {
           if (target.scope == ConfigLocationScope.project) {
-            final absolutePath = p.normalize(p.join(root, target.relativePath));
-            final config = DiscoveredConfig.fromPath(
-              filePath: absolutePath,
-              scope: ConfigLocationScope.project,
-              kind: target.kind,
-              format: target.format,
-              sourceLabel: descriptor.displayName,
-              descriptor: descriptor,
+            final expectedPattern = p.normalize(
+              p.join(root, target.relativePath),
             );
-            await addIfValid(config);
+            await processTarget(
+              expectedPattern,
+              target,
+              descriptor,
+              ConfigLocationScope.project,
+            );
           }
         }
       }

@@ -140,5 +140,75 @@ void main() {
         );
       },
     );
+
+    test('discoverConfigs discovers exact instruction documents', () async {
+      final claudeMd = File(p.join(mockProject.path, 'CLAUDE.md'));
+      await claudeMd.create(recursive: true);
+
+      final agentsMd = File(p.join(mockHome.path, '.codex', 'AGENTS.md'));
+      await agentsMd.create(recursive: true);
+
+      final cursorRules = File(p.join(mockProject.path, '.cursorrules'));
+      await cursorRules.create(recursive: true);
+
+      final request = DiscoveryRequest(
+        normalizedHomePath: mockHome.path,
+        normalizedProjectRoots: [mockProject.path],
+      );
+
+      final result = await discoveryService.discoverConfigs(request);
+
+      expect(
+        result.items.where((item) => item.filePath == claudeMd.path).length,
+        equals(1),
+      );
+      expect(
+        result.items.where((item) => item.filePath == agentsMd.path).length,
+        equals(1),
+      );
+      expect(
+        result.items.where((item) => item.filePath == cursorRules.path).length,
+        equals(1),
+      );
+    });
+
+    test(
+      'discoverConfigs discovers bounded glob instruction documents',
+      () async {
+        final mdc1 = File(
+          p.join(mockProject.path, '.cursor', 'rules', 'rule1.mdc'),
+        );
+        await mdc1.create(recursive: true);
+
+        final mdc2 = File(
+          p.join(mockProject.path, '.cursor', 'rules', 'rule2.mdc'),
+        );
+        await mdc2.create(recursive: true);
+
+        final kiroMd = File(
+          p.join(mockProject.path, '.kiro', 'steering', 'steer.md'),
+        );
+        await kiroMd.create(recursive: true);
+
+        final request = DiscoveryRequest(
+          normalizedProjectRoots: [mockProject.path],
+        );
+
+        final result = await discoveryService.discoverConfigs(request);
+
+        expect(
+          result.items.where((item) => item.filePath == mdc1.path).length,
+          equals(1),
+        );
+        expect(
+          result.items.where((item) => item.filePath == mdc2.path).length,
+          equals(1),
+        );
+        expect(
+          result.items.where((item) => item.filePath == kiroMd.path).length,
+          equals(1),
+        );
+      },
+    );
   });
 }

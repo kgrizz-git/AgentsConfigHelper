@@ -167,13 +167,16 @@ class _ConfigEditorState extends State<ConfigEditor> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  _buildDiffSection('Rules', _currentConfig.rules, _rules),
-                  const SizedBox(height: 16),
-                  _buildDiffSection(
-                    'Permissions',
-                    _currentConfig.permissions,
-                    _permissions,
-                  ),
+                  if (_currentConfig.format != ConfigFormat.text &&
+                      _currentConfig.format != ConfigFormat.markdown) ...[
+                    _buildDiffSection('Rules', _currentConfig.rules, _rules),
+                    const SizedBox(height: 16),
+                    _buildDiffSection(
+                      'Permissions',
+                      _currentConfig.permissions,
+                      _permissions,
+                    ),
+                  ],
                   if (_rawContent != _currentConfig.originalContent) ...[
                     const SizedBox(height: 16),
                     _buildRawDiffSection(

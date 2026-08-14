@@ -58,6 +58,26 @@ void main() {
       expect(match.sourceLabel, 'Unknown configuration');
     });
 
+    test('matches glob target successfully', () {
+      const projectRoot = '/root';
+      final path = p.normalize(p.join(projectRoot, '.cursor/rules/foo.mdc'));
+
+      final match = ToolDescriptorRegistry.matchPath(
+        path,
+        normalizedProjectRoots: [projectRoot],
+      );
+
+      expect(match.descriptor?.id, ToolId.cursor);
+      expect(match.scope, ConfigLocationScope.project);
+      expect(match.format, ConfigFormat.text);
+      expect(
+        match.descriptor?.targets
+            .firstWhere((t) => t.relativePath == '.cursor/rules/*.mdc')
+            .kind,
+        ConfigSourceKind.instructionDocument,
+      );
+    });
+
     test('throws ValidationException for unsupported extensions', () {
       const path = 'home_test/some_manual_path.bin';
 

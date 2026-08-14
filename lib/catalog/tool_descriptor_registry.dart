@@ -297,7 +297,7 @@ class ToolDescriptorRegistry {
     return null;
   }
 
-  static bool _isMatch(String expectedPattern, String actualNormalizedPath) {
+  static bool isMatch(String expectedPattern, String actualNormalizedPath) {
     if (!expectedPattern.contains('*')) {
       return expectedPattern == actualNormalizedPath;
     }
@@ -326,7 +326,7 @@ class ToolDescriptorRegistry {
           final expected = p.normalize(
             p.join(normalizedHomePath, target.relativePath),
           );
-          if (_isMatch(expected, normalizedAbsolutePath)) {
+          if (isMatch(expected, normalizedAbsolutePath)) {
             return RegistryMatchResult(
               descriptor: descriptor,
               scope: ConfigLocationScope.user,
@@ -339,7 +339,7 @@ class ToolDescriptorRegistry {
             final expected = p.normalize(
               p.join(root, target.relativePath),
             );
-            if (_isMatch(expected, normalizedAbsolutePath)) {
+            if (isMatch(expected, normalizedAbsolutePath)) {
               return RegistryMatchResult(
                 descriptor: descriptor,
                 scope: ConfigLocationScope.project,
