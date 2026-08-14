@@ -4,6 +4,7 @@ import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
+import 'package:agents_config_helper/widgets/history_modal.dart';
 import 'package:agents_config_helper/widgets/sidebar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -91,6 +92,32 @@ class _MainShellState extends ConsumerState<MainShell> {
       ),
     );
     return shouldDiscard ?? false;
+  }
+
+  void _showHistoryModal() {
+    if (_activeConfig == null) return;
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final configService = ref.read(configServiceProvider);
+        return HistoryModal(
+          config: _activeConfig!,
+          backupService: configService.backupService,
+          onRestore: (backupPath) async {
+            final targetPath = configService.resolvePath(_activeConfig!.filePath);
+            await configService.backupService.restoreBackup(backupPath, targetPath);
+            // Reload the config after restoring
+            final configItem = ref.read(discoveryControllerProvider).value?.items.firstWhere(
+              (item) => item.id == _activeConfigId,
+            );
+            if (configItem != null && mounted) {
+              await _loadConfig(configItem);
+            }
+          },
+        );
+      },
+    );
   }
 
   IconData _getIconForTool(String toolId) {
@@ -215,8 +242,27 @@ class _MainShellState extends ConsumerState<MainShell> {
           final configService = ref.read(configServiceProvider);
           return ConfigEditor(
             config: _activeConfig!,
-            onSave: configService.saveConfig,
+            onSave: (config, [rawContent]) async {
+              if (rawContent != null) {
+                final updated = await configService.saveRawConfig(config, rawContent);
+                if (mounted) {
+                  setState(() {
+                    _activeConfig = updated;
+                  });
+                }
+                return updated;
+              } else {
+                await configService.saveConfig(config);
+                if (mounted) {
+                  setState(() {
+                    _activeConfig = config;
+                  });
+                }
+                return config;
+              }
+            },
             resolvePath: configService.resolvePath,
+            onShowHistory: _showHistoryModal,
             onDirtyChanged: (hasUnsavedChanges) {
               if (mounted) {
                 setState(() {

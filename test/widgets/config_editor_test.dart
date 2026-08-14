@@ -14,9 +14,10 @@ class FakeConfigService extends ConfigService {
   final savedConfigs = <ToolConfig>[];
 
   @override
-  Future<void> saveConfig(ToolConfig config) async {
+  Future<ToolConfig?> saveConfig(ToolConfig config, [String? rawContent]) async {
     savedConfigs.add(config);
     await Future<void>.delayed(Duration.zero);
+    return config;
   }
 }
 
@@ -43,6 +44,7 @@ void main() {
               config: config,
               onSave: configService.saveConfig,
               resolvePath: configService.resolvePath,
+              onShowHistory: () {},
             ),
           ),
         ),
@@ -90,6 +92,7 @@ void main() {
               config: config,
               onSave: configService.saveConfig,
               resolvePath: configService.resolvePath,
+              onShowHistory: () {},
             ),
           ),
         ),
@@ -136,6 +139,7 @@ void main() {
               config: config,
               onSave: configService.saveConfig,
               resolvePath: configService.resolvePath,
+              onShowHistory: () {},
             ),
           ),
         ),
@@ -165,8 +169,9 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (_) async {},
+              onSave: (c, [r]) async => c,
               resolvePath: (path) => path,
+              onShowHistory: () {},
             ),
           ),
         ),

@@ -49,7 +49,7 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
       format: ConfigFormat.yaml,
       rules: rules,
       permissions: permissions,
-      rawSettings: rawMap,
+      originalContent: content, rawSettings: rawMap,
     );
   }
 

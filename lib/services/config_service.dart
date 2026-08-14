@@ -140,6 +140,35 @@ class ConfigService {
     await file.writeAsString(serialized);
   }
 
+  /// Safely saves raw [rawContent] to disk and returns the updated [ToolConfig].
+  ///
+  /// Automatically creates a backup of the existing file using [BackupService],
+  /// then overwrites the file with the raw content and re-parses it.
+  Future<ToolConfig> saveRawConfig(ToolConfig config, String rawContent) async {
+    final expandedPath = resolvePath(config.filePath);
+    final file = File(expandedPath);
+
+    // ignore: avoid_slow_async_io
+    if (await file.exists()) {
+      await backupService.createBackup(expandedPath);
+    } else {
+      final parentDir = file.parent;
+      // ignore: avoid_slow_async_io
+      if (!await parentDir.exists()) {
+        await parentDir.create(recursive: true);
+      }
+    }
+
+    await file.writeAsString(rawContent);
+
+    final parser = _getParserForFormat(config.format);
+    return parser.parse(
+      rawContent,
+      filePath: config.filePath,
+      toolName: config.toolName,
+    );
+  }
+
   ConfigParser _getParserForFormat(ConfigFormat format) {
     switch (format) {
       case ConfigFormat.json:

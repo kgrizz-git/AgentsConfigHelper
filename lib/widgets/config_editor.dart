@@ -16,6 +16,7 @@ class ConfigEditor extends StatefulWidget {
     required this.config,
     required this.onSave,
     required this.resolvePath,
+    required this.onShowHistory,
     this.onDirtyChanged,
     super.key,
   });
@@ -24,13 +25,16 @@ class ConfigEditor extends StatefulWidget {
   final ToolConfig config;
 
   /// Persists a confirmed edited configuration.
-  final Future<void> Function(ToolConfig config) onSave;
+  final Future<ToolConfig?> Function(ToolConfig config, [String? rawContent]) onSave;
 
   /// Resolves the configuration path before opening its directory.
   final String Function(String path) resolvePath;
 
   /// Notifies the owner when editor changes become dirty or clean.
   final ValueChanged<bool>? onDirtyChanged;
+
+  /// Triggered when the user requests to view the history and backups.
+  final VoidCallback onShowHistory;
 
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
@@ -40,12 +44,21 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late ToolConfig _currentConfig;
   late List<String> _rules;
   late List<String> _permissions;
+  late TextEditingController _rawContentController;
+  late String _rawContent;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
+    _rawContentController = TextEditingController();
     _initLocalState(widget.config);
+  }
+
+  @override
+  void dispose() {
+    _rawContentController.dispose();
+    super.dispose();
   }
 
   @override
@@ -60,6 +73,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
     _currentConfig = config;
     _rules = List.from(_currentConfig.rules);
     _permissions = List.from(_currentConfig.permissions);
+    _rawContent = _currentConfig.originalContent;
+    if (_rawContentController.text != _rawContent) {
+      _rawContentController.text = _rawContent;
+    }
   }
 
   void _notifyDirtyChanged() {
@@ -68,7 +85,8 @@ class _ConfigEditorState extends State<ConfigEditor> {
 
   bool get _hasUnsavedChanges {
     return !listEquals(_rules, _currentConfig.rules) ||
-        !listEquals(_permissions, _currentConfig.permissions);
+        !listEquals(_permissions, _currentConfig.permissions) ||
+        _rawContent != _currentConfig.originalContent;
   }
 
   bool get _hasUnsupportedPermissions =>
@@ -101,10 +119,11 @@ class _ConfigEditorState extends State<ConfigEditor> {
     });
 
     try {
-      await widget.onSave(updatedConfig);
+      final rawChanged = _rawContent != _currentConfig.originalContent;
+      final savedConfig = await widget.onSave(updatedConfig, rawChanged ? _rawContent : null);
       if (mounted) {
         setState(() {
-          _currentConfig = updatedConfig;
+          _currentConfig = savedConfig ?? updatedConfig;
           _initLocalState(_currentConfig);
         });
         _notifyDirtyChanged();
@@ -151,6 +170,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     _currentConfig.permissions,
                     _permissions,
                   ),
+                  if (_rawContent != _currentConfig.originalContent) ...[
+                    const SizedBox(height: 16),
+                    _buildRawDiffSection(_currentConfig.originalContent, _rawContent),
+                  ],
                 ],
               ),
             ),
@@ -226,6 +249,35 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
+  Widget _buildRawDiffSection(String original, String updated) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Raw File Content',
+          style: AppTextStyles.uiSubheader.copyWith(
+            color: AppColors.primaryAccent,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.black12,
+            border: Border.all(color: AppColors.borderDark),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: const SelectableText(
+            'Raw content has been modified.',
+            style: TextStyle(color: Colors.orange),
+          ),
+        ),
+      ],
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -253,13 +305,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     OutlinedButton.icon(
                       icon: const Icon(Icons.history),
                       label: const Text('History & Backups'),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('History & Backups coming soon!'),
-                          ),
-                        );
-                      },
+                      onPressed: widget.onShowHistory,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimaryDark,
                         side: const BorderSide(color: AppColors.borderDark),
@@ -394,9 +440,20 @@ class _ConfigEditorState extends State<ConfigEditor> {
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: AppColors.borderDark),
                             ),
-                            child: const Text(
-                              'Raw JSON/YAML Editor Coming Soon...',
+                            child: TextField(
+                              controller: _rawContentController,
+                              maxLines: null,
                               style: AppTextStyles.codeBase,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: 'Raw configuration content',
+                              ),
+                              onChanged: (val) {
+                                setState(() {
+                                  _rawContent = val;
+                                });
+                                _notifyDirtyChanged();
+                              },
                             ),
                           ),
                         ],

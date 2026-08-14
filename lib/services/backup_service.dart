@@ -81,4 +81,36 @@ class BackupService {
 
     await backupFile.copy(targetPath);
   }
+
+  /// Lists all backups for the given [originalPath].
+  ///
+  /// Returns a list of [File] objects representing the backups,
+  /// sorted by creation time (most recent first, assuming timestamp in filename).
+  Future<List<File>> listBackups(String originalPath) async {
+    // Checking directory existence asynchronously avoids blocking the UI thread.
+    // ignore: avoid_slow_async_io
+    if (!await backupDirectory.exists()) {
+      return [];
+    }
+
+    final safeOriginalPath = originalPath
+        .replaceAll(Platform.pathSeparator, '__')
+        .replaceAll(':', '_drive_');
+
+    final prefix = '${safeOriginalPath}_';
+
+    final allEntities = await backupDirectory.list().toList();
+    final backupFiles = allEntities
+        .whereType<File>()
+        .where((file) {
+          final name = p.basename(file.path);
+          return name.startsWith(prefix) && name.endsWith('.bak');
+        })
+        .toList();
+
+    // Sort descending by filename (which includes the timestamp)
+    backupFiles.sort((a, b) => b.path.compareTo(a.path));
+
+    return backupFiles;
+  }
 }

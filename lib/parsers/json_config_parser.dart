@@ -68,7 +68,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       format: format,
       rules: rules,
       permissions: permissions,
-      rawSettings: decoded,
+      originalContent: content, rawSettings: decoded,
     );
   }
 
