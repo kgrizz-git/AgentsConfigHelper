@@ -14,10 +14,21 @@ analyzer:
     inference_failure_on_function_invocation: ignore
     inference_failure_on_collection_literal: ignore
     inference_failure_on_instance_creation: ignore
+  plugins:
+    - dart_code_linter
 
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 include: package:very_good_analysis/analysis_options.yaml
+
+dart_code_linter:
+  metrics:
+    cyclomatic-complexity: 50
+    lines-of-code: 300
+    maximum-nesting-level: 8
+  metrics-exclude:
+    - test/**
+    - lib/vendor/**
 
 linter:
   # The lint rules applied to this project can be customized in the

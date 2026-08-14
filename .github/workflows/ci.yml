@@ -23,6 +23,7 @@ jobs:
       - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze --fatal-infos
+      - run: dart run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning
 
   test:
     name: Tests

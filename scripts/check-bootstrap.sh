@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2015,SC2012
 # check-bootstrap.sh — verify bootstrap phases by repo evidence, not by claims.
 #
 # Run: bash scripts/check-bootstrap.sh

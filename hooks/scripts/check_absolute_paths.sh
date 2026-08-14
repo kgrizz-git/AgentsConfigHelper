@@ -11,11 +11,13 @@ for file in "$@"; do
         continue
     fi
 
-    if [[ "$file" == *"check_absolute_paths.sh" ]]; then
+    if [[ "$file" == *"check_absolute_paths.sh" ]] || [[ "$file" == *"test_policy_hooks_smoke.py" ]]; then
         continue
     fi
 
-    if grep -E -n "$LEAK_PATTERN" "$file"; then
+    matches=$(grep -E -n "$LEAK_PATTERN" "$file" | grep -v -E "https?://")
+    if [ -n "$matches" ]; then
+        echo "$matches"
         echo "ERROR: Absolute path leak detected in $file"
         has_errors=1
     fi

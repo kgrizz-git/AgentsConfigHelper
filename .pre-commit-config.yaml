@@ -59,3 +59,13 @@ repos:
         name: "security: check absolute paths"
         entry: hooks/scripts/check_absolute_paths.sh
         language: script
+      - id: check-file-length
+        name: "style: check file length"
+        entry: hooks/scripts/check_file_length.sh
+        language: script
+        types: [dart]
+      - id: dart-code-linter
+        name: "dart: code linter metrics"
+        entry: dart run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning
+        language: system
+        pass_filenames: false

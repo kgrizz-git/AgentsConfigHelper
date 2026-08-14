@@ -54,7 +54,7 @@ main() {
             cp hooks/.pre-commit-config.yaml .pre-commit-config.yaml
             success "Copied pre-commit config to project root"
         fi
-        
+
         pre-commit install
         success "Pre-commit hooks installed"
     else
@@ -66,7 +66,7 @@ main() {
     if git rev-parse --git-dir > /dev/null 2>&1; then
         current_remote=$(git remote get-url origin 2>/dev/null || echo "")
         template_keywords="template-repo|template-seed|project-seed"
-        
+
         if echo "$current_remote" | grep -qiE "$template_keywords"; then
             warn "Current remote appears to be the template repo: $current_remote"
             info "Before pushing, update to your project remote:"
@@ -83,9 +83,9 @@ main() {
     info "Python environment setup (optional)..."
     if check_command python3 || check_command python; then
         py_cmd=$(check_command python3 && echo "python3" || echo "python")
-        
+
         if [ ! -f .python-version ] && [ ! -f pyproject.toml ] && [ ! -f requirements.txt ]; then
-            read -p "Create .python-version file? (y/n): " create_pyversion
+            read -r -p "Create .python-version file? (y/n): " create_pyversion
             if [ "$create_pyversion" = "y" ]; then
                 $py_cmd --version | awk '{print $2}' > .python-version
                 success "Created .python-version with current Python version"
