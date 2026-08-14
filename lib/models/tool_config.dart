@@ -16,6 +16,12 @@ enum ConfigFormat {
   /// TOML configuration.
   toml,
 
+  /// Markdown instruction document.
+  markdown,
+
+  /// Plain text instruction document.
+  text,
+
   /// A format that has no supported parser.
   unknown,
 }

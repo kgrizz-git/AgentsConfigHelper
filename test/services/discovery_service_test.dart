@@ -104,7 +104,7 @@ void main() {
         await validManualFile.create(recursive: true);
 
         final missingManualFile = p.join(mockHome.path, 'missing.json');
-        final unsupportedManualFile = p.join(mockHome.path, 'unsupported.txt');
+        final unsupportedManualFile = p.join(mockHome.path, 'unsupported.bin');
 
         final request = DiscoveryRequest(
           manualPaths: [

@@ -59,7 +59,7 @@ void main() {
     });
 
     test('throws ValidationException for unsupported extensions', () {
-      const path = 'home_test/some_manual_path.txt';
+      const path = 'home_test/some_manual_path.bin';
 
       expect(
         () => ToolDescriptorRegistry.matchPath(path),

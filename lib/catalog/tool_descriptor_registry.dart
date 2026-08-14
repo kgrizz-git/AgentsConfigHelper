@@ -57,6 +57,24 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),
+        ConfigTarget(
+          relativePath: '.claude/CLAUDE.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'CLAUDE.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.claude/CLAUDE.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
       ],
     ),
     ToolDescriptor(
@@ -75,6 +93,18 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),
+        ConfigTarget(
+          relativePath: '.codex/AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
       ],
     ),
     ToolDescriptor(
@@ -92,6 +122,18 @@ class ToolDescriptorRegistry {
           format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.config/opencode/AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
         ),
       ],
     ),
@@ -129,6 +171,30 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),
+        ConfigTarget(
+          relativePath: '.cursorrules',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.cursor/rules/*.mdc',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'CLAUDE.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
       ],
     ),
     ToolDescriptor(
@@ -140,6 +206,18 @@ class ToolDescriptorRegistry {
           format: ConfigFormat.yaml,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.kiro/steering/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
         ),
       ],
     ),
@@ -159,6 +237,18 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),
+        ConfigTarget(
+          relativePath: '.config/devin/AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
       ],
     ),
     ToolDescriptor(
@@ -170,6 +260,18 @@ class ToolDescriptorRegistry {
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.gemini/GEMINI.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.agents/rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
         ),
       ],
     ),
@@ -195,6 +297,15 @@ class ToolDescriptorRegistry {
     return null;
   }
 
+  static bool _isMatch(String expectedPattern, String actualNormalizedPath) {
+    if (!expectedPattern.contains('*')) {
+      return expectedPattern == actualNormalizedPath;
+    }
+    final regexStr = RegExp.escape(expectedPattern).replaceAll(r'\*', '.*');
+    final regex = RegExp('^$regexStr\$');
+    return regex.hasMatch(actualNormalizedPath);
+  }
+
   /// Matches a normalized absolute path against the catalog.
   ///
   /// Checks for an exact match against known user targets
@@ -215,7 +326,7 @@ class ToolDescriptorRegistry {
           final expected = p.normalize(
             p.join(normalizedHomePath, target.relativePath),
           );
-          if (expected == normalizedAbsolutePath) {
+          if (_isMatch(expected, normalizedAbsolutePath)) {
             return RegistryMatchResult(
               descriptor: descriptor,
               scope: ConfigLocationScope.user,
@@ -228,7 +339,7 @@ class ToolDescriptorRegistry {
             final expected = p.normalize(
               p.join(root, target.relativePath),
             );
-            if (expected == normalizedAbsolutePath) {
+            if (_isMatch(expected, normalizedAbsolutePath)) {
               return RegistryMatchResult(
                 descriptor: descriptor,
                 scope: ConfigLocationScope.project,
@@ -254,10 +365,21 @@ class ToolDescriptorRegistry {
         format = ConfigFormat.yaml;
       case '.toml':
         format = ConfigFormat.toml;
+      case '.md':
+      case '.mdc':
+        format = ConfigFormat.markdown;
+      case '.txt':
+        format = ConfigFormat.text;
       default:
-        throw ValidationException(
-          'Unsupported configuration file extension: $ext',
-        );
+        // Try fallback to text if no extension
+        if (ext.isEmpty ||
+            p.basename(normalizedAbsolutePath) == '.cursorrules') {
+          format = ConfigFormat.text;
+        } else {
+          throw ValidationException(
+            'Unsupported configuration file extension: $ext',
+          );
+        }
     }
 
     return RegistryMatchResult(
