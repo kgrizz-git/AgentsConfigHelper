@@ -13,13 +13,13 @@ class DiscoveryService {
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
     final items = <DiscoveredConfig>[];
     final warnings = <DiscoveryWarning>[];
-    final seenIds = <String>{};
+    final seenPaths = <String>{};
 
     Future<void> addIfValid(
       DiscoveredConfig config, {
       bool isManual = false,
     }) async {
-      if (seenIds.contains(config.id)) {
+      if (seenPaths.contains(config.filePath)) {
         return;
       }
 
@@ -28,7 +28,7 @@ class DiscoveryService {
         // ignore: avoid_slow_async_io
         if (await file.exists()) {
           items.add(config);
-          seenIds.add(config.id);
+          seenPaths.add(config.filePath);
         } else if (isManual) {
           warnings.add(
             DiscoveryWarning(

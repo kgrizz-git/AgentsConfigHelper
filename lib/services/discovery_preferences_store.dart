@@ -100,6 +100,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
         .map((fp) => fp.trim())
         .where((fp) => fp.isNotEmpty)
         .map(p.normalize)
+        .where(p.isAbsolute)
         .toSet()
         .toList();
     if (dedupedManualPaths.length != prefs.manualFilePaths.length) {
@@ -110,6 +111,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
         .map((fp) => fp.trim())
         .where((fp) => fp.isNotEmpty)
         .map(p.normalize)
+        .where(p.isAbsolute)
         .toSet()
         .toList();
     if (dedupedProjectRoots.length != prefs.projectRoots.length) {
@@ -139,12 +141,14 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
         .map((fp) => fp.trim())
         .where((fp) => fp.isNotEmpty)
         .map(p.normalize)
+        .where(p.isAbsolute)
         .toSet()
         .toList();
     final dedupedProjectRoots = preferences.projectRoots
         .map((fp) => fp.trim())
         .where((fp) => fp.isNotEmpty)
         .map(p.normalize)
+        .where(p.isAbsolute)
         .toSet()
         .toList();
 
