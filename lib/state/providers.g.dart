@@ -59,8 +59,26 @@ final discoveryPreferencesStoreProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DiscoveryPreferencesStoreRef = ProviderRef<IDiscoveryPreferencesStore>;
+String _$homeDirectoryResolverHash() =>
+    r'e9a4d34bf4cdfc4b3911dcba77750cd028d28afc';
+
+/// See also [homeDirectoryResolver].
+@ProviderFor(homeDirectoryResolver)
+final homeDirectoryResolverProvider = Provider<String? Function()>.internal(
+  homeDirectoryResolver,
+  name: r'homeDirectoryResolverProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$homeDirectoryResolverHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef HomeDirectoryResolverRef = ProviderRef<String? Function()>;
 String _$discoveryControllerHash() =>
-    r'65db443bef53bff90cb8949e150d1139ba7b0dc4';
+    r'9b35f02ba7109a879382e4cf20f024f76831caa0';
 
 /// See also [DiscoveryController].
 @ProviderFor(DiscoveryController)

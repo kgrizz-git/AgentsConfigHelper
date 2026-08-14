@@ -64,6 +64,9 @@ class _FakeDiscoveryService extends DiscoveryService {
 }
 
 class _FakePreferencesStore implements IDiscoveryPreferencesStore {
+  final addedManualPaths = <String>[];
+  final addedProjectRoots = <String>[];
+
   @override
   Future<DiscoveryPreferencesResult> load() async {
     return const DiscoveryPreferencesResult(
@@ -72,11 +75,17 @@ class _FakePreferencesStore implements IDiscoveryPreferencesStore {
   }
 
   @override
-  Future<void> addManualPath(String path) async {}
+  Future<void> addManualPath(String path) async {
+    addedManualPaths.add(path);
+  }
+
   @override
   Future<void> removeManualPath(String path) async {}
   @override
-  Future<void> addProjectRoot(String path) async {}
+  Future<void> addProjectRoot(String path) async {
+    addedProjectRoots.add(path);
+  }
+
   @override
   Future<void> removeProjectRoot(String path) async {}
 }
@@ -147,5 +156,81 @@ void main() {
     await tester.tap(find.text('Discard & Load'));
     await tester.pumpAndSettle();
     expect(find.text('Cursor'), findsNWidgets(2));
+  });
+
+  testWidgets('adds a manual config path via the sidebar "+" menu', (
+    tester,
+  ) async {
+    final configService = ConfigService(
+      backupService: BackupService(backupDirectory: Directory.systemTemp),
+    );
+    final prefsStore = _FakePreferencesStore();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          configServiceProvider.overrideWithValue(configService),
+          discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+          discoveryPreferencesStoreProvider.overrideWithValue(prefsStore),
+          homeDirectoryResolverProvider.overrideWithValue(
+            () => '/tmp/fake-home',
+          ),
+        ],
+        child: const MaterialApp(home: MainShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add Manual Config Path'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byType(TextField),
+      '/tmp/fake-home/custom.json',
+    );
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(prefsStore.addedManualPaths, equals(['/tmp/fake-home/custom.json']));
+  });
+
+  testWidgets('adds a project root via the sidebar "+" menu', (
+    tester,
+  ) async {
+    final configService = ConfigService(
+      backupService: BackupService(backupDirectory: Directory.systemTemp),
+    );
+    final prefsStore = _FakePreferencesStore();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          configServiceProvider.overrideWithValue(configService),
+          discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+          discoveryPreferencesStoreProvider.overrideWithValue(prefsStore),
+          homeDirectoryResolverProvider.overrideWithValue(
+            () => '/tmp/fake-home',
+          ),
+        ],
+        child: const MaterialApp(home: MainShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add Project Root'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '/workspace/my-project');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(
+      prefsStore.addedProjectRoots,
+      equals(['/workspace/my-project']),
+    );
   });
 }

@@ -10,6 +10,7 @@ class RegistryMatchResult {
     required this.format,
     required this.sourceLabel,
     this.descriptor,
+    this.kind,
   });
 
   /// The matched tool descriptor, or null if this is an unknown manual file.
@@ -23,6 +24,10 @@ class RegistryMatchResult {
 
   /// The label for the source (e.g. tool name or 'Unknown configuration').
   final String sourceLabel;
+
+  /// The kind of the specific [ConfigTarget] that matched, or null if this
+  /// is an unknown manual file with no matching catalog target.
+  final ConfigSourceKind? kind;
 }
 
 /// Exception thrown when a file extension is unsupported.
@@ -301,7 +306,8 @@ class ToolDescriptorRegistry {
     if (!expectedPattern.contains('*')) {
       return expectedPattern == actualNormalizedPath;
     }
-    final regexStr = RegExp.escape(expectedPattern).replaceAll(r'\*', '.*');
+    final regexStr =
+        RegExp.escape(expectedPattern).replaceAll(r'\*', r'[^/\\]*');
     final regex = RegExp('^$regexStr\$');
     return regex.hasMatch(actualNormalizedPath);
   }
@@ -311,7 +317,8 @@ class ToolDescriptorRegistry {
   /// Checks for an exact match against known user targets
   /// (if [normalizedHomePath] is provided) and known project targets
   /// (if [normalizedProjectRoots] are provided).
-  /// If no exact match is found, treats it as a manual file and attempts to derive the format.
+  /// If no exact match is found, treats it as a manual file and attempts
+  /// to derive the format.
   /// Throws a [ValidationException] if the extension is unsupported.
   static RegistryMatchResult matchPath(
     String normalizedAbsolutePath, {
@@ -332,6 +339,7 @@ class ToolDescriptorRegistry {
               scope: ConfigLocationScope.user,
               format: target.format,
               sourceLabel: descriptor.displayName,
+              kind: target.kind,
             );
           }
         } else if (target.scope == ConfigLocationScope.project) {
@@ -345,6 +353,7 @@ class ToolDescriptorRegistry {
                 scope: ConfigLocationScope.project,
                 format: target.format,
                 sourceLabel: descriptor.displayName,
+                kind: target.kind,
               );
             }
           }

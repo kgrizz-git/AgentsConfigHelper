@@ -19,7 +19,8 @@ enum ConfigLocationScope {
   /// A global configuration file found in the user's home directory.
   user,
 
-  /// A repository-level configuration file found in an explicitly added project root.
+  /// A repository-level configuration file found in an explicitly added
+  /// project root.
   project,
 
   /// A configuration file manually added by the user at a specific path.
@@ -28,7 +29,8 @@ enum ConfigLocationScope {
 
 /// The kind of configuration source.
 enum ConfigSourceKind {
-  /// A structured config file (JSON, YAML, TOML) that the app can fully parse and edit.
+  /// A structured config file (JSON, YAML, TOML) that the app can fully
+  /// parse and edit.
   structuredConfig,
 
   /// A markdown or raw text rule/instruction file (e.g., AGENTS.md, .cursorrules).
@@ -45,8 +47,9 @@ class ConfigTarget extends Equatable {
   });
 
   /// The expected relative path, such as `.claude/settings.json`.
-  /// For [ConfigLocationScope.user], this is relative to the user's home directory.
-  /// For [ConfigLocationScope.project], this is relative to the project root.
+  /// For [ConfigLocationScope.user], this is relative to the user's home
+  /// directory. For [ConfigLocationScope.project], this is relative to the
+  /// project root.
   final String relativePath;
 
   /// The serialization format expected at this target.
@@ -62,7 +65,8 @@ class ConfigTarget extends Equatable {
   List<Object?> get props => [relativePath, format, scope, kind];
 }
 
-/// A pure domain descriptor for a supported tool and its known configuration targets.
+/// A pure domain descriptor for a supported tool and its known
+/// configuration targets.
 class ToolDescriptor extends Equatable {
   const ToolDescriptor({
     required this.id,

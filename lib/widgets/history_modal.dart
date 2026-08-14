@@ -39,7 +39,8 @@ class _HistoryModalState extends State<HistoryModal> {
         backgroundColor: AppColors.backgroundDark,
         title: const Text('Confirm Restore', style: AppTextStyles.uiHeader),
         content: const Text(
-          'Are you sure you want to restore this backup? This will overwrite the current live configuration file.',
+          'Are you sure you want to restore this backup? This will '
+          'overwrite the current live configuration file.',
           style: AppTextStyles.uiSecondary,
         ),
         actions: [
@@ -78,7 +79,7 @@ class _HistoryModalState extends State<HistoryModal> {
           const SnackBar(content: Text('Backup restored successfully.')),
         );
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -40,7 +40,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     String content;
     try {
       content = await file.readAsString();
-    } catch (e) {
+    } on Object catch (e) {
       warnings.add('Failed to read preferences file: $e');
       return DiscoveryPreferencesResult(
         preferences: const DiscoveryPreferences(),
@@ -51,7 +51,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     dynamic json;
     try {
       json = jsonDecode(content);
-    } catch (e) {
+    } on Object catch (e) {
       warnings.add('Preferences file contains invalid JSON: $e');
       return DiscoveryPreferencesResult(
         preferences: const DiscoveryPreferences(),

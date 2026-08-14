@@ -126,7 +126,8 @@ void main() {
     });
 
     test(
-      'loadDiscoveredConfig loads configuration using explicitly passed DiscoveredConfig',
+      'loadDiscoveredConfig loads configuration using explicitly passed '
+      'DiscoveredConfig',
       () async {
         final jsonFile = File(p.join(tempDir.path, 'some_config.json'));
         await jsonFile.writeAsString('{"rules": ["r1"]}');
@@ -224,6 +225,61 @@ void main() {
       final backups = backupService.backupDirectory.listSync();
       expect(backups.length, equals(1));
     });
+
+    test(
+      'saveRawConfig reconciles structured edits made alongside raw edits',
+      () async {
+        final jsonFile = File(p.join(tempDir.path, 'raw_config_3.json'));
+        await jsonFile.create(recursive: true);
+        const originalContent = '{"rules": [], "permissions": []}';
+        await jsonFile.writeAsString(originalContent);
+
+        final config = await _load(configService, jsonFile.path);
+
+        // Simulates a user editing the Rules list editor (independent of
+        // the raw text box) while also editing the raw content directly.
+        final structurallyEditedConfig = config.copyWith(rules: ['new-rule']);
+        const rawEdit = '{"rules": [], "permissions": [], "extra": true}';
+
+        final updatedConfig = await configService.saveRawConfig(
+          structurallyEditedConfig,
+          rawEdit,
+        );
+
+        // The structured edit must survive...
+        expect(updatedConfig.rules, equals(['new-rule']));
+        // ...and so must the raw edit's own content.
+        expect(updatedConfig.rawSettings['extra'], isTrue);
+
+        final content = await jsonFile.readAsString();
+        expect(content, contains('new-rule'));
+        expect(content, contains('extra'));
+      },
+    );
+
+    test(
+      'saveRawConfig writes raw content verbatim when structured fields are '
+      'untouched',
+      () async {
+        final jsonFile = File(p.join(tempDir.path, 'raw_config_4.json'));
+        await jsonFile.create(recursive: true);
+        const originalContent = '{"rules": ["old"]}';
+        await jsonFile.writeAsString(originalContent);
+
+        final config = await _load(configService, jsonFile.path);
+        const rawEdit = '{"rules": ["old"], "extra": true}';
+
+        final updatedConfig = await configService.saveRawConfig(
+          config,
+          rawEdit,
+        );
+
+        final content = await jsonFile.readAsString();
+        expect(content, equals(rawEdit));
+        expect(updatedConfig.rawSettings['extra'], isTrue);
+      },
+    );
+
     test('loadConfig identifies JSONC and parses', () async {
       final jsoncPath = '${tempDir.path}/test_config.jsonc';
       final jsoncFile = File(jsoncPath);

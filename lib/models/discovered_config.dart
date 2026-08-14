@@ -16,7 +16,8 @@ class DiscoveredConfig extends Equatable {
     this.isManual = false,
   });
 
-  /// Factory that automatically derives the [id] from the normalized absolute path and source kind.
+  /// Factory that automatically derives the [id] from the normalized
+  /// absolute path and source kind.
   factory DiscoveredConfig.fromPath({
     required String filePath,
     required ConfigLocationScope scope,
@@ -39,8 +40,9 @@ class DiscoveredConfig extends Equatable {
     );
   }
 
-  /// A stable identifier derived from the normalized absolute path and source kind.
-  /// Keeps duplicate configurations for one tool independently selectable.
+  /// A stable identifier derived from the normalized absolute path and
+  /// source kind. Keeps duplicate configurations for one tool independently
+  /// selectable.
   final String id;
 
   /// The normalized absolute path to the configuration file.
@@ -79,8 +81,9 @@ class DiscoveredConfig extends Equatable {
     return DiscoveredConfig(
       id: id ?? this.id,
       filePath: filePath ?? this.filePath,
-      // If descriptor was explicitly passed as null, we can't easily distinguish it
-      // with standard copyWith unless we use a wrapper, but for our usage this is fine.
+      // If descriptor was explicitly passed as null, we can't easily
+      // distinguish it with standard copyWith unless we use a wrapper, but
+      // for our usage this is fine.
       descriptor: descriptor ?? this.descriptor,
       scope: scope ?? this.scope,
       kind: kind ?? this.kind,

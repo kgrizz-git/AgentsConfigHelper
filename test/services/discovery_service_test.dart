@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:agents_config_helper/models/discovery_request.dart';
+import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/services/discovery_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,10 +22,12 @@ void main() {
     });
 
     tearDown(() async {
+      // Checking existence asynchronously avoids blocking the test isolate.
       // ignore: avoid_slow_async_io
       if (await mockHome.exists()) {
         await mockHome.delete(recursive: true);
       }
+      // Checking existence asynchronously avoids blocking the test isolate.
       // ignore: avoid_slow_async_io
       if (await mockProject.exists()) {
         await mockProject.delete(recursive: true);
@@ -79,7 +82,8 @@ void main() {
     });
 
     test(
-      'discoverConfigs deduplicates and sets isManual if manual path matches existing',
+      'discoverConfigs deduplicates and sets isManual if manual path '
+      'matches existing',
       () async {
         final manualFile = File(
           p.join(mockHome.path, '.claude', 'settings.json'),
@@ -93,17 +97,18 @@ void main() {
 
         final result = await discoveryService.discoverConfigs(request);
 
-        // Should only appear once, prioritized as user target (since it is first)
+        // Should only appear once, prioritized as user target (it's first).
         expect(result.items.length, equals(1));
         expect(result.items.first.scope, equals(ConfigLocationScope.user));
-        // But it should retain manual provenance because the user added it manually
+        // But it should retain manual provenance since the user added it.
         expect(result.items.first.isManual, isTrue);
         expect(result.warnings, isEmpty);
       },
     );
 
     test(
-      'discoverConfigs classifies manual paths and adds warnings for unsupported',
+      'discoverConfigs classifies manual paths and adds warnings for '
+      'unsupported',
       () async {
         final validManualFile = File(p.join(mockHome.path, 'custom.json'));
         await validManualFile.create(recursive: true);
@@ -142,6 +147,33 @@ void main() {
                 w.message.contains('Unsupported configuration file extension'),
           ),
           isTrue,
+        );
+      },
+    );
+
+    test(
+      "discoverConfigs assigns the matched target's kind, not the first "
+      'same-scope target',
+      () async {
+        // Claude Code's project-scope targets list a structuredConfig
+        // target (.claude/settings.json) before this instructionDocument
+        // target (CLAUDE.md); the manually-added file must be classified
+        // by the target it actually matched, not by catalog order.
+        final claudeMd = File(p.join(mockProject.path, 'CLAUDE.md'));
+        await claudeMd.create(recursive: true);
+
+        final request = DiscoveryRequest(
+          normalizedProjectRoots: [mockProject.path],
+          manualPaths: [claudeMd.path],
+        );
+
+        final result = await discoveryService.discoverConfigs(request);
+
+        expect(result.items.length, equals(1));
+        expect(result.items.first.format, equals(ConfigFormat.markdown));
+        expect(
+          result.items.first.kind,
+          equals(ConfigSourceKind.instructionDocument),
         );
       },
     );

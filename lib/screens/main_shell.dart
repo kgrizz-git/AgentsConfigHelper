@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
+import 'package:agents_config_helper/widgets/add_path_dialog.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/history_modal.dart';
 import 'package:agents_config_helper/widgets/sidebar_item.dart';
@@ -103,36 +106,84 @@ class _MainShellState extends ConsumerState<MainShell> {
   void _showHistoryModal() {
     if (_activeConfig == null) return;
 
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        final configService = ref.read(configServiceProvider);
-        return HistoryModal(
-          config: _activeConfig!,
-          backupService: configService.backupService,
-          onRestore: (backupPath) async {
-            final targetPath = configService.resolvePath(
-              _activeConfig!.filePath,
-            );
-            await configService.backupService.restoreBackup(
-              backupPath,
-              targetPath,
-            );
-            // Reload the config after restoring
-            final configItem = ref
-                .read(discoveryControllerProvider)
-                .value
-                ?.items
-                .firstWhere(
-                  (item) => item.id == _activeConfigId,
-                );
-            if (configItem != null && mounted) {
-              await _loadConfig(configItem);
-            }
-          },
-        );
-      },
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) {
+          final configService = ref.read(configServiceProvider);
+          return HistoryModal(
+            config: _activeConfig!,
+            backupService: configService.backupService,
+            onRestore: (backupPath) async {
+              final targetPath = configService.resolvePath(
+                _activeConfig!.filePath,
+              );
+              await configService.backupService.restoreBackup(
+                backupPath,
+                targetPath,
+              );
+              // Reload the config after restoring, if it's still discoverable.
+              final items = ref.read(discoveryControllerProvider).value?.items;
+              final configItem = items
+                  ?.cast<DiscoveredConfig?>()
+                  .firstWhere(
+                    (item) => item?.id == _activeConfigId,
+                    orElse: () => null,
+                  );
+              if (configItem != null && mounted) {
+                await _loadConfig(configItem);
+              }
+            },
+          );
+        },
+      ),
     );
+  }
+
+  Future<void> _showAddManualPathDialog() async {
+    final path = await showDialog<String>(
+      context: context,
+      builder: (context) => const AddPathDialog(
+        title: 'Add Manual Config Path',
+        hintText: '/absolute/path/to/config/file',
+      ),
+    );
+    if (path == null || !mounted) return;
+    try {
+      await ref.read(discoveryControllerProvider.notifier).addManualPath(path);
+    } on Object catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not add path: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showAddProjectRootDialog() async {
+    final path = await showDialog<String>(
+      context: context,
+      builder: (context) => const AddPathDialog(
+        title: 'Add Project Root',
+        hintText: '/absolute/path/to/project',
+      ),
+    );
+    if (path == null || !mounted) return;
+    try {
+      await ref.read(discoveryControllerProvider.notifier).addProjectRoot(path);
+    } on Object catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not add project root: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   IconData _getIconForTool(String toolId) {
@@ -185,12 +236,31 @@ class _MainShellState extends ConsumerState<MainShell> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      PopupMenuButton<VoidCallback>(
+                        icon: const Icon(Icons.add, size: 16),
+                        tooltip: 'Add configuration',
+                        onSelected: (callback) => callback(),
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: () =>
+                                unawaited(_showAddManualPathDialog()),
+                            child: const Text('Add Manual Config Path'),
+                          ),
+                          PopupMenuItem(
+                            value: () =>
+                                unawaited(_showAddProjectRootDialog()),
+                            child: const Text('Add Project Root'),
+                          ),
+                        ],
+                      ),
                       IconButton(
                         icon: const Icon(Icons.refresh, size: 16),
                         onPressed: () {
-                          ref
-                              .read(discoveryControllerProvider.notifier)
-                              .refresh();
+                          unawaited(
+                            ref
+                                .read(discoveryControllerProvider.notifier)
+                                .refresh(),
+                          );
                         },
                       ),
                     ],
@@ -200,6 +270,17 @@ class _MainShellState extends ConsumerState<MainShell> {
                   child: discoveryState.when(
                     data: (result) {
                       if (result.items.isEmpty) {
+                        if (result.warnings.isNotEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text(
+                              result.warnings.map((w) => w.message).join(
+                                '\n',
+                              ),
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          );
+                        }
                         return const Padding(
                           padding: EdgeInsets.all(20),
                           child: Text('No configurations found.'),
@@ -223,11 +304,16 @@ class _MainShellState extends ConsumerState<MainShell> {
                             },
                             onRemove: configItem.isManual
                                 ? () {
-                                    ref
-                                        .read(
-                                          discoveryControllerProvider.notifier,
-                                        )
-                                        .removeManualPath(configItem.filePath);
+                                    unawaited(
+                                      ref
+                                          .read(
+                                            discoveryControllerProvider
+                                                .notifier,
+                                          )
+                                          .removeManualPath(
+                                            configItem.filePath,
+                                          ),
+                                    );
                                   }
                                 : null,
                           );
@@ -296,49 +382,30 @@ class _MainShellState extends ConsumerState<MainShell> {
           final configService = ref.read(configServiceProvider);
           return ConfigEditor(
             config: _activeConfig!,
+            // Save feedback (success/error SnackBars) is shown by
+            // ConfigEditor itself; this callback only persists the change
+            // and updates the active config. Errors propagate to
+            // ConfigEditor's own try/catch.
             onSave: (config, [rawContent]) async {
-              final messenger = ScaffoldMessenger.of(context);
-              try {
-                if (rawContent != null) {
-                  final updated = await configService.saveRawConfig(
-                    config,
-                    rawContent,
-                  );
-                  if (mounted) {
-                    setState(() {
-                      _activeConfig = updated;
-                    });
-                  }
-                  messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Saved successfully.'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  return updated;
-                } else {
-                  await configService.saveConfig(config);
-                  if (mounted) {
-                    setState(() {
-                      _activeConfig = config;
-                    });
-                  }
-                  messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Saved successfully.'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  return config;
-                }
-              } catch (e) {
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('Error saving config: $e'),
-                    backgroundColor: Colors.red,
-                  ),
+              if (rawContent != null) {
+                final updated = await configService.saveRawConfig(
+                  config,
+                  rawContent,
                 );
-                rethrow;
+                if (mounted) {
+                  setState(() {
+                    _activeConfig = updated;
+                  });
+                }
+                return updated;
+              } else {
+                await configService.saveConfig(config);
+                if (mounted) {
+                  setState(() {
+                    _activeConfig = config;
+                  });
+                }
+                return config;
               }
             },
             resolvePath: configService.resolvePath,

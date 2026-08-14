@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:agents_config_helper/models/discovery_request.dart';
 import 'package:agents_config_helper/models/discovery_result.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/discovery_preferences_store.dart';
 import 'package:agents_config_helper/services/discovery_service.dart';
+import 'package:agents_config_helper/services/home_directory_resolver.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -26,6 +25,11 @@ IDiscoveryPreferencesStore discoveryPreferencesStore(Ref ref) {
   return DiscoveryPreferencesStore();
 }
 
+@Riverpod(keepAlive: true)
+String? Function() homeDirectoryResolver(Ref ref) {
+  return resolveHomeDirectory;
+}
+
 @riverpod
 class DiscoveryController extends _$DiscoveryController {
   int _generation = 0;
@@ -43,8 +47,7 @@ class DiscoveryController extends _$DiscoveryController {
     final prefsResult = await prefsStore.load();
     final prefs = prefsResult.preferences;
 
-    final homeDirRaw =
-        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    final homeDirRaw = ref.read(homeDirectoryResolverProvider)();
     final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
 
     final request = DiscoveryRequest(
@@ -53,7 +56,25 @@ class DiscoveryController extends _$DiscoveryController {
       manualPaths: prefs.manualFilePaths,
     );
 
-    return discoveryService.discoverConfigs(request);
+    final result = await discoveryService.discoverConfigs(request);
+    if (homeDir == null) {
+      // Surface this rather than silently skipping all user-scope
+      // discovery: an unresolvable home directory otherwise looks
+      // identical to "nothing found".
+      return DiscoveryResult(
+        items: result.items,
+        warnings: [
+          const DiscoveryWarning(
+            path: '',
+            message:
+                "Could not resolve the user's home directory; user-scope "
+                'configurations were not searched.',
+          ),
+          ...result.warnings,
+        ],
+      );
+    }
+    return result;
   }
 
   Future<void> refresh() async {
@@ -67,8 +88,7 @@ class DiscoveryController extends _$DiscoveryController {
   }
 
   Future<void> addManualPath(String path) async {
-    final homeDirRaw =
-        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    final homeDirRaw = ref.read(homeDirectoryResolverProvider)();
     final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
     if (homeDir != null) {
       final normalizedPath = p.normalize(p.absolute(path));

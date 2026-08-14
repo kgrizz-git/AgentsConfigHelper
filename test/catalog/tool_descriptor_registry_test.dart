@@ -78,6 +78,48 @@ void main() {
       );
     });
 
+    test('does not match glob across path segment boundaries', () {
+      const projectRoot = '/root';
+      final pattern = p.normalize(p.join(projectRoot, '.cursor/rules/*.mdc'));
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(p.join(projectRoot, '.cursor/rules/archive/notes.mdc')),
+        ),
+        isFalse,
+      );
+    });
+
+    test('matches glob within a single path segment', () {
+      const projectRoot = '/root';
+      final pattern = p.normalize(p.join(projectRoot, '.cursor/rules/*.mdc'));
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(p.join(projectRoot, '.cursor/rules/foo.mdc')),
+        ),
+        isTrue,
+      );
+    });
+
+    test('nested glob path falls back to manual unknown', () {
+      const projectRoot = '/root';
+      final path = p.normalize(
+        p.join(projectRoot, '.cursor/rules/archive/notes.mdc'),
+      );
+
+      final match = ToolDescriptorRegistry.matchPath(
+        path,
+        normalizedProjectRoots: [projectRoot],
+      );
+
+      expect(match.descriptor, isNull);
+      expect(match.scope, ConfigLocationScope.manual);
+      expect(match.sourceLabel, 'Unknown configuration');
+    });
+
     test('throws ValidationException for unsupported extensions', () {
       const path = 'home_test/some_manual_path.bin';
 

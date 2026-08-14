@@ -10,10 +10,6 @@ analyzer:
     - "lib/vendor/**"
   language:
     strict-casts: true
-  errors:
-    inference_failure_on_function_invocation: ignore
-    inference_failure_on_collection_literal: ignore
-    inference_failure_on_instance_creation: ignore
   plugins:
     - dart_code_linter
 
@@ -44,13 +40,11 @@ linter:
   rules:
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # very_good_analysis targets published packages; this is an internal
+    # app with no external API, and mandating a doc comment on every public
+    # field/constructor conflicts with AGENTS.md's "no comments unless they
+    # add non-obvious context" rule.
     public_member_api_docs: false
-    document_ignores: false
-    lines_longer_than_80_chars: false
-    curly_braces_in_flow_control_structures: false
-    avoid_catches_without_on_clauses: false
-    discarded_futures: false
-    cascade_invocations: false
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

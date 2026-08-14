@@ -83,7 +83,8 @@ rules = ["rule1"]
     });
 
     test(
-      'explicitly discards comments and reorders during serialization (known limitation)',
+      'explicitly discards comments and reorders during serialization '
+      '(known limitation)',
       () {
         const originalToml = '''
 # This is a comment

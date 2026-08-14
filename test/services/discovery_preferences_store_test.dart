@@ -55,7 +55,8 @@ void main() {
   });
 
   test(
-    'load() extracts what it can from malformed JSON and warns about wrong types',
+    'load() extracts what it can from malformed JSON and warns about '
+    'wrong types',
     () async {
       await preferencesFile.writeAsString(
         jsonEncode({
@@ -158,7 +159,8 @@ void main() {
   });
 
   test('writes are atomic via temp file', () async {
-    // This is hard to test perfectly without race conditions, but we can verify the normal flow works.
+    // This is hard to test perfectly without race conditions, but we can
+    // verify the normal flow works.
     await store.addManualPath('/path/atomic');
 
     expect(preferencesFile.existsSync(), isTrue);

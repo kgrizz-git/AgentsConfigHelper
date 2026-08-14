@@ -9,7 +9,8 @@ import 'package:path/path.dart' as p;
 /// Service responsible for discovering AI agent configuration files
 /// on the local filesystem.
 class DiscoveryService {
-  /// Scans the file system for configuration files based on the given [request].
+  /// Scans the file system for configuration files based on the given
+  /// [request].
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
     final items = <DiscoveredConfig>[];
     final warnings = <DiscoveryWarning>[];
@@ -35,6 +36,7 @@ class DiscoveryService {
 
       final file = File(config.filePath);
       try {
+        // Checking file existence asynchronously avoids blocking the UI thread.
         // ignore: avoid_slow_async_io
         if (await file.exists()) {
           items.add(config);
@@ -47,7 +49,7 @@ class DiscoveryService {
             ),
           );
         }
-      } catch (e) {
+      } on Object catch (e) {
         warnings.add(
           DiscoveryWarning(
             path: config.filePath,
@@ -78,6 +80,8 @@ class DiscoveryService {
         // Bounded glob enumeration
         final dirPath = p.dirname(expectedPattern);
         final dir = Directory(dirPath);
+        // Checking directory existence asynchronously avoids blocking the
+        // UI thread.
         // ignore: avoid_slow_async_io
         if (!await dir.exists()) return;
 
@@ -155,13 +159,10 @@ class DiscoveryService {
         final config = DiscoveredConfig.fromPath(
           filePath: normalizedPath,
           scope: match.scope,
-          // Since manual could be unknown, default to structuredConfig if no target gives a specific kind
-          kind:
-              match.descriptor?.targets
-                  .where((t) => t.scope == match.scope)
-                  .firstOrNull
-                  ?.kind ??
-              ConfigSourceKind.structuredConfig,
+          // match.kind is the kind of the specific target that matched.
+          // For unmatched/unknown manual files there's no target at all, so
+          // fall back to structuredConfig.
+          kind: match.kind ?? ConfigSourceKind.structuredConfig,
           format: match.format,
           sourceLabel: match.sourceLabel,
           descriptor: match.descriptor,
@@ -175,7 +176,7 @@ class DiscoveryService {
             message: e.message,
           ),
         );
-      } catch (e) {
+      } on Object catch (e) {
         warnings.add(
           DiscoveryWarning(
             path: normalizedPath,

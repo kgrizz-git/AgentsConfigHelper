@@ -83,5 +83,52 @@ void main() {
         );
       },
     );
+
+    test(
+      "listBackups does not return another path's backups when one path "
+      'is a string prefix of another',
+      () async {
+        final shortPathFile = File(p.join(tempDir.path, 'app'));
+        await shortPathFile.writeAsString('short');
+        final longPathFile = File(p.join(tempDir.path, 'app_old'));
+        await longPathFile.writeAsString('long');
+
+        await backupService.createBackup(shortPathFile.path);
+        await backupService.createBackup(longPathFile.path);
+
+        final shortBackups = await backupService.listBackups(
+          shortPathFile.path,
+        );
+        final longBackups = await backupService.listBackups(
+          longPathFile.path,
+        );
+
+        expect(shortBackups, hasLength(1));
+        expect(p.basename(shortBackups.single.path), contains('__app_'));
+        expect(
+          p.basename(shortBackups.single.path),
+          isNot(contains('__app_old_')),
+        );
+
+        expect(longBackups, hasLength(1));
+        expect(p.basename(longBackups.single.path), contains('__app_old_'));
+      },
+    );
+
+    test('listBackups returns backups sorted most-recent first', () async {
+      final backupPath1 = await backupService.createBackup(
+        originalFile.path,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      final backupPath2 = await backupService.createBackup(
+        originalFile.path,
+      );
+
+      final backups = await backupService.listBackups(originalFile.path);
+
+      expect(backups, hasLength(2));
+      expect(backups.first.path, equals(backupPath2));
+      expect(backups.last.path, equals(backupPath1));
+    });
   });
 }

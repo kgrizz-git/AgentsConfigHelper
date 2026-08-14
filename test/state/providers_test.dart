@@ -20,9 +20,7 @@ class _FakeDiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   @override
   Future<DiscoveryPreferencesResult> load() async {
     return const DiscoveryPreferencesResult(
-      preferences: DiscoveryPreferences(
-
-      ),
+      preferences: DiscoveryPreferences(),
     );
   }
 
@@ -105,7 +103,8 @@ void main() {
   );
 
   test(
-    'DiscoveryController.addManualPath throws if path is outside home directory',
+    'DiscoveryController.addManualPath throws if path is outside home '
+    'directory',
     () async {
       final fakePrefs = _FakeDiscoveryPreferencesStore();
       final fakeService = _FakeDiscoveryService();
@@ -138,6 +137,32 @@ void main() {
           throwsA(isA<ArgumentError>()),
         );
       }
+    },
+  );
+
+  test(
+    'DiscoveryController surfaces a warning when the home directory '
+    "can't be resolved, instead of silently skipping user-scope discovery",
+    () async {
+      final fakePrefs = _FakeDiscoveryPreferencesStore();
+      final fakeService = _FakeDiscoveryService();
+
+      final container = ProviderContainer(
+        overrides: [
+          discoveryPreferencesStoreProvider.overrideWithValue(fakePrefs),
+          discoveryServiceProvider.overrideWithValue(fakeService),
+          homeDirectoryResolverProvider.overrideWithValue(() => null),
+        ],
+      );
+
+      addTearDown(container.dispose);
+
+      final result = await container.read(discoveryControllerProvider.future);
+
+      expect(
+        result.warnings.any((w) => w.message.contains('home directory')),
+        isTrue,
+      );
     },
   );
 }

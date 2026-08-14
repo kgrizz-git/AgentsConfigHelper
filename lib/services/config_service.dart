@@ -8,6 +8,7 @@ import 'package:agents_config_helper/parsers/text_config_parser.dart';
 import 'package:agents_config_helper/parsers/toml_config_parser.dart';
 import 'package:agents_config_helper/parsers/yaml_config_parser.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
+import 'package:agents_config_helper/services/home_directory_resolver.dart';
 import 'package:path/path.dart' as p;
 
 /// A facade service that orchestrates reading configs, parsing them,
@@ -17,7 +18,7 @@ class ConfigService {
   ConfigService({
     required this.backupService,
     String? Function()? homeDirectoryResolver,
-  }) : _homeDirectoryResolver = homeDirectoryResolver ?? _resolveHomeDirectory;
+  }) : _homeDirectoryResolver = homeDirectoryResolver ?? resolveHomeDirectory;
 
   /// Creates backups of existing configs before overwriting them.
   final BackupService backupService;
@@ -28,22 +29,6 @@ class ConfigService {
   final _yamlParser = YamlConfigParser();
   final _tomlParser = TomlConfigParser();
   final _textParser = TextConfigParser();
-
-  static String? _resolveHomeDirectory() {
-    final home =
-        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
-    if (home != null) {
-      return home;
-    }
-    if (Platform.isWindows) {
-      final drive = Platform.environment['HOMEDRIVE'];
-      final path = Platform.environment['HOMEPATH'];
-      if (drive != null && path != null) {
-        return '$drive$path';
-      }
-    }
-    return null;
-  }
 
   /// Resolves a user-supplied path to an absolute local filesystem path.
   String resolvePath(String path) {
@@ -66,6 +51,7 @@ class ConfigService {
   /// Loads a configuration explicitly discovered by the app.
   Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
     final file = File(config.filePath);
+    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await file.exists()) {
       throw FileSystemException('File not found', config.filePath);
@@ -88,14 +74,16 @@ class ConfigService {
     final file = File(expandedPath);
     String? originalContent;
 
-    // Backup before write if the file already exists
+    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (await file.exists()) {
       originalContent = await file.readAsString();
       await backupService.createBackup(expandedPath);
     } else {
-      // Ensure directory exists if we are creating a brand new config
+      // Ensure directory exists if we are creating a brand new config.
       final parentDir = file.parent;
+      // Checking directory existence asynchronously avoids blocking the UI
+      // thread.
       // ignore: avoid_slow_async_io
       if (!await parentDir.exists()) {
         await parentDir.create(recursive: true);
@@ -111,38 +99,89 @@ class ConfigService {
     await file.writeAsString(serialized);
   }
 
-  /// Safely saves raw [rawContent] to disk and returns the updated [ToolConfig].
+  /// Safely saves raw [rawContent] to disk and returns the updated
+  /// [ToolConfig].
   ///
   /// Automatically creates a backup of the existing file using [BackupService],
   /// then overwrites the file with the raw content and re-parses it.
+  ///
+  /// [config] carries the rules/permissions from the structured editor,
+  /// which may have been edited independently of [rawContent]. If they
+  /// diverge from `config.originalContent` (the pre-edit baseline), both
+  /// edits are reconciled by re-serializing on top of the raw text rather
+  /// than silently discarding one or the other.
   Future<ToolConfig> saveRawConfig(ToolConfig config, String rawContent) async {
     final parser = _getParserForFormat(config.format);
 
     // Validate the raw content by attempting to parse it before writing.
     // Throws an exception (e.g. ConfigParseException) if invalid.
-    final parsedConfig = parser.parse(
+    final parsedFromRaw = parser.parse(
       rawContent,
       filePath: config.filePath,
       toolName: config.toolName,
     );
 
+    // Compare against the pre-edit baseline (not parsedFromRaw) to detect
+    // whether the structured editor was touched independently of the raw
+    // text — parsedFromRaw's rules/permissions naturally differ from
+    // config's whenever the raw edit itself touches those fields, which
+    // must not be mistaken for a structured-editor edit.
+    final baseline = parser.parse(
+      config.originalContent,
+      filePath: config.filePath,
+      toolName: config.toolName,
+    );
+
+    String contentToWrite;
+    ToolConfig parsedConfig;
+    if (!_stringListEquals(config.rules, baseline.rules) ||
+        !_stringListEquals(config.permissions, baseline.permissions)) {
+      final mergedConfig = parsedFromRaw.copyWith(
+        rules: config.rules,
+        permissions: config.permissions,
+      );
+      contentToWrite = parser.serialize(
+        mergedConfig,
+        originalContent: rawContent,
+      );
+      parsedConfig = parser.parse(
+        contentToWrite,
+        filePath: config.filePath,
+        toolName: config.toolName,
+      );
+    } else {
+      contentToWrite = rawContent;
+      parsedConfig = parsedFromRaw;
+    }
+
     final expandedPath = resolvePath(config.filePath);
     final file = File(expandedPath);
 
+    // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (await file.exists()) {
       await backupService.createBackup(expandedPath);
     } else {
       final parentDir = file.parent;
+      // Checking directory existence asynchronously avoids blocking the UI
+      // thread.
       // ignore: avoid_slow_async_io
       if (!await parentDir.exists()) {
         await parentDir.create(recursive: true);
       }
     }
 
-    await file.writeAsString(rawContent);
+    await file.writeAsString(contentToWrite);
 
     return parsedConfig;
+  }
+
+  bool _stringListEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   ConfigParser _getParserForFormat(ConfigFormat format) {
