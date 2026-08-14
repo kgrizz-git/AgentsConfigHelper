@@ -37,6 +37,16 @@ class _FakeConfigService extends ConfigService {
       rules: const ['original rule'],
     );
   }
+
+  @override
+  Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
+    return ToolConfig(
+      toolName: config.filePath.contains('cursor') ? 'Cursor' : 'Claude',
+      filePath: config.filePath,
+      format: ConfigFormat.json,
+      rules: const ['original rule'],
+    );
+  }
 }
 
 

@@ -48,7 +48,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     });
     try {
       final configService = ref.read(configServiceProvider);
-      final config = await configService.loadConfig(configItem.filePath);
+      final config = await configService.loadDiscoveredConfig(configItem);
       if (!mounted || generation != _loadGeneration) {
         return;
       }

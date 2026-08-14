@@ -6,6 +6,7 @@ import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/discovery_preferences_store.dart';
 import 'package:agents_config_helper/services/discovery_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'providers.g.dart';
@@ -39,7 +40,8 @@ class DiscoveryController extends _$DiscoveryController {
     final prefsResult = await prefsStore.load();
     final prefs = prefsResult.preferences;
 
-    final homeDir = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    final homeDirRaw = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
 
     final request = DiscoveryRequest(
       normalizedHomePath: homeDir,
