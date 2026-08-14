@@ -124,12 +124,10 @@ class _MainShellState extends ConsumerState<MainShell> {
               );
               // Reload the config after restoring, if it's still discoverable.
               final items = ref.read(discoveryControllerProvider).value?.items;
-              final configItem = items
-                  ?.cast<DiscoveredConfig?>()
-                  .firstWhere(
-                    (item) => item?.id == _activeConfigId,
-                    orElse: () => null,
-                  );
+              final configItem = items?.cast<DiscoveredConfig?>().firstWhere(
+                (item) => item?.id == _activeConfigId,
+                orElse: () => null,
+              );
               if (configItem != null && mounted) {
                 await _loadConfig(configItem);
               }
@@ -242,13 +240,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                         onSelected: (callback) => callback(),
                         itemBuilder: (context) => [
                           PopupMenuItem(
-                            value: () =>
-                                unawaited(_showAddManualPathDialog()),
+                            value: () => unawaited(_showAddManualPathDialog()),
                             child: const Text('Add Manual Config Path'),
                           ),
                           PopupMenuItem(
-                            value: () =>
-                                unawaited(_showAddProjectRootDialog()),
+                            value: () => unawaited(_showAddProjectRootDialog()),
                             child: const Text('Add Project Root'),
                           ),
                         ],
@@ -274,9 +270,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                           return Padding(
                             padding: const EdgeInsets.all(20),
                             child: Text(
-                              result.warnings.map((w) => w.message).join(
-                                '\n',
-                              ),
+                              result.warnings
+                                  .map((w) => w.message)
+                                  .join(
+                                    '\n',
+                                  ),
                               style: const TextStyle(color: Colors.red),
                             ),
                           );

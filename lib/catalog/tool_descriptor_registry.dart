@@ -306,8 +306,9 @@ class ToolDescriptorRegistry {
     if (!expectedPattern.contains('*')) {
       return expectedPattern == actualNormalizedPath;
     }
-    final regexStr =
-        RegExp.escape(expectedPattern).replaceAll(r'\*', r'[^/\\]*');
+    final regexStr = RegExp.escape(
+      expectedPattern,
+    ).replaceAll(r'\*', r'[^/\\]*');
     final regex = RegExp('^$regexStr\$');
     return regex.hasMatch(actualNormalizedPath);
   }
