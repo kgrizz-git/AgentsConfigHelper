@@ -83,13 +83,13 @@ class ToolDescriptorRegistry {
       targets: [
         ConfigTarget(
           relativePath: '.config/opencode/opencode.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
         ),
         ConfigTarget(
           relativePath: '.opencode/opencode.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),
