@@ -18,6 +18,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `AGENTS.md` | scope-based allow/deny |
 | Antigravity | JSON | `~/.gemini/antigravity-cli/settings.json` | `.agents/rules/` | `GEMINI.md` + rules | action(target) + presets |
 | agy-acp | JSON | `~/.openab/agy-acp/sessions.json` | host ACP config (e.g. Zed `agent_servers`) | via agy hooks | ACP permission bridge |
+| VS Code / GitHub Copilot | Markdown | `.github/copilot-instructions.md` | (same, repo-root) | `.github/copilot-instructions.md` | instructions only (no permission model) |
 
 ---
 
@@ -523,13 +524,62 @@ rules:
 
 ---
 
+## VS Code / GitHub Copilot
+
+> **Status:** Deferred — listed for parity/tracking; no dedicated parser or auto-discovery
+> yet. Instructions are plain Markdown and fall under the deferred Markdown sources.
+
+### VS Code / GitHub Copilot Config paths
+
+| Scope | Path |
+| --- | --- |
+| Project instructions | `.github/copilot-instructions.md` (repo root) |
+| User/agent settings | VS Code `settings.json` (`github.copilot.*`, `chat.agents`) |
+| Agent definitions | `.github/agents/*.md` (or `.github/chatmodes/*.chatmode.md`) |
+
+### VS Code / GitHub Copilot Config format
+
+Plain **Markdown** for instructions/agents. No structured permission model — VS Code
+Copilot reads instructions and applies the host IDE's trust/sandbox settings. Chat agents
+can be defined as Markdown with YAML frontmatter (name, description, tools, skills).
+
+### VS Code / GitHub Copilot Rules
+
+- **Instructions:** `.github/copilot-instructions.md` — project-level guidance, plain Markdown.
+- **Agents:** `.github/agents/<name>.md` with frontmatter.
+- **Chat modes:** `.github/chatmodes/*.chatmode.md`.
+
+### VS Code / GitHub Copilot CLI
+
+`code` (VS Code), `github-copilot` / `copilot` (CLI), `gh copilot`.
+
+**Sources:** [Copilot overview](https://code.visualstudio.com/docs/copilot/overview) · [Agent skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills) · [GitHub Copilot](https://github.com/features/copilot)
+
+---
+
 ## Config format summary
 
 | Format | Tools | Parser approach |
 | --- | --- | --- |
 | JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, agy-acp | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
 | TOML | Codex | `toml` Dart package |
-| YAML | Kiro | `yaml` Dart package |
+| YAML | Kiro (permissions), Paseo (hub/workflows) | `yaml` Dart package |
+| Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — **deferred** (see below) | raw-text editor (planned) |
+
+## Deferred / not yet supported
+
+These sources are known but intentionally excluded from V1 auto-discovery until a
+dedicated raw-text editor exists (see "Detection and Registry → Deferred Sources"):
+
+- **Markdown rules** — `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`
+  (YAML frontmatter + markdown body), Codex `.rules`, Devin `.devin/rules/*.md`.
+- **Starlark** — Codex command rules (`.codex/rules/*.rules`).
+- **Plain text** — Cursor `.cursorrules` (deprecated).
+- **VS Code / GitHub Copilot** — instructions live in `.github/copilot-instructions.md`
+  (Markdown); not given a dedicated tool entry or parser yet. Tracked in the master plan
+  under deferred-tools work.
+
+Adding VS Code / GitHub Copilot as a first-class supported tool is tracked in the master plan.
 
 ## Permissions model taxonomy
 

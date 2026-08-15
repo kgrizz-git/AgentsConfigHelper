@@ -107,6 +107,18 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
   * Providing guidance on common read-only commands.
   * Offering templates or wizards for allowing/restricting commands within specific folders or workspaces.
 
+## Phase 9: Deferred Tools & Markdown/Starlark Sources
+
+**Goal:** Extend discovery and editing beyond the V1 structured-config set (JSON/JSONC, TOML, YAML) to the deferred sources and tools currently excluded from auto-discovery.
+
+* **Raw-text editor (prerequisite):** Build the deferred Markdown/Starlark/plain-text editor so non-JSON/YAML/TOML sources can be opened, viewed, and safely edited (ties to Phase 5 raw-editor stub).
+* **Markdown rules discovery:** Surface `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`, Codex `.rules`, Devin `.devin/rules/*.md` in the sidebar once the raw editor exists (per `docs/supported-tools.md` "Deferred Sources").
+* **Starlark & plain text:** Support Codex `.rules` (Starlark) and deprecated Cursor `.cursorrules` (plain text) via the raw editor.
+* **VS Code / GitHub Copilot:** Add as a first-class supported tool. Instructions are `.github/copilot-instructions.md` (Markdown); no permission model. Add a `ToolDescriptor` entry and a section in `docs/supported-tools.md` (already stubbed there as deferred).
+* **Parser registry reconciliation:** Ensure `lib/catalog/tool_descriptor_registry.dart` and `DiscoveryService.defaultRelativePaths` reflect all 10 tools plus deferred sources.
+
+> **Note:** See `docs/supported-tools.md` "Deferred / not yet supported" for the authoritative list of excluded sources. The Phase 1 Markdown parser (line 18) anticipated this; Phase 9 closes the gap.
+
 ## Backlog & Future Enhancements
 
 **Goal:** Track future feature requests that are currently deferred.
