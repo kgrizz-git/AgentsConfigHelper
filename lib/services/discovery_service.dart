@@ -78,32 +78,59 @@ class DiscoveryService {
         await addIfValid(config);
       } else {
         // Bounded glob enumeration
-        final dirPath = p.dirname(expectedPattern);
-        final dir = Directory(dirPath);
-        // Checking directory existence asynchronously avoids blocking the
-        // UI thread.
-        // ignore: avoid_slow_async_io
-        if (!await dir.exists()) return;
+        try {
+          final dirPath = p.dirname(expectedPattern);
+          final dir = Directory(dirPath);
+          // Checking directory existence asynchronously avoids blocking
+          // the UI thread.
+          // ignore: avoid_slow_async_io
+          if (!await dir.exists()) return;
 
-        var count = 0;
-        const maxEntries = 100;
+          var count = 0;
+          var truncated = false;
+          const maxEntries = 100;
 
-        await for (final entity in dir.list()) {
-          if (entity is File) {
-            if (ToolDescriptorRegistry.isMatch(expectedPattern, entity.path)) {
-              final config = DiscoveredConfig.fromPath(
-                filePath: entity.path,
-                scope: scope,
-                kind: target.kind,
-                format: target.format,
-                sourceLabel: descriptor.displayName,
-                descriptor: descriptor,
-              );
-              await addIfValid(config);
-              count++;
-              if (count >= maxEntries) break;
+          await for (final entity in dir.list()) {
+            if (entity is File) {
+              if (ToolDescriptorRegistry.isMatch(
+                expectedPattern,
+                entity.path,
+              )) {
+                final config = DiscoveredConfig.fromPath(
+                  filePath: entity.path,
+                  scope: scope,
+                  kind: target.kind,
+                  format: target.format,
+                  sourceLabel: descriptor.displayName,
+                  descriptor: descriptor,
+                );
+                await addIfValid(config);
+                count++;
+                if (count >= maxEntries) {
+                  truncated = true;
+                  break;
+                }
+              }
             }
           }
+
+          if (truncated) {
+            warnings.add(
+              DiscoveryWarning(
+                path: expectedPattern,
+                message:
+                    'Glob enumeration hit the $maxEntries-entry cap; '
+                    'some matches may have been omitted.',
+              ),
+            );
+          }
+        } on Object catch (e) {
+          warnings.add(
+            DiscoveryWarning(
+              path: expectedPattern,
+              message: 'Error enumerating glob target: $e',
+            ),
+          );
         }
       }
     }
@@ -166,6 +193,7 @@ class DiscoveryService {
           format: match.format,
           sourceLabel: match.sourceLabel,
           descriptor: match.descriptor,
+          isManual: true,
         );
 
         await addIfValid(config, isManual: true);

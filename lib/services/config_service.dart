@@ -65,11 +65,12 @@ class ConfigService {
     );
   }
 
-  /// Safely saves [config] to disk.
+  /// Safely saves [config] to disk and returns the freshly-parsed result.
   ///
   /// Automatically creates a backup of the existing file using [BackupService],
-  /// then overwrites the file with the serialized config.
-  Future<void> saveConfig(ToolConfig config) async {
+  /// then overwrites the file with the serialized config and re-parses it
+  /// so the returned [ToolConfig] has an up-to-date `originalContent`.
+  Future<ToolConfig> saveConfig(ToolConfig config) async {
     final expandedPath = resolvePath(config.filePath);
     final file = File(expandedPath);
     String? originalContent;
@@ -97,6 +98,12 @@ class ConfigService {
     );
 
     await file.writeAsString(serialized);
+
+    return parser.parse(
+      serialized,
+      filePath: config.filePath,
+      toolName: config.toolName,
+    );
   }
 
   /// Safely saves raw [rawContent] to disk and returns the updated

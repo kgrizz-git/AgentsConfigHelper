@@ -137,7 +137,12 @@ void main() {
         filePath: 'test.json',
         toolName: 'test',
       );
-      expect(roundTrippedConfig, equals(parsedConfig));
+      // Normalize originalContent before comparing since the serialization
+      // reformats the raw text.
+      expect(
+        roundTrippedConfig,
+        equals(parsedConfig.copyWith(originalContent: serializedJson)),
+      );
     });
 
     test(

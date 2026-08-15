@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:agents_config_helper/models/discovery_preferences.dart';
 import 'package:agents_config_helper/models/discovery_request.dart';
@@ -11,14 +10,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeDiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
+  _FakeDiscoveryPreferencesStore({this.loadResults = const []});
+
+  final List<String> addedManualPaths = [];
+  final List<DiscoveryPreferencesResult> loadResults;
+
+  int _loadIndex = 0;
+
   @override
-  Future<void> addManualPath(String path) async {}
+  Future<void> addManualPath(String path) async {
+    addedManualPaths.add(path);
+  }
 
   @override
   Future<void> addProjectRoot(String path) async {}
 
   @override
   Future<DiscoveryPreferencesResult> load() async {
+    if (_loadIndex < loadResults.length) {
+      return loadResults[_loadIndex++];
+    }
     return const DiscoveryPreferencesResult(
       preferences: DiscoveryPreferences(),
     );
@@ -103,10 +114,44 @@ void main() {
   );
 
   test(
-    'DiscoveryController.addManualPath throws if path is outside home '
-    'directory',
+    'DiscoveryController.addManualPath accepts path outside home directory',
     () async {
       final fakePrefs = _FakeDiscoveryPreferencesStore();
+      final fakeService = _FakeDiscoveryService();
+
+      final container = ProviderContainer(
+        overrides: [
+          discoveryPreferencesStoreProvider.overrideWithValue(fakePrefs),
+          discoveryServiceProvider.overrideWithValue(fakeService),
+          homeDirectoryResolverProvider.overrideWithValue(
+            () => '/tmp/fake-home',
+          ),
+        ],
+      );
+
+      addTearDown(container.dispose);
+
+      final controller = container.read(discoveryControllerProvider.notifier);
+      await controller.addManualPath('/tmp/somewhere-else/config.json');
+
+      expect(fakePrefs.addedManualPaths, ['/tmp/somewhere-else/config.json']);
+    },
+  );
+
+  test(
+    'DiscoveryController merges preference-store warnings into DiscoveryResult',
+    () async {
+      final fakePrefs = _FakeDiscoveryPreferencesStore(
+        loadResults: [
+          const DiscoveryPreferencesResult(
+            preferences: DiscoveryPreferences(),
+            warnings: [
+              "Removed duplicate or empty paths from 'manualFilePaths'.",
+              "Ignored non-absolute path: 'relative/path'",
+            ],
+          ),
+        ],
+      );
       final fakeService = _FakeDiscoveryService();
 
       final container = ProviderContainer(
@@ -118,25 +163,19 @@ void main() {
 
       addTearDown(container.dispose);
 
-      final controller = container.read(discoveryControllerProvider.notifier);
+      final result = await container.read(discoveryControllerProvider.future);
 
-      // Usually /tmp or /var is outside home. On Windows it could be C:\temp.
-      const outsidePath =
-          r'C:\temp\file.json'; // Hardcode some clearly non-home paths for testing
-      const outsidePathUnix = '/tmp/file.json';
-
-      final homeDirRaw =
-          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
-      if (homeDirRaw != null) {
-        expect(
-          () => controller.addManualPath(
-            Platform.environment['HOME'] != null
-                ? outsidePathUnix
-                : outsidePath,
-          ),
-          throwsA(isA<ArgumentError>()),
-        );
-      }
+      expect(result.warnings.length, 2);
+      expect(result.warnings[0].path, '');
+      expect(
+        result.warnings[0].message,
+        "Removed duplicate or empty paths from 'manualFilePaths'.",
+      );
+      expect(result.warnings[1].path, '');
+      expect(
+        result.warnings[1].message,
+        "Ignored non-absolute path: 'relative/path'",
+      );
     },
   );
 

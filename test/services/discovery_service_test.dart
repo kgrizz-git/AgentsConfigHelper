@@ -130,6 +130,10 @@ void main() {
         expect(result.items.first.filePath, equals(validManualFile.path));
         expect(result.items.first.scope, equals(ConfigLocationScope.manual));
         expect(result.items.first.sourceLabel, equals('Unknown configuration'));
+        // A manually-added path that isn't otherwise discovered must still
+        // be flagged as manual, or the sidebar's "remove" affordance (which
+        // is gated on isManual) never appears for it.
+        expect(result.items.first.isManual, isTrue);
 
         expect(result.warnings.length, equals(2));
         expect(
@@ -245,6 +249,130 @@ void main() {
           result.items.where((item) => item.filePath == kiroMd.path).length,
           equals(1),
         );
+      },
+    );
+
+    test(
+      'glob enumeration error in one target does not abort other targets',
+      () async {
+        // Create a file that will be found by a known-good target.
+        final claudeFile = File(
+          p.join(mockHome.path, '.claude', 'settings.json'),
+        );
+        await claudeFile.create(recursive: true);
+
+        // Create a directory with no read permissions to trigger an error
+        // during glob enumeration.
+        final restrictedDir = Directory(
+          p.join(mockProject.path, '.cursor', 'rules'),
+        );
+        await restrictedDir.create(recursive: true);
+        await Process.run('chmod', ['000', restrictedDir.path]);
+
+        final request = DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+          normalizedProjectRoots: [mockProject.path],
+        );
+
+        final result = await discoveryService.discoverConfigs(request);
+
+        // The claude file should still be found despite the glob error.
+        expect(
+          result.items.any((item) => item.filePath == claudeFile.path),
+          isTrue,
+        );
+        // There should be a warning about the failed glob target.
+        expect(
+          result.warnings.any(
+            (w) =>
+                w.path.contains('.cursor') &&
+                w.message.contains('Error enumerating glob target'),
+          ),
+          isTrue,
+        );
+
+        // Restore permissions so tearDown can clean up.
+        await Process.run('chmod', ['755', restrictedDir.path]);
+      },
+    );
+
+    test(
+      'glob enumeration emits warning when cap is hit',
+      () async {
+        final rulesDir = Directory(
+          p.join(mockProject.path, '.cursor', 'rules'),
+        );
+        await rulesDir.create(recursive: true);
+
+        // Create 105 matching .mdc files so the cap (100) is exceeded.
+        for (var i = 0; i < 105; i++) {
+          await File(p.join(rulesDir.path, 'rule$i.mdc')).create();
+        }
+
+        final request = DiscoveryRequest(
+          normalizedProjectRoots: [mockProject.path],
+        );
+
+        final result = await discoveryService.discoverConfigs(request);
+
+        // At most 100 cursor rules should appear.
+        final cursorItems = result.items
+            .where((item) => item.filePath.contains('.cursor'))
+            .toList();
+        expect(cursorItems.length, equals(100));
+
+        // A truncation warning should be present.
+        expect(
+          result.warnings.any(
+            (w) =>
+                w.path.contains('.cursor') &&
+                w.message.contains('100-entry cap'),
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'manual path that is also auto-discovered: '
+      'isManual reverts to false when removed from manualPaths',
+      () async {
+        // Create a file that is auto-discoverable via the user-scope scan.
+        final claudeFile = File(
+          p.join(mockHome.path, '.claude', 'settings.json'),
+        );
+        await claudeFile.create(recursive: true);
+
+        // First scan: file is BOTH auto-discovered AND manually added.
+        final requestWithManual = DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+          manualPaths: [claudeFile.path],
+        );
+
+        final result1 = await discoveryService.discoverConfigs(
+          requestWithManual,
+        );
+
+        // The item should appear exactly once.
+        expect(result1.items.length, equals(1));
+        // It should be flagged as manual because the user explicitly added it.
+        expect(result1.items.first.isManual, isTrue);
+        expect(result1.items.first.filePath, equals(claudeFile.path));
+
+        // Second scan: the same path is no longer in manualPaths.
+        final requestWithoutManual = DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+        );
+
+        final result2 = await discoveryService.discoverConfigs(
+          requestWithoutManual,
+        );
+
+        // The item should still be present (it's a real config).
+        expect(result2.items.length, equals(1));
+        expect(result2.items.first.filePath, equals(claudeFile.path));
+        // But isManual should now be false since it wasn't manually added.
+        expect(result2.items.first.isManual, isFalse);
       },
     );
   });

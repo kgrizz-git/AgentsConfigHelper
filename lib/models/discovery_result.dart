@@ -18,11 +18,13 @@ class DiscoveryResult extends Equatable {
   const DiscoveryResult({
     required this.items,
     this.warnings = const [],
+    this.projectRoots = const [],
   });
 
   final List<DiscoveredConfig> items;
   final List<DiscoveryWarning> warnings;
+  final List<String> projectRoots;
 
   @override
-  List<Object?> get props => [items, warnings];
+  List<Object?> get props => [items, warnings, projectRoots];
 }

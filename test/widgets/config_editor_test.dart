@@ -14,10 +14,7 @@ class FakeConfigService extends ConfigService {
   final savedConfigs = <ToolConfig>[];
 
   @override
-  Future<ToolConfig?> saveConfig(
-    ToolConfig config, [
-    String? rawContent,
-  ]) async {
+  Future<ToolConfig> saveConfig(ToolConfig config) async {
     savedConfigs.add(config);
     await Future<void>.delayed(Duration.zero);
     return config;
@@ -45,7 +42,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: configService.saveConfig,
+              onSave: (c, [r]) => configService.saveConfig(c),
               resolvePath: configService.resolvePath,
               onShowHistory: () {},
             ),
@@ -93,7 +90,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: configService.saveConfig,
+              onSave: (c, [r]) => configService.saveConfig(c),
               resolvePath: configService.resolvePath,
               onShowHistory: () {},
             ),
@@ -140,7 +137,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: configService.saveConfig,
+              onSave: (c, [r]) => configService.saveConfig(c),
               resolvePath: configService.resolvePath,
               onShowHistory: () {},
             ),
@@ -154,6 +151,93 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('- duplicate'), findsOneWidget);
+    });
+
+    testWidgets(
+      'shows TOML formatting warning when structured fields change',
+      (tester) async {
+        final tempDir = Directory.systemTemp;
+        final configService = FakeConfigService(
+          BackupService(backupDirectory: tempDir),
+        );
+        final config = ToolConfig(
+          toolName: 'Test Tool',
+          filePath: '${tempDir.path}/config.toml',
+          format: ConfigFormat.toml,
+          rules: const ['rule1'],
+          permissions: const ['perm1'],
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ConfigEditor(
+                config: config,
+                onSave: (c, [r]) => configService.saveConfig(c),
+                resolvePath: configService.resolvePath,
+                onShowHistory: () {},
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Add Item').first);
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField).at(1), 'new rule');
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Review Changes'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.textContaining(
+            'Saving a TOML config with structured changes',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('does not show TOML warning for JSON configs', (
+      tester,
+    ) async {
+      final tempDir = Directory.systemTemp;
+      final configService = FakeConfigService(
+        BackupService(backupDirectory: tempDir),
+      );
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: '${tempDir.path}/config.json',
+        format: ConfigFormat.json,
+        rules: const ['rule1'],
+        permissions: const ['perm1'],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ConfigEditor(
+              config: config,
+              onSave: (c, [r]) => configService.saveConfig(c),
+              resolvePath: configService.resolvePath,
+              onShowHistory: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Add Item').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), 'new rule');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Changes'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Saving a TOML config with structured changes'),
+        findsNothing,
+      );
     });
 
     testWidgets('allows editing when permissions is explicitly null', (

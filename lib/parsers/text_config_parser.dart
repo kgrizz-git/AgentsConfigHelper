@@ -23,7 +23,6 @@ class TextConfigParser implements ConfigParser {
 
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
-    // For text configurations, we just return the original string content.
     return config.originalContent;
   }
 

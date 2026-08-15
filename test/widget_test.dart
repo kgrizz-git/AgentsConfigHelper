@@ -66,11 +66,14 @@ class _FakeDiscoveryService extends DiscoveryService {
 class _FakePreferencesStore implements IDiscoveryPreferencesStore {
   final addedManualPaths = <String>[];
   final addedProjectRoots = <String>[];
+  final removedProjectRoots = <String>[];
 
   @override
   Future<DiscoveryPreferencesResult> load() async {
-    return const DiscoveryPreferencesResult(
-      preferences: DiscoveryPreferences(),
+    return DiscoveryPreferencesResult(
+      preferences: DiscoveryPreferences(
+        projectRoots: addedProjectRoots.toList(),
+      ),
     );
   }
 
@@ -87,7 +90,10 @@ class _FakePreferencesStore implements IDiscoveryPreferencesStore {
   }
 
   @override
-  Future<void> removeProjectRoot(String path) async {}
+  Future<void> removeProjectRoot(String path) async {
+    removedProjectRoots.add(path);
+    addedProjectRoots.remove(path);
+  }
 }
 
 void main() {
@@ -233,4 +239,62 @@ void main() {
       equals(['/workspace/my-project']),
     );
   });
+
+  testWidgets(
+    'removes a project root via the "Manage Project Roots" dialog',
+    (tester) async {
+      final configService = ConfigService(
+        backupService: BackupService(backupDirectory: Directory.systemTemp),
+      );
+      final prefsStore = _FakePreferencesStore();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            configServiceProvider.overrideWithValue(configService),
+            discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+            discoveryPreferencesStoreProvider.overrideWithValue(prefsStore),
+            homeDirectoryResolverProvider.overrideWithValue(
+              () => '/tmp/fake-home',
+            ),
+          ],
+          child: const MaterialApp(home: MainShell()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // First add a project root so there's something to remove.
+      await tester.tap(find.byIcon(Icons.add));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Project Root'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '/workspace/my-project');
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+
+      expect(
+        prefsStore.addedProjectRoots,
+        equals(['/workspace/my-project']),
+      );
+
+      // Open the manage dialog.
+      await tester.tap(find.byIcon(Icons.add));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Manage Project Roots'));
+      await tester.pumpAndSettle();
+
+      // Verify the root is listed.
+      expect(find.text('/workspace/my-project'), findsOneWidget);
+
+      // Tap the remove button next to the root.
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      // Verify removeProjectRoot was called.
+      expect(
+        prefsStore.removedProjectRoots,
+        equals(['/workspace/my-project']),
+      );
+    },
+  );
 }

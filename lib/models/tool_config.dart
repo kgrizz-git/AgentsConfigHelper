@@ -89,5 +89,6 @@ class ToolConfig extends Equatable {
     rules,
     permissions,
     rawSettings,
+    originalContent,
   ];
 }

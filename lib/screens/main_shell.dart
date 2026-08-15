@@ -25,6 +25,7 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   ToolConfig? _activeConfig;
   String? _activeConfigId;
+  DiscoveredConfig? _activeDiscoveredConfig;
   bool _isLoading = false;
   bool _hasUnsavedChanges = false;
   String? _error;
@@ -48,6 +49,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       _error = null;
       _activeConfig = null;
       _activeConfigId = configItem.id;
+      _activeDiscoveredConfig = configItem;
       _hasUnsavedChanges = false;
     });
     try {
@@ -113,7 +115,6 @@ class _MainShellState extends ConsumerState<MainShell> {
           final configService = ref.read(configServiceProvider);
           return HistoryModal(
             config: _activeConfig!,
-            backupService: configService.backupService,
             onRestore: (backupPath) async {
               final targetPath = configService.resolvePath(
                 _activeConfig!.filePath,
@@ -122,12 +123,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 backupPath,
                 targetPath,
               );
-              // Reload the config after restoring, if it's still discoverable.
-              final items = ref.read(discoveryControllerProvider).value?.items;
-              final configItem = items?.cast<DiscoveredConfig?>().firstWhere(
-                (item) => item?.id == _activeConfigId,
-                orElse: () => null,
-              );
+              final configItem = _activeDiscoveredConfig;
               if (configItem != null && mounted) {
                 await _loadConfig(configItem);
               }
@@ -182,6 +178,26 @@ class _MainShellState extends ConsumerState<MainShell> {
         );
       }
     }
+  }
+
+  void _showManageProjectRootsDialog() {
+    final discoveryState = ref.read(discoveryControllerProvider);
+    final projectRoots = discoveryState.value?.projectRoots ?? [];
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => _ManageProjectRootsDialog(
+          projectRoots: projectRoots,
+          onRemove: (path) {
+            unawaited(
+              ref
+                  .read(discoveryControllerProvider.notifier)
+                  .removeProjectRoot(path),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   IconData _getIconForTool(String toolId) {
@@ -246,6 +262,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                           PopupMenuItem(
                             value: () => unawaited(_showAddProjectRootDialog()),
                             child: const Text('Add Project Root'),
+                          ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem(
+                            value: _showManageProjectRootsDialog,
+                            child: const Text('Manage Project Roots'),
                           ),
                         ],
                       ),
@@ -397,13 +418,13 @@ class _MainShellState extends ConsumerState<MainShell> {
                 }
                 return updated;
               } else {
-                await configService.saveConfig(config);
+                final updated = await configService.saveConfig(config);
                 if (mounted) {
                   setState(() {
-                    _activeConfig = config;
+                    _activeConfig = updated;
                   });
                 }
-                return config;
+                return updated;
               }
             },
             resolvePath: configService.resolvePath,
@@ -436,6 +457,65 @@ class _MainShellState extends ConsumerState<MainShell> {
           controller: _controller,
         ),
       ),
+    );
+  }
+}
+
+class _ManageProjectRootsDialog extends StatelessWidget {
+  const _ManageProjectRootsDialog({
+    required this.projectRoots,
+    required this.onRemove,
+  });
+
+  final List<String> projectRoots;
+  final void Function(String path) onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.backgroundDark,
+      title: const Text(
+        'Manage Project Roots',
+        style: AppTextStyles.uiHeader,
+      ),
+      content: SizedBox(
+        width: 500,
+        child: projectRoots.isEmpty
+            ? const Center(
+                child: Text(
+                  'No project roots configured.',
+                  style: AppTextStyles.uiSecondary,
+                ),
+              )
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: projectRoots.length,
+                itemBuilder: (context, index) {
+                  final root = projectRoots[index];
+                  return ListTile(
+                    title: Text(
+                      root,
+                      style: AppTextStyles.codeBase,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      color: AppColors.textSecondaryDark,
+                      onPressed: () => onRemove(root),
+                    ),
+                  );
+                },
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.textPrimaryDark,
+          ),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }

@@ -1,36 +1,28 @@
 import 'dart:io';
 
 import 'package:agents_config_helper/models/tool_config.dart';
-import 'package:agents_config_helper/services/backup_service.dart';
+import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HistoryModal extends StatefulWidget {
+class HistoryModal extends ConsumerStatefulWidget {
   const HistoryModal({
     required this.config,
-    required this.backupService,
     required this.onRestore,
     super.key,
   });
 
   final ToolConfig config;
-  final BackupService backupService;
   final Future<void> Function(String backupPath) onRestore;
 
   @override
-  State<HistoryModal> createState() => _HistoryModalState();
+  ConsumerState<HistoryModal> createState() => _HistoryModalState();
 }
 
-class _HistoryModalState extends State<HistoryModal> {
-  late Future<List<File>> _backupsFuture;
+class _HistoryModalState extends ConsumerState<HistoryModal> {
   bool _isRestoring = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _backupsFuture = widget.backupService.listBackups(widget.config.filePath);
-  }
 
   Future<void> _confirmAndRestore(File backupFile) async {
     final confirm = await showDialog<bool>(
@@ -99,27 +91,25 @@ class _HistoryModalState extends State<HistoryModal> {
 
   @override
   Widget build(BuildContext context) {
+    final backupsAsync = ref.watch(
+      backupListProvider(widget.config.filePath),
+    );
+
     return AlertDialog(
       backgroundColor: AppColors.backgroundDark,
       title: const Text('History & Backups', style: AppTextStyles.uiHeader),
       content: SizedBox(
         width: 500,
         height: 400,
-        child: FutureBuilder<List<File>>(
-          future: _backupsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  'Error: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
-            }
-            final backups = snapshot.data ?? [];
+        child: backupsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Text(
+              'Error: $e',
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+          data: (backups) {
             if (backups.isEmpty) {
               return const Center(
                 child: Text('No backups found for this file.'),

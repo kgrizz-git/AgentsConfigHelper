@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:agents_config_helper/models/discovery_request.dart';
 import 'package:agents_config_helper/models/discovery_result.dart';
 import 'package:agents_config_helper/services/config_service.dart';
@@ -57,24 +59,37 @@ class DiscoveryController extends _$DiscoveryController {
     );
 
     final result = await discoveryService.discoverConfigs(request);
+
+    final prefsWarnings = [
+      for (final w in prefsResult.warnings)
+        DiscoveryWarning(path: '', message: w),
+    ];
+
+    final warnings = <DiscoveryWarning>[
+      ...prefsWarnings,
+      ...result.warnings,
+    ];
+
     if (homeDir == null) {
       // Surface this rather than silently skipping all user-scope
       // discovery: an unresolvable home directory otherwise looks
       // identical to "nothing found".
-      return DiscoveryResult(
-        items: result.items,
-        warnings: [
-          const DiscoveryWarning(
-            path: '',
-            message:
-                "Could not resolve the user's home directory; user-scope "
-                'configurations were not searched.',
-          ),
-          ...result.warnings,
-        ],
+      warnings.insert(
+        0,
+        const DiscoveryWarning(
+          path: '',
+          message:
+              "Could not resolve the user's home directory; user-scope "
+              'configurations were not searched.',
+        ),
       );
     }
-    return result;
+
+    return DiscoveryResult(
+      items: result.items,
+      warnings: warnings,
+      projectRoots: prefs.projectRoots,
+    );
   }
 
   Future<void> refresh() async {
@@ -88,18 +103,6 @@ class DiscoveryController extends _$DiscoveryController {
   }
 
   Future<void> addManualPath(String path) async {
-    final homeDirRaw = ref.read(homeDirectoryResolverProvider)();
-    final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
-    if (homeDir != null) {
-      final normalizedPath = p.normalize(p.absolute(path));
-      if (!p.isWithin(homeDir, normalizedPath) &&
-          !p.equals(homeDir, normalizedPath)) {
-        throw ArgumentError(
-          'Manual path must be within the user home directory.',
-        );
-      }
-    }
-
     final prefsStore = ref.read(discoveryPreferencesStoreProvider);
     await prefsStore.addManualPath(path);
     await refresh();
@@ -123,3 +126,9 @@ class DiscoveryController extends _$DiscoveryController {
     await refresh();
   }
 }
+
+final FutureProviderFamily<List<File>, String> backupListProvider =
+    FutureProvider.family<List<File>, String>((ref, filePath) async {
+      final configService = ref.watch(configServiceProvider);
+      return configService.backupService.listBackups(filePath);
+    });

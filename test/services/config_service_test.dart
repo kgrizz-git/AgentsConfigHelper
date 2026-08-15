@@ -79,6 +79,28 @@ void main() {
       expect(backupContent, contains('"old"'));
     });
 
+    test(
+      'saveConfig returns ToolConfig with originalContent matching disk',
+      () async {
+        final jsonFile = File(
+          p.join(tempDir.path, 'return_test.json'),
+        );
+        await jsonFile.create(recursive: true);
+        await jsonFile.writeAsString('{"rules": ["old"]}');
+
+        final config = await _load(configService, jsonFile.path);
+        final updatedConfig = config.copyWith(rules: ['new']);
+
+        final returned = await configService.saveConfig(updatedConfig);
+
+        // The returned config's originalContent must reflect what's now on
+        // disk, not the stale pre-save value.
+        final diskContent = await jsonFile.readAsString();
+        expect(returned.originalContent, equals(diskContent));
+        expect(returned.rules, equals(['new']));
+      },
+    );
+
     test('loadConfig maps YAML correctly based on known target', () async {
       final homeStr =
           Platform.environment['HOME'] ??

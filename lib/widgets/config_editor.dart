@@ -176,6 +176,43 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       _currentConfig.permissions,
                       _permissions,
                     ),
+                    if (_currentConfig.format == ConfigFormat.toml &&
+                        (!listEquals(_rules, _currentConfig.rules) ||
+                            !listEquals(
+                              _permissions,
+                              _currentConfig.permissions,
+                            ))) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.1),
+                          border: Border.all(color: AppColors.warning),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.warning_amber,
+                              color: AppColors.warning,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Saving a TOML config with structured changes '
+                                'will reformat the file and discard existing '
+                                'comments and formatting. This is a known '
+                                'limitation of the TOML library.',
+                                style: AppTextStyles.uiSecondary.copyWith(
+                                  color: AppColors.warning,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                   if (_rawContent != _currentConfig.originalContent) ...[
                     const SizedBox(height: 16),
