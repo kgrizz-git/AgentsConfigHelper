@@ -379,8 +379,11 @@ class ToolDescriptorRegistry {
       case '.toml':
         format = ConfigFormat.toml;
       case '.md':
-      case '.mdc':
         format = ConfigFormat.markdown;
+      case '.mdc':
+        // Cursor .mdc rule files resolve to text via the catalog project
+        // target; keep the manual-path fallback identical so both paths agree.
+        format = ConfigFormat.text;
       case '.txt':
         format = ConfigFormat.text;
       default:
