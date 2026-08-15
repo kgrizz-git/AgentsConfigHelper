@@ -74,7 +74,16 @@ def stamp_is_fresh(stamp_path: Path, max_age_hours: float) -> bool:
     return age_s < max_age_hours * 3600.0
 
 
+def _is_within_repo(path: Path, root: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(root.resolve())
+    except (OSError, ValueError):
+        return False
+
+
 def touch_stamp(stamp_path: Path) -> None:
+    if not _is_within_repo(stamp_path, Path.cwd()):
+        die(f"--stamp-file must stay within the repo, got: {stamp_path}")
     stamp_path.parent.mkdir(parents=True, exist_ok=True)
     stamp_path.write_text(
         datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ\n"),
@@ -203,15 +212,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
+
+    if not _is_within_repo(args.stamp_file, Path.cwd()):
+        die(f"--stamp-file must stay within the repo, got: {args.stamp_file}")
 
     if args.once_per_day and not args.force:
         if stamp_is_fresh(args.stamp_file, args.max_age_hours):
             info(
                 f"skipped (stamp fresh < {args.max_age_hours:g}h): {args.stamp_file}"
             )
-            return 0
+            return
 
     ensure_gh()
 
@@ -244,8 +256,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.once_per_day or args.force:
         touch_stamp(args.stamp_file)
 
-    return 0
-
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

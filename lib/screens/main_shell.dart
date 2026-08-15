@@ -116,6 +116,15 @@ class _MainShellState extends ConsumerState<MainShell> {
           return HistoryModal(
             config: _activeConfig!,
             onRestore: (backupPath) async {
+              if (_hasUnsavedChanges) {
+                final shouldDiscard = await _confirmDiscardChanges();
+                if (!shouldDiscard || !mounted) {
+                  return;
+                }
+                setState(() {
+                  _hasUnsavedChanges = false;
+                });
+              }
               final targetPath = configService.resolvePath(
                 _activeConfig!.filePath,
               );
@@ -181,13 +190,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _showManageProjectRootsDialog() {
-    final discoveryState = ref.read(discoveryControllerProvider);
-    final projectRoots = discoveryState.value?.projectRoots ?? [];
     unawaited(
       showDialog<void>(
         context: context,
         builder: (context) => _ManageProjectRootsDialog(
-          projectRoots: projectRoots,
           onRemove: (path) {
             unawaited(
               ref
@@ -406,26 +412,22 @@ class _MainShellState extends ConsumerState<MainShell> {
             // and updates the active config. Errors propagate to
             // ConfigEditor's own try/catch.
             onSave: (config, [rawContent]) async {
+              final ToolConfig updated;
               if (rawContent != null) {
-                final updated = await configService.saveRawConfig(
+                updated = await configService.saveRawConfig(
                   config,
                   rawContent,
                 );
-                if (mounted) {
-                  setState(() {
-                    _activeConfig = updated;
-                  });
-                }
-                return updated;
               } else {
-                final updated = await configService.saveConfig(config);
-                if (mounted) {
-                  setState(() {
-                    _activeConfig = updated;
-                  });
-                }
-                return updated;
+                updated = await configService.saveConfig(config);
               }
+              ref.invalidate(backupListProvider(config.filePath));
+              if (mounted) {
+                setState(() {
+                  _activeConfig = updated;
+                });
+              }
+              return updated;
             },
             resolvePath: configService.resolvePath,
             onShowHistory: _showHistoryModal,
@@ -461,17 +463,15 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 }
 
-class _ManageProjectRootsDialog extends StatelessWidget {
-  const _ManageProjectRootsDialog({
-    required this.projectRoots,
-    required this.onRemove,
-  });
+class _ManageProjectRootsDialog extends ConsumerWidget {
+  const _ManageProjectRootsDialog({required this.onRemove});
 
-  final List<String> projectRoots;
   final void Function(String path) onRemove;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectRoots =
+        ref.watch(discoveryControllerProvider).value?.projectRoots ?? [];
     return AlertDialog(
       backgroundColor: AppColors.backgroundDark,
       title: const Text(

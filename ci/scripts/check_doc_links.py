@@ -58,9 +58,25 @@ SKIP_HOSTS = ("twitter.com", "x.com", "linkedin.com", "reddit.com")
 EXPECTED_ABSENT = (".context/",)
 
 
+def _is_within_repo(path: Path, root: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(root.resolve())
+    except (OSError, ValueError):
+        return False
+
+
 def iter_markdown(paths: list[Path]) -> list[Path]:
     if paths:
-        return [p for p in paths if p.suffix == ".md" and p.exists()]
+        root = Path.cwd()
+        valid = []
+        for p in paths:
+            if p.suffix != ".md" or not p.exists():
+                continue
+            if not _is_within_repo(p, root):
+                print(f"[links] SKIP   {p}: outside repo root, refusing to read", file=sys.stderr)
+                continue
+            valid.append(p)
+        return valid
     found = []
     for path in Path(".").rglob("*.md"):
         if SKIP_DIRS & set(path.parts):

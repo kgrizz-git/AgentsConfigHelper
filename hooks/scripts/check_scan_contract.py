@@ -199,10 +199,14 @@ def cmd_status(root: Path) -> int:
     if not contract_path.exists():
         print(f"[scan-contract] no {CONTRACT_FILE}; contract gate is not configured")
         return 0
-    contract = load_json(contract_path)
-    scanners = scanners_from(contract)
-    ledger_path = root / LEDGER_FILE
-    records = load_json(ledger_path).get("records", {}) if ledger_path.exists() else {}
+    try:
+        contract = load_json(contract_path)
+        scanners = scanners_from(contract)
+        ledger_path = root / LEDGER_FILE
+        records = load_json(ledger_path).get("records", {}) if ledger_path.exists() else {}
+    except (ValueError, json.JSONDecodeError, OSError) as exc:
+        _fail(f"could not read {CONTRACT_FILE} or {LEDGER_FILE}: {exc}")
+        return 1
     for scanner in scanners:
         scanner_id = scanner["id"]
         files = covered_files(root, scanner["paths"])

@@ -14,11 +14,21 @@ from pathlib import Path
 from check_sensitive_data import scan_text
 
 
+def _is_within_repo(path: Path, root: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(root.resolve())
+    except (OSError, ValueError):
+        return False
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         print("[commit-message-sensitive-data] ERROR expected one commit-message file", file=sys.stderr)
         return 1
     message_path = Path(sys.argv[1])
+    if not _is_within_repo(message_path, Path.cwd()):
+        print("[commit-message-sensitive-data] ERROR commit-message path must stay within the repo", file=sys.stderr)
+        return 1
     try:
         findings = scan_text(str(message_path), message_path.read_bytes())
     except OSError:

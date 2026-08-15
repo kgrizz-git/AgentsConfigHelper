@@ -67,6 +67,13 @@ def is_ignored(path: str) -> bool:
     return any(frag in path.replace(os.sep, "/") for frag in IGNORE_FRAGMENTS)
 
 
+def _is_within_repo(path: Path, root: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(root.resolve())
+    except (OSError, ValueError):
+        return False
+
+
 def read_override(path: Path) -> int | None:
     """Return per-file line-cap override if the policy marker is present."""
     try:
@@ -88,7 +95,7 @@ def check(filepath: str) -> tuple[list[str], list[str]]:
     warnings: list[str] = []
 
     path = Path(filepath)
-    if not path.exists() or is_ignored(filepath):
+    if not path.exists() or is_ignored(filepath) or not _is_within_repo(path, Path.cwd()):
         return errors, warnings
 
     size = path.stat().st_size

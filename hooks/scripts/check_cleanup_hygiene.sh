@@ -21,16 +21,11 @@ done
 
 # --- 2. Plan archival: warn if complete/abandoned plans aren't in plans/archive/ ---
 if [ -d plans ]; then
-    for plan_file in plans/*.md; do
-        [ -f "$plan_file" ] || continue
-        # Skip anything under plans/archive/
-        case "$plan_file" in
-            plans/archive/*) continue ;;
-        esac
+    while IFS= read -r plan_file; do
         if grep -q -i -E 'Status:\s*(complete|abandoned)' "$plan_file" 2>/dev/null; then
             issues+=("${plan_file}: Plan marked complete/abandoned but not in plans/archive/")
         fi
-    done
+    done < <(find plans -type f -name '*.md' -not -path 'plans/archive/*')
 fi
 
 # --- 3. Stale .context/ files ---
