@@ -201,9 +201,14 @@ def cmd_status(root: Path) -> int:
         return 0
     try:
         contract = load_json(contract_path)
+        if not isinstance(contract, dict):
+            raise ValueError(f"{CONTRACT_FILE} must contain a JSON object")
         scanners = scanners_from(contract)
         ledger_path = root / LEDGER_FILE
-        records = load_json(ledger_path).get("records", {}) if ledger_path.exists() else {}
+        ledger = load_json(ledger_path) if ledger_path.exists() else {}
+        records = ledger.get("records", {}) if isinstance(ledger, dict) else None
+        if not isinstance(records, dict):
+            raise ValueError(f"{LEDGER_FILE} must contain a 'records' object")
     except (ValueError, OSError) as exc:
         _fail(f"could not read {CONTRACT_FILE} or {LEDGER_FILE}: {exc}")
         return 1

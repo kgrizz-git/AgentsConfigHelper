@@ -1,12 +1,17 @@
 import 'package:equatable/equatable.dart';
 
+/// Persisted user preferences that influence discovery, such as manually
+/// added files and project roots.
 class DiscoveryPreferences extends Equatable {
+  /// Creates discovery preferences.
   const DiscoveryPreferences({
     this.version = 1,
     this.manualFilePaths = const [],
     this.projectRoots = const [],
   });
 
+  /// Parses preferences from a decoded JSON map, tolerating missing or
+  /// malformed fields by falling back to defaults.
   factory DiscoveryPreferences.fromJson(Map<String, dynamic> json) {
     return DiscoveryPreferences(
       version: json['version'] is int ? json['version'] as int : 1,
@@ -15,10 +20,16 @@ class DiscoveryPreferences extends Equatable {
     );
   }
 
+  /// The schema version of these persisted preferences.
   final int version;
+
+  /// Paths to configuration files the user manually added.
   final List<String> manualFilePaths;
+
+  /// Additional project root directories the user registered for discovery.
   final List<String> projectRoots;
 
+  /// Returns a copy of this object with updated fields.
   DiscoveryPreferences copyWith({
     int? version,
     List<String>? manualFilePaths,
@@ -31,6 +42,7 @@ class DiscoveryPreferences extends Equatable {
     );
   }
 
+  /// Serializes these preferences to a JSON-compatible map.
   Map<String, dynamic> toJson() {
     return {
       'version': version,
@@ -50,13 +62,19 @@ class DiscoveryPreferences extends Equatable {
   List<Object?> get props => [version, manualFilePaths, projectRoots];
 }
 
+/// The outcome of loading [DiscoveryPreferences], including any warnings
+/// produced while parsing.
 class DiscoveryPreferencesResult extends Equatable {
+  /// Creates a discovery preferences load result.
   const DiscoveryPreferencesResult({
     required this.preferences,
     this.warnings = const [],
   });
 
+  /// The loaded (or defaulted) preferences.
   final DiscoveryPreferences preferences;
+
+  /// Human-readable warnings encountered while loading preferences.
   final List<String> warnings;
 
   @override

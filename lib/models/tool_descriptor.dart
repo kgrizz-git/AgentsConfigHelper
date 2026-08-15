@@ -3,14 +3,31 @@ import 'package:equatable/equatable.dart';
 
 /// Identifiers for supported AI agent and IDE tools.
 enum ToolId {
+  /// Claude Code.
   claudeCode,
+
+  /// Codex.
   codex,
+
+  /// Opencode.
   opencode,
+
+  /// Paseo.
   paseo,
+
+  /// Cursor.
   cursor,
+
+  /// Kiro.
   kiro,
+
+  /// Devin.
   devin,
+
+  /// Antigravity.
   antigravity,
+
+  /// Agy-ACP.
   agyAcp,
 }
 
@@ -39,6 +56,7 @@ enum ConfigSourceKind {
 
 /// A specific target path and format associated with a tool.
 class ConfigTarget extends Equatable {
+  /// Creates a config target.
   const ConfigTarget({
     required this.relativePath,
     required this.format,
@@ -68,6 +86,7 @@ class ConfigTarget extends Equatable {
 /// A pure domain descriptor for a supported tool and its known
 /// configuration targets.
 class ToolDescriptor extends Equatable {
+  /// Creates a tool descriptor.
   const ToolDescriptor({
     required this.id,
     required this.displayName,

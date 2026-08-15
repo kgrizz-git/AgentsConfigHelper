@@ -4,6 +4,10 @@ import 'package:toml/toml.dart';
 
 /// Parses and serializes TOML configuration files.
 class TomlConfigParser with ConfigParserMixin implements ConfigParser {
+  /// Parses raw TOML content into a [ToolConfig].
+  ///
+  /// Empty or entirely-whitespace content preserves `content` as
+  /// `originalContent` and returns an otherwise-empty [ToolConfig].
   @override
   ToolConfig parse(
     String content, {
@@ -15,6 +19,7 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
         toolName: toolName,
         filePath: filePath,
         format: ConfigFormat.toml,
+        originalContent: content,
       );
     }
 

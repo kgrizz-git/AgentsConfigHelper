@@ -268,6 +268,9 @@ void main() {
         );
         await restrictedDir.create(recursive: true);
         await Process.run('chmod', ['000', restrictedDir.path]);
+        addTearDown(() async {
+          await Process.run('chmod', ['755', restrictedDir.path]);
+        });
 
         final request = DiscoveryRequest(
           normalizedHomePath: mockHome.path,
@@ -290,10 +293,10 @@ void main() {
           ),
           isTrue,
         );
-
-        // Restore permissions so tearDown can clean up.
-        await Process.run('chmod', ['755', restrictedDir.path]);
       },
+      skip: Platform.isWindows
+          ? 'chmod-based permission denial is POSIX only'
+          : false,
     );
 
     test(

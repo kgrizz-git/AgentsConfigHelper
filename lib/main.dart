@@ -15,6 +15,7 @@ Future<Directory> _getBackupDir() async {
   return Directory(p.join(appSupportDirectory.path, 'backups'));
 }
 
+/// Initializes app services and launches the Flutter application.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final configService = ConfigService(

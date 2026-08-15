@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -30,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -38,12 +42,27 @@ jobs:
 
       - run: flutter pub get
       - run: flutter test --coverage
-      - name: Check coverage
-        uses: VeryGoodOpenSource/very_good_coverage@c953fca3e24a915e111cc6f55f03f756dcb3964c # v3
-        with:
-          path: coverage/lcov.info
-          min_coverage: 80
-          exclude: "**/vendor/**"
+      - name: Check coverage (min 80%, excluding vendor)
+        run: |
+          python3 - <<'PY'
+          import sys
+
+          total = covered = 0
+          include = True
+          with open("coverage/lcov.info") as handle:
+              for line in handle:
+                  if line.startswith("SF:"):
+                      include = "/vendor/" not in line[3:].strip()
+                  elif include and line.startswith("DA:"):
+                      hits = int(line[3:].strip().split(",")[1])
+                      total += 1
+                      covered += 1 if hits > 0 else 0
+
+          pct = (covered / total * 100) if total else 100.0
+          print(f"Line coverage: {pct:.2f}% ({covered}/{total})")
+          if pct < 80:
+              sys.exit(f"Coverage {pct:.2f}% is below the minimum of 80%")
+          PY
 
   secrets:
     name: Secret scan
@@ -52,6 +71,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,6 +84,8 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:

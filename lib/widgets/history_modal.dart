@@ -7,14 +7,20 @@ import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// A dialog listing backup snapshots for a configuration file, with the
+/// ability to restore a selected backup over the live file.
 class HistoryModal extends ConsumerStatefulWidget {
+  /// Creates the modal for the given configuration.
   const HistoryModal({
     required this.config,
     required this.onRestore,
     super.key,
   });
 
+  /// The configuration whose backup history is shown.
   final ToolConfig config;
+
+  /// Invoked with the chosen backup's path after the user confirms restore.
   final Future<void> Function(String backupPath) onRestore;
 
   @override

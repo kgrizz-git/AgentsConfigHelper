@@ -302,6 +302,9 @@ class ToolDescriptorRegistry {
     return null;
   }
 
+  /// Returns true if [actualNormalizedPath] matches [expectedPattern],
+  /// treating any `*` in the pattern as a wildcard for a single path
+  /// segment.
   static bool isMatch(String expectedPattern, String actualNormalizedPath) {
     if (!expectedPattern.contains('*')) {
       return expectedPattern == actualNormalizedPath;

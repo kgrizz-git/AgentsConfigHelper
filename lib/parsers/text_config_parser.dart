@@ -6,6 +6,8 @@ import 'package:path/path.dart' as p;
 /// It wraps the entire file content into `ToolConfig.originalContent`
 /// without modifying it.
 class TextConfigParser implements ConfigParser {
+  /// Parses raw text into a [ToolConfig] whose `originalContent` holds the
+  /// entire, unaltered file content.
   @override
   ToolConfig parse(
     String content, {
@@ -21,6 +23,8 @@ class TextConfigParser implements ConfigParser {
     );
   }
 
+  /// Returns `config.originalContent` unchanged; text/markdown files are
+  /// never reformatted or rewritten.
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
     return config.originalContent;

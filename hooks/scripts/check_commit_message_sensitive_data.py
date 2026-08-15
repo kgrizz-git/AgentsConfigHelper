@@ -8,6 +8,7 @@ details belong in the approved issue/incident system, not immutable Git history.
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -21,12 +22,27 @@ def _is_within_repo(path: Path, root: Path) -> bool:
         return False
 
 
+def _git_dir() -> Path | None:
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--absolute-git-dir"],
+            capture_output=True, text=True, check=True,
+        )
+        return Path(out.stdout.strip())
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return None
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         print("[commit-message-sensitive-data] ERROR expected one commit-message file", file=sys.stderr)
         return 1
     message_path = Path(sys.argv[1])
-    if not _is_within_repo(message_path, Path.cwd()):
+    git_dir = _git_dir()
+    allowed = _is_within_repo(message_path, Path.cwd()) or (
+        git_dir is not None and _is_within_repo(message_path, git_dir)
+    )
+    if not allowed:
         print("[commit-message-sensitive-data] ERROR commit-message path must stay within the repo", file=sys.stderr)
         return 1
     try:

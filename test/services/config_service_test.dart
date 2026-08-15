@@ -33,10 +33,7 @@ void main() {
     test(
       'loadConfig correctly identifies JSON and parses based on known target',
       () async {
-        final homeStr =
-            Platform.environment['HOME'] ??
-            Platform.environment['USERPROFILE'] ??
-            tempDir.path;
+        final homeStr = tempDir.path;
         final jsonFile = File(p.join(homeStr, '.claude', 'settings.json'));
         await jsonFile.parent.create(recursive: true);
         await jsonFile.writeAsString('{"rules": ["r1"]}');
@@ -46,7 +43,11 @@ void main() {
           homeDirectoryResolver: () => homeStr,
         );
 
-        final config = await _load(serviceWithHome, jsonFile.path);
+        final config = await _load(
+          serviceWithHome,
+          jsonFile.path,
+          home: homeStr,
+        );
 
         expect(config.toolName, equals('Claude Code'));
         expect(config.rules, equals(['r1']));
@@ -102,10 +103,7 @@ void main() {
     );
 
     test('loadConfig maps YAML correctly based on known target', () async {
-      final homeStr =
-          Platform.environment['HOME'] ??
-          Platform.environment['USERPROFILE'] ??
-          tempDir.path;
+      final homeStr = tempDir.path;
       final yamlFile = File(
         p.join(homeStr, '.kiro', 'settings', 'permissions.yaml'),
       );
@@ -117,15 +115,16 @@ void main() {
         homeDirectoryResolver: () => homeStr,
       );
 
-      final config = await _load(serviceWithHome, yamlFile.path);
+      final config = await _load(
+        serviceWithHome,
+        yamlFile.path,
+        home: homeStr,
+      );
       expect(config.toolName, equals('Kiro'));
     });
 
     test('loadConfig maps TOML correctly based on known target', () async {
-      final homeStr =
-          Platform.environment['HOME'] ??
-          Platform.environment['USERPROFILE'] ??
-          tempDir.path;
+      final homeStr = tempDir.path;
       final tomlFile = File(p.join(homeStr, '.codex', 'config.toml'));
       await tomlFile.parent.create(recursive: true);
       await tomlFile.writeAsString('rules = ["r1"]');
@@ -135,7 +134,11 @@ void main() {
         homeDirectoryResolver: () => homeStr,
       );
 
-      final config = await _load(serviceWithHome, tomlFile.path);
+      final config = await _load(
+        serviceWithHome,
+        tomlFile.path,
+        home: homeStr,
+      );
       expect(config.toolName, equals('Codex'));
     });
 
@@ -373,14 +376,14 @@ void main() {
   });
 }
 
-Future<ToolConfig> _load(ConfigService service, String path) async {
-  final home =
-      Platform.environment['HOME'] ??
-      Platform.environment['USERPROFILE'] ??
-      Directory.systemTemp.path;
+Future<ToolConfig> _load(
+  ConfigService service,
+  String path, {
+  String? home,
+}) async {
   final match = ToolDescriptorRegistry.matchPath(
     path,
-    normalizedHomePath: home,
+    normalizedHomePath: home ?? Directory.systemTemp.path,
   );
   return service.loadDiscoveredConfig(
     DiscoveredConfig.fromPath(

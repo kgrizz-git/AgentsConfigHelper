@@ -90,6 +90,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
         _rawContent != _currentConfig.originalContent;
   }
 
+  bool get _supportsStructuredFields =>
+      _currentConfig.format != ConfigFormat.text &&
+      _currentConfig.format != ConfigFormat.markdown;
+
   bool get _hasUnsupportedPermissions =>
       _currentConfig.rawSettings['permissions'] != null &&
       _currentConfig.rawSettings['permissions'] is! List &&
@@ -167,8 +171,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  if (_currentConfig.format != ConfigFormat.text &&
-                      _currentConfig.format != ConfigFormat.markdown) ...[
+                  if (_supportsStructuredFields) ...[
                     _buildDiffSection('Rules', _currentConfig.rules, _rules),
                     const SizedBox(height: 16),
                     _buildDiffSection(
@@ -464,46 +467,49 @@ class _ConfigEditorState extends State<ConfigEditor> {
                           bottom: 80,
                         ), // padding for floating bar
                         children: [
-                          _buildSectionHeader('Rules'),
-                          const Text(
-                            'Define custom rules for this agent.',
-                            style: AppTextStyles.uiSecondary,
-                          ),
-                          const SizedBox(height: 12),
-                          StringListEditor(
-                            values: _rules,
-                            hintText: 'e.g., Always use type hints...',
-                            onChanged: (newValues) {
-                              setState(() {
-                                _rules = newValues;
-                              });
-                              _notifyDirtyChanged();
-                            },
-                          ),
-
-                          _buildSectionHeader('Permissions'),
-                          if (_hasUnsupportedPermissions)
+                          if (_supportsStructuredFields) ...[
+                            _buildSectionHeader('Rules'),
                             const Text(
-                              'Nested permissions are preserved but '
-                              'not editable here yet.',
-                              style: AppTextStyles.uiSecondary,
-                            )
-                          else ...[
-                            const Text(
-                              'Allowed directories or commands for this agent.',
+                              'Define custom rules for this agent.',
                               style: AppTextStyles.uiSecondary,
                             ),
                             const SizedBox(height: 12),
                             StringListEditor(
-                              values: _permissions,
-                              hintText: 'e.g., ~/Projects',
+                              values: _rules,
+                              hintText: 'e.g., Always use type hints...',
                               onChanged: (newValues) {
                                 setState(() {
-                                  _permissions = newValues;
+                                  _rules = newValues;
                                 });
                                 _notifyDirtyChanged();
                               },
                             ),
+
+                            _buildSectionHeader('Permissions'),
+                            if (_hasUnsupportedPermissions)
+                              const Text(
+                                'Nested permissions are preserved but '
+                                'not editable here yet.',
+                                style: AppTextStyles.uiSecondary,
+                              )
+                            else ...[
+                              const Text(
+                                'Allowed directories or commands for this '
+                                'agent.',
+                                style: AppTextStyles.uiSecondary,
+                              ),
+                              const SizedBox(height: 12),
+                              StringListEditor(
+                                values: _permissions,
+                                hintText: 'e.g., ~/Projects',
+                                onChanged: (newValues) {
+                                  setState(() {
+                                    _permissions = newValues;
+                                  });
+                                  _notifyDirtyChanged();
+                                },
+                              ),
+                            ],
                           ],
 
                           _buildSectionHeader('Advanced'),
