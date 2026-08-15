@@ -47,6 +47,11 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
   /// settings into a Dart Map and re-serializing it from scratch.
   /// As a result, **all original comments, whitespace, and structural layout
   /// (like arrays of tables) will be discarded or reformatted.**
+  ///
+  /// This lossy behavior is a deliberate, deferred choice — see
+  /// docs/adr/ADR-001-toml-comment-preservation.md for the options considered
+  /// (notably a surgical text-splice mirroring the JSON path) and the trigger
+  /// for revisiting it.
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
     final outputMap = Map<String, Object?>.from(config.rawSettings);

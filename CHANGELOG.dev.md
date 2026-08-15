@@ -89,6 +89,13 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Changed
 
+- **TOML comment preservation: documented and deferred.** `TomlConfigParser.serialize` stays
+  lossy (rebuilds from the parsed map, dropping comments/whitespace/order) because the Dart
+  `toml` package has no source-preserving editor, unlike the JSON (`json_ast`) and YAML
+  (`yaml_edit`) paths. Qodo finding #12. Options — surgical text-splice for the two edited keys,
+  vendoring a TOML AST, or status quo — are captured in
+  `docs/adr/ADR-001-toml-comment-preservation.md`, with a follow-up trigger. The parser doc
+  comment now points at the ADR.
 - Template CI pins Markdownlint and applies the repository's established style choices;
   gitleaks receives the read-only pull-request permission it needs for PR scans.
 - **References to the private notes repo: cited, not hidden.** The repo stays private, so
