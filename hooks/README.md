@@ -10,9 +10,15 @@ directory is an **example** — copy it to your project root to activate it.
 ```bash
 pip install pre-commit
 cp hooks/.pre-commit-config.yaml .pre-commit-config.yaml  # if not already at root
-pre-commit install          # wire into git
-pre-commit run --all-files  # first-run check
+pre-commit install                       # wire into git (commit stage)
+pre-commit install --hook-type pre-push  # wire into git (push stage, if any hooks use `stages: [pre-push]`)
+pre-commit run --all-files               # first-run check
 ```
+
+Hooks with `stages: [pre-push]` (e.g. the commented Flutter/Dart
+format/analyze/test block) only run on `git push`, not `git commit` — they're
+slower checks meant to catch what CI would catch, before the push happens
+rather than after.
 
 ## Files
 

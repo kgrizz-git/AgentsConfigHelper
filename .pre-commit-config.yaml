@@ -69,3 +69,25 @@ repos:
         entry: dart run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning
         language: system
         pass_filenames: false
+
+      # ── Pre-push only: slower checks that mirror CI's "Analyze & format"
+      # and "Tests" jobs. Kept out of pre-commit so day-to-day commits stay
+      # fast; run once before code leaves the machine instead.
+      - id: dart-format-check
+        name: "dart: format check (pre-push)"
+        entry: dart format --output=none --set-exit-if-changed .
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: flutter-analyze
+        name: "dart: flutter analyze (pre-push)"
+        entry: flutter analyze --fatal-infos
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: flutter-test
+        name: "dart: flutter test (pre-push)"
+        entry: flutter test
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
