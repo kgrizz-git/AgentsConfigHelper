@@ -58,7 +58,12 @@ jobs:
                       total += 1
                       covered += 1 if hits > 0 else 0
 
-          pct = (covered / total * 100) if total else 100.0
+          if total == 0:
+              sys.exit(
+                  "No coverable lines found in coverage/lcov.info "
+                  "(empty, unrecognized, or vendor-only report)"
+              )
+          pct = covered / total * 100
           print(f"Line coverage: {pct:.2f}% ({covered}/{total})")
           if pct < 80:
               sys.exit(f"Coverage {pct:.2f}% is below the minimum of 80%")

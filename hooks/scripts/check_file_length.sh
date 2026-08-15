@@ -6,8 +6,8 @@ EXIT_CODE=0
 for file in "$@"; do
     if [[ "$file" == *.dart ]]; then
         LINES=$(wc -l < "$file")
-        if [ "$LINES" -gt "$MAX_LINES" ]; then
-            echo "Error: $file has $LINES lines, which exceeds the maximum of $MAX_LINES."
+        if [[ "$LINES" -gt "$MAX_LINES" ]]; then
+            echo "Error: $file has $LINES lines, which exceeds the maximum of $MAX_LINES." >&2
             EXIT_CODE=1
         fi
     fi

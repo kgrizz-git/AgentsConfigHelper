@@ -29,7 +29,7 @@ def _git_dir() -> Path | None:
             capture_output=True, text=True, check=True,
         )
         return Path(out.stdout.strip())
-    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+    except (subprocess.CalledProcessError, OSError):
         return None
 
 

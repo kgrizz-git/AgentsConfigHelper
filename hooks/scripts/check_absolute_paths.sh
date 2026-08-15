@@ -7,7 +7,7 @@ LEAK_PATTERN="(/Users/|/home/|[a-zA-Z]:\\\\\\\\|/var/folders/)"
 has_errors=0
 
 for file in "$@"; do
-    if [ ! -f "$file" ]; then
+    if [[ ! -f "$file" ]]; then
         continue
     fi
 
@@ -16,14 +16,14 @@ for file in "$@"; do
     fi
 
     matches=$(grep -E -n "$LEAK_PATTERN" "$file" | grep -v -E "https?://")
-    if [ -n "$matches" ]; then
+    if [[ -n "$matches" ]]; then
         echo "$matches"
         echo "ERROR: Absolute path leak detected in $file"
         has_errors=1
     fi
 done
 
-if [ $has_errors -eq 1 ]; then
+if [[ $has_errors -eq 1 ]]; then
     echo "Please use relative paths or environment variables (e.g. \$HOME) instead."
     exit 1
 fi
