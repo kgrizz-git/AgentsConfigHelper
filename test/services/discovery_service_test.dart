@@ -82,8 +82,8 @@ void main() {
     });
 
     test(
-      'discoverConfigs deduplicates and sets isManual if manual path '
-      'matches existing',
+      'discoverConfigs deduplicates a manual path matching a catalog target '
+      'without flipping it to manual',
       () async {
         final manualFile = File(
           p.join(mockHome.path, '.claude', 'settings.json'),
@@ -100,8 +100,11 @@ void main() {
         // Should only appear once, prioritized as user target (it's first).
         expect(result.items.length, equals(1));
         expect(result.items.first.scope, equals(ConfigLocationScope.user));
-        // But it should retain manual provenance since the user added it.
-        expect(result.items.first.isManual, isTrue);
+        // A file also discovered via a catalog target keeps catalog
+        // provenance: isManual stays false so the sidebar never offers a
+        // remove action that removeManualPath cannot honor (the file would be
+        // rediscovered anyway).
+        expect(result.items.first.isManual, isFalse);
         expect(result.warnings, isEmpty);
       },
     );
@@ -337,8 +340,8 @@ void main() {
     );
 
     test(
-      'manual path that is also auto-discovered: '
-      'isManual reverts to false when removed from manualPaths',
+      'manual path that is also auto-discovered stays non-manual '
+      '(catalog provenance wins)',
       () async {
         // Create a file that is auto-discoverable via the user-scope scan.
         final claudeFile = File(
@@ -356,13 +359,15 @@ void main() {
           requestWithManual,
         );
 
-        // The item should appear exactly once.
+        // The item appears exactly once and is NOT flagged manual: it is a
+        // real catalog config, so removeManualPath must not appear to own it
+        // (removing the manual entry can't make it disappear).
         expect(result1.items.length, equals(1));
-        // It should be flagged as manual because the user explicitly added it.
-        expect(result1.items.first.isManual, isTrue);
+        expect(result1.items.first.isManual, isFalse);
         expect(result1.items.first.filePath, equals(claudeFile.path));
 
-        // Second scan: the same path is no longer in manualPaths.
+        // Second scan: the same path is no longer in manualPaths. The item is
+        // still present (a real config) and still non-manual.
         final requestWithoutManual = DiscoveryRequest(
           normalizedHomePath: mockHome.path,
         );
@@ -371,10 +376,8 @@ void main() {
           requestWithoutManual,
         );
 
-        // The item should still be present (it's a real config).
         expect(result2.items.length, equals(1));
         expect(result2.items.first.filePath, equals(claudeFile.path));
-        // But isManual should now be false since it wasn't manually added.
         expect(result2.items.first.isManual, isFalse);
       },
     );

@@ -21,16 +21,12 @@ class DiscoveryService {
       bool isManual = false,
     }) async {
       if (seenPaths.contains(config.filePath)) {
-        if (isManual) {
-          final existingIndex = items.indexWhere(
-            (i) => i.filePath == config.filePath,
-          );
-          if (existingIndex != -1) {
-            items[existingIndex] = items[existingIndex].copyWith(
-              isManual: true,
-            );
-          }
-        }
+        // Already discovered via a catalog (user/project) target. A coinciding
+        // manual entry must NOT flip it to manual: `isManual` stays true only
+        // for files whose sole provenance is the manual list. Otherwise the
+        // sidebar's remove action (gated on `isManual`) would appear for a
+        // catalog-backed file that `removeManualPath` cannot make disappear —
+        // it is rediscovered via its catalog target on the next refresh.
         return;
       }
 
