@@ -16,9 +16,8 @@ from check_sensitive_data import scan_text
 
 def _is_within_repo(path: Path, root: Path) -> bool:
     try:
-        path.resolve().relative_to(root.resolve())
-        return True
-    except (OSError, ValueError):
+        return path.resolve().is_relative_to(root.resolve())
+    except OSError:
         return False
 
 
