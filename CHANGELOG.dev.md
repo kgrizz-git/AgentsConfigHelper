@@ -108,7 +108,7 @@ Internal / developer-facing changes that do not belong in the public
 - **Python lint in CI.** `template-checks` now runs `ruff check .` (pinned to 0.11.13 to match
   `hooks/.pre-commit-config.yaml`; a version skew is why "it passed locally" stops being true).
   `compileall` only proved the files parse — proof that was insufficient: an F541 had been
-  sitting in `hooks/scripts/check_cleanup_hygiene.py` on main, now fixed. The pre-commit hook
+  sitting in `hooks/scripts/check_cleanup_hygiene.sh` on main, now fixed. The pre-commit hook
   alone does not cover it either, since it only protects contributors who ran
   `pre-commit install`, and these scripts are policy gates other repos inherit. Adds `ruff.toml`
   so pre-commit and CI read one rule set. `ruff format` is deliberately **not** gated: 11 of 14

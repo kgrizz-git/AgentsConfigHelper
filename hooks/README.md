@@ -27,7 +27,7 @@ pre-commit run --all-files  # first-run check
 | `scripts/check_gitignore_protected.py` | Opt-in gate blocking removal of required `.gitignore` rules (config: `.gitignore-protected`) |
 | `scripts/check_forbidden_paths.py` | Opt-in gate blocking any tracked file under never-commit paths (config: `.forbidden-paths`) |
 | `scripts/check_scan_contract.py` | Opt-in ledger gate: blocks when a required heavy scanner is stale vs the files it covers (config: `.scan-contract.json` + `.scan-ledger.json`) |
-| `scripts/check_cleanup_hygiene.py` | Optional hygiene check: warns when completed items linger in `to_do.md`, plans aren't archived, `.context/` has old files, or changelog entries are missing |
+| `scripts/check_cleanup_hygiene.sh` | Optional hygiene check: warns when completed items linger in `to_do.md`, plans aren't archived, `.context/` has old files, or changelog entries are missing |
 | `phi-security-approvals.json.example` | Root-level exact-file inventory a human must complete before enabling the strict gate |
 | `gitignore-protected.example`, `forbidden-paths.example`, `scan-contract.json.example` | Starter configs for the structural sensitive-data gates ([`policies/sensitive-data-scan-gates.md`](../policies/sensitive-data-scan-gates.md)) |
 | `scripts/prune_backups.sh` | Optional: delete `backups/` dirs older than last N commits |

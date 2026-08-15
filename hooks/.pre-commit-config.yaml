@@ -103,8 +103,8 @@ repos:
       # .context/ has old files, or changelog entries are missing.
       # - id: check-cleanup-hygiene
       #   name: "hygiene: cleanup completed work"
-      #   entry: python hooks/scripts/check_cleanup_hygiene.py
-      #   language: python
+      #   entry: hooks/scripts/check_cleanup_hygiene.sh
+      #   language: script
       #   pass_filenames: false
       #   always_run: true
 
