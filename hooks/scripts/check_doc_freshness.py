@@ -65,7 +65,8 @@ def is_required(path: Path) -> bool:
 
 def _is_within_repo(path: Path, root: Path) -> bool:
     try:
-        return path.resolve().is_relative_to(root.resolve())
+        path.resolve().relative_to(root.resolve())
+        return True
     except (OSError, ValueError):
         return False
 

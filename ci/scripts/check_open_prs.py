@@ -76,7 +76,8 @@ def stamp_is_fresh(stamp_path: Path, max_age_hours: float) -> bool:
 
 def _is_within_repo(path: Path, root: Path) -> bool:
     try:
-        return path.resolve().is_relative_to(root.resolve())
+        path.resolve().relative_to(root.resolve())
+        return True
     except (OSError, ValueError):
         return False
 
@@ -212,6 +213,34 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
+def _resolve_head(args: argparse.Namespace) -> str | None:
+    if args.head is not None:
+        return args.head
+    if not args.branch:
+        return None
+    head = current_branch()
+    if head is None:
+        die("could not resolve current branch for --branch (detached HEAD?)")
+    return head
+
+
+def _print_result(prs: list[dict[str, Any]], scope: str, args: argparse.Namespace, head: str | None) -> None:
+    if args.json:
+        payload = {
+            "scope": scope,
+            "count": len(prs),
+            "pull_requests": prs,
+            "checked_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return
+    print(format_human(prs, scope))
+    if prs and head:
+        info("If one of these matches your work, update that PR instead of opening another.")
+    elif not prs and head:
+        info("No open PR for this branch yet — open one when the change is ready to review.")
+
+
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
 
@@ -227,31 +256,13 @@ def main(argv: list[str] | None = None) -> None:
 
     ensure_gh()
 
-    head: str | None = args.head
-    if head is None and args.branch:
-        head = current_branch()
-        if head is None:
-            die("could not resolve current branch for --branch (detached HEAD?)")
-
+    head = _resolve_head(args)
     prs = list_open_prs(args.repo, head)
     scope = f"head={head}" if head else "repo"
     if args.repo:
         scope = f"{args.repo} {scope}"
 
-    if args.json:
-        payload = {
-            "scope": scope,
-            "count": len(prs),
-            "pull_requests": prs,
-            "checked_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
-        print(json.dumps(payload, indent=2, sort_keys=True))
-    else:
-        print(format_human(prs, scope))
-        if prs and head:
-            info("If one of these matches your work, update that PR instead of opening another.")
-        elif not prs and head:
-            info("No open PR for this branch yet — open one when the change is ready to review.")
+    _print_result(prs, scope, args, head)
 
     if args.once_per_day or args.force:
         touch_stamp(args.stamp_file)
