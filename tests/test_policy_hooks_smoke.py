@@ -365,7 +365,10 @@ class ScanGateHookTests(unittest.TestCase):
 
 class CommitMessageSensitiveDataTests(unittest.TestCase):
     def run_message(self, content: str) -> subprocess.CompletedProcess[str]:
-        with tempfile.TemporaryDirectory() as temp:
+        # The hook only accepts commit-message paths within the worktree or Git
+        # directory (mirroring real commit-msg behavior), so create the fixture
+        # under the repo root rather than the system temp dir.
+        with tempfile.TemporaryDirectory(dir=ROOT) as temp:
             message = Path(temp) / "commit-message"
             message.write_text(content, encoding="utf-8")
             cmd = [sys.executable, str(ROOT / "hooks" / "scripts" / "check_commit_message_sensitive_data.py"), str(message)]
