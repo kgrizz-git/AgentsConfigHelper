@@ -22,7 +22,8 @@
       through `parser.serialize` when structured edits diverge from the raw
       baseline, which drops comments/whitespace for TOML (serializer is not
       AST-preserving). See ADR referenced in `toml_config_parser.dart`.
-- [ ] Confirm the Qodo "review profile" applied to this repo — several findings
-      assumed a Python-forbidden policy and a Python 3.8 baseline that do not
-      apply here (repo ships Python hooks, baseline is 3.10+). Adjust the Qodo
-      config so it stops flagging these.
+- [x] Correct the Qodo review profile for the Python false positives —
+      clarified the Dart-vs-Python note in AGENTS.md and added `.pr_agent.toml`
+      with scoped `extra_instructions` (no checks disabled). Remaining, only if
+      the noise persists: the Python-3.8-baseline assumption and any org-level
+      Compliance-tool toggle are dashboard settings at qodo.ai, not repo files.

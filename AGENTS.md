@@ -65,7 +65,9 @@ flutter build macos --release   # build release binary
 - **Never disable linters, rules, or checks (e.g., in `.pre-commit-config.yaml` or `.gitignore`) without explicit user permission.**
 - Follow Dart/Flutter style (dart format enforced in CI)
 - No comments unless they add non-obvious context
-- Keep widgets small and focused; business logic in services/models
+- Keep widgets small and focused; business *logic* lives in services/models. Widgets (including
+  Riverpod `ConsumerWidget`/`ConsumerState`) may still invoke services and read providers from
+  callbacks — that orchestration is not "business logic in the widget."
 - Config parsers are pure functions — easy to test
 - New tools (agent/IDE) get a parser + entry in `docs/supported-tools.md`
 
