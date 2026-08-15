@@ -15,7 +15,18 @@ for file in "$@"; do
         continue
     fi
 
-    matches=$(grep -E -n "$LEAK_PATTERN" "$file" | grep -v -E "https?://")
+    # Flag lines leaking an absolute path. URLs are excluded, but only the URL
+    # portion is stripped before re-checking, so a real leak sharing a line with
+    # a URL is still caught (a plain `grep -v https?://` would drop the whole
+    # line and hide it).
+    matches=$(
+        grep -E -n "$LEAK_PATTERN" "$file" | while IFS= read -r match; do
+            stripped=$(printf '%s' "$match" | sed -E 's#https?://[^[:space:]]*##g')
+            if printf '%s' "$stripped" | grep -E -q "$LEAK_PATTERN"; then
+                printf '%s\n' "$match"
+            fi
+        done
+    )
     if [[ -n "$matches" ]]; then
         echo "$matches"
         echo "ERROR: Absolute path leak detected in $file"
