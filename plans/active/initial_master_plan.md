@@ -55,12 +55,12 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Set up dark/light theme switching based on the OS.
 * **Detailed Plan:** *[Link to be created]*
 
-> **Suggestion (2026-08-13):** Phase 4 is the highest-leverage next step. Two concrete, well-scoped pieces:
+> **Update (PR #5):** Phase 4's two concrete pieces are done:
 >
-> 1. **Wire `DiscoveryService` into the shell.** `main_shell.dart` currently hardcodes two sidebar entries; replace with a Riverpod-provided list from `DiscoveryService.discoverConfigs()` plus user-added paths. This turns the hardcoded demo into the real app.
-> 2. **Add state management (Riverpod).** Everything is currently local widget state, which blocks scaling to a discovery-driven UI. Introduce a `DiscoveryProvider`/`ConfigProvider` before building History/Backups or the raw editor.
+> 1. **`DiscoveryService` wired into the shell.** `main_shell.dart` no longer hardcodes sidebar entries; the sidebar is Riverpod-provided from `DiscoveryService.discoverConfigs()` plus user-added paths (`lib/state/providers.dart`).
+> 2. **State management (Riverpod) is in place.** `lib/state/providers.dart` supplies `DiscoveryProvider`/config providers consumed by the shell and editors.
 >
-> Reconcile the "Detection priority" list in `docs/supported-tools.md` and `DiscoveryService.defaultRelativePaths` into one declarative `ToolDescriptor` table (see notes in `agent-config-discovery.md`).
+> The "Detection priority" list in `docs/supported-tools.md` and `DiscoveryService.defaultRelativePaths` have been reconciled into a declarative `ToolDescriptor` table (`lib/catalog/tool_descriptor_registry.dart`).
 
 ## Phase 5: Editors & Diff Viewers
 
@@ -71,12 +71,12 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Implement a Diff Viewer widget to preview changes before confirming a save.
 * **Detailed Plan:** *[Link to be created]*
 
-> **Suggestion (2026-08-13):** Two editor features are already stubbed in the shipped `ConfigEditor` and should be promoted to real work items:
+> **Update (PR #5):** Both editor features are shipped:
 >
-> * **History & Backups view** — the "History & Backups" button currently shows a "coming soon" snackbar, but `BackupService` (centralized `.bak` store in app support dir, restore support) is already built. This is high-value, low-risk, and should be done right after Phase 4 wiring.
-> * **Raw text editor fallback** — the "Raw JSON/YAML Editor Coming Soon" panel. Needed so the many `rawSettings` fields (models, env, nested permissions) that `ToolConfig` does not normalize are still user-editable without redesigning the model.
+> * **History & Backups view** — implemented as `lib/widgets/history_modal.dart`, backed by `BackupService` (centralized `.bak` store in app support dir, restore support).
+> * **Raw text editor fallback** — implemented in `lib/widgets/config_editor.dart`, replacing the former "coming soon" placeholder.
 >
-> The existing diff modal (`ConfigEditor._buildDiffSection`) is a list-level add/remove view; consider upgrading it to a true line-level diff for the raw editor and for the History/Backups comparison (ties into the master-plan backlog "Git-style Merging & Diffing").
+> **Still deferred:** the diff modal (`ConfigEditor._buildDiffSection`) remains a list-level add/remove view; upgrading it to a true line-level diff for the raw editor and History/Backups comparison is tracked under the master-plan backlog "Git-style Merging & Diffing."
 
 ## Phase 6: Polish, Error Handling & Release
 

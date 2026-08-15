@@ -73,6 +73,20 @@ flutter build macos --release   # build release binary
 - Config parsers are pure functions — easy to test
 - New tools (agent/IDE) get a parser + entry in `docs/supported-tools.md`
 
+## Maintenance
+
+- Use semantic versioning (`CHANGELOG.md` already declares this; `TO_DO.md` tracks
+  formalizing it as an enforced policy).
+- Update the relevant plan(s) in `plans/active/` as each phase is implemented — reflect
+  what actually shipped, not just what was proposed.
+- When a phase's plan is fully complete, archive it: move the file from `plans/active/`
+  to `plans/archive/` rather than deleting it.
+- Log changes in the appropriate changelog: user-facing / template-consumer changes go in
+  `CHANGELOG.md`; developer-only changes (hooks internals, inventory menus, tests/CI) go in
+  `CHANGELOG.dev.md`. See `policies/changelog-conventions.md`.
+- Remove completed items from `TO_DO.md` once done. Plans are different: keep completed
+  items in plan files as history — archive the plan instead of stripping it.
+
 ## Agent tooling policy
 
 - Search and read targeted files before requesting broad repository context.

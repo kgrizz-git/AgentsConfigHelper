@@ -43,9 +43,9 @@
 ## Follow-up suggestions (added 2026-08-13)
 
 - Steps 1–4 are implemented (`lib/theme/*`, fonts bundled in `pubspec.yaml`, `MultiSplitView` shell in `main_shell.dart`). The design language is established.
-- **Stub features called out in the design still need real implementations:**
-  - *History/Backups View* (Phase 3 §3 "A dedicated tab or modal to view and restore previously saved configurations"). In the shipped `ConfigEditor` it is a "coming soon" snackbar. `BackupService` already supports this; promote to a real view after Phase 4 wiring.
-  - *Raw config editor* (Phase 3 §3 "Raw JSON/YAML Editor Coming Soon" panel). Needed for the opaque `rawSettings` fields `ToolConfig` does not normalize.
+- **Stub features called out in the design are now implemented:**
+  - *History/Backups View* (Phase 3 §3 "A dedicated tab or modal to view and restore previously saved configurations") — shipped as `lib/widgets/history_modal.dart`, backed by `BackupService`.
+  - *Raw config editor* (Phase 3 §3 "Raw JSON/YAML Editor Coming Soon" panel) — shipped in `lib/widgets/config_editor.dart` for the opaque `rawSettings` fields `ToolConfig` does not normalize.
 - **Micro-interactions:** the floating "Review Changes / Save" bar (Phase 3 §4 "Save Flow") is implemented in `ConfigEditor`; the "Discard unsaved changes?" confirm-on-switch guard is also implemented. These can be marked done.
 - **Component library:** decided as custom Material 3 (not `macos_ui`/`fluent_ui`). Record this decision so future sessions don't re-litigate it.
 - **Empty states:** Phase 3 §4 calls for a minimalist empty state when no agents are discovered. With Phase 4 discovery wiring, the sidebar will sometimes be empty — implement the empty state then.
