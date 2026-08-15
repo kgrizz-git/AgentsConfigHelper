@@ -29,7 +29,9 @@ Do not load everything. Start here, then open only what the task needs.
 ## Project essentials
 
 - **Stack:** Flutter / Dart, targeting macOS, Windows, Linux
-- **No Python** — ignore ruff/Python hooks in template; Dart toolchain handles lint/format/tests
+- **App language is Dart, not Python** — the Dart toolchain handles all app lint/format/tests, so
+  ignore the template's ruff/Python *application* hooks. This is not a ban on Python: repo tooling
+  (pre-commit hook scripts under `hooks/scripts/`) is intentionally written in Python and targets 3.10+.
 - **Config discovery:** auto-detect common paths on first launch + user-managed paths
 - **Edit safety:** backup-before-write with diff/undo and restore instructions
 - **Data classification:** internal — config files may contain tokens but nothing leaves the machine
