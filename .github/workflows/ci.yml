@@ -46,13 +46,15 @@ jobs:
         run: |
           python3 - <<'PY'
           import sys
+          from pathlib import PurePosixPath
 
           total = covered = 0
           include = True
           with open("coverage/lcov.info") as handle:
               for line in handle:
                   if line.startswith("SF:"):
-                      include = "/vendor/" not in line[3:].strip()
+                      source_path = PurePosixPath(line[3:].strip().replace("\\", "/"))
+                      include = "vendor" not in source_path.parts
                   elif include and line.startswith("DA:"):
                       hits = int(line[3:].strip().split(",")[1])
                       total += 1

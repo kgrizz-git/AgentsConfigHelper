@@ -32,6 +32,8 @@ Do not load everything. Start here, then open only what the task needs.
 - **App language is Dart, not Python** — the Dart toolchain handles all app lint/format/tests, so
   ignore the template's ruff/Python *application* hooks. This is not a ban on Python: repo tooling
   (pre-commit hook scripts under `hooks/scripts/`) is intentionally written in Python and targets 3.10+.
+- **Review checklist:** [`best_practices.md`](best_practices.md) is a compact mirror of these
+  conventions for Qodo's compliance check — keep it in sync with this file (AGENTS.md is authoritative).
 - **Config discovery:** auto-detect common paths on first launch + user-managed paths
 - **Edit safety:** backup-before-write with diff/undo and restore instructions
 - **Data classification:** internal — config files may contain tokens but nothing leaves the machine

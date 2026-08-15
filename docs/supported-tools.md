@@ -18,7 +18,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `AGENTS.md` | scope-based allow/deny |
 | Antigravity | JSON | `~/.gemini/antigravity-cli/settings.json` | `.agents/rules/` | `GEMINI.md` + rules | action(target) + presets |
 | agy-acp | JSON | `~/.openab/agy-acp/sessions.json` | host ACP config (e.g. Zed `agent_servers`) | via agy hooks | ACP permission bridge |
-| VS Code / GitHub Copilot | Markdown | `.github/copilot-instructions.md` | (same, repo-root) | `.github/copilot-instructions.md` | instructions only (no permission model) |
+| VS Code / GitHub Copilot | Markdown | — | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` | instructions only (no permission model) |
 
 ---
 

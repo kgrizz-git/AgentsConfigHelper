@@ -91,8 +91,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   bool get _supportsStructuredFields =>
-      _currentConfig.format != ConfigFormat.text &&
-      _currentConfig.format != ConfigFormat.markdown;
+      _currentConfig.format == ConfigFormat.json ||
+      _currentConfig.format == ConfigFormat.jsonc ||
+      _currentConfig.format == ConfigFormat.yaml ||
+      _currentConfig.format == ConfigFormat.toml;
 
   bool get _hasUnsupportedPermissions =>
       _currentConfig.rawSettings['permissions'] != null &&
