@@ -50,17 +50,20 @@ class ConfigService {
 
   /// Loads a configuration explicitly discovered by the app.
   Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
-    final file = File(config.filePath);
+    // Resolve `~` the same way the save methods do, so a discovered path loads
+    // the exact file that a later save would overwrite.
+    final resolvedPath = resolvePath(config.filePath);
+    final file = File(resolvedPath);
     // Checking file existence asynchronously avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await file.exists()) {
-      throw FileSystemException('File not found', config.filePath);
+      throw FileSystemException('File not found', resolvedPath);
     }
     final content = await file.readAsString();
     final parser = _getParserForFormat(config.format);
     return parser.parse(
       content,
-      filePath: config.filePath,
+      filePath: resolvedPath,
       toolName: config.sourceLabel,
       format: config.format,
     );
