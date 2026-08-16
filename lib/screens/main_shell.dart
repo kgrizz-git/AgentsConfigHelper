@@ -305,13 +305,21 @@ class _MainShellState extends ConsumerState<MainShell> {
                     data: (result) {
                       final warningBanner = result.warnings.isEmpty
                           ? null
-                          : Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Text(
-                                result.warnings
-                                    .map((w) => w.message)
-                                    .join('\n'),
-                                style: const TextStyle(color: Colors.red),
+                          : ConstrainedBox(
+                              // Cap height and scroll internally so a burst
+                              // of warnings can't overflow or crowd out the
+                              // config list.
+                              constraints: const BoxConstraints(maxHeight: 160),
+                              child: SingleChildScrollView(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Text(
+                                    result.warnings
+                                        .map((w) => w.message)
+                                        .join('\n'),
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ),
                               ),
                             );
 

@@ -29,7 +29,8 @@ uses [Semantic Versioning](https://semver.org/).
 - Discovery warnings (e.g. a manual path that no longer exists, or an
   unresolved home directory) now appear in the sidebar even when other
   configurations were found — previously they were only shown when the
-  result list was empty.
+  result list was empty. The warning banner is height-capped and scrolls
+  internally, so a burst of warnings can't overflow or crowd out the list.
 
 ## [0.4.4] - 2026-07-09
 

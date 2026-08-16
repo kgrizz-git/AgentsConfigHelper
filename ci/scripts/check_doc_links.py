@@ -117,9 +117,24 @@ def find_external(text: str) -> list[str]:
     return list(seen)
 
 
+def _url_host(url: str) -> str:
+    return (urlsplit(url).hostname or "").lower()
+
+
+def _host_matches(url: str, domains: tuple[str, ...]) -> bool:
+    """True when the URL's host equals one of [domains] or a subdomain of it.
+
+    Compares the parsed host rather than doing a substring check, so a domain
+    cannot match at an arbitrary position (e.g. 'github.com' in a path or a
+    look-alike host like 'github.com.evil.example').
+    """
+    host = _url_host(url)
+    return any(host == d or host.endswith("." + d) for d in domains)
+
+
 def check_link(url: str) -> tuple[str, str] | None:
     """Return (url, problem) when the link looks dead or moved, else None."""
-    if any(host in url for host in SKIP_HOSTS):
+    if _host_matches(url, SKIP_HOSTS):
         return None
     # Only ever fetch http(s). urllib also understands file://, ftp://, etc., so
     # guard the scheme at the sink even though callers already pass http(s) URLs —
@@ -131,10 +146,9 @@ def check_link(url: str) -> tuple[str, str] | None:
         # Scheme restricted to http/https above; this is a documentation link
         # from a tracked markdown file, not user input.
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # nosemgrep
-
             final = response.geturl()
             # A GitHub repo redirect means the project was renamed or transferred.
-            if "github.com" in url and final.rstrip("/") != url.rstrip("/"):
+            if _url_host(url) == "github.com" and final.rstrip("/") != url.rstrip("/"):
                 return (url, f"redirects to {final} — renamed or transferred?")
         return None
     except urllib.error.HTTPError as error:

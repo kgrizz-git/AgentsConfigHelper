@@ -155,7 +155,10 @@ class ConfigService {
         toolName: config.toolName,
         format: config.format,
       );
-    } on Object {
+    } on Exception {
+      // Only an expected parse/format failure (e.g. ConfigParseException,
+      // FormatException) means the baseline is unusable; let Errors —
+      // programming bugs — propagate rather than silently skipping the merge.
       baseline = null;
     }
 

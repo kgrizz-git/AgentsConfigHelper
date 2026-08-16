@@ -111,6 +111,17 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Fixed
 
+- **URL host checks parse the host instead of substring-matching (2026-08-16).**
+  `ci/scripts/check_doc_links.py` now compares the parsed hostname (via
+  `_host_matches`/`_url_host`) for both the skip-list and the GitHub-redirect
+  check, so a domain can't match at an arbitrary position (e.g. `github.com`
+  in a path, or a look-alike host `github.com.evil.example`). Clears the
+  CodeQL `py/incomplete-url-substring-sanitization` alert, the matching
+  Semgrep finding, and SonarCloud's New-Code Security Rating.
+- **Narrower baseline-parse catch in `saveRawConfig` (2026-08-16).**
+  `ConfigService` now catches `Exception` (not `Object`) around the baseline
+  reparse, so genuine `Error`s (programming bugs) propagate instead of being
+  swallowed as an unparseable baseline. Qodo finding.
 - **Glob discovery cap now bounds work, not just results (2026-08-16).**
   `DiscoveryService`'s bounded glob enumeration increments its per-glob counter
   for every matching entry (not only newly-added ones), so the `maxEntries`
