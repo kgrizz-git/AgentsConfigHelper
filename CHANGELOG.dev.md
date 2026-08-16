@@ -7,6 +7,14 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Semgrep SAST in CI (2026-08-16).** New non-blocking `semgrep` job runs
+  `semgrep scan --config p/default --metrics off` and uploads SARIF to the
+  Security tab (category `semgrep`), covering Dart plus the Python/shell/YAML
+  that CodeQL default setup (Python + Actions only) leaves uncovered. Actions
+  pinned to commit SHAs; a `.semgrepignore` excludes vendored and generated
+  platform code. Also hardened `ci/scripts/check_doc_links.py` to restrict the
+  `urllib` scheme to http/https at the sink (Semgrep `dynamic-urllib-use`
+  audit finding).
 - **Nitpick resolution round (2026-08-16).** Tests: `discovered_config_test` drops the const-identical equality check for a real props
   comparison plus inequality and `fromPath` id/normalization coverage;
   `text_config_parser_test` covers the `originalContent` argument and
@@ -103,6 +111,11 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Fixed
 
+- **Glob discovery cap now bounds work, not just results (2026-08-16).**
+  `DiscoveryService`'s bounded glob enumeration increments its per-glob counter
+  for every matching entry (not only newly-added ones), so the `maxEntries`
+  cap bounds the scan even when many matches are duplicates already discovered
+  via another target. Qodo/CodeRabbit review finding.
 - **Windows path deduplication (2026-08-16).** `DiscoveryPreferencesStore` now dedups and
   matches manual paths / project roots via a platform-aware key (case-insensitive on Windows,
   case-sensitive elsewhere), and `DiscoveryService` keys `seenPaths` the same way, so

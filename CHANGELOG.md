@@ -24,6 +24,13 @@ uses [Semantic Versioning](https://semver.org/).
   (via `saveConfig`) instead of the load-time content, keeping the saved file
   in sync with the actual file on disk.
 
+### Fixed
+
+- Discovery warnings (e.g. a manual path that no longer exists, or an
+  unresolved home directory) now appear in the sidebar even when other
+  configurations were found — previously they were only shown when the
+  result list was empty.
+
 ## [0.4.4] - 2026-07-09
 
 ### Added

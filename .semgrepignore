@@ -1,0 +1,13 @@
+# Paths excluded from Semgrep SAST (mirrors the coverage/vendor exclusions).
+
+# Vendored third-party code (also excluded from the coverage gate).
+lib/vendor/
+
+# Generated Flutter desktop runner scaffold (not first-party app code).
+linux/
+macos/
+windows/
+
+# Build output and dependencies.
+build/
+.dart_tool/

@@ -303,26 +303,26 @@ class _MainShellState extends ConsumerState<MainShell> {
                 Expanded(
                   child: discoveryState.when(
                     data: (result) {
+                      final warningBanner = result.warnings.isEmpty
+                          ? null
+                          : Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Text(
+                                result.warnings
+                                    .map((w) => w.message)
+                                    .join('\n'),
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            );
+
                       if (result.items.isEmpty) {
-                        if (result.warnings.isNotEmpty) {
-                          return Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Text(
-                              result.warnings
-                                  .map((w) => w.message)
-                                  .join(
-                                    '\n',
-                                  ),
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          );
-                        }
-                        return const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Text('No configurations found.'),
-                        );
+                        return warningBanner ??
+                            const Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Text('No configurations found.'),
+                            );
                       }
-                      return ListView.builder(
+                      final list = ListView.builder(
                         itemCount: result.items.length,
                         itemBuilder: (context, index) {
                           final configItem = result.items[index];
@@ -352,6 +352,18 @@ class _MainShellState extends ConsumerState<MainShell> {
                                 : null,
                           );
                         },
+                      );
+
+                      if (warningBanner == null) return list;
+                      // Surface warnings even when configs were found, so a bad
+                      // manual path or unresolved home dir isn't silently
+                      // hidden behind a non-empty list.
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          warningBanner,
+                          Expanded(child: list),
+                        ],
                       );
                     },
                     loading: () =>

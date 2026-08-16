@@ -38,6 +38,7 @@ import urllib.error
 import urllib.request
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlsplit
 
 CATALOG_WINDOW_DAYS = 120  # tighter than the 180-day prose window on purpose
 CATALOG_DIRS = ("inventory",)
@@ -120,9 +121,17 @@ def check_link(url: str) -> tuple[str, str] | None:
     """Return (url, problem) when the link looks dead or moved, else None."""
     if any(host in url for host in SKIP_HOSTS):
         return None
+    # Only ever fetch http(s). urllib also understands file://, ftp://, etc., so
+    # guard the scheme at the sink even though callers already pass http(s) URLs —
+    # defense in depth against a dynamic value reaching urlopen.
+    if urlsplit(url).scheme not in ("http", "https"):
+        return (url, "unsupported URL scheme — only http/https are checked")
     request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+        # Scheme restricted to http/https above; this is a documentation link
+        # from a tracked markdown file, not user input.
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # nosemgrep
+
             final = response.geturl()
             # A GitHub repo redirect means the project was renamed or transferred.
             if "github.com" in url and final.rstrip("/") != url.rstrip("/"):

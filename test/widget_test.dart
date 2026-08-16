@@ -63,6 +63,26 @@ class _FakeDiscoveryService extends DiscoveryService {
   }
 }
 
+class _WarningDiscoveryService extends DiscoveryService {
+  @override
+  Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
+    return DiscoveryResult(
+      items: [
+        DiscoveredConfig.fromPath(
+          filePath: '~/.claude/settings.json',
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+          format: ConfigFormat.json,
+          sourceLabel: 'Claude Code',
+        ),
+      ],
+      warnings: const [
+        DiscoveryWarning(path: '/nope', message: 'Manual path does not exist.'),
+      ],
+    );
+  }
+}
+
 class _FakePreferencesStore implements IDiscoveryPreferencesStore {
   final addedManualPaths = <String>[];
   final addedProjectRoots = <String>[];
@@ -118,6 +138,34 @@ void main() {
 
     expect(find.text('Agents Config'), findsOneWidget);
     expect(find.text('Claude Code'), findsOneWidget);
+  });
+
+  testWidgets('renders warnings alongside discovered configs', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final configService = ConfigService(
+      backupService: BackupService(backupDirectory: Directory.systemTemp),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          configServiceProvider.overrideWithValue(configService),
+          discoveryServiceProvider.overrideWithValue(
+            _WarningDiscoveryService(),
+          ),
+          discoveryPreferencesStoreProvider.overrideWithValue(
+            _FakePreferencesStore(),
+          ),
+        ],
+        child: const MaterialApp(home: MainShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The warning must render even though a config was discovered.
+    expect(find.text('Claude Code'), findsOneWidget);
+    expect(find.text('Manual path does not exist.'), findsOneWidget);
   });
 
   testWidgets('confirms before discarding edits to load another config', (

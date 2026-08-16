@@ -110,6 +110,10 @@ class DiscoveryService {
                 truncated = true;
                 break;
               }
+              // Count every matching entry, not just newly-added ones, so the
+              // cap bounds the work done per glob even when many matches are
+              // duplicates already discovered via another target.
+              count++;
               final config = DiscoveredConfig.fromPath(
                 filePath: entity.path,
                 scope: scope,
@@ -118,9 +122,7 @@ class DiscoveryService {
                 sourceLabel: descriptor.displayName,
                 descriptor: descriptor,
               );
-              if (await addIfValid(config)) {
-                count++;
-              }
+              await addIfValid(config);
             }
           }
 

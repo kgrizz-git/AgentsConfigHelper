@@ -539,11 +539,12 @@ rules:
 
 ### VS Code / GitHub Copilot Config format
 
-Plain **Markdown** for instructions/agents. No structured permission model — VS Code
-Copilot reads instructions and applies the host IDE's trust/sandbox settings. Custom agents
-are defined in `.agent.md` files with YAML frontmatter (name, description, tools). Agent
-Skills are packaged separately as `SKILL.md` files (an open standard shared across Copilot
-surfaces), not as agent frontmatter.
+Plain **Markdown** for both instructions and agents. Plain instruction files
+(`copilot-instructions.md`) have no structured permission model — Copilot reads them and
+applies the host IDE's trust/sandbox settings. Custom agents, defined in `.agent.md` files
+with YAML frontmatter (name, description, tools), do carry a structured `tools` allow-list
+that restricts which tools the agent may use. Agent Skills are packaged separately as
+`SKILL.md` files (an open standard shared across Copilot surfaces), not as agent frontmatter.
 
 ### VS Code / GitHub Copilot Rules
 
@@ -554,7 +555,7 @@ surfaces), not as agent frontmatter.
 
 ### VS Code / GitHub Copilot CLI
 
-`code` (VS Code), `copilot` (GitHub Copilot CLI), `gh copilot` (GitHub CLI extension).
+`code` (VS Code), `copilot` (GitHub Copilot CLI), `gh copilot` (GitHub CLI command for running Copilot CLI; preview).
 
 **Sources:** [Copilot overview](https://code.visualstudio.com/docs/copilot/overview) · [Agent skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills) · [GitHub Copilot](https://github.com/features/copilot)
 
@@ -708,4 +709,4 @@ In Phase 1, only exact parser-supported structured config files are automaticall
 
 ### Deferred Sources
 
-Markdown rules, system prompts, glob-matched directories, and instruction sources (like `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.mdc` files) are explicitly deferred. They will not appear in sidebar discovery until a dedicated raw-text editor exists.
+Raw editing of these sources is available via the raw-text editor. What remains deferred is their **discovery, parsing, and validation**: Markdown rules, system prompts, glob-matched directories, and instruction sources (like `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.mdc` files) do not yet appear in sidebar discovery.
