@@ -15,12 +15,14 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
     String content, {
     required String filePath,
     required String toolName,
+    ConfigFormat? format,
   }) {
+    final resolvedFormat = format ?? ConfigFormat.yaml;
     if (isContentEmpty(content)) {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
-        format: ConfigFormat.yaml,
+        format: resolvedFormat,
         originalContent: content,
       );
     }
@@ -36,7 +38,7 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
-        format: ConfigFormat.yaml,
+        format: resolvedFormat,
         originalContent: content,
       );
     }
@@ -52,7 +54,7 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
     return ToolConfig(
       toolName: toolName,
       filePath: filePath,
-      format: ConfigFormat.yaml,
+      format: resolvedFormat,
       rules: rules,
       permissions: permissions,
       originalContent: content,

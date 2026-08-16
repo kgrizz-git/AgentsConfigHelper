@@ -1,6 +1,7 @@
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 /// A dialog that prompts the user for an absolute filesystem path.
 ///
@@ -21,6 +22,7 @@ class AddPathDialog extends StatefulWidget {
 
 class _AddPathDialogState extends State<AddPathDialog> {
   final _controller = TextEditingController();
+  String? _errorText;
 
   @override
   void dispose() {
@@ -30,7 +32,14 @@ class _AddPathDialogState extends State<AddPathDialog> {
 
   void _submit() {
     final path = _controller.text.trim();
-    if (path.isEmpty) return;
+    if (path.isEmpty) {
+      setState(() => _errorText = 'Path must not be empty.');
+      return;
+    }
+    if (!p.isAbsolute(path)) {
+      setState(() => _errorText = 'Path must be absolute.');
+      return;
+    }
     Navigator.of(context).pop(path);
   }
 
@@ -46,7 +55,13 @@ class _AddPathDialogState extends State<AddPathDialog> {
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: AppTextStyles.uiSecondary,
+          errorText: _errorText,
         ),
+        onChanged: (_) {
+          if (_errorText != null) {
+            setState(() => _errorText = null);
+          }
+        },
         onSubmitted: (_) => _submit(),
       ),
       actions: [

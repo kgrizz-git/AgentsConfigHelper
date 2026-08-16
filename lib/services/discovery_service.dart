@@ -16,7 +16,8 @@ class DiscoveryService {
     final warnings = <DiscoveryWarning>[];
     final seenPaths = <String>{};
 
-    Future<void> addIfValid(
+    // Returns true only when [config] is newly added to [items].
+    Future<bool> addIfValid(
       DiscoveredConfig config, {
       bool isManual = false,
     }) async {
@@ -27,7 +28,7 @@ class DiscoveryService {
         // sidebar's remove action (gated on `isManual`) would appear for a
         // catalog-backed file that `removeManualPath` cannot make disappear —
         // it is rediscovered via its catalog target on the next refresh.
-        return;
+        return false;
       }
 
       final file = File(config.filePath);
@@ -37,6 +38,7 @@ class DiscoveryService {
         if (await file.exists()) {
           items.add(config);
           seenPaths.add(config.filePath);
+          return true;
         } else if (isManual) {
           warnings.add(
             DiscoveryWarning(
@@ -53,6 +55,7 @@ class DiscoveryService {
           ),
         );
       }
+      return false;
     }
 
     Future<void> processTarget(
@@ -87,25 +90,24 @@ class DiscoveryService {
           const maxEntries = 100;
 
           await for (final entity in dir.list()) {
-            if (entity is File) {
-              if (ToolDescriptorRegistry.isMatch(
-                expectedPattern,
-                entity.path,
-              )) {
-                final config = DiscoveredConfig.fromPath(
-                  filePath: entity.path,
-                  scope: scope,
-                  kind: target.kind,
-                  format: target.format,
-                  sourceLabel: descriptor.displayName,
-                  descriptor: descriptor,
-                );
-                await addIfValid(config);
+            if (entity is File &&
+                ToolDescriptorRegistry.isMatch(expectedPattern, entity.path)) {
+              if (count >= maxEntries) {
+                // A further matching entry exists beyond the cap, so results
+                // are genuinely truncated.
+                truncated = true;
+                break;
+              }
+              final config = DiscoveredConfig.fromPath(
+                filePath: entity.path,
+                scope: scope,
+                kind: target.kind,
+                format: target.format,
+                sourceLabel: descriptor.displayName,
+                descriptor: descriptor,
+              );
+              if (await addIfValid(config)) {
                 count++;
-                if (count >= maxEntries) {
-                  truncated = true;
-                  break;
-                }
               }
             }
           }

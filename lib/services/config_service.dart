@@ -62,6 +62,7 @@ class ConfigService {
       content,
       filePath: config.filePath,
       toolName: config.sourceLabel,
+      format: config.format,
     );
   }
 
@@ -103,6 +104,7 @@ class ConfigService {
       serialized,
       filePath: config.filePath,
       toolName: config.toolName,
+      format: config.format,
     );
   }
 
@@ -126,6 +128,7 @@ class ConfigService {
       rawContent,
       filePath: config.filePath,
       toolName: config.toolName,
+      format: config.format,
     );
 
     // Compare against the pre-edit baseline (not parsedFromRaw) to detect
@@ -137,6 +140,7 @@ class ConfigService {
       config.originalContent,
       filePath: config.filePath,
       toolName: config.toolName,
+      format: config.format,
     );
 
     String contentToWrite;
@@ -155,6 +159,7 @@ class ConfigService {
         contentToWrite,
         filePath: config.filePath,
         toolName: config.toolName,
+        format: config.format,
       );
     } else {
       contentToWrite = rawContent;

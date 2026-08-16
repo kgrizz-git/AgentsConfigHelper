@@ -13,12 +13,13 @@ class TextConfigParser implements ConfigParser {
     String content, {
     required String filePath,
     required String toolName,
+    ConfigFormat? format,
   }) {
-    final format = _determineFormat(filePath);
+    final resolvedFormat = format ?? _determineFormat(filePath);
     return ToolConfig(
       toolName: toolName,
       filePath: filePath,
-      format: format,
+      format: resolvedFormat,
       originalContent: content,
     );
   }
