@@ -165,5 +165,9 @@ class DiscoveryController extends _$DiscoveryController {
 final FutureProviderFamily<List<File>, String> backupListProvider =
     FutureProvider.family<List<File>, String>((ref, filePath) async {
       final configService = ref.watch(configServiceProvider);
-      return configService.backupService.listBackups(filePath);
+      // The family key stays unresolved (callers pass config.filePath), but
+      // resolve `~` before listing so the filenames match those createBackup
+      // writes from the resolved path in saveConfig/saveRawConfig.
+      final resolvedPath = configService.resolvePath(filePath);
+      return configService.backupService.listBackups(resolvedPath);
     });
