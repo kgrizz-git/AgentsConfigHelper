@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
+import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -216,28 +217,28 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  IconData _getIconForTool(String toolId) {
+  IconData _getIconForTool(ToolId toolId) {
+    // Exhaustive over ToolId so a newly added tool fails to compile until it
+    // gets an explicit icon, rather than silently falling through.
     switch (toolId) {
-      case 'claudeCode':
+      case ToolId.claudeCode:
         return Icons.code;
-      case 'cursor':
+      case ToolId.cursor:
         return Icons.edit;
-      case 'opencode':
+      case ToolId.opencode:
         return Icons.open_in_browser;
-      case 'paseo':
+      case ToolId.paseo:
         return Icons.directions_walk;
-      case 'kiro':
+      case ToolId.kiro:
         return Icons.keyboard;
-      case 'devin':
+      case ToolId.devin:
         return Icons.developer_mode;
-      case 'antigravity':
+      case ToolId.antigravity:
         return Icons.rocket_launch;
-      case 'codex':
+      case ToolId.codex:
         return Icons.book;
-      case 'agyAcp':
+      case ToolId.agyAcp:
         return Icons.api;
-      default:
-        return Icons.insert_drive_file;
     }
   }
 
@@ -329,9 +330,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                             title: configItem.sourceLabel,
                             subtitle: configItem.filePath,
                             icon: configItem.descriptor != null
-                                ? _getIconForTool(
-                                    configItem.descriptor!.id.name,
-                                  )
+                                ? _getIconForTool(configItem.descriptor!.id)
                                 : Icons.insert_drive_file,
                             isActive: _activeConfigId == configItem.id,
                             onTap: () async {

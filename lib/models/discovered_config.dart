@@ -79,15 +79,26 @@ class DiscoveredConfig extends Equatable {
     String? sourceLabel,
     bool? isManual,
   }) {
+    final nextKind = kind ?? this.kind;
+    final nextFilePath = filePath != null
+        ? p.normalize(filePath)
+        : this.filePath;
+    // Keep id synchronized with kind + filePath (as the factory derives it)
+    // whenever either changes, unless an explicit id is supplied.
+    final nextId =
+        id ??
+        (filePath != null || kind != null
+            ? '${nextKind.name}:$nextFilePath'
+            : this.id);
     return DiscoveredConfig(
-      id: id ?? this.id,
-      filePath: filePath ?? this.filePath,
+      id: nextId,
+      filePath: nextFilePath,
       // If descriptor was explicitly passed as null, we can't easily
       // distinguish it with standard copyWith unless we use a wrapper, but
       // for our usage this is fine.
       descriptor: descriptor ?? this.descriptor,
       scope: scope ?? this.scope,
-      kind: kind ?? this.kind,
+      kind: nextKind,
       format: format ?? this.format,
       sourceLabel: sourceLabel ?? this.sourceLabel,
       isManual: isManual ?? this.isManual,

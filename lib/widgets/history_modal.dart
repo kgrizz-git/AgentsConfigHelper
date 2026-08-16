@@ -67,20 +67,24 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
   }
 
   Future<void> _restoreBackup(File backupFile) async {
+    // Resolve messenger/navigator before the await + pop, so the lookups don't
+    // depend on the dialog route still being present after it is dismissed.
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     setState(() {
       _isRestoring = true;
     });
     try {
       await widget.onRestore(backupFile.path);
       if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
+        navigator.pop();
+        messenger.showSnackBar(
           const SnackBar(content: Text('Backup restored successfully.')),
         );
       }
     } on Object catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text('Failed to restore backup: $e'),
             backgroundColor: Colors.red,

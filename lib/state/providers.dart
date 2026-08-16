@@ -162,8 +162,11 @@ class DiscoveryController extends _$DiscoveryController {
 
 /// Provides the list of backups on disk for the config at the given file
 /// path, sorted most-recent first.
-final FutureProviderFamily<List<File>, String> backupListProvider =
-    FutureProvider.family<List<File>, String>((ref, filePath) async {
+final AutoDisposeFutureProviderFamily<List<File>, String> backupListProvider =
+    FutureProvider.autoDispose.family<List<File>, String>((
+      ref,
+      filePath,
+    ) async {
       final configService = ref.watch(configServiceProvider);
       // The family key stays unresolved (callers pass config.filePath), but
       // resolve `~` before listing so the filenames match those createBackup

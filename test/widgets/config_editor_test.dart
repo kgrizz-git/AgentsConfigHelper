@@ -71,6 +71,98 @@ void main() {
       expect(configService.savedConfigs.single.rules, contains('new rule'));
     });
 
+    testWidgets('forwards edited raw content to onSave', (tester) async {
+      final tempDir = Directory.systemTemp;
+      final configService = FakeConfigService(
+        BackupService(backupDirectory: tempDir),
+      );
+      // Text format shows only the raw editor (no structured fields), so there
+      // is exactly one TextField to drive.
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: '${tempDir.path}/notes.md',
+        format: ConfigFormat.text,
+        originalContent: 'original raw',
+      );
+      var sawRawArg = false;
+      String? capturedRaw;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ConfigEditor(
+              config: config,
+              onSave: (c, [r]) {
+                sawRawArg = true;
+                capturedRaw = r;
+                return configService.saveConfig(c);
+              },
+              resolvePath: configService.resolvePath,
+              onShowHistory: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'edited raw');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirm & Save'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(sawRawArg, isTrue);
+      expect(capturedRaw, 'edited raw');
+    });
+
+    testWidgets('passes null rawContent for a structured-only save', (
+      tester,
+    ) async {
+      final tempDir = Directory.systemTemp;
+      final configService = FakeConfigService(
+        BackupService(backupDirectory: tempDir),
+      );
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: '${tempDir.path}/structured.json',
+        format: ConfigFormat.json,
+        rules: const ['rule1'],
+        permissions: const ['perm1'],
+      );
+      String? capturedRaw = 'sentinel';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ConfigEditor(
+              config: config,
+              onSave: (c, [r]) {
+                capturedRaw = r;
+                return configService.saveConfig(c);
+              },
+              resolvePath: configService.resolvePath,
+              onShowHistory: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Add Item').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), 'new rule');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirm & Save'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(capturedRaw, isNull);
+    });
+
     testWidgets('diff viewer modal opens and can save', (tester) async {
       final tempDir = Directory.systemTemp;
       final configPath = '${tempDir.path}/test_config2.json';

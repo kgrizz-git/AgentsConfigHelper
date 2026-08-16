@@ -25,7 +25,7 @@ class ConfigEditor extends StatefulWidget {
   final ToolConfig config;
 
   /// Persists a confirmed edited configuration.
-  final Future<ToolConfig?> Function(ToolConfig config, [String? rawContent])
+  final Future<ToolConfig> Function(ToolConfig config, [String? rawContent])
   onSave;
 
   /// Resolves the configuration path before opening its directory.
@@ -133,7 +133,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
       );
       if (mounted) {
         setState(() {
-          _currentConfig = savedConfig ?? updatedConfig;
+          _currentConfig = savedConfig;
           _initLocalState(_currentConfig);
         });
         _notifyDirtyChanged();

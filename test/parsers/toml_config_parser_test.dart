@@ -108,12 +108,14 @@ key = "value"
           originalContent: originalToml,
         );
 
-        // Assert that comments are lost
+        // Assert that comments are lost (raw-text check).
         expect(serializedToml.contains('# This is a comment'), isFalse);
 
-        // And the structure is reformatted
-        expect(serializedToml, contains("rules = ['rule1']"));
-        expect(serializedToml, contains('[nested]'));
+        // Assert TOML semantics, not the encoder's quote/format style, which
+        // the caret version constraint permits changing across releases.
+        final roundTripped = TomlDocument.parse(serializedToml).toMap();
+        expect(roundTripped['rules'], equals(['rule1']));
+        expect(roundTripped.containsKey('nested'), isTrue);
       },
     );
   });
