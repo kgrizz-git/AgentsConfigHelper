@@ -8,7 +8,9 @@ Internal / developer-facing changes that do not belong in the public
 ### Added
 
 - **Semgrep SAST in CI (2026-08-16).** New non-blocking `semgrep` job runs
-  `semgrep scan --config p/default --metrics off` and uploads SARIF to the
+  `semgrep scan --config p/default --metrics off` (installed with
+  `pip install --only-binary :all:` so no dependency setup scripts run —
+  Sonar S8541) and uploads SARIF to the
   Security tab (category `semgrep`), covering Dart plus the Python/shell/YAML
   that CodeQL default setup (Python + Actions only) leaves uncovered. Actions
   pinned to commit SHAs; a `.semgrepignore` excludes vendored and generated

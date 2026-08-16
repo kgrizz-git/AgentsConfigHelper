@@ -98,7 +98,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: pip install semgrep==1.173.0
+      # `--only-binary :all:` forbids source builds, so no dependency's setup
+      # script runs during install (supply-chain hardening; Sonar S8541).
+      - run: "pip install --only-binary :all: semgrep==1.173.0"
 
       # Non-blocking: no `--error`, so findings surface in the Security tab
       # without failing the PR. `--metrics off` keeps the scan telemetry-free.
