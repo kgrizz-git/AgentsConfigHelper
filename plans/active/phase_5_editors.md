@@ -1,7 +1,9 @@
 # Phase 5: Editors, Diff Viewers, and Backups
 
-**Status:** Complete (PR #5)
-**Goal:** Implement the raw configuration editor, line-level diffing, and wire up the Backup & Restore UI.
+**Status:** Complete (PR #5) — line-level diffing descoped to the backlog (see Requirement 3)
+**Goal:** Implement the raw configuration editor and wire up the Backup & Restore UI. (Line-level
+diffing was part of the original goal but is deferred to the master-plan backlog; the shipped scope
+is the raw editor and Backup & Restore.)
 
 ## Requirements
 
