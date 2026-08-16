@@ -36,6 +36,12 @@ class _MainShellState extends ConsumerState<MainShell> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadConfig(DiscoveredConfig configItem) async {
     final generation = ++_loadGeneration;
     if (_hasUnsavedChanges) {
