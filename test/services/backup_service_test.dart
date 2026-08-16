@@ -130,5 +130,20 @@ void main() {
       expect(backups.first.path, equals(backupPath2));
       expect(backups.last.path, equals(backupPath1));
     });
+
+    test(
+      'createBackup prunes backups per path beyond maxBackupsPerPath',
+      () async {
+        String? lastBackupPath;
+        for (var i = 0; i < BackupService.maxBackupsPerPath + 3; i++) {
+          lastBackupPath = await backupService.createBackup(originalFile.path);
+        }
+
+        final backups = await backupService.listBackups(originalFile.path);
+
+        expect(backups, hasLength(BackupService.maxBackupsPerPath));
+        expect(backups.first.path, equals(lastBackupPath));
+      },
+    );
   });
 }

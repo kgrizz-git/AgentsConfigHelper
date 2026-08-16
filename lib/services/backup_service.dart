@@ -10,6 +10,10 @@ class BackupService {
   /// The application-managed directory that stores backups.
   final Directory backupDirectory;
 
+  /// Maximum number of backups retained per original path. Older snapshots
+  /// beyond this limit are pruned after each backup is created.
+  static const int maxBackupsPerPath = 10;
+
   /// Creates a backup of the file at [originalPath].
   ///
   /// The backup is stored in [backupDirectory] with a timestamp appended
@@ -52,7 +56,28 @@ class BackupService {
 
     await originalFile.copy(backupFile.path);
 
+    await _pruneOldBackups(originalPath);
+
     return backupFile.path;
+  }
+
+  /// Enforces [maxBackupsPerPath] for [originalPath] by deleting the oldest
+  /// snapshots beyond the cap. Best-effort: failures in listing or deleting
+  /// never fail the save that just created the backup.
+  Future<void> _pruneOldBackups(String originalPath) async {
+    try {
+      final backups = await listBackups(originalPath);
+      if (backups.length <= maxBackupsPerPath) return;
+      for (final backup in backups.sublist(maxBackupsPerPath)) {
+        try {
+          await backup.delete();
+        } on Object {
+          // One failed deletion must not abort pruning the rest.
+        }
+      }
+    } on Object {
+      // Retention is best-effort and must never fail a save.
+    }
   }
 
   /// Restores a backup from [backupPath] to [targetPath].
@@ -110,7 +135,21 @@ class BackupService {
       return match != null && match.group(1) == safeOriginalPath;
     }).toList();
 
-    return backupFiles..sort((a, b) => b.path.compareTo(a.path));
+    // Sort by the parsed timestamp (most recent first) rather than by raw path
+    // comparison, which is fragile for timestamps of differing digit lengths.
+    return backupFiles..sort((a, b) {
+      final byTime = _backupTimestamp(b).compareTo(_backupTimestamp(a));
+      if (byTime != 0) return byTime;
+      return b.path.compareTo(a.path);
+    });
+  }
+
+  /// Extracts the microsecond timestamp embedded in a backup filename, or 0
+  /// if the name does not match the expected pattern.
+  static int _backupTimestamp(File file) {
+    final match = _backupFilenamePattern.firstMatch(p.basename(file.path));
+    final timestamp = match != null ? int.tryParse(match.group(2)!) : null;
+    return timestamp ?? 0;
   }
 
   static final _backupFilenamePattern = RegExp(r'^(.*)_(\d+)_(\d+)\.bak$');

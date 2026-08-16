@@ -7,6 +7,20 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Nitpick resolution round (2026-08-16).** Tests: `discovered_config_test` drops the const-identical equality check for a real props
+  comparison plus inequality and `fromPath` id/normalization coverage;
+  `text_config_parser_test` covers the `originalContent` argument and
+  uppercase `.MD` extension detection; `history_modal_test` captures
+  `restoredPath` outside the callback and asserts it after the confirm flow;
+  `discovery_preferences_store_test` asserts the atomic write leaves only the
+  preferences file behind (no temp-file residue); `backup_service_test`
+  covers per-path pruning past `maxBackupsPerPath`. Refactors:
+  `DiscoveryPreferences` preserves unknown JSON keys in `extraFields`;
+  `DiscoveryPreferencesStore` extracts a shared
+  `_normalizeAndFilterPaths` helper; `ConfigService` uses `listEquals` from
+  `foundation`; `BackupService` sorts backups by parsed filename timestamp
+  and prunes per-path retention; `ConfigEditor`'s raw diff view truncates at
+  20 lines with an expand toggle.
 - **Bootstrap follow-through.** The checklist existed but nothing recorded progress, so a
   compacted or resumed session had no way to know where it stopped. Adds stable phase IDs
   (`P0`–`P8`, `PS`); `templates/bootstrap-state.md` → `.context/bootstrap-state.md` for

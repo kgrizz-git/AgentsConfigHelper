@@ -24,11 +24,18 @@ class TextConfigParser implements ConfigParser {
     );
   }
 
-  /// Returns `config.originalContent` unchanged; text/markdown files are
-  /// never reformatted or rewritten.
+  /// Returns [originalContent] when provided, falling back to
+  /// `config.originalContent`.
+  ///
+  /// [originalContent] is the caller's serialized output (typically the file's
+  /// on-disk content at save time, passed by `ConfigService.saveConfig`), not
+  /// the load-time file content. Text and markdown files have no structured
+  /// fields that could desync, so honoring it is intentional: if the file
+  /// changed on disk while the editor was open, the save writes the current
+  /// disk state instead of a stale in-memory copy.
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
-    return config.originalContent;
+    return originalContent ?? config.originalContent;
   }
 
   ConfigFormat _determineFormat(String filePath) {

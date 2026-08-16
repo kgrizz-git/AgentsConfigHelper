@@ -19,3 +19,9 @@ Integrate directly with user-provided AI providers (e.g., OpenAI, Anthropic, Goo
 - **Context-Aware Assistance:** Allow users to ask questions directly inside the app, automatically passing their current active agent configuration file as context.
 - **Rule Generation:** Use the integrated AI to suggest or generate safe, secure rules and permissions based on a natural language prompt from the user (e.g., "Allow this agent to read from src but not write to tests").
 - **Config Auditing:** Have the AI review a configuration file and flag potentially unsafe command permissions or over-scoped folder access.
+
+**Secret handling and consent (required before any provider integration):**
+
+- Rules, config contents, or logs sent to external providers must first undergo redaction of API keys, tokens, and other secrets (e.g., `AWS_*`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, bearer tokens) before leaving the machine.
+- Providers must be invoked only after explicit user consent per session/request, with a clear indication of what data is being shared and with which provider.
+- Define and document a retention policy: what payloads are stored (locally or by the provider), for how long, and how users can request deletion.

@@ -73,5 +73,30 @@ Some random plain text rules.''';
 
       expect(parser.serialize(config), original);
     });
+
+    test('serialize honors the originalContent argument when provided', () {
+      const original = 'original text';
+      final config = ToolConfig(
+        toolName: 'Test',
+        filePath: '/test.md',
+        format: ConfigFormat.markdown,
+        originalContent: original,
+      );
+
+      expect(
+        parser.serialize(config, originalContent: 'some overridden text'),
+        'some overridden text',
+      );
+    });
+
+    test('parse detects markdown format for uppercase extensions', () {
+      final config = parser.parse(
+        'Some text',
+        filePath: '/path/to/README.MD',
+        toolName: 'Claude Code',
+      );
+
+      expect(config.format, ConfigFormat.markdown);
+    });
   });
 }

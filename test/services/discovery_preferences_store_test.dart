@@ -162,17 +162,23 @@ void main() {
     expect(result.preferences.projectRoots, ['/root/B']);
   });
 
-  test('writes are atomic via temp file', () async {
-    // This is hard to test perfectly without race conditions, but we can
-    // verify the normal flow works.
-    await store.addManualPath('/path/atomic');
+  test(
+    'writes leave only the preferences file behind (atomic temp+rename)',
+    () async {
+      await store.addManualPath('/path/atomic');
 
-    expect(preferencesFile.existsSync(), isTrue);
-    final tempFile = File('${preferencesFile.path}.tmp');
-    expect(tempFile.existsSync(), isFalse); // Should be cleaned up/renamed
+      expect(preferencesFile.existsSync(), isTrue);
+      // The temp file used for the atomic rename must not linger.
+      final fileNames = tempDir
+          .listSync()
+          .whereType<File>()
+          .map((f) => p.basename(f.path))
+          .toList();
+      expect(fileNames, ['test_prefs.json']);
 
-    final content = await preferencesFile.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-    expect(json['manualFilePaths'], ['/path/atomic']);
-  });
+      final content = await preferencesFile.readAsString();
+      final json = jsonDecode(content) as Map<String, dynamic>;
+      expect(json['manualFilePaths'], ['/path/atomic']);
+    },
+  );
 }

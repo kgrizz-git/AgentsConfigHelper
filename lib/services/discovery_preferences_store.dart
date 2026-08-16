@@ -147,39 +147,18 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     var prefs = DiscoveryPreferences.fromJson(json);
 
     // Normalize and deduplicate
-    final dedupedManualPathsRaw = prefs.manualFilePaths
-        .map((fp) => fp.trim())
-        .where((fp) => fp.isNotEmpty)
-        .map(p.normalize)
-        .toSet()
-        .toList();
-    if (dedupedManualPathsRaw.length != prefs.manualFilePaths.length) {
-      warnings.add("Removed duplicate or empty paths from 'manualFilePaths'.");
-    }
-
-    final dedupedManualPaths = dedupedManualPathsRaw
-        .where(p.isAbsolute)
-        .toList();
-    for (final bad in dedupedManualPathsRaw.where((fp) => !p.isAbsolute(fp))) {
-      warnings.add("Ignored non-absolute path: '$bad'");
-    }
-
-    final dedupedProjectRootsRaw = prefs.projectRoots
-        .map((fp) => fp.trim())
-        .where((fp) => fp.isNotEmpty)
-        .map(p.normalize)
-        .toSet()
-        .toList();
-    if (dedupedProjectRootsRaw.length != prefs.projectRoots.length) {
-      warnings.add("Removed duplicate or empty paths from 'projectRoots'.");
-    }
-
-    final dedupedProjectRoots = dedupedProjectRootsRaw
-        .where(p.isAbsolute)
-        .toList();
-    for (final bad in dedupedProjectRootsRaw.where((fp) => !p.isAbsolute(fp))) {
-      warnings.add("Ignored non-absolute path: '$bad'");
-    }
+    final dedupedManualPaths = _normalizeAndFilterPaths(
+      prefs.manualFilePaths,
+      'manualFilePaths',
+      collectWarnings: true,
+      warnings: warnings,
+    );
+    final dedupedProjectRoots = _normalizeAndFilterPaths(
+      prefs.projectRoots,
+      'projectRoots',
+      collectWarnings: true,
+      warnings: warnings,
+    );
 
     prefs = prefs.copyWith(
       manualFilePaths: dedupedManualPaths,
@@ -200,20 +179,16 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     }
 
     // Normalize and deduplicate before saving
-    final dedupedManualPaths = preferences.manualFilePaths
-        .map((fp) => fp.trim())
-        .where((fp) => fp.isNotEmpty)
-        .map(p.normalize)
-        .where(p.isAbsolute)
-        .toSet()
-        .toList();
-    final dedupedProjectRoots = preferences.projectRoots
-        .map((fp) => fp.trim())
-        .where((fp) => fp.isNotEmpty)
-        .map(p.normalize)
-        .where(p.isAbsolute)
-        .toSet()
-        .toList();
+    final dedupedManualPaths = _normalizeAndFilterPaths(
+      preferences.manualFilePaths,
+      'manualFilePaths',
+      collectWarnings: false,
+    );
+    final dedupedProjectRoots = _normalizeAndFilterPaths(
+      preferences.projectRoots,
+      'projectRoots',
+      collectWarnings: false,
+    );
 
     final prefsToSave = preferences.copyWith(
       manualFilePaths: dedupedManualPaths,
@@ -230,6 +205,32 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     );
     await tempFile.writeAsString(jsonString, flush: true);
     await tempFile.rename(file.path);
+  }
+
+  /// Trims, drops empties, normalizes, deduplicates, and filters to absolute
+  /// paths. When [collectWarnings] is true, writes the distinct dedup and
+  /// non-absolute warnings (formatted with [fieldName]) into [warnings].
+  List<String> _normalizeAndFilterPaths(
+    List<String> input,
+    String fieldName, {
+    required bool collectWarnings,
+    List<String>? warnings,
+  }) {
+    final deduped = input
+        .map((fp) => fp.trim())
+        .where((fp) => fp.isNotEmpty)
+        .map(p.normalize)
+        .toSet()
+        .toList();
+    if (collectWarnings) {
+      if (deduped.length != input.length) {
+        warnings!.add("Removed duplicate or empty paths from '$fieldName'.");
+      }
+      for (final bad in deduped.where((fp) => !p.isAbsolute(fp))) {
+        warnings!.add("Ignored non-absolute path: '$bad'");
+      }
+    }
+    return deduped.where(p.isAbsolute).toList();
   }
 
   /// Validates that [path] is non-empty (after trimming) and absolute.

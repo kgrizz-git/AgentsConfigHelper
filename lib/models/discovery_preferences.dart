@@ -8,15 +8,23 @@ class DiscoveryPreferences extends Equatable {
     this.version = 1,
     this.manualFilePaths = const [],
     this.projectRoots = const [],
+    this.extraFields = const {},
   });
 
   /// Parses preferences from a decoded JSON map, tolerating missing or
-  /// malformed fields by falling back to defaults.
+  /// malformed fields by falling back to defaults. Unknown keys are kept in
+  /// [extraFields] so they survive a save/rewrite cycle.
   factory DiscoveryPreferences.fromJson(Map<String, dynamic> json) {
+    const knownKeys = {'version', 'manualFilePaths', 'projectRoots'};
+    final extraFields = <String, dynamic>{
+      for (final entry in json.entries)
+        if (!knownKeys.contains(entry.key)) entry.key: entry.value,
+    };
     return DiscoveryPreferences(
       version: json['version'] is int ? json['version'] as int : 1,
       manualFilePaths: _parseStringList(json['manualFilePaths']),
       projectRoots: _parseStringList(json['projectRoots']),
+      extraFields: Map.unmodifiable(extraFields),
     );
   }
 
@@ -29,16 +37,22 @@ class DiscoveryPreferences extends Equatable {
   /// Additional project root directories the user registered for discovery.
   final List<String> projectRoots;
 
+  /// Unknown JSON keys found at load time, preserved unmodified so nothing
+  /// written by a newer app version is silently dropped.
+  final Map<String, dynamic> extraFields;
+
   /// Returns a copy of this object with updated fields.
   DiscoveryPreferences copyWith({
     int? version,
     List<String>? manualFilePaths,
     List<String>? projectRoots,
+    Map<String, dynamic>? extraFields,
   }) {
     return DiscoveryPreferences(
       version: version ?? this.version,
       manualFilePaths: manualFilePaths ?? this.manualFilePaths,
       projectRoots: projectRoots ?? this.projectRoots,
+      extraFields: extraFields ?? this.extraFields,
     );
   }
 
@@ -48,6 +62,7 @@ class DiscoveryPreferences extends Equatable {
       'version': version,
       'manualFilePaths': manualFilePaths,
       'projectRoots': projectRoots,
+      ...extraFields,
     };
   }
 
@@ -59,7 +74,12 @@ class DiscoveryPreferences extends Equatable {
   }
 
   @override
-  List<Object?> get props => [version, manualFilePaths, projectRoots];
+  List<Object?> get props => [
+    version,
+    manualFilePaths,
+    projectRoots,
+    extraFields,
+  ];
 }
 
 /// The outcome of loading [DiscoveryPreferences], including any warnings

@@ -22,6 +22,7 @@ void main() {
 
     testWidgets('shows backups and can confirm restore', (tester) async {
       var restoreCalled = false;
+      String? restoredPath;
 
       await tester.pumpWidget(
         ProviderScope(
@@ -35,7 +36,7 @@ void main() {
               body: HistoryModal(
                 config: config,
                 onRestore: (path) async {
-                  expect(path, '/fake/backup/path.bak');
+                  restoredPath = path;
                   restoreCalled = true;
                 },
               ),
@@ -63,10 +64,11 @@ void main() {
       final confirmButton = find.text('Confirm & Restore');
       expect(confirmButton, findsOneWidget);
       await tester.tap(confirmButton);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      // Flush the async onRestore callback and the navigator pop.
+      await tester.pumpAndSettle();
 
       expect(restoreCalled, isTrue);
+      expect(restoredPath, '/fake/backup/path.bak');
     });
 
     testWidgets('shows empty message when no backups exist', (tester) async {

@@ -78,6 +78,31 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 >
 > **Still deferred:** the diff modal (`ConfigEditor._buildDiffSection`) remains a list-level add/remove view; upgrading it to a true line-level diff for the raw editor and History/Backups comparison is tracked under the master-plan backlog "Git-style Merging & Diffing."
 
+## Phase 5.5: Documentation Accuracy & Polish
+
+**Goal:** Bring the user-facing and contributor docs in line with the shipped codebase, and
+raise the README's professionalism so the project reads like a credible OSS desktop app.
+
+**Why now:** The first independent doc audit (`tmp/docs-accuracy-assessment-2026-08-15T1335.md`)
+found the architecture and safety claims largely hold up, but several README/ARCHITECTURE
+statements are inaccurate and one is security-relevant. Most are concentrated in feature-scope
+overreach and the backup-location note. Fixing these is low-risk, high-trust, and unblocks the
+Phase 6 release narrative.
+
+* Correct README feature-scope overreach: remove the "sync" capability claim (not implemented; no networking in `lib/`), and reword "undo mechanisms" to the actual backup-restore behavior.
+* Rewrite the Data Privacy / backup note so it states the **true** backup location (centralized app-support `backups/` dir, not alongside originals), discloses that backups accumulate without auto-pruning, and that filenames encode original absolute paths. Add where/how to purge.
+* Fix the structured-vs-instruction-document distinction: Markdown/text are raw passthrough, not "native" like JSON/JSONC/YAML/TOML.
+* Sync the README supported-tool list to `ToolDescriptorRegistry` (9 tools; currently lists 8 and omits `agy-acp`); consider a drift test (README tool count == catalog length).
+* Mark the "CLI Integration Service" in `ARCHITECTURE.md` as `(planned)` — no such service exists.
+* Resolve the `CHANGELOG.md` version conflict (says `0.4.4` template history; app is `0.1.0`); reset to an app changelog.
+* Rewrite `docs/NAVIGATION.md` to drop the inherited "this template" scaffolding framing.
+* Add a `LICENSE` file and License section; add a screenshot, status/CI badges, and a "Project status: early development" line to README.
+* Document the vendored `lib/vendor/json_ast/` (origin, license, rationale) and clarify it is vendored, not a pub dependency.
+* Add a `Last reviewed:` line to README (matching AGENTS.md/ARCHITECTURE.md/`docs/supported-tools.md`).
+* **Detailed Plan:** `plans/active/phase_5.5_docs.md`
+
+> **Note:** The Master Plan itself also contains stale "sync" language (Goal line, Phase 2 "Integrate CLI hooks", Phase 2 "`.bak` creation") that this phase should reconcile while editing the docs.
+
 ## Phase 6: Polish, Error Handling & Release
 
 **Goal:** Get it ready for a local machine release.
