@@ -103,6 +103,13 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Changed
 
+- **Collision-free backup filename encoding (2026-08-16).** `BackupService` now encodes the
+  original path via a shared `_encodeOriginalPath` helper (percent-escape `%` first, then the OS
+  separator → `%2F` and `:` → `%3A`), replacing the non-injective `sep → __` / `: → _drive_`
+  substitution where a literal `__` in one path could alias a separator in another (e.g. `/x/y`
+  vs `/x__y`), letting their backups list and prune together. `createBackup` and `listBackups`
+  share the helper; a regression test covers the former collision. This changes the on-disk
+  `.bak` filename format (no existing backups yet to migrate). CodeRabbit review finding.
 - **TOML comment preservation: documented and deferred.** `TomlConfigParser.serialize` stays
   lossy (rebuilds from the parsed map, dropping comments/whitespace/order) because the Dart
   `toml` package has no source-preserving editor, unlike the JSON (`json_ast`) and YAML

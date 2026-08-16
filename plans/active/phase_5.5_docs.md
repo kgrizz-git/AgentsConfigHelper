@@ -42,7 +42,7 @@ other than correcting prose and adding a license/screenshot.
   CLIs", "diff/undo", and an *unresolved* backup-location question at `:72`). Because `AGENTS.md:21`
   tells agents to read it first, it is recorded here as a **tracked follow-up** (append to
   `TO_DO.md`): reconcile or regenerate it so it matches the shipped code. Not edited in this phase.
-- Backup retention / pruning (tracked in `TO_DO.md`; H2 in the audit).
+- Backup retention / pruning — **shipped** since this plan was drafted (`BackupService.maxBackupsPerPath = 10`, best-effort `_pruneOldBackups` after each save). The docs below must describe this shipped behavior, not an unimplemented deferral. Only a "Reveal backups folder" action remains genuinely unfinished (tracked in `TO_DO.md`).
 - CLI Integration Service (only mark it `(planned)`; not building it).
 - "Sync" feature (deferred; belongs to Phase 7 Templates & Syncing, not V1).
 
@@ -76,8 +76,8 @@ Severity: **H** = materially misleading / security-relevant · **M** = inaccurat
   - macOS: `~/Library/Application Support/<reverse-DNS bundle id, e.g. com.example.agentsconfighelper>/backups`
   - Linux: `~/.local/share/<app>/backups` (or `$XDG_DATA_HOME`)
   - Windows: `%APPDATA%\<app>\backups`
-  Disclose that (a) backups accumulate without automatic pruning, (b) filenames encode original absolute paths (usernames/project names), (c) they are outside the user's `~/.claude/` etc. protections, and (d) how to purge them. Also reconcile `ARCHITECTURE.md:19` ("`.bak` or app-data folder") — only the app-data branch is implemented. Also **close the same open question** in `DESIGN.md:56` ("Should backups live next to the original file … or in a centralized app data directory?") with one line: "Resolved: centralized `<appSupport>/backups`."
-- **Follow-up (track in `TO_DO.md`, do NOT implement here):** backup retention/pruning and a "Reveal backups folder" action. Per `AGENTS.md:78` deferred work is tracked in `TO_DO.md`; append an entry there (and mark it done per `AGENTS.md:87` when shipped). Do not open a separate GitHub issue unless the user requests one.
+  Disclose that (a) only the newest `BackupService.maxBackupsPerPath` (10) snapshots per original path are retained — older ones are pruned best-effort after each save, (b) filenames encode original absolute paths (usernames/project names), (c) they are outside the user's `~/.claude/` etc. protections, and (d) how to purge them. Also reconcile `ARCHITECTURE.md:19` ("`.bak` or app-data folder") — only the app-data branch is implemented. Also **close the same open question** in `DESIGN.md:56` ("Should backups live next to the original file … or in a centralized app data directory?") with one line: "Resolved: centralized `<appSupport>/backups`."
+- **Follow-up (track in `TO_DO.md`, do NOT implement here):** a "Reveal backups folder" action. (Backup retention/pruning already shipped — `BackupService.maxBackupsPerPath`/`_pruneOldBackups` — so it is no longer a follow-up.) Per `AGENTS.md:78` deferred work is tracked in `TO_DO.md`; append an entry there (and mark it done per `AGENTS.md:87` when shipped). Do not open a separate GitHub issue unless the user requests one.
 
 ### H3. Mark the ARCHITECTURE "CLI Integration Service" as planned
 
@@ -182,8 +182,8 @@ Severity: **H** = materially misleading / security-relevant · **M** = inaccurat
 ## Done criteria
 
 All H/M/L items either completed or explicitly deferred with a tracked follow-up (backup pruning
-tracked in `TO_DO.md`; CLI service stays `(planned)`; sync annotated as deferred/moved to Phase 7 in
-the Master Plan). README, ARCHITECTURE, and **AGENTS.md** are internally consistent with each other
+already shipped; a "Reveal backups folder" action stays tracked in `TO_DO.md`; CLI service stays
+`(planned)`; sync annotated as deferred/moved to Phase 7 in the Master Plan). README, ARCHITECTURE, and **AGENTS.md** are internally consistent with each other
 and with the code, and the Master Plan's original goals are preserved (annotated as deferred, not
 erased).
 
@@ -199,4 +199,5 @@ erased).
       file from `plans/active/phase_5.5_docs.md` to `plans/archive/phase_5.5_docs.md` (do not
       delete). Keep the deferred-item annotations in the archived copy as history.
 - [ ] **Update `TO_DO.md`:** Remove any items this phase closes (per `AGENTS.md:87`); leave deferred
-      items (backup pruning, `.context/` profile reconciliation) tracked there.
+      items (a "Reveal backups folder" action, `.context/` profile reconciliation) tracked there.
+      Backup pruning has shipped, so it should not be listed as outstanding.

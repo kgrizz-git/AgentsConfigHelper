@@ -92,7 +92,7 @@ Phase 6 release narrative.
 * Correct README feature-scope overreach: remove the "sync" capability claim (not implemented; no networking in `lib/`), and reword "undo mechanisms" to the actual backup-restore behavior.
 * Rewrite the Data Privacy / backup note so it states the **true** backup location (centralized app-support `backups/` dir, not alongside originals), discloses that backups accumulate without auto-pruning, and that filenames encode original absolute paths. Add where/how to purge.
 * Fix the structured-vs-instruction-document distinction: Markdown/text are raw passthrough, not "native" like JSON/JSONC/YAML/TOML.
-* Sync the README supported-tool list to `ToolDescriptorRegistry` (9 tools; currently lists 8 and omits `agy-acp`); consider a drift test (README tool count == catalog length).
+* Sync the README supported-tool list to `ToolDescriptorRegistry` (9 tools; currently lists 8 and omits `agy-acp`); consider a drift test that asserts every `ToolDescriptorRegistry` display name appears in `docs/supported-tools.md` (names as source of truth, catching substitutions and omissions — not a count-only check).
 * Mark the "CLI Integration Service" in `ARCHITECTURE.md` as `(planned)` — no such service exists.
 * Resolve the `CHANGELOG.md` version conflict (says `0.4.4` template history; app is `0.1.0`); reset to an app changelog.
 * Rewrite `docs/NAVIGATION.md` to drop the inherited "this template" scaffolding framing.
@@ -136,8 +136,8 @@ Phase 6 release narrative.
 
 **Goal:** Extend discovery and editing beyond the V1 structured-config set (JSON/JSONC, TOML, YAML) to the deferred sources and tools currently excluded from auto-discovery.
 
-* **Raw-text editor (prerequisite):** Build the deferred Markdown/Starlark/plain-text editor so non-JSON/YAML/TOML sources can be opened, viewed, and safely edited (ties to Phase 5 raw-editor stub).
-* **Markdown rules discovery:** Surface `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`, Codex `.rules`, Devin `.devin/rules/*.md` in the sidebar once the raw editor exists (per `docs/supported-tools.md` "Deferred Sources").
+* **Raw-text editor:** Shipped in Phase 5 as the raw-editor fallback (`ConfigEditor` "Advanced" raw-content editor + `ConfigService.saveRawConfig`), so it is no longer a Phase 9 prerequisite. Phase 9 builds discovery/parsing/validation/tool support for the deferred Markdown/Starlark/plain-text sources on top of that shipped editor.
+* **Markdown rules discovery:** Surface `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`, Codex `.rules`, Devin `.devin/rules/*.md` in the sidebar (per `docs/supported-tools.md` "Deferred Sources").
 * **Starlark & plain text:** Support Codex `.rules` (Starlark) and deprecated Cursor `.cursorrules` (plain text) via the raw editor.
 * **VS Code / GitHub Copilot:** Add as a first-class supported tool. Instructions are `.github/copilot-instructions.md` (Markdown); no permission model. Add a `ToolDescriptor` entry and a section in `docs/supported-tools.md` (already stubbed there as deferred).
 * **Parser registry reconciliation:** Ensure `lib/catalog/tool_descriptor_registry.dart` and `DiscoveryService.defaultRelativePaths` reflect all 10 tools plus deferred sources.

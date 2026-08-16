@@ -534,24 +534,27 @@ rules:
 | Scope | Path |
 | --- | --- |
 | Project instructions | `.github/copilot-instructions.md` (repo root) |
-| User/agent settings | VS Code `settings.json` (`github.copilot.*`, `chat.agents`) |
-| Agent definitions | `.github/agents/*.md` (or `.github/chatmodes/*.chatmode.md`) |
+| User/agent settings | VS Code `settings.json` (`github.copilot.*`; extra agent-file dirs via `chat.agentFilesLocations`) |
+| Agent definitions | `.github/agents/<name>.agent.md` (legacy: `.github/chatmodes/*.chatmode.md`) |
 
 ### VS Code / GitHub Copilot Config format
 
 Plain **Markdown** for instructions/agents. No structured permission model — VS Code
-Copilot reads instructions and applies the host IDE's trust/sandbox settings. Chat agents
-can be defined as Markdown with YAML frontmatter (name, description, tools, skills).
+Copilot reads instructions and applies the host IDE's trust/sandbox settings. Custom agents
+are defined in `.agent.md` files with YAML frontmatter (name, description, tools). Agent
+Skills are packaged separately as `SKILL.md` files (an open standard shared across Copilot
+surfaces), not as agent frontmatter.
 
 ### VS Code / GitHub Copilot Rules
 
 - **Instructions:** `.github/copilot-instructions.md` — project-level guidance, plain Markdown.
-- **Agents:** `.github/agents/<name>.md` with frontmatter.
-- **Chat modes:** `.github/chatmodes/*.chatmode.md`.
+- **Agents:** `.github/agents/<name>.agent.md` with frontmatter.
+- **Chat modes (legacy):** `.github/chatmodes/*.chatmode.md` — superseded by custom agents;
+  rename to `.agent.md` to migrate.
 
 ### VS Code / GitHub Copilot CLI
 
-`code` (VS Code), `github-copilot` / `copilot` (CLI), `gh copilot`.
+`code` (VS Code), `copilot` (GitHub Copilot CLI), `gh copilot` (GitHub CLI extension).
 
 **Sources:** [Copilot overview](https://code.visualstudio.com/docs/copilot/overview) · [Agent skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills) · [GitHub Copilot](https://github.com/features/copilot)
 

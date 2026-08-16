@@ -42,11 +42,8 @@ class BackupService {
     final timestamp = DateTime.now().microsecondsSinceEpoch;
     final randomId = Random().nextInt(1000000);
 
-    // Encode the absolute path safely in the filename.
-    // Replace OS path separators and colons (Windows drive letters) with '__'
-    final safeOriginalPath = originalPath
-        .replaceAll(Platform.pathSeparator, '__')
-        .replaceAll(':', '_drive_');
+    // Encode the absolute path into a collision-free, filename-safe token.
+    final safeOriginalPath = _encodeOriginalPath(originalPath);
 
     final backupNameWithContext =
         '${safeOriginalPath}_${timestamp}_$randomId.bak';
@@ -119,16 +116,14 @@ class BackupService {
       return [];
     }
 
-    final safeOriginalPath = originalPath
-        .replaceAll(Platform.pathSeparator, '__')
-        .replaceAll(':', '_drive_');
+    final safeOriginalPath = _encodeOriginalPath(originalPath);
 
     final allEntities = await backupDirectory.list().toList();
     final backupFiles = allEntities.whereType<File>().where((file) {
       final name = p.basename(file.path);
       // Match on the exact encoded-path prefix, not a string prefix: a
-      // startsWith check would also match e.g. "__app_old_..." backups
-      // when listing backups for "__app", since "app_old" starts with
+      // startsWith check would also match e.g. "%2Fapp_old_..." backups
+      // when listing backups for "%2Fapp", since "app_old" starts with
       // "app_". Anchoring on the trailing "_<timestamp>_<random>.bak"
       // suffix and comparing the remainder for exact equality avoids that.
       final match = _backupFilenamePattern.firstMatch(name);
@@ -150,6 +145,20 @@ class BackupService {
     final match = _backupFilenamePattern.firstMatch(p.basename(file.path));
     final timestamp = match != null ? int.tryParse(match.group(2)!) : null;
     return timestamp ?? 0;
+  }
+
+  /// Encodes [originalPath] into a collision-free, filename-safe token.
+  ///
+  /// Percent-escapes the escape character (`%`) first, then the OS path
+  /// separator and the drive colon. Escaping `%` first keeps the encoding
+  /// injective: a literal marker in one path can no longer alias a separator
+  /// in another (e.g. `/x%2Fy` and `/x/y` encode distinctly), which a plain
+  /// separator substitution — `/` → `__` — did not guarantee.
+  static String _encodeOriginalPath(String originalPath) {
+    return originalPath
+        .replaceAll('%', '%25')
+        .replaceAll(Platform.pathSeparator, '%2F')
+        .replaceAll(':', '%3A');
   }
 
   static final _backupFilenamePattern = RegExp(r'^(.*)_(\d+)_(\d+)\.bak$');
