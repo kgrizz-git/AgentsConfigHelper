@@ -226,6 +226,31 @@ void main() {
       },
     );
 
+    test(
+      'saveRawConfig honors valid raw content when the baseline is unparseable',
+      () async {
+        final jsonFile = File(p.join(tempDir.path, 'raw_config_stale.json'));
+        await jsonFile.create(recursive: true);
+        await jsonFile.writeAsString('{"rules": ["disk"]}');
+
+        // A stale in-memory snapshot whose originalContent no longer parses.
+        // The internal baseline reparse must not turn a valid raw save into
+        // an "invalid raw content" failure.
+        final config = ToolConfig(
+          toolName: 'Test',
+          filePath: jsonFile.path,
+          format: ConfigFormat.json,
+          originalContent: '{ not valid json',
+        );
+
+        const validRaw = '{"rules": ["new"]}';
+        final updated = await configService.saveRawConfig(config, validRaw);
+
+        expect(updated.rules, equals(['new']));
+        expect(await jsonFile.readAsString(), equals(validRaw));
+      },
+    );
+
     test('saveRawConfig creates backup and writes on valid content', () async {
       final jsonFile = File(p.join(tempDir.path, 'raw_config_2.json'));
       await jsonFile.create(recursive: true);

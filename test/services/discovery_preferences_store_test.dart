@@ -181,4 +181,21 @@ void main() {
       expect(json['manualFilePaths'], ['/path/atomic']);
     },
   );
+
+  test('dedups manual paths per platform case sensitivity', () async {
+    // Two absolute spellings differing only in case. On case-insensitive
+    // filesystems (Windows) they name the same file and fold to one entry;
+    // on case-sensitive platforms (Linux/macOS-posix) they stay distinct.
+    final upper = p.join(tempDir.path, 'Config.json');
+    final lower = p.join(tempDir.path, 'config.json');
+    await store.addManualPath(upper);
+    await store.addManualPath(lower);
+
+    final result = await store.load();
+    if (Platform.isWindows) {
+      expect(result.preferences.manualFilePaths, [upper]);
+    } else {
+      expect(result.preferences.manualFilePaths, [upper, lower]);
+    }
+  });
 }

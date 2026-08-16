@@ -21,7 +21,13 @@ class DiscoveryService {
       DiscoveredConfig config, {
       bool isManual = false,
     }) async {
-      if (seenPaths.contains(config.filePath)) {
+      // Dedup by a platform-aware key: case-insensitive on Windows so a manual
+      // entry and a catalog target that differ only in case don't produce two
+      // sidebar rows for the same file.
+      final pathKey = Platform.isWindows
+          ? config.filePath.toLowerCase()
+          : config.filePath;
+      if (seenPaths.contains(pathKey)) {
         // Already discovered via a catalog (user/project) target. A coinciding
         // manual entry must NOT flip it to manual: `isManual` stays true only
         // for files whose sole provenance is the manual list. Otherwise the
@@ -37,7 +43,7 @@ class DiscoveryService {
         // ignore: avoid_slow_async_io
         if (await file.exists()) {
           items.add(config);
-          seenPaths.add(config.filePath);
+          seenPaths.add(pathKey);
           return true;
         } else if (isManual) {
           // File.exists() is false for a directory; report that distinctly so

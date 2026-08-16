@@ -101,6 +101,18 @@ Internal / developer-facing changes that do not belong in the public
   and OpenTelemetry, with the keep-event-data-on-your-infra / no-BAA-on-free-tiers
   caveat cross-linked to the runtime-leak policy and prompt.
 
+### Fixed
+
+- **Windows path deduplication (2026-08-16).** `DiscoveryPreferencesStore` now dedups and
+  matches manual paths / project roots via a platform-aware key (case-insensitive on Windows,
+  case-sensitive elsewhere), and `DiscoveryService` keys `seenPaths` the same way, so
+  differently-cased spellings of the same file no longer produce duplicate preference entries or
+  sidebar rows on Windows. No-op on Linux/macOS-posix. Qodo review finding.
+- **`saveRawConfig` baseline reparse guard (2026-08-16).** The internal reparse of the pre-edit
+  baseline (`config.originalContent`) used to diff structured edits is now wrapped in try/catch;
+  a stale/unparseable baseline no longer throws a `ConfigParseException` indistinguishable from a
+  genuine invalid-raw-content error — a valid raw edit is written as-is instead. Qodo review finding.
+
 ### Changed
 
 - **Collision-free backup filename encoding (2026-08-16).** `BackupService` now encodes the

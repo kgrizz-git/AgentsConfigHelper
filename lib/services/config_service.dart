@@ -140,17 +140,30 @@ class ConfigService {
     // text — parsedFromRaw's rules/permissions naturally differ from
     // config's whenever the raw edit itself touches those fields, which
     // must not be mistaken for a structured-editor edit.
-    final baseline = parser.parse(
-      config.originalContent,
-      filePath: config.filePath,
-      toolName: config.toolName,
-      format: config.format,
-    );
+    //
+    // This is internal bookkeeping, not user-facing validation: the only
+    // input that may legitimately fail parsing is `rawContent` (handled
+    // above). If the baseline snapshot (`config.originalContent`) no longer
+    // parses — e.g. it went stale relative to disk — do NOT surface that as
+    // an "invalid raw content" error. Skip the structured-merge path and
+    // honor the already-validated raw text as-is.
+    ToolConfig? baseline;
+    try {
+      baseline = parser.parse(
+        config.originalContent,
+        filePath: config.filePath,
+        toolName: config.toolName,
+        format: config.format,
+      );
+    } on Object {
+      baseline = null;
+    }
 
     String contentToWrite;
     ToolConfig parsedConfig;
-    if (!listEquals(config.rules, baseline.rules) ||
-        !listEquals(config.permissions, baseline.permissions)) {
+    if (baseline != null &&
+        (!listEquals(config.rules, baseline.rules) ||
+            !listEquals(config.permissions, baseline.permissions))) {
       final mergedConfig = parsedFromRaw.copyWith(
         rules: config.rules,
         permissions: config.permissions,

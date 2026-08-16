@@ -216,12 +216,19 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     required bool collectWarnings,
     List<String>? warnings,
   }) {
-    final deduped = input
-        .map((fp) => fp.trim())
-        .where((fp) => fp.isNotEmpty)
-        .map(p.normalize)
-        .toSet()
-        .toList();
+    // Dedup by a platform-aware key so differently-cased spellings of the same
+    // path fold together on case-insensitive platforms (Windows), while the
+    // first-seen spelling is preserved for display.
+    final seenKeys = <String>{};
+    final deduped = <String>[];
+    for (final fp in input) {
+      final trimmed = fp.trim();
+      if (trimmed.isEmpty) continue;
+      final normalized = p.normalize(trimmed);
+      if (seenKeys.add(_pathDedupKey(normalized))) {
+        deduped.add(normalized);
+      }
+    }
     if (collectWarnings) {
       if (deduped.length != input.length) {
         warnings!.add("Removed duplicate or empty paths from '$fieldName'.");
@@ -232,6 +239,12 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     }
     return deduped.where(p.isAbsolute).toList();
   }
+
+  /// Comparison key for path deduplication and removal matching.
+  /// Case-insensitive on platforms with case-insensitive filesystems
+  /// (Windows); case-sensitive elsewhere.
+  static String _pathDedupKey(String normalizedPath) =>
+      Platform.isWindows ? normalizedPath.toLowerCase() : normalizedPath;
 
   /// Validates that [path] is non-empty (after trimming) and absolute.
   /// Throws [InvalidPathException] otherwise.
@@ -270,9 +283,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     return _serialize(() async {
       final result = await load();
       final prefs = result.preferences;
-      final normalizedToRemove = p.normalize(path.trim());
+      final keyToRemove = _pathDedupKey(p.normalize(path.trim()));
       final updatedPaths = prefs.manualFilePaths
-          .where((fp) => p.normalize(fp.trim()) != normalizedToRemove)
+          .where((fp) => _pathDedupKey(p.normalize(fp.trim())) != keyToRemove)
           .toList();
       await _save(prefs.copyWith(manualFilePaths: updatedPaths));
     });
@@ -301,9 +314,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     return _serialize(() async {
       final result = await load();
       final prefs = result.preferences;
-      final normalizedToRemove = p.normalize(path.trim());
+      final keyToRemove = _pathDedupKey(p.normalize(path.trim()));
       final updatedRoots = prefs.projectRoots
-          .where((fp) => p.normalize(fp.trim()) != normalizedToRemove)
+          .where((fp) => _pathDedupKey(p.normalize(fp.trim())) != keyToRemove)
           .toList();
       await _save(prefs.copyWith(projectRoots: updatedRoots));
     });
