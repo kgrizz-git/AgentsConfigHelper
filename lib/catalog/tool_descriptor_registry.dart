@@ -307,7 +307,7 @@ class ToolDescriptorRegistry {
   /// segment.
   static bool isMatch(String expectedPattern, String actualNormalizedPath) {
     if (!expectedPattern.contains('*')) {
-      return expectedPattern == actualNormalizedPath;
+      return p.equals(expectedPattern, actualNormalizedPath);
     }
     final regexStr = RegExp.escape(
       expectedPattern,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:agents_config_helper/models/discovery_preferences.dart';
 import 'package:agents_config_helper/models/discovery_request.dart';
@@ -43,14 +44,19 @@ class _FakeDiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
 }
 
 class _FakeDiscoveryService extends DiscoveryService {
-  Completer<DiscoveryResult>? completer;
+  final Queue<Completer<DiscoveryResult>> _completers =
+      Queue<Completer<DiscoveryResult>>();
   int callCount = 0;
+
+  void enqueueCompleter(Completer<DiscoveryResult> completer) {
+    _completers.add(completer);
+  }
 
   @override
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) {
     callCount++;
-    if (completer != null) {
-      return completer!.future;
+    if (_completers.isNotEmpty) {
+      return _completers.removeFirst().future;
     }
     return Future.value(const DiscoveryResult(items: []));
   }
@@ -76,18 +82,23 @@ void main() {
       await container.read(discoveryControllerProvider.future);
       expect(fakeService.callCount, 1);
 
-      // Prepare two futures that we will resolve manually in reverse order
+      // Prepare two futures that we will resolve manually in reverse order.
+      // Both are enqueued up front so that the two refreshes each consume
+      // their own completer (FIFO), regardless of how the async preferences
+      // load() interleaves with discoverConfigs().
       final completer1 = Completer<DiscoveryResult>();
       final completer2 = Completer<DiscoveryResult>();
+      fakeService
+        ..enqueueCompleter(completer1)
+        ..enqueueCompleter(completer2);
 
       final controller = container.read(discoveryControllerProvider.notifier);
 
-      // Trigger refresh 1
-      fakeService.completer = completer1;
+      // Trigger refresh 1 (will consume completer1)
       final refresh1 = controller.refresh();
 
-      // Trigger refresh 2 (this should cancel refresh 1 from updating state)
-      fakeService.completer = completer2;
+      // Trigger refresh 2 (will consume completer2; this should prevent
+      // refresh 1 from overwriting the newer state once it resolves)
       final refresh2 = controller.refresh();
 
       // Resolve refresh 2 first
@@ -110,6 +121,10 @@ void main() {
         finalState.value?.warnings,
         isEmpty,
       ); // Should not have the stale warning
+      expect(
+        fakeService.callCount,
+        3,
+      ); // initial build + two refreshes
     },
   );
 

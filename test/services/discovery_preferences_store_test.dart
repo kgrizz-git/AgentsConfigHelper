@@ -94,17 +94,21 @@ void main() {
   );
 
   test('load() deduplicates and normalizes entries', () async {
+    final pathA = p.join(tempDir.path, 'path', 'A');
+    final pathB = p.join(tempDir.path, 'path', 'B');
+    final rootC = p.join(tempDir.path, 'proj', 'C');
+
     await preferencesFile.writeAsString(
       jsonEncode({
         'version': 1,
-        'manualFilePaths': ['/path/A', ' /path/A ', ' ', '/path/B'],
-        'projectRoots': ['/proj/C', '/proj/C'],
+        'manualFilePaths': [pathA, ' $pathA ', ' ', pathB],
+        'projectRoots': [rootC, rootC],
       }),
     );
 
     final result = await store.load();
-    expect(result.preferences.manualFilePaths, ['/path/A', '/path/B']);
-    expect(result.preferences.projectRoots, ['/proj/C']);
+    expect(result.preferences.manualFilePaths, [pathA, pathB]);
+    expect(result.preferences.projectRoots, [rootC]);
 
     expect(
       result.warnings,

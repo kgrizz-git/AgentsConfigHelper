@@ -122,6 +122,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           return HistoryModal(
             config: _activeConfig!,
             onRestore: (backupPath) async {
+              // Capture before any await: _loadConfig can null out
+              // _activeConfig while the discard dialog is open.
+              final activeConfig = _activeConfig;
+              if (activeConfig == null) return;
               if (_hasUnsavedChanges) {
                 final shouldDiscard = await _confirmDiscardChanges();
                 if (!shouldDiscard || !mounted) {
@@ -132,7 +136,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 });
               }
               final targetPath = configService.resolvePath(
-                _activeConfig!.filePath,
+                activeConfig.filePath,
               );
               await configService.backupService.restoreBackup(
                 backupPath,

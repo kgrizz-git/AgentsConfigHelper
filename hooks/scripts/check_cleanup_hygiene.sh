@@ -10,7 +10,7 @@ POLICY_WARN_AS_ERROR="${POLICY_WARN_AS_ERROR:-0}"
 issues=()
 
 # --- 1. TODO cleanup: warn about completed checklist items ---
-for todo_file in to_do.md TODO.md; do
+for todo_file in to_do.md TODO.md TO_DO.md; do
     if [[ -f "$todo_file" ]]; then
         count=$(grep -c -E '^\s*-\s+\[x\]' "$todo_file" 2>/dev/null || true)
         if [[ "$count" -gt 0 ]]; then

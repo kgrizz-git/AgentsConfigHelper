@@ -40,10 +40,16 @@ class DiscoveryService {
           seenPaths.add(config.filePath);
           return true;
         } else if (isManual) {
+          // File.exists() is false for a directory; report that distinctly so
+          // the user isn't told a path that plainly exists "does not exist".
+          // ignore: avoid_slow_async_io
+          final isDirectory = await Directory(config.filePath).exists();
           warnings.add(
             DiscoveryWarning(
               path: config.filePath,
-              message: 'Manual path does not exist.',
+              message: isDirectory
+                  ? 'Manual path is a directory, not a configuration file.'
+                  : 'Manual path does not exist.',
             ),
           );
         }

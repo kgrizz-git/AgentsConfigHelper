@@ -1,6 +1,6 @@
 # Plan: Agent Config Discovery
 
-**Status:** active — research complete; runtime integration pending
+**Status:** active — discovery + Riverpod runtime integration shipped (PR #5); deferred work tracked below
 **Created:** 2026-08-11
 **Revised:** 2026-08-13
 **Depends on:** completed parser, `BackupService`, and `ConfigService` work
@@ -39,8 +39,8 @@ does **not** make the editor a full schema editor for every agent.
 | --- | --- |
 | Runtime source of truth | A pure-Dart `ToolDescriptor` registry owns tool identity, fixed targets, display labels, and formats. |
 | Documentation | `docs/supported-tools.md` remains explanatory; remove its duplicate detection list and link it to the registry. |
-| V1 auto-discovery | Discover only exact parser-supported JSON/JSONC, YAML, and TOML files. |
-| Markdown, directories, globs | Document as known instruction sources, but defer sidebar discovery until a raw-text editor exists. |
+| V1 auto-discovery | Discover exact parser-supported JSON/JSONC, YAML, and TOML files, plus Markdown/text instruction documents and wildcard (`*`) targets. **Shipped (PR #5).** |
+| Markdown, directories, globs | Markdown/text and wildcard instruction sources are now discovered in the sidebar, capped at 100 entries per glob target. **Shipped (PR #5).** |
 | Project discovery | Scan only roots explicitly selected by the user. Never substitute process CWD for a selected root. |
 | Manual additions | Persist explicit file paths and selected project roots in app-support storage. Never persist file contents. |
 | Model scope | Retain narrow `ToolConfig` plus `rawSettings`; defer typed model/MCP/environment editors. |
@@ -209,20 +209,20 @@ cannot brick startup, and all removal is non-destructive.
 can be safely managed, multiple configs for one tool work, and no static sidebar
 path remains.
 
-## Phase 5 — explicitly deferred work
+## Phase 5 — status
 
-Start only after Phase 4 stabilizes.
+Items 1, 2, and 4 shipped in PR #5. Item 3 (typed editors) and line-level
+diffing remain deferred (see `plans/active/phase_5_editors.md`).
 
-1. Add a raw-text editor/save contract that preserves original content, reports
-   syntax errors, and uses backup-before-write.
-2. Then introduce `instructionDocument` discovery for `AGENTS.md`, `CLAUDE.md`,
-   `.cursorrules`, `.cursor/rules/*.mdc`, and related text sources. Directory/glob
-   scans need an explicit per-root limit and pagination; never scan arbitrary
-   project trees recursively.
-3. Revisit typed model/environment/MCP/nested-permission editors only with
-   documented semantics and parser round-trip coverage.
-4. Keep History/Backups separate from discovery; it may use a selected file path
-   but must not mutate discovery preferences.
+1. **Shipped (PR #5).** Raw-text editor/save contract that preserves original
+   content and uses backup-before-write.
+2. **Shipped (PR #5).** `instructionDocument` discovery for `AGENTS.md`,
+   `CLAUDE.md`, `.cursorrules`, `.cursor/rules/*.mdc`, and related text sources,
+   with a 100-entry cap per glob target and no recursive arbitrary-tree scans.
+3. **Deferred.** Typed model/environment/MCP/nested-permission editors — only
+   with documented semantics and parser round-trip coverage.
+4. **Shipped (PR #5).** History/Backups remains separate from discovery; it may
+   use a selected file path but must not mutate discovery preferences.
 
 ## Test plan
 
