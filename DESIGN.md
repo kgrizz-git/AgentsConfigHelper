@@ -53,4 +53,4 @@ Different AI tools (Claude, Cursor, Opencode, etc.) scatter their configuration 
 ## Open questions
 
 - [ ] How should we handle nested structures in TOML/YAML when mapping to a flat UI?
-- [ ] Should backups live next to the original file (e.g., `.cursorrules.bak`) or in a centralized app data directory?
+- [x] Should backups live next to the original file (e.g., `.cursorrules.bak`) or in a centralized app data directory? **Resolved:** centralized `<appSupport>/backups` (per-OS app-support directory, not alongside originals).

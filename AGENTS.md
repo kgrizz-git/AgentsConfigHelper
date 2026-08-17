@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Last reviewed: 2026-08-11
+Last reviewed: 2026-08-16
 
 Single source of truth for AI coding agents working in this repository. Other agent
 entrypoints (`CLAUDE.md`, `GEMINI.md`, `QWEN.md`, `.github/copilot-instructions.md`,
@@ -8,7 +8,11 @@ entrypoints (`CLAUDE.md`, `GEMINI.md`, `QWEN.md`, `.github/copilot-instructions.
 
 > **Project:** AgentsConfigHelper — cross-platform Flutter desktop app for visualizing,
 > editing, and managing config settings, rules, and permissions for AI agents and IDEs
-> (Claude, Codex, Opencode, Paseo, Cursor, Kiro, Devin, Antigravity, etc.).
+> (Claude Code, Codex, Opencode, Paseo, Cursor, Kiro, Devin, Antigravity, Agy-ACP, etc.).
+>
+> **Under development — use at your own risk.** Pre-1.0, under active development. Provided
+> "as is," without warranty. Reads and writes real agent/IDE config files (with automatic
+> timestamped backups). Always review pending changes.
 
 ## Read this first
 
@@ -35,7 +39,7 @@ Do not load everything. Start here, then open only what the task needs.
 - **Review checklist:** [`best_practices.md`](best_practices.md) is a compact mirror of these
   conventions for Qodo's compliance check — keep it in sync with this file (AGENTS.md is authoritative).
 - **Config discovery:** auto-detect common paths on first launch + user-managed paths
-- **Edit safety:** backup-before-write with diff/undo and restore instructions
+- **Edit safety:** backup-before-write with diff preview and timestamped backup restore
 - **Data classification:** internal — config files may contain tokens but nothing leaves the machine
 
 ## Key files and directories
@@ -81,8 +85,8 @@ flutter build macos --release   # build release binary
   what actually shipped, not just what was proposed.
 - When a phase's plan is fully complete, archive it: move the file from `plans/active/`
   to `plans/archive/` rather than deleting it.
-- Log changes in the appropriate changelog: user-facing / template-consumer changes go in
-  `CHANGELOG.md`; developer-only changes (hooks internals, inventory menus, tests/CI) go in
+- Log changes in the appropriate changelog: user-facing changes go in
+  `CHANGELOG.md`; developer-only changes (hooks internals, tests/CI) go in
   `CHANGELOG.dev.md`. See `policies/changelog-conventions.md`.
 - Remove completed items from `TO_DO.md` once done. Plans are different: keep completed
   items in plan files as history — archive the plan instead of stripping it.

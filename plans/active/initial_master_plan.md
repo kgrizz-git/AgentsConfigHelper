@@ -6,7 +6,7 @@ Profile: `.context/project-profile.md`
 
 ## Goal
 
-Build a cross-platform desktop application to visualize, edit, sync, and manage configuration settings and rules for AI agents and IDEs.
+Build a cross-platform desktop application to visualize, edit, and manage configuration settings and rules for AI agents and IDEs. (Original goal included "sync" — deferred: moved to Phase 7 Templates & Syncing; V1 is local-only, no networking.)
 
 ---
 
@@ -24,8 +24,8 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 **Goal:** Find the configs and handle safe file I/O.
 
 * Implement `DiscoveryService` to scan standard OS directories and project folders.
-* Implement `BackupService` to handle `.bak` creation and restore functionality.
-* Integrate CLI hooks for agents that expose configuration commands.
+* Implement `BackupService` to handle `.bak` creation and restore functionality. (Implemented as app-support-dir backups via BackupService, not alongside originals.)
+* Integrate CLI hooks for agents that expose configuration commands. (Deferred: moved to Phase 7 Templates & Syncing; V1 is local-only, no networking.)
 * **Detailed Plan:** *[Link to be created]*
 
 ## Phase 2.5: Advanced Parsers (JSONC)
@@ -80,6 +80,8 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 
 ## Phase 5.5: Documentation Accuracy & Polish
 
+> **Status:** Complete (2026-08-17). Plan archived at `plans/archive/phase_5.5_docs.md`.
+
 **Goal:** Bring the user-facing and contributor docs in line with the shipped codebase, and
 raise the README's professionalism so the project reads like a credible OSS desktop app.
 
@@ -90,7 +92,7 @@ overreach and the backup-location note. Fixing these is low-risk, high-trust, an
 Phase 6 release narrative.
 
 * Correct README feature-scope overreach: remove the "sync" capability claim (not implemented; no networking in `lib/`), and reword "undo mechanisms" to the actual backup-restore behavior.
-* Rewrite the Data Privacy / backup note so it states the **true** backup location (centralized app-support `backups/` dir, not alongside originals), discloses that backups accumulate without auto-pruning, and that filenames encode original absolute paths. Add where/how to purge.
+* Rewrite the Data Privacy / backup note so it states the **true** backup location (centralized app-support `backups/` dir, not alongside originals), discloses that backups accumulate without auto-pruning, and that filenames encode original absolute paths. Add where/how to purge. (Shipped: retention/pruning subsequently landed — `BackupService.maxBackupsPerPath = 10`, `_pruneOldBackups` — so the shipped README documents retention (10 snapshots per path, pruned best-effort) instead.)
 * Fix the structured-vs-instruction-document distinction: Markdown/text are raw passthrough, not "native" like JSON/JSONC/YAML/TOML.
 * Sync the README supported-tool list to `ToolDescriptorRegistry` (9 tools; currently lists 8 and omits `agy-acp`); consider a drift test that asserts every `ToolDescriptorRegistry` display name appears in `docs/supported-tools.md` (names as source of truth, catching substitutions and omissions — not a count-only check).
 * Mark the "CLI Integration Service" in `ARCHITECTURE.md` as `(planned)` — no such service exists.
@@ -99,7 +101,7 @@ Phase 6 release narrative.
 * Add a `LICENSE` file and License section; add a screenshot, status/CI badges, and a "Project status: early development" line to README.
 * Document the vendored `lib/vendor/json_ast/` (origin, license, rationale) and clarify it is vendored, not a pub dependency.
 * Add a `Last reviewed:` line to README (matching AGENTS.md/ARCHITECTURE.md/`docs/supported-tools.md`).
-* **Detailed Plan:** `plans/active/phase_5.5_docs.md`
+* **Detailed Plan:** `plans/archive/phase_5.5_docs.md`
 
 > **Note:** The Master Plan itself also contains stale "sync" language (Goal line, Phase 2 "Integrate CLI hooks", Phase 2 "`.bak` creation") that this phase should reconcile while editing the docs.
 
@@ -140,7 +142,12 @@ Phase 6 release narrative.
 * **Markdown rules discovery:** Surface `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`, Codex `.rules`, Devin `.devin/rules/*.md` in the sidebar (per `docs/supported-tools.md` "Deferred Sources").
 * **Starlark & plain text:** Support Codex `.rules` (Starlark) and deprecated Cursor `.cursorrules` (plain text) via the raw editor.
 * **VS Code / GitHub Copilot:** Add as a first-class supported tool. Instructions are `.github/copilot-instructions.md` (Markdown); no permission model. Add a `ToolDescriptor` entry and a section in `docs/supported-tools.md` (already stubbed there as deferred).
-* **Parser registry reconciliation:** Ensure `lib/catalog/tool_descriptor_registry.dart` and `DiscoveryService.defaultRelativePaths` reflect all 10 tools plus deferred sources.
+* **Additional deferred tools (from 2026-08-16 review):** the catalog currently has 9 entries and omits several requested tools, and folds some multi-surface products into one entry. Add/separate as follows:
+  * **Kilo** — no `ToolId` or `docs/supported-tools.md` section today; add descriptor + config paths.
+  * **Cline** — not supported at all; add `ToolId` + config paths.
+  * **Cursor agent vs Cursor IDE** — the single `cursor` entry mixes agent permissions (`~/.cursor/permissions.json`) with IDE instruction files (`.cursorrules`, `.cursor/rules/*.mdc`); model the IDE-level editor `settings.json` as a separate entry (e.g., `cursorIde`) so agent and IDE configs are discoverable distinctly.
+  * **Antigravity surfaces** — the `antigravity` entry today only covers the CLI config (`.gemini/antigravity-cli/settings.json`); add distinct descriptors/config for the **Antigravity IDE**, the **Antigravity desktop app**, and the **`agy` CLI** settings. (`agyAcp` already models the ACP session bridge separately and should stay distinct.)
+* **Parser registry reconciliation:** Ensure `lib/catalog/tool_descriptor_registry.dart` and `DiscoveryService.defaultRelativePaths` reflect all supported tools (target set grows past 10 once Kilo, Cline, the Cursor IDE split, and the Antigravity-surface splits are added) plus deferred sources.
 
 > **Note:** See `docs/supported-tools.md` "Deferred / not yet supported" for the authoritative list of excluded sources. The Phase 1 Markdown parser (line 18) anticipated this; Phase 9 closes the gap.
 

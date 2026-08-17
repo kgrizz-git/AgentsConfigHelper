@@ -1,210 +1,72 @@
 # Documentation Navigation
 
-Last reviewed: 2026-07-27
+Last reviewed: 2026-08-16
 
-Quick navigation guide for this template's documentation. Use this to find what you need without loading everything.
+> **Under development — use at your own risk.** AgentsConfigHelper is pre-1.0 and under active
+> development. See [README.md](../README.md) for details.
+
+Quick navigation guide for AgentsConfigHelper's documentation. Use this to find what you need without loading everything.
 
 ## Quick Start by Role
 
-### I'm starting a new project
+### I'm new to the project
 
 1. Read [`README.md`](../README.md) (2 min)
-2. Run [`scripts/setup.sh`](../scripts/setup.sh) (1 min)
-3. Feed [`prompts/bootstrap-project.md`](../prompts/bootstrap-project.md) to your AI agent
-4. Remove irrelevant content (see setup script cleanup suggestions)
+2. Check [`docs/supported-tools.md`](supported-tools.md) for the tools and config formats you care about
+3. Review [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the system overview
 
-### I'm returning to an existing project
+### I'm an AI agent starting a session
 
-1. Run [`scripts/health-check.sh`](../scripts/health-check.sh) (30 sec)
-2. Feed [`prompts/new-agent-session.md`](../prompts/new-agent-session.md) to your AI agent
-3. Check `.context/project-profile.md` if it exists
+1. Read [`AGENTS.md`](../AGENTS.md) — the single source of truth for conventions and rules
+2. Check [`docs/supported-tools.md`](supported-tools.md) for config format reference
+3. See [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the service and parser layers
 
-### I want to understand this template
+### I'm contributing code
 
-1. Read [`AGENTS.md`](../AGENTS.md) (3 min)
-2. Browse [`inventory/README.md`](../inventory/README.md) for available tools
-3. Skim [`README.md`](../README.md) sections
-
-### I'm setting up CI/CD
-
-1. Read [`ci/README.md`](../ci/README.md)
-2. Copy relevant workflows from [`ci/examples/`](../ci/examples/)
-3. Configure per [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md)
-
-### I'm working with sensitive data
-
-1. Read [`prompts/strict-phi-agent-guidance.md`](../prompts/strict-phi-agent-guidance.md) **before** starting
-2. Read [`inventory/medical-data-security.md`](../inventory/medical-data-security.md)
-3. Configure strict hooks per [`hooks/README.md`](../hooks/README.md)
+1. Read [`AGENTS.md`](../AGENTS.md) for conventions
+2. Run the quality gates: `dart format --output=none --set-exit-if-changed .` and `flutter analyze --fatal-infos`
+3. Check [`plans/active/`](../plans/active/) for current implementation plans
 
 ## Documentation Map
 
-### Core Navigation (Read These First)
+### Core (Read These First)
 
-- [`AGENTS.md`](../AGENTS.md) - Single source of truth for AI agents
-- [`README.md`](../README.md) - Project overview and directory map
-- [`inventory/README.md`](../inventory/README.md) - Tool/skill menu (not a checklist)
+- [`AGENTS.md`](../AGENTS.md) — Single source of truth for AI coding agents
+- [`README.md`](../README.md) — Project overview, features, getting started, safety model
+- [`ARCHITECTURE.md`](../ARCHITECTURE.md) — High-level system architecture
+- [`docs/supported-tools.md`](supported-tools.md) — Config format reference for each supported tool
 
-### Getting Started
+### Design & Decisions
 
-- [`prompts/bootstrap-project.md`](../prompts/bootstrap-project.md) - New project initialization
-- [`prompts/bootstrap-checklist.md`](../prompts/bootstrap-checklist.md) - Tick-list version (phases P0–P8, PS)
-- [`prompts/bootstrap/`](../prompts/bootstrap/) - Decision cards: ask → branch → produce → done when
-- [`templates/bootstrap-state.md`](../templates/bootstrap-state.md) - Phase status that survives a context reset
-- [`scripts/check-bootstrap.sh`](../scripts/check-bootstrap.sh) - Verify phases by repo evidence, not by claims
-- [`prompts/new-agent-session.md`](../prompts/new-agent-session.md) - Returning to existing projects
-- [`scripts/setup.sh`](../scripts/setup.sh) - Automated setup
-- [`scripts/health-check.sh`](../scripts/health-check.sh) - Project health check
+- [`DESIGN.md`](../DESIGN.md) — UI and data model design notes
+- [`docs/adr/`](adr/) — Architecture Decision Records
 
-### Project Configuration
+### Plans & Tracking
 
-- [`prompts/project-init-profile.md`](../prompts/project-init-profile.md) - Capture project type and stack
-- `.context/project-profile.md` - Generated project profile (fast-load summary; gitignored, so it does not exist in the template itself)
+- [`plans/active/`](../plans/active/) — Active implementation plans
+- [`plans/archive/`](../plans/archive/) — Completed plans (history)
+- [`TO_DO.md`](../TO_DO.md) — Deferred items and follow-ups
+- [`CHANGELOG.md`](../CHANGELOG.md) — User-facing changes
+- [`CHANGELOG.dev.md`](../CHANGELOG.dev.md) — Developer-only changes
 
-### Policies & Rules
+### Hooks & CI
 
-- [`policies/README.md`](../policies/README.md) - Durable repo rules index
-- [`policies/file-size-and-counts.md`](../policies/file-size-and-counts.md) - File size limits
-- [`policies/plans-and-todos.md`](../policies/plans-and-todos.md) - Plan lifecycle and TODO limits
-- [`policies/changelog-conventions.md`](../policies/changelog-conventions.md) - Changelog format
-- [`policies/security-baseline.md`](../policies/security-baseline.md) - Security requirements
-- [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md) - GitHub setup
-
-### Hooks & Automation
-
-- [`hooks/README.md`](../hooks/README.md) - Pre-commit hooks and policy scripts
-- [`hooks/.pre-commit-config.yaml`](../hooks/.pre-commit-config.yaml) - Example configuration
-- [`scripts/validate-env.sh`](../scripts/validate-env.sh) - Environment validation
-
-### CI/CD
-
-- [`ci/README.md`](../ci/README.md) - CI selection guidance
-- [`ci/examples/`](../ci/examples/) - Example GitHub Actions workflows
-- [`policies/github-actions-usage.md`](../policies/github-actions-usage.md) - Actions minutes/storage
-
-### Sensitive Data Handling
-
-- [`prompts/strict-phi-agent-guidance.md`](../prompts/strict-phi-agent-guidance.md) - PII/PHI agent behavior
-- [`prompts/sensitive-data-leak-prevention.md`](../prompts/sensitive-data-leak-prevention.md) - Runtime leak prevention
-- [`inventory/medical-data-security.md`](../inventory/medical-data-security.md) - Medical data security
-- [`policies/sensitive-data-runtime-leaks.md`](../policies/sensitive-data-runtime-leaks.md) - Runtime leak rules
-- [`policies/sensitive-data-scan-gates.md`](../policies/sensitive-data-scan-gates.md) - Structural gates
-
-### Templates & Artifacts
-
-- [`templates/README.md`](../templates/README.md) - Fill-in artifacts index
-- [`templates/project-brief.md`](../templates/project-brief.md) - Project briefs
-- [`templates/plan.md`](../templates/plan.md) - Implementation plans
-- [`templates/design.md`](../templates/design.md) - Design documents
-- [`templates/adr.md`](../templates/adr.md) - Architecture Decision Records
-- [`docs/adr/ADR-001-toml-comment-preservation.md`](adr/ADR-001-toml-comment-preservation.md) - Why TOML serialization is lossy (deferred)
-- [`templates/bootstrap-state.md`](../templates/bootstrap-state.md) - Bootstrap phase status
-- [`templates/handoff.md`](../templates/handoff.md) - Cross-agent / cross-IDE handoff packet
-
-### Maintenance & Cleanup
-
-- [`prompts/maintenance-loop.md`](../prompts/maintenance-loop.md) - Periodic repo health checks
-- [`prompts/cleanup-completed-work.md`](../prompts/cleanup-completed-work.md) - Cleanup completed items
-- [`policies/plans-and-todos.md`](../policies/plans-and-todos.md) - Archiving completed plans
-
-### Inventory Menus (Load Only What You Need)
-
-- [`inventory/tools-index.md`](../inventory/tools-index.md) - General developer tools
-- [`inventory/security-quality.md`](../inventory/security-quality.md) - Security and quality tools
-- [`inventory/python.md`](../inventory/python.md) - Python project defaults
-- [`inventory/frontend-design-ux.md`](../inventory/frontend-design-ux.md) - Frontend and design
-- [`inventory/rag.md`](../inventory/rag.md) - RAG and vector databases
-- [`inventory/ai-agent-platforms.md`](../inventory/ai-agent-platforms.md) - Agent orchestration
-- [`inventory/cloud-and-infra.md`](../inventory/cloud-and-infra.md) - Cloud platforms
-- [`catalog-skills-agents.md`](../inventory/catalog-skills-agents.md) - Skills and agents catalog
-
-### Harness Engineering
-
-- [`inventory/harness-engineering.md`](../inventory/harness-engineering.md) - Agent platform references
-- [`inventory/catalog-skills-agents.md`](../inventory/catalog-skills-agents.md) - Skills/agents installation
-- [`inventory/agent-tooling-efficiency.md`](../inventory/agent-tooling-efficiency.md) - Token-efficient tooling; choosing between overlapping code-intelligence tools
-- [`policies/agent-tooling-contract.md`](../policies/agent-tooling-contract.md) - The rule to paste into a project's `AGENTS.md`
-
-## Decision Trees
-
-### Choosing Orchestration Tier
-
-→ See [`inventory/harness-engineering.md`](../inventory/harness-engineering.md) decision table
-
-- Simple task → No orchestration
-- 3-10 agents, IDE workflow → Hub-and-spoke
-- Complex loops → LangGraph
-- Production API → Symphony
-
-### Choosing CI Checks
-
-→ See [`ci/README.md`](../ci/README.md) tier guidance
-
-- Fast checks (<5 min) → Pre-commit + fast CI lane
-- Slow checks → Scheduled CI or separate workflow
-- Agent reviews → Never gates, always advisory
-
-### Sensitive Data Classification
-
-→ See [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md)
-
-- Public → Basic secret scanning
-- Confidential → + Sensitive data job
-- Regulated/PII/PHI → + Strict gates + approval inventory
-
-## Search by Task
-
-| Task | Documentation |
-| --- | --- |
-| **Start new project** | `prompts/bootstrap-project.md` + `scripts/setup.sh` |
-| **Add pre-commit hooks** | `hooks/README.md` |
-| **Set up CI** | `ci/README.md` + `ci/examples/` |
-| **Write ADR** | `templates/adr.md` |
-| **Handle PII/PHI** | `prompts/strict-phi-agent-guidance.md` + `inventory/medical-data-security.md` |
-| **Choose tools** | `inventory/README.md` (then specific inventory files) |
-| **Clean up completed work** | `prompts/cleanup-completed-work.md` |
-| **Add agent skills** | `inventory/catalog-skills-agents.md` |
-| **Configure GitHub** | `policies/github-repository-hygiene.md` |
-| **Check project health** | `scripts/health-check.sh` |
-| **Validate environment** | `scripts/validate-env.sh` |
-| **Resume an unfinished bootstrap** | `.context/bootstrap-state.md` + `scripts/check-bootstrap.sh` |
-| **Hand work to another agent/IDE** | `templates/handoff.md` |
-| **Add code-intelligence / MCP tooling** | `inventory/agent-tooling-efficiency.md` |
-| **Find stale tool entries / dead links** | `ci/scripts/check_doc_links.py` |
-
-## File Size Quick Reference
-
-Per [`policies/file-size-and-counts.md`](../policies/file-size-and-counts.md):
-
-- **Source files**: Soft 600 lines / Hard 1000 lines
-- **Markdown docs**: Soft 1000 lines / Hard 1000 lines  
-- **Binary files**: 5 MB hard limit
-- **Non-source files**: 500 KB hard limit
+- [`hooks/README.md`](../hooks/README.md) — Pre-commit hooks and policy scripts
+- [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — CI pipeline
 
 ## Common Commands
 
 ```bash
-# Setup
-bash scripts/setup.sh
-
-# Health check
-bash scripts/health-check.sh
-
-# Environment validation
-bash scripts/validate-env.sh
-
-# Pre-commit
-pre-commit install
-pre-commit run --all-files
-
-# Check GitHub Actions usage
-python3 ci/scripts/check_gha_usage.py --repo
+flutter pub get                              # install dependencies
+flutter run -d macos                         # run from source
+flutter analyze --fatal-infos                # lint + type check
+dart format --output=none --set-exit-if-changed .  # format check
+flutter test                                 # run tests
+flutter build macos --release                # build release binary
 ```
 
 ## Tips
 
-1. **Don't load everything** - Start with AGENTS.md, then open only what you need
-2. **Menu, not checklist** - Inventory files are options, not requirements
-3. **Thin entry, deep docs** - AGENTS.md is short; detail lives in linked files
-4. **Temporary stays temporary** - Use `.context/` for scratch work
-5. **Clean up after completion** - Archive completed plans, remove completed TODOs
+1. **Don't load everything** — Start with `AGENTS.md`, then open only what you need
+2. **One source of truth** — `docs/supported-tools.md` is the authoritative tool/config reference
+3. **Plans are history** — Completed plans get archived, not deleted

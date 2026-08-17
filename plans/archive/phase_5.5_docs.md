@@ -102,11 +102,11 @@ Severity: **H** = materially misleading / security-relevant · **M** = inaccurat
 - **Where:** `README.md:5` lists 8 tools (Claude, Codex, Opencode, Paseo, Cursor, Kiro, Devin, Antigravity). `lib/catalog/tool_descriptor_registry.dart` has **9** (`ToolId` enum incl. `agyAcp` / "Agy-ACP", `~/.openab/agy-acp/sessions.json`). Also rename "Claude" → "Claude Code" to match `displayName`.
 - **Action:** Replace the prose list in README with a link/table to `docs/supported-tools.md`, which `AGENTS.md:27,49,74` already mandates as the single source of truth for supported tools. Do **not** maintain a separate inline 9-item list — manual duplication is exactly the drift this phase is fixing. If a short inline summary is desired, generate it from `ToolDescriptorRegistry` (e.g., a build step or a code comment), not by hand.
 - **AGENTS.md reconciliation (committed agent contract):** `AGENTS.md:11` repeats the same 8-tool/"Claude" list and `AGENTS.md:38` repeats the "diff/undo" overstatement — fix both to match the registry ("Claude Code" + 9 tools incl. `agy-acp`) and "backup-before-write with diff + restore" wording.
-- **Guardrail (optional, low-risk, no HTML marker):** `test/catalog/tool_descriptor_registry_test.dart:9-19` already locks `catalog.length == 9`, so do NOT add a redundant count assertion. If a genuine cross-doc guardrail is wanted, assert that `docs/supported-tools.md` names every `catalog[i].displayName` (a real consistency check with no manual count to maintain, and no `<!-- TOOL_COUNT -->` marker). Note markdownlint currently leaves MD033 enabled, so an inline-HTML marker could trip the pre-commit hook — another reason to avoid it.
+- **Guardrail (optional, low-risk, no HTML marker):** `test/catalog/tool_descriptor_registry_test.dart:9-19` already locks `catalog.length == 9`, so do NOT add a redundant count assertion. If a genuine cross-doc guardrail is wanted, assert that `docs/supported-tools.md` names every `catalog[i].displayName` (a real consistency check with no manual count to maintain, and no `<!-- TOOL_COUNT -->` marker). Note MD033 (no-inline-HTML) is not disabled in `.markdownlint.yaml`, so an inline-HTML marker could trip the pre-commit hook — another reason to avoid it.
 
 ### M4. Resolve CHANGELOG version conflict
 
-- **Where:** `CHANGELOG.md:10` newest entry `## [0.4.4] - 2026-07-09`; header says "user-facing / **template-consumer** changes." `VERSION` = `0.1.0`; `pubspec.yaml:19` = `0.1.0+1`.
+- **Where:** `CHANGELOG.md:35` newest *released* entry `## [0.4.4] - 2026-07-09` (line 10 is now the `## Unreleased` header, which sits above it); header says "user-facing / **template-consumer** changes." `VERSION` = `0.1.0`; `pubspec.yaml:19` = `0.1.0+1`.
 - **Evidence:** The changelog is the upstream template's history, not the app's.
 - **Action:** Reset `CHANGELOG.md` to an app changelog with a top entry `## [0.1.0] - <today>` describing the initial shipped feature set. Keep the Keep-a-Changelog / SemVer framing.
 - **Template history disposal:** Do **not** move the inherited scaffold history into `CHANGELOG.dev.md` — `AGENTS.md:84-86` strictly scopes that file to the app's developer-only changes (hooks internals, inventory menus, tests/CI), and mixing in template history violates that separation. Instead either (a) drop it, or (b) move it to a dedicated `CHANGELOG.template.md` archiving the upstream scaffold's history, clearly labeled as inherited. Prefer (a) unless the user wants the history retained.
@@ -140,22 +140,38 @@ Severity: **H** = materially misleading / security-relevant · **M** = inaccurat
 
 - README: one-line description, "Project status: early development (0.1.0)" line, "Last reviewed:" line (matches AGENTS.md/ARCHITECTURE.md/`docs/supported-tools.md`), fix `e.g.` punctuation (file uses `e.g.` without a comma, at `README.md:9`), drop "etc." after `e.g.`, relabel `docs/supported-tools.md` from "Internal research" to "configuration reference".
 - **Screenshot / GIF (requires user, do NOT attempt as an agent):** An AI agent cannot capture a running Flutter desktop GUI. Add a placeholder section in the README referencing `assets/screenshots/` and **ask the user to provide** a screenshot/GIF (or run `flutter run -d macos` and capture one). Do not invent an image path or fabricate a screenshot. Mark this item explicitly blocked-on-user in the phase's status until provided.
-- Getting Started: pin a minimum Flutter version (CI uses `3.44.9`; `pubspec.yaml` requires Dart `^3.12.2`); add per-OS prerequisites — especially Linux `ninja-build` + `libgtk-3-dev` (installed at `ci.yml:110`, not `:107-108`), without which a Linux contributor hits a build failure.
+- Getting Started: pin a minimum Flutter version (CI uses `3.44.9`; `pubspec.yaml` requires Dart `^3.12.2`); add per-OS prerequisites — especially Linux `ninja-build` + `libgtk-3-dev` (installed at `ci.yml:140`, in the `ubuntu-latest` build step), without which a Linux contributor hits a build failure.
+
+### L5. Add an "under development / use at your own risk" disclaimer
+
+- **Where:** `README.md` near the top (after the title/one-liner, before Features) and in `docs/NAVIGATION.md` / `AGENTS.md` orientation so every entrypoint sets expectations. Precedence: `AGENTS.md:9` already frames the project as an app "for visualizing, editing, and managing config settings"; this disclaimer should not contradict that, only add the maturity caveat.
+- **Evidence:** `VERSION` = `0.1.0`, `pubspec.yaml:19` = `0.1.0+1`, and `README.md` status line reads "early development (0.1.0)" — so the project is pre-1.0 and self-declared early-stage. The tool edits agents' real config files on disk, so a use-at-own-risk notice is warranted even though the app is local-only (no networking).
+- **Action:** Add a short, honest disclaimer making clear the project is under active development, is pre-1.0, and is provided as-is without warranty; users assume all risk when running it, especially because it reads and writes real agent/IDE configuration files. Suggested wording (adapt tone to fit the README):
+
+  > **⚠️ Under development — use at your own risk.** AgentsConfigHelper is pre-1.0 and under active
+  > development. It is provided "as is," without warranty of any kind. Because it reads and writes your
+  > real AI-agent and IDE configuration files (with automatic, timestamped backups), you use it entirely
+  > **at your own risk**. Always review pending changes and keep your backups before relying on it for
+  > production configuration.
+
+  - Keep it compact; do not reintroduce the false "sync"/"undo" claims this phase removes elsewhere.
+  - Mirror a one-line version in `AGENTS.md` (after the Project block) and `docs/NAVIGATION.md` (near the top) so the caveat is visible at every doc entrypoint.
 
 ---
 
 ## Recommended README structure (target)
 
 1. Title + one-liner + badges (CI, license, platforms, Flutter).
-2. Screenshot / short GIF.
-3. Project status ("Early development (0.1.0)") + one-line scope.
-4. Why (the real problem: agent config scattered across `~/.claude/`, `~/.codex/`, `.cursor/`, in four formats with divergent permission models).
-5. Features — split **Available now** vs **Planned**; use the structured vs instruction-document split.
-6. Supported tools — table synced to `ToolDescriptorRegistry`, linking to `docs/supported-tools.md`.
-7. Getting Started — pin Flutter version; per-OS prerequisites; Run-from-source vs Build release.
-8. How it works / Safety model — corrected backup location + retention caveat, diff-before-write, comment preservation, restore flow; fold the corrected Data Privacy note in here.
-9. Development — commands + enforced quality gates (coverage floor, 3-OS matrix, secret scan) + pre-commit setup.
-10. Contributing + License + links to `ARCHITECTURE.md` / `AGENTS.md` / `docs/supported-tools.md`.
+2. "Under development — use at your own risk" disclaimer (L5).
+3. Screenshot / short GIF.
+4. Project status ("Early development (0.1.0)") + one-line scope.
+5. Why (the real problem: agent config scattered across `~/.claude/`, `~/.codex/`, `.cursor/`, in four formats with divergent permission models).
+6. Features — split **Available now** vs **Planned**; use the structured vs instruction-document split.
+7. Supported tools — table synced to `ToolDescriptorRegistry`, linking to `docs/supported-tools.md`.
+8. Getting Started — pin Flutter version; per-OS prerequisites; Run-from-source vs Build release.
+9. How it works / Safety model — corrected backup location + retention caveat, diff-before-write, comment preservation, restore flow; fold the corrected Data Privacy note in here.
+10. Development — commands + enforced quality gates (coverage floor, 3-OS matrix, secret scan) + pre-commit setup.
+11. Contributing + License + links to `ARCHITECTURE.md` / `AGENTS.md` / `docs/supported-tools.md`.
 
 ---
 
@@ -164,7 +180,7 @@ Severity: **H** = materially misleading / security-relevant · **M** = inaccurat
 1. **H1, H2, H3** — correctness/trust fixes (README tagline, backup note, ARCHITECTURE CLI service). Include Master Plan reconciliation from H1.
 2. **M1, M2, M3, M4, M5** — wording accuracy (Markdown, undo, tool list + drift test, changelog, NAVIGATION).
 3. **L2** — LICENSE (unblocks the Contributing section).
-4. **L1, L3, L4** — CI gates + badges, vendor provenance, prerequisites/prose/screenshot/status line.
+4. **L1, L3, L4, L5** — CI gates + badges, vendor provenance, prerequisites/prose/screenshot/status line, and the under-development disclaimer.
 
 ---
 
@@ -178,6 +194,7 @@ Severity: **H** = materially misleading / security-relevant · **M** = inaccurat
 - [ ] `CHANGELOG.md` top entry is `0.1.0` and header no longer says "template-consumer".
 - [ ] `docs/NAVIGATION.md` has no "this template" phrasing; `Last reviewed:` updated.
 - [ ] `AGENTS.md:11` (tool list) and `AGENTS.md:38` (undo) reconciled to match registry/restore wording.
+- [ ] "Under development / use at your own risk" disclaimer present in `README.md` and mirrored in `AGENTS.md`/`docs/NAVIGATION.md` (L5).
 
 ## Done criteria
 
@@ -192,9 +209,12 @@ erased).
 > mismatch, no actual exposure). Both stay H for triage emphasis; the distinction is recorded here.
 
 - [ ] **`.context/project-profile.md` follow-up:** append a `TO_DO.md` entry to reconcile (or
-      regenerate) `.context/project-profile.md` so it matches shipped code — its `:9` "sync", `:25`
-      "call external CLIs", `:65` "diff/undo", and `:72` open backup-location question are stale.
-      It is gitignored (not shipped), so it is explicitly out of scope for this phase but tracked.
+       regenerate) `.context/project-profile.md` so it matches shipped code — its `:9` "sync", `:25`
+       "call external CLIs", `:65` "diff/undo", and `:72` open backup-location question are stale.
+       It is gitignored (not shipped), so it is explicitly out of scope for this phase but tracked.
+       Note also that `.context/research/2026-08-13-discovery-targets.md` is the 9-target research
+       backing `tool_descriptor_registry.dart`; when Phase 9 adds Kilo/Cline and the Cursor/Antigravity
+       splits, regenerate that research note to match the expanded catalog.
 - [ ] **Archive this plan:** Per `AGENTS.md:82-83`, when the phase is fully complete, move this
       file from `plans/active/phase_5.5_docs.md` to `plans/archive/phase_5.5_docs.md` (do not
       delete). Keep the deferred-item annotations in the archived copy as history.

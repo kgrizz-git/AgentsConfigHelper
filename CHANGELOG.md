@@ -1,106 +1,33 @@
 # Changelog
 
-All notable **user-facing / template-consumer** changes are documented here.
-Developer-only detail (hooks internals, inventory menus, tests/CI) lives in
+All notable **user-facing** changes to AgentsConfigHelper are documented here.
+Developer-only changes (hooks internals, tests/CI) live in
 [`CHANGELOG.dev.md`](CHANGELOG.dev.md). See [`policies/changelog-conventions.md`](policies/changelog-conventions.md).
 
 The format follows [Keep a Changelog](https://keepachangelog.com/), and this project
 uses [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## [0.1.0] - 2026-08-17
 
 ### Added
 
-- Backups per config file are now capped at 10; when exceeded, the oldest
-  snapshots are pruned automatically after each save (best-effort, never
-  blocks a save).
-- The raw "Review Changes" diff truncates each side to 20 lines with a
-  "Show full content" expand control, so large files no longer flood the
-  review dialog.
-
-### Changed
-
-- Saving a text/markdown config now writes the current on-disk file state
-  (via `saveConfig`) instead of the load-time content, keeping the saved file
-  in sync with the actual file on disk.
-
-### Fixed
-
-- Discovery warnings (e.g. a manual path that no longer exists, or an
-  unresolved home directory) now appear in the sidebar even when other
-  configurations were found — previously they were only shown when the
-  result list was empty. The warning banner is height-capped and scrolls
-  internally, so a burst of warnings can't overflow or crowd out the list.
-
-## [0.4.4] - 2026-07-09
-
-### Added
-
-- Advisory open-PR check for agents after push / about once a day
-  (`ci/scripts/check_open_prs.py`, guidance in commits policy and session prompts).
-  Optional non-blocking daily workflow example; not a git hook.
-  Agents check `.context/open-prs-check.stamp` first and skip the script when
-  the stamp is fresh (saves tokens vs always launching the check).
-
-## [0.4.3] - 2026-07-09
-
-### Added
-
-- Inventory: Archon harness builder; Pantheon (K-Dense) multi-persona brainstorming;
-  cross-IDE handoff pattern links; expanded Sphinx/Pandoc docs guidance.
-
-## [0.4.2] - 2026-07-09
-
-### Added
-
-- Inventory: AI code-wiki / repo-doc tools (Google Code Wiki, DeepWiki, deepwiki-open,
-  RepoWiki, FSoft CodeWiki, repowise) plus Ry Walker code-intelligence survey.
-
-## [0.4.1] - 2026-07-09
-
-### Added
-
-- Policy and script for GitHub Actions minutes/storage stewardship
-  (`policies/github-actions-usage.md`, `ci/scripts/check_gha_usage.py`).
-
-### Changed
-
-- Firecrawl inventory entry is product-only (no API-key dashboard link).
-
-## [0.4.0] - 2026-07-09
-
-### Added
-
-- Conventions for dual changelogs, plans/TODO lifecycle and archiving, and clearer
-  agent entry stubs (`AGENTS.md` / `GEMINI.md` / `QWEN.md` / `CLAUDE.md`).
-- Pre-commit policy hook for oversized living `to_do` / `TODO` backlogs; documented
-  secret-scan and lint hooks already in the example config.
-- Expanded harness and code-mapping inventory (agent quality patterns, Graphify,
-  security plugin, license compliance, crawl tooling).
-
-### Changed
-
-- Default source-file soft warn raised to **600** lines (hard **1000**); see
-  [`policies/file-size-and-counts.md`](policies/file-size-and-counts.md).
-
-## [0.3.0] - 2026-07-09
-
-### Changed
-
-- Fixed Obra inventory pointers: replace dead `obraunsdorf/obra-superprompts` with
-  `obra/superpowers`, `obra/superpowers-skills`, and `obra/superpowers-marketplace`.
-
-### Added
-
-- Harness reading: Loop Engineering (Addy Osmani) and Agent Patterns catalog links.
-- OpenCode permission/config links for constraining filesystem writes.
-- SonarQube Community menu entries (security-quality + github-apps).
-- `datalab-to/lift` under RAG document parsing (schema-constrained PDF/image JSON).
-- `genius-code-review` skill pointer in skills-index.
-- `backups/` gitignore entry; optional prune-hook note in `hooks/README.md`.
-
-## [0.2.0] - 2026-06-26
-
-### Added
-
-- Initial published template baseline (prompts, policies, hooks, CI examples, inventories).
+- Initial release of AgentsConfigHelper.
+- **Config discovery** — auto-detects agent/IDE configuration files across 9 tools
+  (Claude Code, Codex, Opencode, Paseo, Cursor, Kiro, Devin, Antigravity, Agy-ACP)
+  on macOS, Windows, and Linux. Users can also add custom paths manually.
+- **Structured config editing** — comment-preserving edits for JSON, JSONC, YAML, and
+  TOML configuration files via AST-based string patching (`json_ast`, `yaml_edit`).
+- **Instruction document editing** — raw text editing for Markdown/text files
+  (`CLAUDE.md`, `AGENTS.md`, `.mdc` rules, etc.) with no reformatting.
+- **Diff preview** — diff view before every write, with truncation at 20 lines and an
+  expand control for large files.
+- **Timestamped backup and restore** — automatic backup before every write, stored in
+  a centralized app-support directory. Up to 10 snapshots per original path are
+  retained (older ones pruned best-effort). One-click restore from the History &
+  Backups view.
+- **Cross-platform desktop UI** — Flutter/Dart application targeting macOS, Windows,
+  and Linux with Riverpod state management, dark/light theme, and a sidebar-driven
+  shell.
+- **CI quality gates** — `dart format`, `flutter analyze --fatal-infos`, 80% minimum
+  line coverage, `gitleaks` secret scan, `semgrep` SAST, and a 3-OS release build
+  matrix.
