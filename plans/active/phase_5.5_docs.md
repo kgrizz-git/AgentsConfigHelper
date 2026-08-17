@@ -106,7 +106,7 @@ Severity: **H** = materially misleading / security-relevant · **M** = inaccurat
 
 ### M4. Resolve CHANGELOG version conflict
 
-- **Where:** `CHANGELOG.md:10` newest entry `## [0.4.4] - 2026-07-09`; header says "user-facing / **template-consumer** changes." `VERSION` = `0.1.0`; `pubspec.yaml:19` = `0.1.0+1`.
+- **Where:** `CHANGELOG.md:35` newest *released* entry `## [0.4.4] - 2026-07-09` (line 10 is now the `## Unreleased` header, which sits above it); header says "user-facing / **template-consumer** changes." `VERSION` = `0.1.0`; `pubspec.yaml:19` = `0.1.0+1`.
 - **Evidence:** The changelog is the upstream template's history, not the app's.
 - **Action:** Reset `CHANGELOG.md` to an app changelog with a top entry `## [0.1.0] - <today>` describing the initial shipped feature set. Keep the Keep-a-Changelog / SemVer framing.
 - **Template history disposal:** Do **not** move the inherited scaffold history into `CHANGELOG.dev.md` — `AGENTS.md:84-86` strictly scopes that file to the app's developer-only changes (hooks internals, inventory menus, tests/CI), and mixing in template history violates that separation. Instead either (a) drop it, or (b) move it to a dedicated `CHANGELOG.template.md` archiving the upstream scaffold's history, clearly labeled as inherited. Prefer (a) unless the user wants the history retained.
