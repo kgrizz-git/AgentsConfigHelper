@@ -59,3 +59,35 @@ repos:
         name: "security: check absolute paths"
         entry: hooks/scripts/check_absolute_paths.sh
         language: script
+      - id: check-file-length
+        name: "style: check file length"
+        entry: hooks/scripts/check_file_length.sh
+        language: script
+        types: [dart]
+      - id: dart-code-linter
+        name: "dart: code linter metrics"
+        entry: dart run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning
+        language: system
+        pass_filenames: false
+
+      # ── Pre-push only: slower checks that mirror CI's "Analyze & format"
+      # and "Tests" jobs. Kept out of pre-commit so day-to-day commits stay
+      # fast; run once before code leaves the machine instead.
+      - id: dart-format-check
+        name: "dart: format check (pre-push)"
+        entry: dart format --output=none --set-exit-if-changed .
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: flutter-analyze
+        name: "dart: flutter analyze (pre-push)"
+        entry: flutter analyze --fatal-infos
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: flutter-test
+        name: "dart: flutter test (pre-push)"
+        entry: flutter test
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

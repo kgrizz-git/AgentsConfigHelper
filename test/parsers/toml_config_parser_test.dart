@@ -79,7 +79,44 @@ rules = ["rule1"]
         filePath: 'test.toml',
         toolName: 'test',
       );
-      expect(roundTrippedConfig, equals(parsedConfig));
+      // Normalize originalContent before comparing since the serialization
+      // reformats the raw text.
+      expect(
+        roundTrippedConfig,
+        equals(parsedConfig.copyWith(originalContent: serializedToml)),
+      );
     });
+
+    test(
+      'explicitly discards comments and reorders during serialization '
+      '(known limitation)',
+      () {
+        const originalToml = '''
+# This is a comment
+rules = ["rule1"]
+[nested]
+key = "value"
+''';
+        final parsedConfig = parser.parse(
+          originalToml,
+          filePath: 'test.toml',
+          toolName: 'test',
+        );
+        // Pass the original content to serialize, simulating a structured save
+        final serializedToml = parser.serialize(
+          parsedConfig,
+          originalContent: originalToml,
+        );
+
+        // Assert that comments are lost (raw-text check).
+        expect(serializedToml.contains('# This is a comment'), isFalse);
+
+        // Assert TOML semantics, not the encoder's quote/format style, which
+        // the caret version constraint permits changing across releases.
+        final roundTripped = TomlDocument.parse(serializedToml).toMap();
+        expect(roundTripped['rules'], equals(['rule1']));
+        expect(roundTripped.containsKey('nested'), isTrue);
+      },
+    );
   });
 }

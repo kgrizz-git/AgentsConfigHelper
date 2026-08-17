@@ -20,6 +20,7 @@ void main() {
       expect(config.rules, isEmpty);
       expect(config.permissions, isEmpty);
       expect(config.rawSettings, isEmpty);
+      expect(config.originalContent, equals(''));
     });
 
     test('parses null root to default config', () {
@@ -29,6 +30,7 @@ void main() {
         toolName: testTool,
       );
       expect(config.rules, isEmpty);
+      expect(config.originalContent, equals('null'));
     });
 
     test('throws ConfigParseException on invalid JSON syntax', () {
@@ -76,6 +78,9 @@ void main() {
 
       // rawSettings should contain everything
       expect(config.rawSettings['extra_key'], isTrue);
+
+      // originalContent should match input exactly
+      expect(config.originalContent, equals(jsonStr));
     });
 
     test('serializes ToolConfig correctly', () {
@@ -132,7 +137,12 @@ void main() {
         filePath: 'test.json',
         toolName: 'test',
       );
-      expect(roundTrippedConfig, equals(parsedConfig));
+      // Normalize originalContent before comparing since the serialization
+      // reformats the raw text.
+      expect(
+        roundTrippedConfig,
+        equals(parsedConfig.copyWith(originalContent: serializedJson)),
+      );
     });
 
     test(

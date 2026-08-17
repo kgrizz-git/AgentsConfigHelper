@@ -40,9 +40,9 @@ void main() {
       final content = await backupFile.readAsString();
       expect(content, equals('{"key": "value"}'));
 
-      // Ensure the path was encoded correctly (e.g. slashes turned into __)
+      // Ensure the path was encoded correctly (separators become %2F).
       final basename = p.basename(backupPath);
-      expect(basename, contains('__config.json_'));
+      expect(basename, contains('%2Fconfig.json_'));
       expect(basename, endsWith('.bak'));
     });
 
@@ -81,6 +81,99 @@ void main() {
           () => backupService.restoreBackup(missingBackup, originalFile.path),
           throwsA(isA<FileSystemException>()),
         );
+      },
+    );
+
+    test(
+      "listBackups does not return another path's backups when one path "
+      'is a string prefix of another',
+      () async {
+        final shortPathFile = File(p.join(tempDir.path, 'app'));
+        await shortPathFile.writeAsString('short');
+        final longPathFile = File(p.join(tempDir.path, 'app_old'));
+        await longPathFile.writeAsString('long');
+
+        await backupService.createBackup(shortPathFile.path);
+        await backupService.createBackup(longPathFile.path);
+
+        final shortBackups = await backupService.listBackups(
+          shortPathFile.path,
+        );
+        final longBackups = await backupService.listBackups(
+          longPathFile.path,
+        );
+
+        expect(shortBackups, hasLength(1));
+        expect(p.basename(shortBackups.single.path), contains('%2Fapp_'));
+        expect(
+          p.basename(shortBackups.single.path),
+          isNot(contains('%2Fapp_old_')),
+        );
+
+        expect(longBackups, hasLength(1));
+        expect(p.basename(longBackups.single.path), contains('%2Fapp_old_'));
+      },
+    );
+
+    test('listBackups returns backups sorted most-recent first', () async {
+      final backupPath1 = await backupService.createBackup(
+        originalFile.path,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      final backupPath2 = await backupService.createBackup(
+        originalFile.path,
+      );
+
+      final backups = await backupService.listBackups(originalFile.path);
+
+      expect(backups, hasLength(2));
+      expect(backups.first.path, equals(backupPath2));
+      expect(backups.last.path, equals(backupPath1));
+    });
+
+    test(
+      'listBackups keeps paths distinct when the old encoding would collide',
+      () async {
+        // Under the previous "separator -> __" encoding, "<dir>/a/b" and a
+        // file literally named "<dir>/a__b" both encoded to the same token, so
+        // their backups listed and pruned together. The percent-style encoding
+        // keeps them distinct.
+        final nestedDir = Directory(p.join(tempDir.path, 'a'));
+        await nestedDir.create();
+        final nestedFile = File(p.join(nestedDir.path, 'b'));
+        await nestedFile.writeAsString('nested');
+        final literalFile = File(p.join(tempDir.path, 'a__b'));
+        await literalFile.writeAsString('literal');
+
+        final nestedBackup = await backupService.createBackup(nestedFile.path);
+        final literalBackup = await backupService.createBackup(
+          literalFile.path,
+        );
+
+        final nestedBackups = await backupService.listBackups(nestedFile.path);
+        final literalBackups = await backupService.listBackups(
+          literalFile.path,
+        );
+
+        expect(nestedBackups, hasLength(1));
+        expect(nestedBackups.single.path, equals(nestedBackup));
+        expect(literalBackups, hasLength(1));
+        expect(literalBackups.single.path, equals(literalBackup));
+      },
+    );
+
+    test(
+      'createBackup prunes backups per path beyond maxBackupsPerPath',
+      () async {
+        String? lastBackupPath;
+        for (var i = 0; i < BackupService.maxBackupsPerPath + 3; i++) {
+          lastBackupPath = await backupService.createBackup(originalFile.path);
+        }
+
+        final backups = await backupService.listBackups(originalFile.path);
+
+        expect(backups, hasLength(BackupService.maxBackupsPerPath));
+        expect(backups.first.path, equals(lastBackupPath));
       },
     );
   });

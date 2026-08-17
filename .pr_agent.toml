@@ -1,0 +1,27 @@
+# Qodo Merge (PR-Agent) repository configuration.
+#
+# Scope: steering only. No review tools are disabled here — every check keeps
+# running. These `extra_instructions` just give Qodo repo-specific context so it
+# stops re-raising known false positives on each review. The conventions Qodo's
+# compliance checks derive from live in AGENTS.md; keep the two in sync.
+
+[pr_reviewer]
+extra_instructions = """
+Repo-specific context (avoid these known false positives):
+- The application is Flutter/Dart. Python files under hooks/scripts/ are
+  intentional repository tooling targeting Python 3.10+. Do NOT flag the
+  presence of Python files, Python pre-commit hooks, or Python-3.10+ syntax
+  (e.g. `X | None`, `Path.is_relative_to`) as a policy violation — this repo
+  has no policy forbidding Python and no sub-3.10 support requirement.
+- State management is Riverpod. UI widgets (ConsumerWidget / ConsumerState) may
+  invoke services and read providers from callbacks; that orchestration is the
+  accepted architecture. Flag business *logic* placed inside a widget, not a
+  widget merely calling a service or provider.
+"""
+
+[pr_code_suggestions]
+extra_instructions = """
+- This repo requires comments/docstrings only where they add non-obvious
+  context. Do not suggest comments that restate what the code plainly does.
+- Prefer suggestions consistent with Dart/Flutter and Riverpod idioms.
+"""

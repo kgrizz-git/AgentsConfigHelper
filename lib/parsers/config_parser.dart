@@ -16,12 +16,18 @@ class ConfigParseException implements Exception {
 abstract class ConfigParser {
   /// Parses raw file content into a unified [ToolConfig].
   ///
+  /// When [format] is supplied (e.g. resolved from a catalog/registry
+  /// descriptor), it is authoritative and is preserved on the returned
+  /// [ToolConfig] as-is. Filename-based format detection is only used as a
+  /// fallback when [format] is `null`.
+  ///
   /// Throws [ConfigParseException] if the content is structurally invalid
   /// or cannot be parsed.
   ToolConfig parse(
     String content, {
     required String filePath,
     required String toolName,
+    ConfigFormat? format,
   });
 
   /// Serializes a [ToolConfig] back into raw file content.

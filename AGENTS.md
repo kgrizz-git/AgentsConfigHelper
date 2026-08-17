@@ -29,7 +29,11 @@ Do not load everything. Start here, then open only what the task needs.
 ## Project essentials
 
 - **Stack:** Flutter / Dart, targeting macOS, Windows, Linux
-- **No Python** — ignore ruff/Python hooks in template; Dart toolchain handles lint/format/tests
+- **App language is Dart, not Python** — the Dart toolchain handles all app lint/format/tests, so
+  ignore the template's ruff/Python *application* hooks. This is not a ban on Python: repo tooling
+  (pre-commit hook scripts under `hooks/scripts/`) is intentionally written in Python and targets 3.10+.
+- **Review checklist:** [`best_practices.md`](best_practices.md) is a compact mirror of these
+  conventions for Qodo's compliance check — keep it in sync with this file (AGENTS.md is authoritative).
 - **Config discovery:** auto-detect common paths on first launch + user-managed paths
 - **Edit safety:** backup-before-write with diff/undo and restore instructions
 - **Data classification:** internal — config files may contain tokens but nothing leaves the machine
@@ -63,9 +67,25 @@ flutter build macos --release   # build release binary
 - **Never disable linters, rules, or checks (e.g., in `.pre-commit-config.yaml` or `.gitignore`) without explicit user permission.**
 - Follow Dart/Flutter style (dart format enforced in CI)
 - No comments unless they add non-obvious context
-- Keep widgets small and focused; business logic in services/models
+- Keep widgets small and focused; business *logic* lives in services/models. Widgets (including
+  Riverpod `ConsumerWidget`/`ConsumerState`) may still invoke services and read providers from
+  callbacks — that orchestration is not "business logic in the widget."
 - Config parsers are pure functions — easy to test
 - New tools (agent/IDE) get a parser + entry in `docs/supported-tools.md`
+
+## Maintenance
+
+- Use semantic versioning (`CHANGELOG.md` already declares this; `TO_DO.md` tracks
+  formalizing it as an enforced policy).
+- Update the relevant plan(s) in `plans/active/` as each phase is implemented — reflect
+  what actually shipped, not just what was proposed.
+- When a phase's plan is fully complete, archive it: move the file from `plans/active/`
+  to `plans/archive/` rather than deleting it.
+- Log changes in the appropriate changelog: user-facing / template-consumer changes go in
+  `CHANGELOG.md`; developer-only changes (hooks internals, inventory menus, tests/CI) go in
+  `CHANGELOG.dev.md`. See `policies/changelog-conventions.md`.
+- Remove completed items from `TO_DO.md` once done. Plans are different: keep completed
+  items in plan files as history — archive the plan instead of stripping it.
 
 ## Agent tooling policy
 

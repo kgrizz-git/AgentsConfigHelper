@@ -12,10 +12,10 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Helper functions
-check() { 
-    if [ $? -eq 0 ]; then 
+check() {
+    if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓${NC} $1"
-    else 
+    else
         echo -e "${RED}✗${NC} $1"
     fi
 }
@@ -30,7 +30,7 @@ echo "===================="
 section "Git Configuration"
 if git rev-parse --git-dir > /dev/null 2>&1; then
     check "Git repository initialized"
-    
+
     # Check for template remote
     current_remote=$(git remote get-url origin 2>/dev/null || echo "")
     if echo "$current_remote" | grep -qiE "template-repo|template-seed|project-seed"; then
@@ -38,7 +38,7 @@ if git rev-parse --git-dir > /dev/null 2>&1; then
     else
         check "Git remote configured (not template)"
     fi
-    
+
     # Check for uncommitted changes
     if [ -n "$(git status --porcelain)" ]; then
         warn "Uncommitted changes present"
@@ -143,7 +143,7 @@ if [ -f requirements.txt ] || [ -f pyproject.toml ] || [ -f setup.py ]; then
     else
         warn "Python not available"
     fi
-    
+
     if [ -f .python-version ]; then
         check ".python-version specified"
     else
@@ -159,7 +159,7 @@ if [ -f package.json ]; then
     else
         warn "Node.js not available"
     fi
-    
+
     if [ -d node_modules ]; then
         check "node_modules installed"
     else

@@ -55,6 +55,13 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Set up dark/light theme switching based on the OS.
 * **Detailed Plan:** *[Link to be created]*
 
+> **Update (PR #5):** Phase 4's two concrete pieces are done:
+>
+> 1. **`DiscoveryService` wired into the shell.** `main_shell.dart` no longer hardcodes sidebar entries; the sidebar is Riverpod-provided from `DiscoveryService.discoverConfigs()` plus user-added paths (`lib/state/providers.dart`).
+> 2. **State management (Riverpod) is in place.** `lib/state/providers.dart` supplies `DiscoveryProvider`/config providers consumed by the shell and editors.
+>
+> The "Detection priority" list in `docs/supported-tools.md` and `DiscoveryService.defaultRelativePaths` have been reconciled into a declarative `ToolDescriptor` table (`lib/catalog/tool_descriptor_registry.dart`).
+
 ## Phase 5: Editors & Diff Viewers
 
 **Goal:** Allow users to actually edit and save configurations safely.
@@ -63,6 +70,38 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Build specialized toggle/form widgets based on the tool.
 * Implement a Diff Viewer widget to preview changes before confirming a save.
 * **Detailed Plan:** *[Link to be created]*
+
+> **Update (PR #5):** Both editor features are shipped:
+>
+> * **History & Backups view** — implemented as `lib/widgets/history_modal.dart`, backed by `BackupService` (centralized `.bak` store in app support dir, restore support).
+> * **Raw text editor fallback** — implemented in `lib/widgets/config_editor.dart`, replacing the former "coming soon" placeholder.
+>
+> **Still deferred:** the diff modal (`ConfigEditor._buildDiffSection`) remains a list-level add/remove view; upgrading it to a true line-level diff for the raw editor and History/Backups comparison is tracked under the master-plan backlog "Git-style Merging & Diffing."
+
+## Phase 5.5: Documentation Accuracy & Polish
+
+**Goal:** Bring the user-facing and contributor docs in line with the shipped codebase, and
+raise the README's professionalism so the project reads like a credible OSS desktop app.
+
+**Why now:** The first independent doc audit (`tmp/docs-accuracy-assessment-2026-08-15T1335.md`)
+found the architecture and safety claims largely hold up, but several README/ARCHITECTURE
+statements are inaccurate and one is security-relevant. Most are concentrated in feature-scope
+overreach and the backup-location note. Fixing these is low-risk, high-trust, and unblocks the
+Phase 6 release narrative.
+
+* Correct README feature-scope overreach: remove the "sync" capability claim (not implemented; no networking in `lib/`), and reword "undo mechanisms" to the actual backup-restore behavior.
+* Rewrite the Data Privacy / backup note so it states the **true** backup location (centralized app-support `backups/` dir, not alongside originals), discloses that backups accumulate without auto-pruning, and that filenames encode original absolute paths. Add where/how to purge.
+* Fix the structured-vs-instruction-document distinction: Markdown/text are raw passthrough, not "native" like JSON/JSONC/YAML/TOML.
+* Sync the README supported-tool list to `ToolDescriptorRegistry` (9 tools; currently lists 8 and omits `agy-acp`); consider a drift test that asserts every `ToolDescriptorRegistry` display name appears in `docs/supported-tools.md` (names as source of truth, catching substitutions and omissions — not a count-only check).
+* Mark the "CLI Integration Service" in `ARCHITECTURE.md` as `(planned)` — no such service exists.
+* Resolve the `CHANGELOG.md` version conflict (says `0.4.4` template history; app is `0.1.0`); reset to an app changelog.
+* Rewrite `docs/NAVIGATION.md` to drop the inherited "this template" scaffolding framing.
+* Add a `LICENSE` file and License section; add a screenshot, status/CI badges, and a "Project status: early development" line to README.
+* Document the vendored `lib/vendor/json_ast/` (origin, license, rationale) and clarify it is vendored, not a pub dependency.
+* Add a `Last reviewed:` line to README (matching AGENTS.md/ARCHITECTURE.md/`docs/supported-tools.md`).
+* **Detailed Plan:** `plans/active/phase_5.5_docs.md`
+
+> **Note:** The Master Plan itself also contains stale "sync" language (Goal line, Phase 2 "Integrate CLI hooks", Phase 2 "`.bak` creation") that this phase should reconcile while editing the docs.
 
 ## Phase 6: Polish, Error Handling & Release
 
@@ -73,9 +112,43 @@ Build a cross-platform desktop application to visualize, edit, sync, and manage 
 * Draft user release notes.
 * **Detailed Plan:** *[Link to be created]*
 
+> **Suggestion (2026-08-13):** Current parse-error handling is a single generic error string in `main_shell.dart`. Phase 6 should define per-format recovery (offer raw-editor open, show line/col of syntax error, never auto-overwrite a corrupted file) and formalize the JSONC fallback-warning path described in `phase_2.5_jsonc.md`.
+
+## Phase 7: Templates & Intelligent Merging
+
+**Goal:** Allow users to save, load, and selectively merge configuration templates, moving beyond automated backups to intentional preset management.
+
+* **Structured Template Library:** Allow saving templates for various configs and agent instructions in a structured folder (defaulting to `~/AgentsConfigHelper/` but configurable by the user).
+* **Live Location Syncing:** Allow loading templates from the library directly to live agent locations, and saving live locations back to the template library.
+* **Semantic Parsing & Granular Copying:** Interpret and parse the configs so the user can visually choose to copy a specific setting or rule from one config/template to another, rather than copying the entire file.
+
+## Phase 8: Visual Editing & Rule Guidance
+
+**Goal:** Move away from raw JSON/YAML editing to an intuitive, visual, and guided experience that helps users write safe and effective agent rules.
+
+* **Visual Editor:** Make the app more intuitive and visual, abstracting away the underlying file formats (JSON, YAML, etc.) with rich UI controls (toggles, dropdowns, specialized rule builders).
+* **Rule Guidance & Safety:** Provide active guidance to help users write or interpret rules, including:
+  * Suggesting safe defaults and best practices.
+  * Providing guidance on common read-only commands.
+  * Offering templates or wizards for allowing/restricting commands within specific folders or workspaces.
+
+## Phase 9: Deferred Tools & Markdown/Starlark Sources
+
+**Goal:** Extend discovery and editing beyond the V1 structured-config set (JSON/JSONC, TOML, YAML) to the deferred sources and tools currently excluded from auto-discovery.
+
+* **Raw-text editor:** Shipped in Phase 5 as the raw-editor fallback (`ConfigEditor` "Advanced" raw-content editor + `ConfigService.saveRawConfig`), so it is no longer a Phase 9 prerequisite. Phase 9 builds discovery/parsing/validation/tool support for the deferred Markdown/Starlark/plain-text sources on top of that shipped editor.
+* **Markdown rules discovery:** Surface `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`, Codex `.rules`, Devin `.devin/rules/*.md` in the sidebar (per `docs/supported-tools.md` "Deferred Sources").
+* **Starlark & plain text:** Support Codex `.rules` (Starlark) and deprecated Cursor `.cursorrules` (plain text) via the raw editor.
+* **VS Code / GitHub Copilot:** Add as a first-class supported tool. Instructions are `.github/copilot-instructions.md` (Markdown); no permission model. Add a `ToolDescriptor` entry and a section in `docs/supported-tools.md` (already stubbed there as deferred).
+* **Parser registry reconciliation:** Ensure `lib/catalog/tool_descriptor_registry.dart` and `DiscoveryService.defaultRelativePaths` reflect all 10 tools plus deferred sources.
+
+> **Note:** See `docs/supported-tools.md` "Deferred / not yet supported" for the authoritative list of excluded sources. The Phase 1 Markdown parser (line 18) anticipated this; Phase 9 closes the gap.
+
 ## Backlog & Future Enhancements
 
 **Goal:** Track future feature requests that are currently deferred.
 
-* **User Config Presets:** Allow users to save and load custom-named "presets" for various configs, rather than just restoring automated system backups.
+* **User Config Presets:** (Superseded by Phase 7 Templates).
 * **Git-style Merging & Diffing:** Show a rich diff (like Git) between the current configuration file and a saved preset/backup. Allow users to selectively merge changes from the current file into the saved preset.
+
+> **Note:** For long-term vision, broader ecosystem ideas (like IDE extensions and integrated AI assistants), please see [`future_enhancements.md`](future_enhancements.md).

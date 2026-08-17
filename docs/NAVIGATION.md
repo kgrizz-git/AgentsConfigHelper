@@ -97,6 +97,7 @@ Quick navigation guide for this template's documentation. Use this to find what 
 - [`templates/plan.md`](../templates/plan.md) - Implementation plans
 - [`templates/design.md`](../templates/design.md) - Design documents
 - [`templates/adr.md`](../templates/adr.md) - Architecture Decision Records
+- [`docs/adr/ADR-001-toml-comment-preservation.md`](adr/ADR-001-toml-comment-preservation.md) - Why TOML serialization is lossy (deferred)
 - [`templates/bootstrap-state.md`](../templates/bootstrap-state.md) - Bootstrap phase status
 - [`templates/handoff.md`](../templates/handoff.md) - Cross-agent / cross-IDE handoff packet
 

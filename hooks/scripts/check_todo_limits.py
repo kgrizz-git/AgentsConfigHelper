@@ -55,6 +55,13 @@ def is_ignored(path: str) -> bool:
     return any(frag in normalized for frag in IGNORE_FRAGMENTS)
 
 
+def _is_within_repo(path: Path, root: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(root.resolve())
+    except OSError:
+        return False
+
+
 def is_backlog_path(path: Path) -> bool:
     name = path.name
     if name in BACKLOG_BASENAMES:
@@ -80,7 +87,11 @@ def default_targets(repo_root: Path) -> list[Path]:
 def check(filepath: Path) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
-    if not filepath.exists() or is_ignored(str(filepath)):
+    if (
+        not filepath.exists()
+        or is_ignored(str(filepath))
+        or not _is_within_repo(filepath, Path.cwd())
+    ):
         return errors, warnings
     if not is_backlog_path(filepath):
         return errors, warnings

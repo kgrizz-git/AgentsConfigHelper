@@ -33,6 +33,7 @@ void main() {
           const ['rule1'],
           const <String>[],
           const <String, Object?>{},
+          '',
         ]),
       );
       expect(config1, isNot(equals(config3)));
@@ -53,6 +54,24 @@ void main() {
       expect(updated.toolName, equals('Cursor'));
       expect(updated.rules, equals(['new_rule']));
       expect(updated.filePath, equals('path')); // unchanged
+    });
+
+    test('configs differing only in originalContent are not equal', () {
+      final config1 = ToolConfig(
+        toolName: 'Claude',
+        filePath: 'path',
+        format: ConfigFormat.json,
+        rules: const ['rule1'],
+        originalContent: '{"rules":["rule1"]}',
+      );
+      final config2 = ToolConfig(
+        toolName: 'Claude',
+        filePath: 'path',
+        format: ConfigFormat.json,
+        rules: const ['rule1'],
+        originalContent: '{"rules":["rule1"],"extra":true}',
+      );
+      expect(config1, isNot(equals(config2)));
     });
   });
 }

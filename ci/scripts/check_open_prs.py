@@ -74,7 +74,16 @@ def stamp_is_fresh(stamp_path: Path, max_age_hours: float) -> bool:
     return age_s < max_age_hours * 3600.0
 
 
+def _is_within_repo(path: Path, root: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(root.resolve())
+    except OSError:
+        return False
+
+
 def touch_stamp(stamp_path: Path) -> None:
+    if not _is_within_repo(stamp_path, Path.cwd()):
+        die(f"--stamp-file must stay within the repo, got: {stamp_path}")
     stamp_path.parent.mkdir(parents=True, exist_ok=True)
     stamp_path.write_text(
         datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ\n"),
@@ -203,29 +212,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
+def _resolve_head(args: argparse.Namespace) -> str | None:
+    if args.head is not None:
+        return args.head
+    if not args.branch:
+        return None
+    head = current_branch()
+    if head is None:
+        die("could not resolve current branch for --branch (detached HEAD?)")
+    return head
 
-    if args.once_per_day and not args.force:
-        if stamp_is_fresh(args.stamp_file, args.max_age_hours):
-            info(
-                f"skipped (stamp fresh < {args.max_age_hours:g}h): {args.stamp_file}"
-            )
-            return 0
 
-    ensure_gh()
-
-    head: str | None = args.head
-    if head is None and args.branch:
-        head = current_branch()
-        if head is None:
-            die("could not resolve current branch for --branch (detached HEAD?)")
-
-    prs = list_open_prs(args.repo, head)
-    scope = f"head={head}" if head else "repo"
-    if args.repo:
-        scope = f"{args.repo} {scope}"
-
+def _print_result(prs: list[dict[str, Any]], scope: str, args: argparse.Namespace, head: str | None) -> None:
     if args.json:
         payload = {
             "scope": scope,
@@ -234,18 +232,40 @@ def main(argv: list[str] | None = None) -> int:
             "checked_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         print(json.dumps(payload, indent=2, sort_keys=True))
-    else:
-        print(format_human(prs, scope))
-        if prs and head:
-            info("If one of these matches your work, update that PR instead of opening another.")
-        elif not prs and head:
-            info("No open PR for this branch yet — open one when the change is ready to review.")
+        return
+    print(format_human(prs, scope))
+    if prs and head:
+        info("If one of these matches your work, update that PR instead of opening another.")
+    elif not prs and head:
+        info("No open PR for this branch yet — open one when the change is ready to review.")
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+
+    if not _is_within_repo(args.stamp_file, Path.cwd()):
+        die(f"--stamp-file must stay within the repo, got: {args.stamp_file}")
+
+    if args.once_per_day and not args.force:
+        if stamp_is_fresh(args.stamp_file, args.max_age_hours):
+            info(
+                f"skipped (stamp fresh < {args.max_age_hours:g}h): {args.stamp_file}"
+            )
+            return
+
+    ensure_gh()
+
+    head = _resolve_head(args)
+    prs = list_open_prs(args.repo, head)
+    scope = f"head={head}" if head else "repo"
+    if args.repo:
+        scope = f"{args.repo} {scope}"
+
+    _print_result(prs, scope, args, head)
 
     if args.once_per_day or args.force:
         touch_stamp(args.stamp_file)
 
-    return 0
-
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

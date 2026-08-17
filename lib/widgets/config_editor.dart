@@ -16,6 +16,7 @@ class ConfigEditor extends StatefulWidget {
     required this.config,
     required this.onSave,
     required this.resolvePath,
+    required this.onShowHistory,
     this.onDirtyChanged,
     super.key,
   });
@@ -24,13 +25,17 @@ class ConfigEditor extends StatefulWidget {
   final ToolConfig config;
 
   /// Persists a confirmed edited configuration.
-  final Future<void> Function(ToolConfig config) onSave;
+  final Future<ToolConfig> Function(ToolConfig config, [String? rawContent])
+  onSave;
 
   /// Resolves the configuration path before opening its directory.
   final String Function(String path) resolvePath;
 
   /// Notifies the owner when editor changes become dirty or clean.
   final ValueChanged<bool>? onDirtyChanged;
+
+  /// Triggered when the user requests to view the history and backups.
+  final VoidCallback onShowHistory;
 
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
@@ -40,12 +45,21 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late ToolConfig _currentConfig;
   late List<String> _rules;
   late List<String> _permissions;
+  late TextEditingController _rawContentController;
+  late String _rawContent;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
+    _rawContentController = TextEditingController();
     _initLocalState(widget.config);
+  }
+
+  @override
+  void dispose() {
+    _rawContentController.dispose();
+    super.dispose();
   }
 
   @override
@@ -60,6 +74,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
     _currentConfig = config;
     _rules = List.from(_currentConfig.rules);
     _permissions = List.from(_currentConfig.permissions);
+    _rawContent = _currentConfig.originalContent;
+    if (_rawContentController.text != _rawContent) {
+      _rawContentController.text = _rawContent;
+    }
   }
 
   void _notifyDirtyChanged() {
@@ -68,8 +86,15 @@ class _ConfigEditorState extends State<ConfigEditor> {
 
   bool get _hasUnsavedChanges {
     return !listEquals(_rules, _currentConfig.rules) ||
-        !listEquals(_permissions, _currentConfig.permissions);
+        !listEquals(_permissions, _currentConfig.permissions) ||
+        _rawContent != _currentConfig.originalContent;
   }
+
+  bool get _supportsStructuredFields =>
+      _currentConfig.format == ConfigFormat.json ||
+      _currentConfig.format == ConfigFormat.jsonc ||
+      _currentConfig.format == ConfigFormat.yaml ||
+      _currentConfig.format == ConfigFormat.toml;
 
   bool get _hasUnsupportedPermissions =>
       _currentConfig.rawSettings['permissions'] != null &&
@@ -101,10 +126,14 @@ class _ConfigEditorState extends State<ConfigEditor> {
     });
 
     try {
-      await widget.onSave(updatedConfig);
+      final rawChanged = _rawContent != _currentConfig.originalContent;
+      final savedConfig = await widget.onSave(
+        updatedConfig,
+        rawChanged ? _rawContent : null,
+      );
       if (mounted) {
         setState(() {
-          _currentConfig = updatedConfig;
+          _currentConfig = savedConfig;
           _initLocalState(_currentConfig);
         });
         _notifyDirtyChanged();
@@ -144,13 +173,59 @@ class _ConfigEditorState extends State<ConfigEditor> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  _buildDiffSection('Rules', _currentConfig.rules, _rules),
-                  const SizedBox(height: 16),
-                  _buildDiffSection(
-                    'Permissions',
-                    _currentConfig.permissions,
-                    _permissions,
-                  ),
+                  if (_supportsStructuredFields) ...[
+                    _buildDiffSection('Rules', _currentConfig.rules, _rules),
+                    const SizedBox(height: 16),
+                    _buildDiffSection(
+                      'Permissions',
+                      _currentConfig.permissions,
+                      _permissions,
+                    ),
+                    if (_currentConfig.format == ConfigFormat.toml &&
+                        (!listEquals(_rules, _currentConfig.rules) ||
+                            !listEquals(
+                              _permissions,
+                              _currentConfig.permissions,
+                            ))) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.1),
+                          border: Border.all(color: AppColors.warning),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.warning_amber,
+                              color: AppColors.warning,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Saving a TOML config with structured changes '
+                                'will reformat the file and discard existing '
+                                'comments and formatting. This is a known '
+                                'limitation of the TOML library.',
+                                style: AppTextStyles.uiSecondary.copyWith(
+                                  color: AppColors.warning,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                  if (_rawContent != _currentConfig.originalContent) ...[
+                    const SizedBox(height: 16),
+                    _buildRawDiffSection(
+                      _currentConfig.originalContent,
+                      _rawContent,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -226,6 +301,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
+  Widget _buildRawDiffSection(String original, String updated) {
+    return _RawDiffView(original: original, updated: updated);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -253,13 +332,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     OutlinedButton.icon(
                       icon: const Icon(Icons.history),
                       label: const Text('History & Backups'),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('History & Backups coming soon!'),
-                          ),
-                        );
-                      },
+                      onPressed: widget.onShowHistory,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimaryDark,
                         side: const BorderSide(color: AppColors.borderDark),
@@ -339,46 +412,49 @@ class _ConfigEditorState extends State<ConfigEditor> {
                           bottom: 80,
                         ), // padding for floating bar
                         children: [
-                          _buildSectionHeader('Rules'),
-                          const Text(
-                            'Define custom rules for this agent.',
-                            style: AppTextStyles.uiSecondary,
-                          ),
-                          const SizedBox(height: 12),
-                          StringListEditor(
-                            values: _rules,
-                            hintText: 'e.g., Always use type hints...',
-                            onChanged: (newValues) {
-                              setState(() {
-                                _rules = newValues;
-                              });
-                              _notifyDirtyChanged();
-                            },
-                          ),
-
-                          _buildSectionHeader('Permissions'),
-                          if (_hasUnsupportedPermissions)
+                          if (_supportsStructuredFields) ...[
+                            _buildSectionHeader('Rules'),
                             const Text(
-                              'Nested permissions are preserved but '
-                              'not editable here yet.',
-                              style: AppTextStyles.uiSecondary,
-                            )
-                          else ...[
-                            const Text(
-                              'Allowed directories or commands for this agent.',
+                              'Define custom rules for this agent.',
                               style: AppTextStyles.uiSecondary,
                             ),
                             const SizedBox(height: 12),
                             StringListEditor(
-                              values: _permissions,
-                              hintText: 'e.g., ~/Projects',
+                              values: _rules,
+                              hintText: 'e.g., Always use type hints...',
                               onChanged: (newValues) {
                                 setState(() {
-                                  _permissions = newValues;
+                                  _rules = newValues;
                                 });
                                 _notifyDirtyChanged();
                               },
                             ),
+
+                            _buildSectionHeader('Permissions'),
+                            if (_hasUnsupportedPermissions)
+                              const Text(
+                                'Nested permissions are preserved but '
+                                'not editable here yet.',
+                                style: AppTextStyles.uiSecondary,
+                              )
+                            else ...[
+                              const Text(
+                                'Allowed directories or commands for this '
+                                'agent.',
+                                style: AppTextStyles.uiSecondary,
+                              ),
+                              const SizedBox(height: 12),
+                              StringListEditor(
+                                values: _permissions,
+                                hintText: 'e.g., ~/Projects',
+                                onChanged: (newValues) {
+                                  setState(() {
+                                    _permissions = newValues;
+                                  });
+                                  _notifyDirtyChanged();
+                                },
+                              ),
+                            ],
                           ],
 
                           _buildSectionHeader('Advanced'),
@@ -394,9 +470,20 @@ class _ConfigEditorState extends State<ConfigEditor> {
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: AppColors.borderDark),
                             ),
-                            child: const Text(
-                              'Raw JSON/YAML Editor Coming Soon...',
+                            child: TextField(
+                              controller: _rawContentController,
+                              maxLines: null,
                               style: AppTextStyles.codeBase,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: 'Raw configuration content',
+                              ),
+                              onChanged: (val) {
+                                setState(() {
+                                  _rawContent = val;
+                                });
+                                _notifyDirtyChanged();
+                              },
                             ),
                           ),
                         ],
@@ -474,6 +561,114 @@ class _ConfigEditorState extends State<ConfigEditor> {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Shows the before/after raw file content in the review dialog, truncating
+/// each side to a preview of 20 lines until the user expands it.
+class _RawDiffView extends StatefulWidget {
+  const _RawDiffView({required this.original, required this.updated});
+
+  final String original;
+  final String updated;
+
+  @override
+  State<_RawDiffView> createState() => _RawDiffViewState();
+}
+
+class _RawDiffViewState extends State<_RawDiffView> {
+  static const int _maxPreviewLines = 20;
+  bool _showFull = false;
+
+  bool get _isTruncated =>
+      _lineCount(widget.original) > _maxPreviewLines ||
+      _lineCount(widget.updated) > _maxPreviewLines;
+
+  static int _lineCount(String text) => text.split('\n').length;
+
+  String _displayText(String text) {
+    if (text.isEmpty) return '(Empty)';
+    if (_showFull) return text;
+    final lines = text.split('\n');
+    if (lines.length <= _maxPreviewLines) return text;
+    final preview = lines.take(_maxPreviewLines).join('\n');
+    return '$preview\n(${lines.length - _maxPreviewLines} more lines)';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Raw File Content',
+          style: AppTextStyles.uiSubheader.copyWith(
+            color: AppColors.primaryAccent,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.black12,
+            border: Border.all(color: AppColors.borderDark),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Before:',
+                style: AppTextStyles.uiSecondary.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                _displayText(widget.original),
+                style: AppTextStyles.codeBase.copyWith(
+                  color: AppColors.textSecondaryDark,
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Divider(color: AppColors.borderDark),
+              ),
+              Text(
+                'After:',
+                style: AppTextStyles.uiSecondary.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.greenAccent,
+                ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                _displayText(widget.updated),
+                style: AppTextStyles.codeBase.copyWith(
+                  color: AppColors.textPrimaryDark,
+                ),
+              ),
+              if (_isTruncated) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _showFull = !_showFull;
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryAccent,
+                  ),
+                  child: Text(_showFull ? 'Show less' : 'Show full content'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

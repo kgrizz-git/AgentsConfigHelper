@@ -10,10 +10,21 @@ analyzer:
     - "lib/vendor/**"
   language:
     strict-casts: true
+  plugins:
+    - dart_code_linter
 
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 include: package:very_good_analysis/analysis_options.yaml
+
+dart_code_linter:
+  metrics:
+    cyclomatic-complexity: 50
+    lines-of-code: 300
+    maximum-nesting-level: 8
+  metrics-exclude:
+    - test/**
+    - lib/vendor/**
 
 linter:
   # The lint rules applied to this project can be customized in the
@@ -29,6 +40,11 @@ linter:
   rules:
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # very_good_analysis targets published packages; this is an internal
+    # app with no external API, and mandating a doc comment on every public
+    # field/constructor conflicts with AGENTS.md's "no comments unless they
+    # add non-obvious context" rule.
+    public_member_api_docs: false
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

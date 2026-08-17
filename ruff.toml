@@ -8,7 +8,7 @@
 # so it is visible and tunable rather than implicit. Widen `select` deliberately — each
 # added rule family is a commitment the whole tree has to meet.
 
-target-version = "py39"
+target-version = "py312"
 line-length = 100
 
 # Generated, vendored, and scratch trees are not ours to lint.

@@ -6,17 +6,24 @@ import 'package:yaml_edit/yaml_edit.dart';
 
 /// Parses and serializes YAML configuration files.
 class YamlConfigParser with ConfigParserMixin implements ConfigParser {
+  /// Parses raw YAML content into a [ToolConfig].
+  ///
+  /// Empty or entirely-whitespace content preserves `content` as
+  /// `originalContent` and returns an otherwise-empty [ToolConfig].
   @override
   ToolConfig parse(
     String content, {
     required String filePath,
     required String toolName,
+    ConfigFormat? format,
   }) {
+    final resolvedFormat = format ?? ConfigFormat.yaml;
     if (isContentEmpty(content)) {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
-        format: ConfigFormat.yaml,
+        format: resolvedFormat,
+        originalContent: content,
       );
     }
 
@@ -31,7 +38,8 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
-        format: ConfigFormat.yaml,
+        format: resolvedFormat,
+        originalContent: content,
       );
     }
 
@@ -46,13 +54,20 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
     return ToolConfig(
       toolName: toolName,
       filePath: filePath,
-      format: ConfigFormat.yaml,
+      format: resolvedFormat,
       rules: rules,
       permissions: permissions,
+      originalContent: content,
       rawSettings: rawMap,
     );
   }
 
+  /// Serializes a [ToolConfig] back into YAML content.
+  ///
+  /// When [originalContent] is provided, this uses [YamlEditor] to update
+  /// only the changed keys in place, preserving existing comments and
+  /// formatting. If the original content fails to parse as a map, it falls
+  /// back to building a fresh YAML document from `config.rawSettings`.
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
     if (originalContent != null && originalContent.trim().isNotEmpty) {

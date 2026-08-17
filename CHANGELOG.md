@@ -7,6 +7,31 @@ Developer-only detail (hooks internals, inventory menus, tests/CI) lives in
 The format follows [Keep a Changelog](https://keepachangelog.com/), and this project
 uses [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- Backups per config file are now capped at 10; when exceeded, the oldest
+  snapshots are pruned automatically after each save (best-effort, never
+  blocks a save).
+- The raw "Review Changes" diff truncates each side to 20 lines with a
+  "Show full content" expand control, so large files no longer flood the
+  review dialog.
+
+### Changed
+
+- Saving a text/markdown config now writes the current on-disk file state
+  (via `saveConfig`) instead of the load-time content, keeping the saved file
+  in sync with the actual file on disk.
+
+### Fixed
+
+- Discovery warnings (e.g. a manual path that no longer exists, or an
+  unresolved home directory) now appear in the sidebar even when other
+  configurations were found — previously they were only shown when the
+  result list was empty. The warning banner is height-capped and scrolls
+  internally, so a burst of warnings can't overflow or crowd out the list.
+
 ## [0.4.4] - 2026-07-09
 
 ### Added

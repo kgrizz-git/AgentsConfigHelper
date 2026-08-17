@@ -1,57 +1,231 @@
 import 'dart:io';
+import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
+import 'package:agents_config_helper/models/discovered_config.dart';
+import 'package:agents_config_helper/models/discovery_request.dart';
+import 'package:agents_config_helper/models/discovery_result.dart';
+import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:path/path.dart' as p;
 
 /// Service responsible for discovering AI agent configuration files
 /// on the local filesystem.
 class DiscoveryService {
-  /// Creates a discovery service rooted at [customHome] or the user's home.
-  DiscoveryService({String? customHome})
-    : homeDirectory = customHome ?? _resolveHomeDirectory();
+  /// Scans the file system for configuration files based on the given
+  /// [request].
+  Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
+    final items = <DiscoveredConfig>[];
+    final warnings = <DiscoveryWarning>[];
+    final seenPaths = <String>{};
 
-  /// The user's home directory.
-  final String homeDirectory;
+    // Returns true only when [config] is newly added to [items].
+    Future<bool> addIfValid(
+      DiscoveredConfig config, {
+      bool isManual = false,
+    }) async {
+      // Dedup by a platform-aware key: case-insensitive on Windows so a manual
+      // entry and a catalog target that differ only in case don't produce two
+      // sidebar rows for the same file.
+      final pathKey = Platform.isWindows
+          ? config.filePath.toLowerCase()
+          : config.filePath;
+      if (seenPaths.contains(pathKey)) {
+        // Already discovered via a catalog (user/project) target. A coinciding
+        // manual entry must NOT flip it to manual: `isManual` stays true only
+        // for files whose sole provenance is the manual list. Otherwise the
+        // sidebar's remove action (gated on `isManual`) would appear for a
+        // catalog-backed file that `removeManualPath` cannot make disappear —
+        // it is rediscovered via its catalog target on the next refresh.
+        return false;
+      }
 
-  static String _resolveHomeDirectory() {
-    final home =
-        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
-    if (home == null) {
-      throw StateError(
-        'Could not resolve home directory from environment variables.',
-      );
+      final file = File(config.filePath);
+      try {
+        // Checking file existence asynchronously avoids blocking the UI thread.
+        // ignore: avoid_slow_async_io
+        if (await file.exists()) {
+          items.add(config);
+          seenPaths.add(pathKey);
+          return true;
+        } else if (isManual) {
+          // File.exists() is false for a directory; report that distinctly so
+          // the user isn't told a path that plainly exists "does not exist".
+          // ignore: avoid_slow_async_io
+          final isDirectory = await Directory(config.filePath).exists();
+          warnings.add(
+            DiscoveryWarning(
+              path: config.filePath,
+              message: isDirectory
+                  ? 'Manual path is a directory, not a configuration file.'
+                  : 'Manual path does not exist.',
+            ),
+          );
+        }
+      } on Object catch (e) {
+        warnings.add(
+          DiscoveryWarning(
+            path: config.filePath,
+            message: 'Error accessing file: $e',
+          ),
+        );
+      }
+      return false;
     }
-    return home;
-  }
 
-  /// The standard list of configuration paths to check on launch, relative
-  /// to the user's home directory, ordered by detection priority.
-  static const List<String> defaultRelativePaths = [
-    '.claude/settings.json', // Claude Code
-    '.codex/config.toml', // Codex
-    '.config/opencode/opencode.json', // Opencode
-    '.paseo/config.json', // Paseo
-    '.cursor/permissions.json', // Cursor
-    '.kiro/settings/permissions.yaml', // Kiro
-    '.config/devin/config.json', // Devin
-    '.gemini/antigravity-cli/settings.json', // Antigravity
-    '.openab/agy-acp/sessions.json', // agy-acp
-  ];
+    Future<void> processTarget(
+      String expectedPattern,
+      ConfigTarget target,
+      ToolDescriptor descriptor,
+      ConfigLocationScope scope,
+    ) async {
+      if (!expectedPattern.contains('*')) {
+        // Exact match
+        final config = DiscoveredConfig.fromPath(
+          filePath: expectedPattern,
+          scope: scope,
+          kind: target.kind,
+          format: target.format,
+          sourceLabel: descriptor.displayName,
+          descriptor: descriptor,
+        );
+        await addIfValid(config);
+      } else {
+        // Bounded glob enumeration
+        try {
+          final dirPath = p.dirname(expectedPattern);
+          final dir = Directory(dirPath);
+          // Checking directory existence asynchronously avoids blocking
+          // the UI thread.
+          // ignore: avoid_slow_async_io
+          if (!await dir.exists()) return;
 
-  /// Scans the file system for known configuration files.
-  /// Returns a list of absolute paths that exist on disk.
-  Future<List<String>> discoverConfigs() async {
-    final discoveredPaths = <String>[];
+          var count = 0;
+          var truncated = false;
+          const maxEntries = 100;
 
-    for (final relPath in defaultRelativePaths) {
-      final absolutePath = p.join(homeDirectory, relPath);
-      final file = File(absolutePath);
+          await for (final entity in dir.list()) {
+            if (entity is File &&
+                ToolDescriptorRegistry.isMatch(expectedPattern, entity.path)) {
+              if (count >= maxEntries) {
+                // A further matching entry exists beyond the cap, so results
+                // are genuinely truncated.
+                truncated = true;
+                break;
+              }
+              // Count every matching entry, not just newly-added ones, so the
+              // cap bounds the work done per glob even when many matches are
+              // duplicates already discovered via another target.
+              count++;
+              final config = DiscoveredConfig.fromPath(
+                filePath: entity.path,
+                scope: scope,
+                kind: target.kind,
+                format: target.format,
+                sourceLabel: descriptor.displayName,
+                descriptor: descriptor,
+              );
+              await addIfValid(config);
+            }
+          }
 
-      // Checking file existence asynchronously avoids blocking the UI thread.
-      // ignore: avoid_slow_async_io
-      if (await file.exists()) {
-        discoveredPaths.add(absolutePath);
+          if (truncated) {
+            warnings.add(
+              DiscoveryWarning(
+                path: expectedPattern,
+                message:
+                    'Glob enumeration hit the $maxEntries-entry cap; '
+                    'some matches may have been omitted.',
+              ),
+            );
+          }
+        } on Object catch (e) {
+          warnings.add(
+            DiscoveryWarning(
+              path: expectedPattern,
+              message: 'Error enumerating glob target: $e',
+            ),
+          );
+        }
       }
     }
 
-    return discoveredPaths;
+    // 1. User targets
+    if (request.normalizedHomePath != null) {
+      for (final descriptor in ToolDescriptorRegistry.catalog) {
+        for (final target in descriptor.targets) {
+          if (target.scope == ConfigLocationScope.user) {
+            final expectedPattern = p.normalize(
+              p.join(request.normalizedHomePath!, target.relativePath),
+            );
+            await processTarget(
+              expectedPattern,
+              target,
+              descriptor,
+              ConfigLocationScope.user,
+            );
+          }
+        }
+      }
+    }
+
+    // 2. Project targets
+    for (final root in request.normalizedProjectRoots) {
+      for (final descriptor in ToolDescriptorRegistry.catalog) {
+        for (final target in descriptor.targets) {
+          if (target.scope == ConfigLocationScope.project) {
+            final expectedPattern = p.normalize(
+              p.join(root, target.relativePath),
+            );
+            await processTarget(
+              expectedPattern,
+              target,
+              descriptor,
+              ConfigLocationScope.project,
+            );
+          }
+        }
+      }
+    }
+
+    // 3. Manual paths
+    for (final manualPath in request.manualPaths) {
+      final normalizedPath = p.normalize(manualPath);
+      try {
+        final match = ToolDescriptorRegistry.matchPath(
+          normalizedPath,
+          normalizedHomePath: request.normalizedHomePath,
+          normalizedProjectRoots: request.normalizedProjectRoots,
+        );
+
+        final config = DiscoveredConfig.fromPath(
+          filePath: normalizedPath,
+          scope: match.scope,
+          // match.kind is the kind of the specific target that matched.
+          // For unmatched/unknown manual files there's no target at all, so
+          // fall back to structuredConfig.
+          kind: match.kind ?? ConfigSourceKind.structuredConfig,
+          format: match.format,
+          sourceLabel: match.sourceLabel,
+          descriptor: match.descriptor,
+          isManual: true,
+        );
+
+        await addIfValid(config, isManual: true);
+      } on ValidationException catch (e) {
+        warnings.add(
+          DiscoveryWarning(
+            path: normalizedPath,
+            message: e.message,
+          ),
+        );
+      } on Object catch (e) {
+        warnings.add(
+          DiscoveryWarning(
+            path: normalizedPath,
+            message: 'Error processing path: $e',
+          ),
+        );
+      }
+    }
+
+    return DiscoveryResult(items: items, warnings: warnings);
   }
 }

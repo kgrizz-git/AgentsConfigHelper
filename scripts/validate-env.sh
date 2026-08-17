@@ -16,11 +16,11 @@ NC='\033[0m'
 FAIL_ON_ERROR=${FAIL_ON_ERROR:-0}  # Set to 1 to make errors fail the script
 
 # Helper functions
-check() { 
-    if [ $? -eq 0 ]; then 
+check() {
+    if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓${NC} $1"
         return 0
-    else 
+    else
         echo -e "${RED}✗${NC} $1"
         if [ "$FAIL_ON_ERROR" = "1" ]; then
             exit 1
@@ -67,7 +67,7 @@ if [ -f requirements.txt ] || [ -f pyproject.toml ] || [ -f setup.py ]; then
         warn "Python required but not found"
         increment_error
     fi
-    
+
     if check_command pip || check_command pip3; then
         check "pip available"
     else
@@ -84,7 +84,7 @@ if [ -f package.json ]; then
         warn "Node.js required but not found"
         increment_error
     fi
-    
+
     if check_command npm || check_command yarn || check_command pnpm; then
         check "Package manager available"
     else
@@ -119,10 +119,10 @@ section "Environment Variables"
 
 if [ -f .env.example ]; then
     info "Checking .env.example for required variables..."
-    
+
     # Extract variable names from .env.example (lines like VAR_NAME=value)
     required_vars=$(grep -E "^[A-Z_]+" .env.example | cut -d'=' -f1 | head -10)
-    
+
     if [ -n "$required_vars" ]; then
         for var in $required_vars; do
             if [ -z "${!var+x}" ]; then
@@ -146,7 +146,7 @@ if git rev-parse --git-dir > /dev/null 2>&1; then
         warn "git user.name not configured"
         info "Set with: git config --global user.name 'Your Name'"
     fi
-    
+
     if git config user.email > /dev/null 2>&1; then
         check "git user.email configured"
     else

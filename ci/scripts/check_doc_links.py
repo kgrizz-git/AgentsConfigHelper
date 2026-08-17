@@ -38,6 +38,7 @@ import urllib.error
 import urllib.request
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlsplit
 
 CATALOG_WINDOW_DAYS = 120  # tighter than the 180-day prose window on purpose
 CATALOG_DIRS = ("inventory",)
@@ -58,9 +59,25 @@ SKIP_HOSTS = ("twitter.com", "x.com", "linkedin.com", "reddit.com")
 EXPECTED_ABSENT = (".context/",)
 
 
+def _is_within_repo(path: Path, root: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(root.resolve())
+    except OSError:
+        return False
+
+
 def iter_markdown(paths: list[Path]) -> list[Path]:
     if paths:
-        return [p for p in paths if p.suffix == ".md" and p.exists()]
+        root = Path.cwd()
+        valid = []
+        for p in paths:
+            if p.suffix != ".md" or not p.exists():
+                continue
+            if not _is_within_repo(p, root):
+                print(f"[links] SKIP   {p}: outside repo root, refusing to read", file=sys.stderr)
+                continue
+            valid.append(p)
+        return valid
     found = []
     for path in Path(".").rglob("*.md"):
         if SKIP_DIRS & set(path.parts):
@@ -100,16 +117,42 @@ def find_external(text: str) -> list[str]:
     return list(seen)
 
 
+def _host_matches(host: str, domains: tuple[str, ...]) -> bool:
+    """True when [host] equals one of [domains] or is a subdomain of it.
+
+    Compares the parsed host rather than doing a substring check, so a domain
+    cannot match at an arbitrary position (e.g. 'github.com' in a path or a
+    look-alike host like 'github.com.evil.example').
+    """
+    return any(host == d or host.endswith("." + d) for d in domains)
+
+
 def check_link(url: str) -> tuple[str, str] | None:
     """Return (url, problem) when the link looks dead or moved, else None."""
-    if any(host in url for host in SKIP_HOSTS):
+    # Parse once, inside a guard: urlsplit()/.hostname raise ValueError on
+    # malformed netlocs (e.g. bad IPv6 brackets), which must become a per-link
+    # result rather than crash the whole run.
+    try:
+        parts = urlsplit(url)
+        host = (parts.hostname or "").lower()
+    except ValueError as error:
+        return (url, f"invalid URL: {error}")
+
+    if _host_matches(host, SKIP_HOSTS):
         return None
+    # Only ever fetch http(s). urllib also understands file://, ftp://, etc., so
+    # guard the scheme at the sink even though callers already pass http(s) URLs —
+    # defense in depth against a dynamic value reaching urlopen.
+    if parts.scheme not in ("http", "https"):
+        return (url, "unsupported URL scheme — only http/https are checked")
     request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+        # Scheme restricted to http/https above; this is a documentation link
+        # from a tracked markdown file, not user input.
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # nosemgrep
             final = response.geturl()
             # A GitHub repo redirect means the project was renamed or transferred.
-            if "github.com" in url and final.rstrip("/") != url.rstrip("/"):
+            if host == "github.com" and final.rstrip("/") != url.rstrip("/"):
                 return (url, f"redirects to {final} — renamed or transferred?")
         return None
     except urllib.error.HTTPError as error:

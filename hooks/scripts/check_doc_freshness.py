@@ -63,6 +63,13 @@ def is_required(path: Path) -> bool:
     return bool(REQUIRED_DIRS & norm_parts)
 
 
+def _is_within_repo(path: Path, root: Path) -> bool:
+    try:
+        return path.resolve().is_relative_to(root.resolve())
+    except OSError:
+        return False
+
+
 def check(filepath: str) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -71,7 +78,7 @@ def check(filepath: str) -> tuple[list[str], list[str]]:
         return errors, warnings
 
     path = Path(filepath)
-    if not path.exists():
+    if not path.exists() or not _is_within_repo(path, Path.cwd()):
         return errors, warnings
 
     try:

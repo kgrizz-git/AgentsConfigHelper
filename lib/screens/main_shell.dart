@@ -1,26 +1,32 @@
+import 'dart:async';
+
+import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
-import 'package:agents_config_helper/services/config_service.dart';
+import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
+import 'package:agents_config_helper/widgets/add_path_dialog.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
+import 'package:agents_config_helper/widgets/history_modal.dart';
 import 'package:agents_config_helper/widgets/sidebar_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 
 /// The split-pane shell for selecting and editing configurations.
-class MainShell extends StatefulWidget {
-  /// Creates the shell with the service used to load configurations.
-  const MainShell({required this.configService, super.key});
-
-  /// Reads configurations selected in the sidebar.
-  final ConfigService configService;
+class MainShell extends ConsumerStatefulWidget {
+  /// Creates the shell.
+  const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends ConsumerState<MainShell> {
   ToolConfig? _activeConfig;
+  String? _activeConfigId;
+  DiscoveredConfig? _activeDiscoveredConfig;
   bool _isLoading = false;
   bool _hasUnsavedChanges = false;
   String? _error;
@@ -31,7 +37,13 @@ class _MainShellState extends State<MainShell> {
     super.initState();
   }
 
-  Future<void> _loadConfig(String path) async {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadConfig(DiscoveredConfig configItem) async {
     final generation = ++_loadGeneration;
     if (_hasUnsavedChanges) {
       final shouldDiscard = await _confirmDiscardChanges();
@@ -43,10 +55,13 @@ class _MainShellState extends State<MainShell> {
       _isLoading = true;
       _error = null;
       _activeConfig = null;
+      _activeConfigId = configItem.id;
+      _activeDiscoveredConfig = configItem;
       _hasUnsavedChanges = false;
     });
     try {
-      final config = await widget.configService.loadConfig(path);
+      final configService = ref.read(configServiceProvider);
+      final config = await configService.loadDiscoveredConfig(configItem);
       if (!mounted || generation != _loadGeneration) {
         return;
       }
@@ -58,6 +73,12 @@ class _MainShellState extends State<MainShell> {
         setState(() {
           _error = error.toString();
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading config: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted && generation == _loadGeneration) {
@@ -91,39 +112,278 @@ class _MainShellState extends State<MainShell> {
     return shouldDiscard ?? false;
   }
 
+  void _showHistoryModal() {
+    if (_activeConfig == null) return;
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) {
+          final configService = ref.read(configServiceProvider);
+          return HistoryModal(
+            config: _activeConfig!,
+            onRestore: (backupPath) async {
+              // Capture before any await: _loadConfig can null out
+              // _activeConfig while the discard dialog is open.
+              final activeConfig = _activeConfig;
+              if (activeConfig == null) return;
+              if (_hasUnsavedChanges) {
+                final shouldDiscard = await _confirmDiscardChanges();
+                if (!shouldDiscard || !mounted) {
+                  return;
+                }
+                setState(() {
+                  _hasUnsavedChanges = false;
+                });
+              }
+              final targetPath = configService.resolvePath(
+                activeConfig.filePath,
+              );
+              await configService.backupService.restoreBackup(
+                backupPath,
+                targetPath,
+              );
+              final configItem = _activeDiscoveredConfig;
+              if (configItem != null && mounted) {
+                await _loadConfig(configItem);
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _showAddManualPathDialog() async {
+    final path = await showDialog<String>(
+      context: context,
+      builder: (context) => const AddPathDialog(
+        title: 'Add Manual Config Path',
+        hintText: '/absolute/path/to/config/file',
+      ),
+    );
+    if (path == null || !mounted) return;
+    try {
+      await ref.read(discoveryControllerProvider.notifier).addManualPath(path);
+    } on Object catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not add path: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showAddProjectRootDialog() async {
+    final path = await showDialog<String>(
+      context: context,
+      builder: (context) => const AddPathDialog(
+        title: 'Add Project Root',
+        hintText: '/absolute/path/to/project',
+      ),
+    );
+    if (path == null || !mounted) return;
+    try {
+      await ref.read(discoveryControllerProvider.notifier).addProjectRoot(path);
+    } on Object catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not add project root: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showManageProjectRootsDialog() {
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => _ManageProjectRootsDialog(
+          onRemove: (path) {
+            unawaited(
+              ref
+                  .read(discoveryControllerProvider.notifier)
+                  .removeProjectRoot(path),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  IconData _getIconForTool(ToolId toolId) {
+    // Exhaustive over ToolId so a newly added tool fails to compile until it
+    // gets an explicit icon, rather than silently falling through.
+    switch (toolId) {
+      case ToolId.claudeCode:
+        return Icons.code;
+      case ToolId.cursor:
+        return Icons.edit;
+      case ToolId.opencode:
+        return Icons.open_in_browser;
+      case ToolId.paseo:
+        return Icons.directions_walk;
+      case ToolId.kiro:
+        return Icons.keyboard;
+      case ToolId.devin:
+        return Icons.developer_mode;
+      case ToolId.antigravity:
+        return Icons.rocket_launch;
+      case ToolId.codex:
+        return Icons.book;
+      case ToolId.agyAcp:
+        return Icons.api;
+    }
+  }
+
   late final MultiSplitViewController _controller = MultiSplitViewController(
     areas: [
       Area(
         size: 250,
         min: 200,
         builder: (context, area) {
+          final discoveryState = ref.watch(discoveryControllerProvider);
+
           return Material(
             color: AppColors.sidebarDark,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    'Agents Config',
-                    style: AppTextStyles.uiHeader,
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Agents Config',
+                          style: AppTextStyles.uiHeader,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      PopupMenuButton<VoidCallback>(
+                        icon: const Icon(Icons.add, size: 16),
+                        tooltip: 'Add configuration',
+                        onSelected: (callback) => callback(),
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: () => unawaited(_showAddManualPathDialog()),
+                            child: const Text('Add Manual Config Path'),
+                          ),
+                          PopupMenuItem(
+                            value: () => unawaited(_showAddProjectRootDialog()),
+                            child: const Text('Add Project Root'),
+                          ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem(
+                            value: _showManageProjectRootsDialog,
+                            child: const Text('Manage Project Roots'),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh, size: 16),
+                        onPressed: () {
+                          unawaited(
+                            ref
+                                .read(discoveryControllerProvider.notifier)
+                                .refresh(),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                SidebarItem(
-                  title: 'Claude Code',
-                  icon: Icons.code,
-                  isActive: _activeConfig?.toolName == 'Claude',
-                  onTap: () async {
-                    await _loadConfig('~/.claude/settings.json');
-                  },
-                ),
-                SidebarItem(
-                  title: 'Cursor',
-                  icon: Icons.edit,
-                  isActive: _activeConfig?.toolName == 'Cursor',
-                  onTap: () async {
-                    await _loadConfig('~/.cursor/permissions.json');
-                  },
+                Expanded(
+                  child: discoveryState.when(
+                    data: (result) {
+                      final warningBanner = result.warnings.isEmpty
+                          ? null
+                          : ConstrainedBox(
+                              // Cap height and scroll internally so a burst
+                              // of warnings can't overflow or crowd out the
+                              // config list.
+                              constraints: const BoxConstraints(maxHeight: 160),
+                              child: SingleChildScrollView(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Text(
+                                    result.warnings
+                                        .map((w) => w.message)
+                                        .join('\n'),
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ),
+                            );
+
+                      if (result.items.isEmpty) {
+                        return warningBanner ??
+                            const Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Text('No configurations found.'),
+                            );
+                      }
+                      final list = ListView.builder(
+                        itemCount: result.items.length,
+                        itemBuilder: (context, index) {
+                          final configItem = result.items[index];
+                          return SidebarItem(
+                            title: configItem.sourceLabel,
+                            subtitle: configItem.filePath,
+                            icon: configItem.descriptor != null
+                                ? _getIconForTool(configItem.descriptor!.id)
+                                : Icons.insert_drive_file,
+                            isActive: _activeConfigId == configItem.id,
+                            onTap: () async {
+                              await _loadConfig(configItem);
+                            },
+                            onRemove: configItem.isManual
+                                ? () {
+                                    unawaited(
+                                      ref
+                                          .read(
+                                            discoveryControllerProvider
+                                                .notifier,
+                                          )
+                                          .removeManualPath(
+                                            configItem.filePath,
+                                          ),
+                                    );
+                                  }
+                                : null,
+                          );
+                        },
+                      );
+
+                      if (warningBanner == null) return list;
+                      // Surface warnings even when configs were found, so a bad
+                      // manual path or unresolved home dir isn't silently
+                      // hidden behind a non-empty list.
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          warningBanner,
+                          Expanded(child: list),
+                        ],
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, st) => Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        'Error: $e',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -145,15 +405,61 @@ class _MainShellState extends State<MainShell> {
             );
           }
           if (_activeConfig == null) {
-            return const Center(
-              child: Text('Select a configuration from the sidebar.'),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.tune,
+                    size: 64,
+                    color: AppColors.textSecondaryDark,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No configuration selected',
+                    style: AppTextStyles.uiHeader.copyWith(
+                      color: AppColors.textSecondaryDark,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Select a configuration from the sidebar to start editing.',
+                    style: AppTextStyles.uiBase.copyWith(
+                      color: AppColors.textSecondaryDark,
+                    ),
+                  ),
+                ],
+              ),
             );
           }
 
+          final configService = ref.read(configServiceProvider);
           return ConfigEditor(
             config: _activeConfig!,
-            onSave: widget.configService.saveConfig,
-            resolvePath: widget.configService.resolvePath,
+            // Save feedback (success/error SnackBars) is shown by
+            // ConfigEditor itself; this callback only persists the change
+            // and updates the active config. Errors propagate to
+            // ConfigEditor's own try/catch.
+            onSave: (config, [rawContent]) async {
+              final ToolConfig updated;
+              if (rawContent != null) {
+                updated = await configService.saveRawConfig(
+                  config,
+                  rawContent,
+                );
+              } else {
+                updated = await configService.saveConfig(config);
+              }
+              ref.invalidate(backupListProvider(config.filePath));
+              if (mounted) {
+                setState(() {
+                  _activeConfig = updated;
+                });
+              }
+              return updated;
+            },
+            resolvePath: configService.resolvePath,
+            onShowHistory: _showHistoryModal,
             onDirtyChanged: (hasUnsavedChanges) {
               if (mounted) {
                 setState(() {
@@ -182,6 +488,63 @@ class _MainShellState extends State<MainShell> {
           controller: _controller,
         ),
       ),
+    );
+  }
+}
+
+class _ManageProjectRootsDialog extends ConsumerWidget {
+  const _ManageProjectRootsDialog({required this.onRemove});
+
+  final void Function(String path) onRemove;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectRoots =
+        ref.watch(discoveryControllerProvider).value?.projectRoots ?? [];
+    return AlertDialog(
+      backgroundColor: AppColors.backgroundDark,
+      title: const Text(
+        'Manage Project Roots',
+        style: AppTextStyles.uiHeader,
+      ),
+      content: SizedBox(
+        width: 500,
+        child: projectRoots.isEmpty
+            ? const Center(
+                child: Text(
+                  'No project roots configured.',
+                  style: AppTextStyles.uiSecondary,
+                ),
+              )
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: projectRoots.length,
+                itemBuilder: (context, index) {
+                  final root = projectRoots[index];
+                  return ListTile(
+                    title: Text(
+                      root,
+                      style: AppTextStyles.codeBase,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      color: AppColors.textSecondaryDark,
+                      onPressed: () => onRemove(root),
+                    ),
+                  );
+                },
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.textPrimaryDark,
+          ),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }

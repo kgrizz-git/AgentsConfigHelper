@@ -14,17 +14,31 @@ class _Edit {
 
 /// Parses and serializes JSON and JSONC configuration files.
 class JsonConfigParser with ConfigParserMixin implements ConfigParser {
+  /// Parses raw JSON or JSONC content into a [ToolConfig].
+  ///
+  /// If strict JSON decoding fails, the content is first run through
+  /// [JsoncCleaner] to strip comments and trailing commas before retrying.
+  /// Empty or entirely-whitespace content preserves `content` as
+  /// `originalContent` and returns an otherwise-empty [ToolConfig].
   @override
   ToolConfig parse(
     String content, {
     required String filePath,
     required String toolName,
+    ConfigFormat? format,
   }) {
+    final resolvedFormat =
+        format ??
+        (filePath.toLowerCase().endsWith('.jsonc')
+            ? ConfigFormat.jsonc
+            : ConfigFormat.json);
+
     if (isContentEmpty(content)) {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
-        format: ConfigFormat.json,
+        format: resolvedFormat,
+        originalContent: content,
       );
     }
 
@@ -45,7 +59,8 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       return ToolConfig(
         toolName: toolName,
         filePath: filePath,
-        format: ConfigFormat.json,
+        format: resolvedFormat,
+        originalContent: content,
       );
     }
 
@@ -61,13 +76,21 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
     return ToolConfig(
       toolName: toolName,
       filePath: filePath,
-      format: ConfigFormat.json,
+      format: resolvedFormat,
       rules: rules,
       permissions: permissions,
+      originalContent: content,
       rawSettings: decoded,
     );
   }
 
+  /// Serializes a [ToolConfig] back into JSON/JSONC content.
+  ///
+  /// When [originalContent] is provided, this attempts a surgical in-place
+  /// patch of just the `rules` and `permissions` fields via AST offsets, so
+  /// existing comments, formatting, and unrelated keys are preserved. If the
+  /// patch cannot be applied safely, it falls back to re-encoding the full
+  /// settings map from scratch (which discards comments).
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
     if (originalContent != null && originalContent.trim().isNotEmpty) {

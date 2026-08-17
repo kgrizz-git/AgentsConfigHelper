@@ -7,6 +7,30 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Semgrep SAST in CI (2026-08-16).** New non-blocking `semgrep` job runs
+  `semgrep scan --config p/default --metrics off` (installed with
+  `pip install --only-binary :all:` so no dependency setup scripts run —
+  Sonar S8541) and uploads SARIF to the
+  Security tab (category `semgrep`), covering Dart plus the Python/shell/YAML
+  that CodeQL default setup (Python + Actions only) leaves uncovered. Actions
+  pinned to commit SHAs; a `.semgrepignore` excludes vendored and generated
+  platform code. Also hardened `ci/scripts/check_doc_links.py` to restrict the
+  `urllib` scheme to http/https at the sink (Semgrep `dynamic-urllib-use`
+  audit finding).
+- **Nitpick resolution round (2026-08-16).** Tests: `discovered_config_test` drops the const-identical equality check for a real props
+  comparison plus inequality and `fromPath` id/normalization coverage;
+  `text_config_parser_test` covers the `originalContent` argument and
+  uppercase `.MD` extension detection; `history_modal_test` captures
+  `restoredPath` outside the callback and asserts it after the confirm flow;
+  `discovery_preferences_store_test` asserts the atomic write leaves only the
+  preferences file behind (no temp-file residue); `backup_service_test`
+  covers per-path pruning past `maxBackupsPerPath`. Refactors:
+  `DiscoveryPreferences` preserves unknown JSON keys in `extraFields`;
+  `DiscoveryPreferencesStore` extracts a shared
+  `_normalizeAndFilterPaths` helper; `ConfigService` uses `listEquals` from
+  `foundation`; `BackupService` sorts backups by parsed filename timestamp
+  and prunes per-path retention; `ConfigEditor`'s raw diff view truncates at
+  20 lines with an expand toggle.
 - **Bootstrap follow-through.** The checklist existed but nothing recorded progress, so a
   compacted or resumed session had no way to know where it stopped. Adds stable phase IDs
   (`P0`–`P8`, `PS`); `templates/bootstrap-state.md` → `.context/bootstrap-state.md` for
@@ -87,8 +111,53 @@ Internal / developer-facing changes that do not belong in the public
   and OpenTelemetry, with the keep-event-data-on-your-infra / no-BAA-on-free-tiers
   caveat cross-linked to the runtime-leak policy and prompt.
 
+### Fixed
+
+- **URL host checks parse the host instead of substring-matching (2026-08-16).**
+  `ci/scripts/check_doc_links.py` now compares the parsed hostname (via
+  `_host_matches`/`_url_host`) for both the skip-list and the GitHub-redirect
+  check, so a domain can't match at an arbitrary position (e.g. `github.com`
+  in a path, or a look-alike host `github.com.evil.example`). Clears the
+  CodeQL `py/incomplete-url-substring-sanitization` alert, the matching
+  Semgrep finding, and SonarCloud's New-Code Security Rating. The URL is
+  parsed once inside a guard so a malformed netloc (`urlsplit` `ValueError`,
+  e.g. bad IPv6 brackets) becomes a per-link result instead of crashing the
+  whole run.
+- **Narrower baseline-parse catch in `saveRawConfig` (2026-08-16).**
+  `ConfigService` now catches `Exception` (not `Object`) around the baseline
+  reparse, so genuine `Error`s (programming bugs) propagate instead of being
+  swallowed as an unparseable baseline. Qodo finding.
+- **Glob discovery cap now bounds work, not just results (2026-08-16).**
+  `DiscoveryService`'s bounded glob enumeration increments its per-glob counter
+  for every matching entry (not only newly-added ones), so the `maxEntries`
+  cap bounds the scan even when many matches are duplicates already discovered
+  via another target. Qodo/CodeRabbit review finding.
+- **Windows path deduplication (2026-08-16).** `DiscoveryPreferencesStore` now dedups and
+  matches manual paths / project roots via a platform-aware key (case-insensitive on Windows,
+  case-sensitive elsewhere), and `DiscoveryService` keys `seenPaths` the same way, so
+  differently-cased spellings of the same file no longer produce duplicate preference entries or
+  sidebar rows on Windows. No-op on Linux/macOS-posix. Qodo review finding.
+- **`saveRawConfig` baseline reparse guard (2026-08-16).** The internal reparse of the pre-edit
+  baseline (`config.originalContent`) used to diff structured edits is now wrapped in try/catch;
+  a stale/unparseable baseline no longer throws a `ConfigParseException` indistinguishable from a
+  genuine invalid-raw-content error — a valid raw edit is written as-is instead. Qodo review finding.
+
 ### Changed
 
+- **Collision-free backup filename encoding (2026-08-16).** `BackupService` now encodes the
+  original path via a shared `_encodeOriginalPath` helper (percent-escape `%` first, then the OS
+  separator → `%2F` and `:` → `%3A`), replacing the non-injective `sep → __` / `: → _drive_`
+  substitution where a literal `__` in one path could alias a separator in another (e.g. `/x/y`
+  vs `/x__y`), letting their backups list and prune together. `createBackup` and `listBackups`
+  share the helper; a regression test covers the former collision. This changes the on-disk
+  `.bak` filename format (no existing backups yet to migrate). CodeRabbit review finding.
+- **TOML comment preservation: documented and deferred.** `TomlConfigParser.serialize` stays
+  lossy (rebuilds from the parsed map, dropping comments/whitespace/order) because the Dart
+  `toml` package has no source-preserving editor, unlike the JSON (`json_ast`) and YAML
+  (`yaml_edit`) paths. Qodo finding #12. Options — surgical text-splice for the two edited keys,
+  vendoring a TOML AST, or status quo — are captured in
+  `docs/adr/ADR-001-toml-comment-preservation.md`, with a follow-up trigger. The parser doc
+  comment now points at the ADR.
 - Template CI pins Markdownlint and applies the repository's established style choices;
   gitleaks receives the read-only pull-request permission it needs for PR scans.
 - **References to the private notes repo: cited, not hidden.** The repo stays private, so
@@ -108,7 +177,7 @@ Internal / developer-facing changes that do not belong in the public
 - **Python lint in CI.** `template-checks` now runs `ruff check .` (pinned to 0.11.13 to match
   `hooks/.pre-commit-config.yaml`; a version skew is why "it passed locally" stops being true).
   `compileall` only proved the files parse — proof that was insufficient: an F541 had been
-  sitting in `hooks/scripts/check_cleanup_hygiene.py` on main, now fixed. The pre-commit hook
+  sitting in `hooks/scripts/check_cleanup_hygiene.sh` on main, now fixed. The pre-commit hook
   alone does not cover it either, since it only protects contributors who ran
   `pre-commit install`, and these scripts are policy gates other repos inherit. Adds `ruff.toml`
   so pre-commit and CI read one rule set. `ruff format` is deliberately **not** gated: 11 of 14

@@ -13,47 +13,105 @@ jobs:
     name: Analyze & format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          channel: stable
+          persist-credentials: false
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: "3.44.9"
           cache: true
 
       - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze --fatal-infos
+      - run: dart run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning
 
   test:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          channel: stable
+          persist-credentials: false
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: "3.44.9"
           cache: true
 
       - run: flutter pub get
       - run: flutter test --coverage
-      - name: Check coverage
-        uses: VeryGoodOpenSource/very_good_coverage@v3
-        with:
-          path: coverage/lcov.info
-          min_coverage: 80
-          exclude: "**/vendor/**"
+      - name: Check coverage (min 80%, excluding vendor)
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import PurePosixPath
+
+          total = covered = 0
+          include = True
+          with open("coverage/lcov.info") as handle:
+              for line in handle:
+                  if line.startswith("SF:"):
+                      source_path = PurePosixPath(line[3:].strip().replace("\\", "/"))
+                      include = "vendor" not in source_path.parts
+                  elif include and line.startswith("DA:"):
+                      hits = int(line[3:].strip().split(",")[1])
+                      total += 1
+                      covered += 1 if hits > 0 else 0
+
+          if total == 0:
+              sys.exit(
+                  "No coverable lines found in coverage/lcov.info "
+                  "(empty, unrecognized, or vendor-only report)"
+              )
+          pct = covered / total * 100
+          print(f"Line coverage: {pct:.2f}% ({covered}/{total})")
+          if pct < 80:
+              sys.exit(f"Coverage {pct:.2f}% is below the minimum of 80%")
+          PY
 
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to the Security tab
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      # `--only-binary :all:` forbids source builds, so no dependency's setup
+      # script runs during install (supply-chain hardening; Sonar S8541).
+      - run: "pip install --only-binary :all: semgrep==1.173.0"
+
+      # Non-blocking: no `--error`, so findings surface in the Security tab
+      # without failing the PR. `--metrics off` keeps the scan telemetry-free.
+      # Strongest coverage is Python/shell/workflow YAML; Dart is Beta-maturity.
+      - run: semgrep scan --config p/default --metrics off --sarif --output semgrep.sarif
+
+      - uses: github/codeql-action/upload-sarif@f3712979fa5f215279b101dd0a2e3bdfb4353324 # v3.37.7
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
 
   build:
     name: Build (${{ matrix.os }})
@@ -62,11 +120,13 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          channel: stable
+          persist-credentials: false
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: "3.44.9"
           cache: true
 
       - run: flutter pub get

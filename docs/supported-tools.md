@@ -18,6 +18,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `AGENTS.md` | scope-based allow/deny |
 | Antigravity | JSON | `~/.gemini/antigravity-cli/settings.json` | `.agents/rules/` | `GEMINI.md` + rules | action(target) + presets |
 | agy-acp | JSON | `~/.openab/agy-acp/sessions.json` | host ACP config (e.g. Zed `agent_servers`) | via agy hooks | ACP permission bridge |
+| VS Code / GitHub Copilot _(deferred)_ | Markdown | — | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` | instructions only (no permission model) |
 
 ---
 
@@ -523,13 +524,66 @@ rules:
 
 ---
 
+## VS Code / GitHub Copilot
+
+> **Status:** Deferred — listed for parity/tracking; no dedicated parser or auto-discovery
+> yet. Instructions are plain Markdown and fall under the deferred Markdown sources.
+
+### VS Code / GitHub Copilot Config paths
+
+| Scope | Path |
+| --- | --- |
+| Project instructions | `.github/copilot-instructions.md` (repo root) |
+| User/agent settings | VS Code `settings.json` (`github.copilot.*`; extra agent-file dirs via `chat.agentFilesLocations`) |
+| Agent definitions | `.github/agents/<name>.agent.md` (legacy: `.github/chatmodes/*.chatmode.md`) |
+
+### VS Code / GitHub Copilot Config format
+
+Plain **Markdown** for both instructions and agents. Plain instruction files
+(`copilot-instructions.md`) have no structured permission model — Copilot reads them and
+applies the host IDE's trust/sandbox settings. Custom agents, defined in `.agent.md` files
+with YAML frontmatter (name, description, tools), do carry a structured `tools` allow-list
+that restricts which tools the agent may use. Agent Skills are packaged separately as
+`SKILL.md` files (an open standard shared across Copilot surfaces), not as agent frontmatter.
+
+### VS Code / GitHub Copilot Rules
+
+- **Instructions:** `.github/copilot-instructions.md` — project-level guidance, plain Markdown.
+- **Agents:** `.github/agents/<name>.agent.md` with frontmatter.
+- **Chat modes (legacy):** `.github/chatmodes/*.chatmode.md` — superseded by custom agents;
+  rename to `.agent.md` to migrate.
+
+### VS Code / GitHub Copilot CLI
+
+`code` (VS Code), `copilot` (GitHub Copilot CLI), `gh copilot` (GitHub CLI command for running Copilot CLI; preview).
+
+**Sources:** [Copilot overview](https://code.visualstudio.com/docs/copilot/overview) · [Agent skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills) · [GitHub Copilot](https://github.com/features/copilot)
+
+---
+
 ## Config format summary
 
 | Format | Tools | Parser approach |
 | --- | --- | --- |
 | JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, agy-acp | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
 | TOML | Codex | `toml` Dart package |
-| YAML | Kiro | `yaml` Dart package |
+| YAML | Kiro (permissions), Paseo (hub/workflows) | `yaml` Dart package |
+| Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — **deferred** (see below) | raw-text editor (planned) |
+
+## Deferred / not yet supported
+
+These sources are known but intentionally excluded from V1 auto-discovery until a
+dedicated raw-text editor exists (see "Detection and Registry → Deferred Sources"):
+
+- **Markdown rules** — `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`
+  (YAML frontmatter + markdown body), Codex `.rules`, Devin `.devin/rules/*.md`.
+- **Starlark** — Codex command rules (`.codex/rules/*.rules`).
+- **Plain text** — Cursor `.cursorrules` (deprecated).
+- **VS Code / GitHub Copilot** — instructions live in `.github/copilot-instructions.md`
+  (Markdown); not given a dedicated tool entry or parser yet. Tracked in the master plan
+  under deferred-tools work.
+
+Adding VS Code / GitHub Copilot as a first-class supported tool is tracked in the master plan.
 
 ## Permissions model taxonomy
 
@@ -612,7 +666,7 @@ When `--permission-prompts` is enabled:
 
 | Value | Effect |
 | --- | --- |
-| *(default)* `ask_question` | Only model questions auto-allowed |
+| _(default)_ `ask_question` | Only model questions auto-allowed |
 | `reads` | Adds `view_file`, `view_code_item`, `list_dir` |
 | `searches` | Adds `grep_search`, `codebase_search`, `find_by_name` |
 | `none` | Nothing auto-allowed |
@@ -641,16 +695,18 @@ When `--permission-prompts` is enabled:
 
 ---
 
-## Detection priority
+## Detection and Registry
 
-For auto-discovery, check these paths on first launch:
+For auto-discovery, the app uses a pure-Dart `ToolDescriptor` registry located in `lib/catalog/tool_descriptor_registry.dart`.
 
-1. `~/.claude/settings.json` → Claude Code
-2. `~/.codex/config.toml` → Codex
-3. `~/.config/opencode/opencode.json` → Opencode
-4. `~/.paseo/config.json` → Paseo
-5. `~/.cursor/permissions.json` → Cursor
-6. `~/.kiro/settings/permissions.yaml` → Kiro
-7. `~/.config/devin/config.json` → Devin
-8. `~/.gemini/antigravity-cli/settings.json` → Antigravity
-9. `~/.openab/agy-acp/sessions.json` → agy-acp
+### V1 Boundary
+
+In Phase 1, only exact parser-supported structured config files are automatically discovered:
+
+- **JSON/JSONC**
+- **YAML**
+- **TOML**
+
+### Deferred Sources
+
+Raw editing of these sources is available via the raw-text editor. What remains deferred is their **discovery, parsing, and validation**: Markdown rules, system prompts, glob-matched directories, and instruction sources (like `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.mdc` files) do not yet appear in sidebar discovery.
