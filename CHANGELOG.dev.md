@@ -119,7 +119,10 @@ Internal / developer-facing changes that do not belong in the public
   check, so a domain can't match at an arbitrary position (e.g. `github.com`
   in a path, or a look-alike host `github.com.evil.example`). Clears the
   CodeQL `py/incomplete-url-substring-sanitization` alert, the matching
-  Semgrep finding, and SonarCloud's New-Code Security Rating.
+  Semgrep finding, and SonarCloud's New-Code Security Rating. The URL is
+  parsed once inside a guard so a malformed netloc (`urlsplit` `ValueError`,
+  e.g. bad IPv6 brackets) becomes a per-link result instead of crashing the
+  whole run.
 - **Narrower baseline-parse catch in `saveRawConfig` (2026-08-16).**
   `ConfigService` now catches `Exception` (not `Object`) around the baseline
   reparse, so genuine `Error`s (programming bugs) propagate instead of being

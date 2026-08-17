@@ -117,29 +117,33 @@ def find_external(text: str) -> list[str]:
     return list(seen)
 
 
-def _url_host(url: str) -> str:
-    return (urlsplit(url).hostname or "").lower()
-
-
-def _host_matches(url: str, domains: tuple[str, ...]) -> bool:
-    """True when the URL's host equals one of [domains] or a subdomain of it.
+def _host_matches(host: str, domains: tuple[str, ...]) -> bool:
+    """True when [host] equals one of [domains] or is a subdomain of it.
 
     Compares the parsed host rather than doing a substring check, so a domain
     cannot match at an arbitrary position (e.g. 'github.com' in a path or a
     look-alike host like 'github.com.evil.example').
     """
-    host = _url_host(url)
     return any(host == d or host.endswith("." + d) for d in domains)
 
 
 def check_link(url: str) -> tuple[str, str] | None:
     """Return (url, problem) when the link looks dead or moved, else None."""
-    if _host_matches(url, SKIP_HOSTS):
+    # Parse once, inside a guard: urlsplit()/.hostname raise ValueError on
+    # malformed netlocs (e.g. bad IPv6 brackets), which must become a per-link
+    # result rather than crash the whole run.
+    try:
+        parts = urlsplit(url)
+        host = (parts.hostname or "").lower()
+    except ValueError as error:
+        return (url, f"invalid URL: {error}")
+
+    if _host_matches(host, SKIP_HOSTS):
         return None
     # Only ever fetch http(s). urllib also understands file://, ftp://, etc., so
     # guard the scheme at the sink even though callers already pass http(s) URLs —
     # defense in depth against a dynamic value reaching urlopen.
-    if urlsplit(url).scheme not in ("http", "https"):
+    if parts.scheme not in ("http", "https"):
         return (url, "unsupported URL scheme — only http/https are checked")
     request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
     try:
@@ -148,7 +152,7 @@ def check_link(url: str) -> tuple[str, str] | None:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # nosemgrep
             final = response.geturl()
             # A GitHub repo redirect means the project was renamed or transferred.
-            if _url_host(url) == "github.com" and final.rstrip("/") != url.rstrip("/"):
+            if host == "github.com" and final.rstrip("/") != url.rstrip("/"):
                 return (url, f"redirects to {final} — renamed or transferred?")
         return None
     except urllib.error.HTTPError as error:
