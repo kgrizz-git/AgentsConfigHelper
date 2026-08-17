@@ -1,6 +1,6 @@
 # System Architecture
 
-Last reviewed: 2026-08-11
+Last reviewed: 2026-08-17
 
 ## Overview
 
@@ -16,13 +16,13 @@ AgentsConfigHelper is a local-only, cross-platform Flutter desktop app. It abstr
 2. **Service Layer**
    - **Discovery Service**: Scans the user's system on start up (standard OS directories and project folders) to discover agents and IDs to configure. It also provides the ability for users to manually add custom configuration paths.
    - **Config Validation Service (planned)**: Will perform strict format verification and schema validation before saving, preventing corrupted or malformed settings.
-   - **Backup & Restore Service**: Responsible for copying the original file to a `.bak` or app-data folder before writes are executed. Handles rollbacks.
-   - **CLI Integration Service**: Interfaces with agent CLIs (e.g., `claude config`, `opencode set`) when file-based edits aren't sufficient.
+   - **Backup & Restore Service**: Responsible for copying the original file to the centralized app-support `backups/` directory before writes are executed. Retains the 10 newest snapshots per original path (older ones pruned best-effort). Handles restore via timestamped backup list.
+   - **CLI Integration Service (planned)**: Will interface with agent CLIs (e.g., `claude config`, `opencode set`) when file-based edits are not sufficient. The V1 design is deliberately local-file-only (no agent-CLI subprocesses).
 
 3. **Parser / Domain Layer**
    - Pure Dart functions that handle format-specific parsing and serialization.
    - Formats handled: `JSON`, `JSONC`, `YAML`, `TOML`.
-   - **Comment Preservation:** `JSONC` and `YAML` parsers utilize AST-based string patching (`json_ast`, `yaml_edit`) to mutate specific values in the raw text, guaranteeing that user comments, trailing commas, and formatting are completely preserved when saving.
+   - **Comment Preservation:** `JSONC` and `YAML` parsers utilize AST-based string patching to mutate specific values in the raw text, guaranteeing that user comments, trailing commas, and formatting are completely preserved when saving. `json_ast` is vendored at [`lib/vendor/json_ast/`](lib/vendor/json_ast/README.md) (MIT, not a pub dependency); `yaml_edit` is a regular pub dependency.
    - Normalizes disparate schemas into a single `ToolConfig` entity.
 
 ## Data Flow (Read/Write)
