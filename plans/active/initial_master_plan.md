@@ -140,7 +140,12 @@ Phase 6 release narrative.
 * **Markdown rules discovery:** Surface `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`, Codex `.rules`, Devin `.devin/rules/*.md` in the sidebar (per `docs/supported-tools.md` "Deferred Sources").
 * **Starlark & plain text:** Support Codex `.rules` (Starlark) and deprecated Cursor `.cursorrules` (plain text) via the raw editor.
 * **VS Code / GitHub Copilot:** Add as a first-class supported tool. Instructions are `.github/copilot-instructions.md` (Markdown); no permission model. Add a `ToolDescriptor` entry and a section in `docs/supported-tools.md` (already stubbed there as deferred).
-* **Parser registry reconciliation:** Ensure `lib/catalog/tool_descriptor_registry.dart` and `DiscoveryService.defaultRelativePaths` reflect all 10 tools plus deferred sources.
+* **Additional deferred tools (from 2026-08-16 review):** the catalog currently has 9 entries and omits several requested tools, and folds some multi-surface products into one entry. Add/separate as follows:
+  * **Kilo** — no `ToolId` or `docs/supported-tools.md` section today; add descriptor + config paths.
+  * **Cline** — not supported at all; add `ToolId` + config paths.
+  * **Cursor agent vs Cursor IDE** — the single `cursor` entry mixes agent permissions (`~/.cursor/permissions.json`) with IDE instruction files (`.cursorrules`, `.cursor/rules/*.mdc`); model the IDE-level editor `settings.json` as a separate entry (e.g., `cursorIde`) so agent and IDE configs are discoverable distinctly.
+  * **Antigravity surfaces** — the `antigravity` entry today only covers the CLI config (`.gemini/antigravity-cli/settings.json`); add distinct descriptors/config for the **Antigravity IDE**, the **Antigravity desktop app**, and the **`agy` CLI** settings. (`agyAcp` already models the ACP session bridge separately and should stay distinct.)
+* **Parser registry reconciliation:** Ensure `lib/catalog/tool_descriptor_registry.dart` and `DiscoveryService.defaultRelativePaths` reflect all supported tools (target set grows past 10 once Kilo, Cline, the Cursor IDE split, and the Antigravity-surface splits are added) plus deferred sources.
 
 > **Note:** See `docs/supported-tools.md` "Deferred / not yet supported" for the authoritative list of excluded sources. The Phase 1 Markdown parser (line 18) anticipated this; Phase 9 closes the gap.
 

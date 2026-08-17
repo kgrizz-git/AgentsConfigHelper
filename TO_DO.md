@@ -6,6 +6,23 @@
 - [ ] add a third party license file
 - [ ] check and possibly clarify harness guidance about the use of TO_DO.md, "CHANGELOG.dev.md", "CHANGELOG.md"
 
+## Tool-support gaps (discovery expansion — see Phase 9 of the master plan)
+
+- [ ] Expand supported-tool catalog beyond the current 9 entries. Tracked after the
+      2026-08-16 review of registry vs. requested tools:
+  - [ ] **Kilo** — not in `tool_descriptor_registry.dart` or `docs/supported-tools.md`; add `ToolId` + config paths.
+  - [ ] **Cline** — not supported at all; add `ToolId` + config paths.
+  - [ ] **Split Cursor agent vs Cursor IDE** — current `cursor` entry folds agent
+        permissions (`~/.cursor/permissions.json`) and IDE instruction files
+        (`.cursorrules`, `.cursor/rules/*.mdc`) into one tool; model the IDE-level
+        editor `settings.json` separately (e.g., `cursorIde`).
+  - [ ] **Split Antigravity surfaces** — current `antigravity` entry only covers the CLI
+        config (`.gemini/antigravity-cli/settings.json`); add distinct entries/config for
+        the Antigravity IDE, the Antigravity desktop app, and the `agy` CLI settings
+        (note `agyAcp` already models the ACP session bridge separately).
+  - [ ] **Promote VS Code / GitHub Copilot** from deferred docs-only to a first-class
+        `ToolDescriptor` (already stubbed in `docs/supported-tools.md`).
+
 ## Deferred from PR #5 review (Qodo / SonarCloud)
 
 - [ ] Wire SonarCloud coverage reporting: switch from Automatic Analysis to a
