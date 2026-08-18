@@ -46,6 +46,8 @@
         (note `agyAcp` already models the ACP session bridge separately).
   - [ ] **Promote VS Code / GitHub Copilot** from deferred docs-only to a first-class
         `ToolDescriptor` (already stubbed in `docs/supported-tools.md`).
+  - [ ] **LM Studio** — not supported at all; add `ToolId` + config paths (local LLM runner
+        with model management and API server settings).
 
 ## Deferred from PR #5 review (Qodo / SonarCloud)
 

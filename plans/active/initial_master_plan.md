@@ -110,11 +110,13 @@ Phase 6 release narrative.
 **Goal:** Get it ready for a local machine release.
 
 * Handle corrupted configs and parsing errors gracefully.
-* Finalize macOS, Windows, and Linux build settings (icons, permissions).
+* Finalize macOS, Windows, and Linux build settings (icons and permissions).
 * Draft user release notes.
-* **Detailed Plan:** *[Link to be created]*
+* **Detailed Plan:** `plans/active/phase_6_release.md` (**DRAFT — NEEDS REVIEW**; supersedes the stub below).
 
 > **Suggestion (2026-08-13):** Current parse-error handling is a single generic error string in `main_shell.dart`. Phase 6 should define per-format recovery (offer raw-editor open, show line/col of syntax error, never auto-overwrite a corrupted file) and formalize the JSONC fallback-warning path described in `phase_2.5_jsonc.md`.
+>
+> **Update (2026-08-18):** The 2026-08-13 premise is partly stale — `lib/screens/main_shell.dart` (not repo-root `main_shell.dart`) already surfaces parse errors via `on Object catch` in three places. The detailed plan (`phase_6_release.md`) re-baselines the goal to per-format recovery, position-accurate diagnostics, and the JSONC fallback-warning path, and folds in two deferred `TO_DO.md` bug fixes: manual-path removal (Qodo #10) and extracting config persistence out of the widget layer (Qodo architecture finding).
 
 ## Phase 7: Templates & Intelligent Merging
 
