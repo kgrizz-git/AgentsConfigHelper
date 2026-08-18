@@ -288,6 +288,31 @@ void main() {
     );
   });
 
+  testWidgets('shows Open Backups Folder in the add menu', (tester) async {
+    final configService = ConfigService(
+      backupService: BackupService(backupDirectory: Directory.systemTemp),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          configServiceProvider.overrideWithValue(configService),
+          discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+          discoveryPreferencesStoreProvider.overrideWithValue(
+            _FakePreferencesStore(),
+          ),
+        ],
+        child: const MaterialApp(home: MainShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open Backups Folder'), findsOneWidget);
+  });
+
   testWidgets(
     'removes a project root via the "Manage Project Roots" dialog',
     (tester) async {

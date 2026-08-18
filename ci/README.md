@@ -2,13 +2,8 @@
 
 Last reviewed: 2026-07-14
 
-Guidance for selecting, structuring, and gating CI checks. Example workflows live in
-`ci/examples/` — copy the ones you need to `.github/workflows/` to activate them.
-
-This repository also ships a small required-check candidate at
-[`.github/workflows/template-checks.yml`](../.github/workflows/template-checks.yml). It validates
-the template's maintained Markdown, workflow examples, and hook scripts; it is not an
-application test, type-check, coverage, or dependency-audit workflow.
+Guidance for selecting, structuring, and gating CI checks. The repository's active
+required checks live in `.github/workflows/ci.yml`.
 
 **Minutes & storage:** use Actions deliberately — see
 [`policies/github-actions-usage.md`](../policies/github-actions-usage.md) and
@@ -43,12 +38,6 @@ project-specific sensitive-data job to the PR lane and make it a required defaul
 check. Keep it local/approved for the repository's data classification, redact findings in CI
 logs, and pair it with the staged-diff hook; see
 [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md).
-
-For medical/FHIR/HL7/DICOM or regulated-data repositories, use the stricter
-[`examples/strict-sensitive-data.yml`](examples/strict-sensitive-data.yml). It scans every
-tracked file rather than only a PR diff, and must be paired with the human-owned approval
-inventory and local hook in [`inventory/medical-data-security.md`](../inventory/medical-data-security.md).
-Make its `security / sensitive data` job required in the default-branch ruleset.
 
 ## Workflow design principles
 
@@ -85,17 +74,10 @@ returns 403, use <https://github.com/settings/billing> (or org Billing) instead.
 product-specific endpoints (`/settings/billing/actions`, `shared-storage`) are retired —
 this script uses the consolidated usage summary API plus per-run timing.
 
-## Example files in this directory
+## Scripts in this directory
 
 | File | Description |
 | --- | --- |
-| `examples/lint-and-type.yml` | Ruff lint/format, pyright/basedpyright, markdownlint |
-| `examples/security.yml` | gitleaks, pip-audit, Semgrep OWASP, TruffleHog (scheduled) |
-| `examples/ci.yml` | Combined fast-lane: lint + types + tests + dep audit |
-| `examples/codeql.yml` | CodeQL on PRs to main and on schedule |
-| `examples/dependabot.yml` | Dependabot config for Python, npm, and GitHub Actions |
-| `examples/open-prs-advisory.yml` | Optional daily/advisory listing of open PRs (`continue-on-error`) |
-| `examples/strict-sensitive-data.yml` | Required-check candidate for strict PII/PHI/opaque-file scanning of every tracked file |
 | `scripts/check_gha_usage.py` | Report repo + account Actions/storage usage |
 | `scripts/check_open_prs.py` | Advisory open-PR listing (local / agent; never a push gate) |
 

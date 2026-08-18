@@ -23,9 +23,8 @@ From the profile, report to the user in a single short paragraph:
 - Any open questions listed at the bottom of the profile
 
 If the profile says `regulated` data or mentions PII, PHI, medical, FHIR/HL7, or DICOM, read
-[`prompts/strict-phi-agent-guidance.md`](strict-phi-agent-guidance.md) before inspecting or
-editing data-bearing files. Verify the strict sensitive-data hook/CI setup before making a
-relevant commit; do not modify its human approval inventory.
+[`prompts/sensitive-data-leak-prevention.md`](sensitive-data-leak-prevention.md) before inspecting
+or editing data-bearing files. Have a human own any approval inventory or gate configuration.
 
 ---
 

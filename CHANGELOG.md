@@ -7,6 +7,13 @@ Developer-only changes (hooks internals, tests/CI) live in
 The format follows [Keep a Changelog](https://keepachangelog.com/), and this project
 uses [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- "Open Backups Folder" menu action in the sidebar that opens the app's
+  timestamped backups directory in the platform file manager.
+
 ## [0.1.0] - 2026-08-17
 
 ### Added

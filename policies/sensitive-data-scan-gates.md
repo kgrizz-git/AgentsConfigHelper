@@ -5,13 +5,12 @@ Enforced by: [`hooks/`](../hooks/) local gates + push ruleset + required CI.
 
 ## Why
 
-The strict guard ([`check_sensitive_data.py`](../hooks/scripts/check_sensitive_data.py)) inspects
-file *content* on every commit. This policy adds three cheaper structural gates that protect the
-controls themselves and force heavy scanners to actually run. Adopt them when the project's data
-classification is `regulated` (or `confidential` with real customer data). They complement, and do
-not replace, [`github-repository-hygiene.md`](github-repository-hygiene.md),
-[`sensitive-data-runtime-leaks.md`](sensitive-data-runtime-leaks.md), and
-[`prompts/strict-phi-agent-guidance.md`](../prompts/strict-phi-agent-guidance.md).
+Heavy content scanners (Presidio, OCR, HoundDog local, etc.) are too slow or environment-specific
+for a per-commit pre-commit hook. This policy adds three cheaper structural gates that protect the
+controls themselves and force those heavy scanners to actually run. Adopt them when the project's
+data classification is `regulated` (or `confidential` with real customer data). They complement,
+and do not replace, [`github-repository-hygiene.md`](github-repository-hygiene.md) and
+[`sensitive-data-runtime-leaks.md`](sensitive-data-runtime-leaks.md).
 
 ## The three gates
 
@@ -62,8 +61,8 @@ python3 hooks/scripts/check_scan_contract.py status   # per-scanner up-to-date /
 scanner. Close that gap in CI by running the scanner and `record` in the same job (or by having CI
 run the scanner directly), then requiring the CI check. The local hook's job is to guarantee the
 scan is *re-run when covered files change* and to make "it was scanned" auditable — not to prove the
-scan happened. See [`inventory/medical-data-security.md`](../inventory/medical-data-security.md) for
-each tool's setup and local-only cautions.
+scan happened. Use each scanner locally or on an approved runner, redact matches from logs,
+and validate recall and false positives with synthetic fixtures before making it a required gate.
 
 ## Adopting
 

@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
+import 'package:agents_config_helper/utils/open_directory.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import 'package:url_launcher/url_launcher.dart';
 
 /// Edits the supported flat configuration fields and confirms saves.
 class ConfigEditor extends StatefulWidget {
@@ -374,17 +375,13 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       color: AppColors.primaryAccent,
                       tooltip: 'Open Directory',
                       onPressed: () async {
-                        var launched = false;
-                        try {
-                          final dir = p.dirname(
+                        final dir = Directory(
+                          p.dirname(
                             widget.resolvePath(widget.config.filePath),
-                          );
-                          final uri = Uri.directory(dir);
-                          launched = await launchUrl(uri);
-                        } on Object {
-                          launched = false;
-                        }
-                        if (!launched && context.mounted) {
+                          ),
+                        );
+                        final opened = await openDirectory(dir);
+                        if (!opened && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(

@@ -61,10 +61,9 @@ thread instead of spawning a duplicate. This is **not** a blocking git hook.
      still fresh — defense in depth, not the preferred path).
 3. If an open PR already covers the branch or task: update that PR (push more
    commits, edit description) — do not open a second PR for the same work.
-4. Optional scheduled reminder in Actions logs:
-   [`ci/examples/open-prs-advisory.yml`](../ci/examples/open-prs-advisory.yml)
-   (`continue-on-error`, never a required check). Prefer the local script for
-   most projects to avoid burning Actions minutes.
+4. Optional scheduled reminder in Actions logs (`continue-on-error`, never a required
+   check). Prefer the local [`ci/scripts/check_open_prs.py`](../ci/scripts/check_open_prs.py)
+   script for most projects to avoid burning Actions minutes.
 
 Do **not** add this as a `pre-push` or pre-commit hard gate.
 

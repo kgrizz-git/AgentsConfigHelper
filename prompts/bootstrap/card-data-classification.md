@@ -30,16 +30,14 @@ cheap; a leak in git history is not.
 - `Data classification` and `Repository data rule` filled in `.context/project-profile.md`.
 - The named approval owner recorded in the profile.
 - If `regulated`: every Phase S item in [`../bootstrap-checklist.md`](../bootstrap-checklist.md),
-  after reading [`../strict-phi-agent-guidance.md`](../strict-phi-agent-guidance.md),
-  [`../sensitive-data-leak-prevention.md`](../sensitive-data-leak-prevention.md), and
-  [`../../inventory/medical-data-security.md`](../../inventory/medical-data-security.md).
+  after reading [`../sensitive-data-leak-prevention.md`](../sensitive-data-leak-prevention.md).
 
 ## Done when
 
 - The profile's data fields are non-`TBD`.
 - The classification is stated back to the user and they confirmed it.
-- For `regulated`: `.phi-security-approvals.json` exists **and was created by a human**, the
-  strict hooks are enabled, and `CODEOWNERS` protects them.
+- For `regulated`: the chosen data-handling hooks and CI jobs are enabled and `CODEOWNERS`
+  protects them.
 
 > An agent must never author an approval entry, weaken a gate, or mark Phase S complete on the
 > user's behalf. A named human owns those.

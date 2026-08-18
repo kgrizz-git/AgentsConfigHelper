@@ -28,7 +28,7 @@ the ledger; it trusts that whoever runs `record` has actually run the scanner. M
 scanner itself (then `record`) so the ledger cannot be advanced without a real scan. The gate
 fails closed: a missing ledger entry, a malformed ledger, or a changed state all block.
 
-See policies/sensitive-data-scan-gates.md and inventory/medical-data-security.md.
+See policies/sensitive-data-scan-gates.md for adoption and cautions.
 """
 
 from __future__ import annotations

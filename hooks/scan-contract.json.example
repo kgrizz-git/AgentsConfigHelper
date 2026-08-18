@@ -5,7 +5,7 @@
     "'paths' are gitignore-ish globs (support **, *, ?, trailing / for a directory).",
     "'record_command' is what a human or CI runs AFTER actually running that scanner.",
     "The gate blocks when covered files change but the scanner has not been re-recorded.",
-    "See policies/sensitive-data-scan-gates.md and inventory/medical-data-security.md."
+    "See policies/sensitive-data-scan-gates.md for adoption and cautions."
   ],
   "scanners": [
     {

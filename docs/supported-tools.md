@@ -10,14 +10,14 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Tool | Config format | User config | Project config | Rules file | Permissions model |
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | JSON | `~/.claude/settings.json` | `.claude/settings.json` | `CLAUDE.md` | allow/ask/deny arrays |
-| Codex CLI | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `AGENTS.md` | sandbox + permission profiles |
+| Codex | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `AGENTS.md` | sandbox + permission profiles |
 | Opencode | JSON | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `AGENTS.md` | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
 | Cursor | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `AGENTS.md`/`CLAUDE.md` | allowlist + classifier |
 | Kiro | YAML | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` + `AGENTS.md` | capability-based |
 | Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `AGENTS.md` | scope-based allow/deny |
 | Antigravity | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` | action(target) + presets |
-| agy-acp | JSON | `~/.openab/agy-acp/sessions.json` | — (host ACP config, e.g. Zed `agent_servers`, is not managed by this app) | via agy hooks | ACP permission bridge |
+| Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — (host ACP config, e.g. Zed `agent_servers`, is not managed by this app) | via agy hooks | ACP permission bridge |
 | VS Code / GitHub Copilot _(deferred)_ | Markdown | — | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` | instructions only (no permission model) |
 
 ---
@@ -82,9 +82,9 @@ Also supports `.claude/rules/*.md` (modular topic rules) and `~/.claude/skills/`
 
 ---
 
-## Codex CLI
+## Codex
 
-### Codex CLI Config paths
+### Codex Config paths
 
 | Scope | Path |
 | --- | --- |
@@ -97,7 +97,7 @@ Also supports `.claude/rules/*.md` (modular topic rules) and `~/.claude/skills/`
 
 Override home with `CODEX_HOME` env var.
 
-### Codex CLI Config format
+### Codex Config format
 
 TOML with model, sandbox, permissions, MCP, hooks sections.
 
@@ -116,7 +116,7 @@ writable_roots = ["/tmp"]
 "/.env" = "deny"
 ```
 
-### Codex CLI Permissions
+### Codex Permissions
 
 - **Legacy:** `sandbox_mode` (`read-only`, `workspace-write`, `danger-full-access`) + `approval_policy` (`untrusted`, `on-request`, `never`)
 - **Profiles (beta):** Named profiles under `[permissions.<name>]` with filesystem and network rules
@@ -124,7 +124,7 @@ writable_roots = ["/tmp"]
 - **Network:** domain allow/deny with wildcards
 - **Sandbox:** macOS Seatbelt, Linux bwrap+seccomp, Windows native
 
-### Codex CLI Rules
+### Codex Rules
 
 | Scope | Path |
 | --- | --- |
@@ -132,7 +132,7 @@ writable_roots = ["/tmp"]
 | Project | `AGENTS.md` (walk root → CWD) |
 | Command rules | `.codex/rules/*.rules` (Starlark) |
 
-### Codex CLI CLI
+### Codex commands
 
 `codex`, `codex exec`, `codex resume`, `codex review`, `codex login`, `codex mcp`, `codex update`
 
@@ -565,7 +565,7 @@ that restricts which tools the agent may use. Agent Skills are packaged separate
 
 | Format | Tools | Parser approach |
 | --- | --- | --- |
-| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, agy-acp | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
+| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
 | TOML | Codex | `toml` Dart package |
 | YAML | Kiro (permissions), Paseo (hub/workflows) | `yaml` Dart package |
 | Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — **deferred** (see below) | raw-text editor (planned) |
@@ -596,7 +596,7 @@ Adding VS Code / GitHub Copilot as a first-class supported tool is tracked in th
 | Sandbox + profiles | Codex | Sandbox mode + named permission profiles |
 | Scope-based | Devin | `Read/Write/Exec/Fetch(pattern)` |
 
-## agy-acp
+## Agy-ACP
 
 ACP (Agent Client Protocol) stdio adapter for Google's Antigravity CLI (`agy`). Bridges
 `agy` into any ACP-compatible host (Zed, Paseo) by speaking JSON-RPC over stdin/stdout,
@@ -606,7 +606,7 @@ spawning `agy` as a subprocess, and streaming responses back as incremental upda
 [`hicder/agy-acp`](https://github.com/hicder/agy-acp) that adds an ACP
 permission-prompt bridge — the feature that distinguishes it from upstream.
 
-### agy-acp Config paths
+### Agy-ACP Config paths
 
 | Scope | Path |
 | --- | --- |
@@ -618,7 +618,7 @@ permission-prompt bridge — the feature that distinguishes it from upstream.
 | agy auth/settings | `~/.gemini/antigravity-cli/settings.json` |
 | Zed host config | `~/.config/zed/settings.json` (`agent_servers` section) |
 
-### agy-acp Config format
+### Agy-ACP Config format
 
 **Session store (`sessions.json`):**
 
@@ -651,7 +651,7 @@ permission-prompt bridge — the feature that distinguishes it from upstream.
 }
 ```
 
-### agy-acp Permissions model
+### Agy-ACP Permissions model
 
 The fork's defining feature is a full permission bridge (1,135 lines in `permission.rs`).
 When `--permission-prompts` is enabled:
@@ -679,7 +679,7 @@ When `--permission-prompts` is enabled:
 
 **Sensitive patterns (`AGY_ACP_SENSITIVE_PATTERNS`):** comma-separated extra substrings added to the built-in denylist.
 
-### agy-acp CLI
+### Agy-ACP CLI
 
 `agy-acp` — runs the adapter
 `agy-acp permission-hook` — invoked by the PreToolUse hook subcommand

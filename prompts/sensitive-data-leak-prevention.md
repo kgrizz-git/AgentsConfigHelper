@@ -2,11 +2,10 @@
 
 Last reviewed: 2026-07-16
 
-Use this alongside [`strict-phi-agent-guidance.md`](strict-phi-agent-guidance.md) whenever the
-project handles PII, PHI, clinical/FHIR/HL7/DICOM, regulated, or customer data. That guidance
-keeps sensitive data **out of the repository and Git history**. This one covers the complementary
-risk: **the code you write leaking sensitive data at runtime**, in production *and* in
-development — into logs, temp files, test/CI output, caches, crash dumps, telemetry, error
+Use this whenever the project handles PII, PHI, clinical/FHIR/HL7/DICOM, regulated, or customer
+data. Keep sensitive data **out of the repository and Git history** first; this prompt covers the
+complementary risk: **the code you write leaking sensitive data at runtime**, in production *and*
+in development — into logs, temp files, test/CI output, caches, crash dumps, telemetry, error
 responses, and third-party/AI calls. A file that never enters Git can still leak through a log
 line, a stack trace, a cache file, or a Sentry event.
 
@@ -65,16 +64,14 @@ every sink below.
   markers, `password`/`token` values, local usernames, private-IP/hostname patterns, or absolute
   home paths.
 - Run a local data-flow scan (**HoundDog**, local CLI/Docker only) to trace sensitive fields into
-  logs, files, and SDKs; see [`inventory/medical-data-security.md`](../inventory/medical-data-security.md).
+  logs, files, and SDKs.
 - Grep the codebase for risky sinks before shipping: broad `log.*(request`, `print(`,
   `console.log(` on user objects, `tempfile`/`/tmp` writes, and telemetry init without a scrubber.
-- When a suspected leak is found, do **not** paste the value into a ticket, log, or PR. Follow the
-  disclosure steps in [`strict-phi-agent-guidance.md`](strict-phi-agent-guidance.md).
+- When a suspected leak is found, do **not** paste the value into a ticket, log, or PR. Use a
+  sanitized issue or incident reference instead.
 
 ## Related
 
 - [`policies/sensitive-data-runtime-leaks.md`](../policies/sensitive-data-runtime-leaks.md) — the rule + enforcement tiers + wiring for the practices in this doc.
-- [`strict-phi-agent-guidance.md`](strict-phi-agent-guidance.md) — keeping data out of the repo/history.
-- [`inventory/medical-data-security.md`](../inventory/medical-data-security.md) — HoundDog, Presidio, and redaction tooling.
 - [`policies/security-baseline.md`](../policies/security-baseline.md), [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md) — secrets, gates, and hygiene tiers.
 - `.cursor/rules/codeguard-0-logging.mdc`, `.cursor/rules/codeguard-0-privacy-data-protection.mdc` (and `.windsurf/` `.md` equivalents) — editor-level rules.

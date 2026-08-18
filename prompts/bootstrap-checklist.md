@@ -73,14 +73,9 @@ Card: [`bootstrap/card-ci-tier.md`](bootstrap/card-ci-tier.md)
 Card: [`bootstrap/card-data-classification.md`](bootstrap/card-data-classification.md)
 
 Run only when P0 flags real or possible PII/PHI/regulated/customer data. Read
-[`prompts/strict-phi-agent-guidance.md`](strict-phi-agent-guidance.md),
-[`prompts/sensitive-data-leak-prevention.md`](sensitive-data-leak-prevention.md), and
-[`inventory/medical-data-security.md`](../inventory/medical-data-security.md) first. An **agent must
-not** author approvals or weaken any gate — a named human owns those.
+[`prompts/sensitive-data-leak-prevention.md`](sensitive-data-leak-prevention.md) first. A named
+human must own any approval or gate configuration.
 
-- [ ] **Keep data out of history:** have a human create `.phi-security-approvals.json`; enable the
-      strict `check-sensitive-data` and `check-commit-message-sensitive-data` hooks + required CI
-      ([`inventory/medical-data-security.md`](../inventory/medical-data-security.md)).
 - [ ] **Protect the ignore rules:** `cp hooks/gitignore-protected.example .gitignore-protected`;
       list the data/export/log dirs that must stay ignored; enable `check-gitignore-protected`.
 - [ ] **Forbid tracking data dirs:** `cp hooks/forbidden-paths.example .forbidden-paths`; enable
@@ -94,7 +89,7 @@ not** author approvals or weaken any gate — a named human owns those.
       add log-scanning tests, review telemetry/error-tracker egress
       ([`policies/sensitive-data-runtime-leaks.md`](../policies/sensitive-data-runtime-leaks.md)).
 - [ ] **Document, image/OCR ingestion?** Inventory local OCR / local vision options to catch
-      burned-in text before ingestion ([`inventory/medical-data-security.md`](../inventory/medical-data-security.md)).
+      burned-in text before ingestion.
 - [ ] **Agent tooling must stay local** — no cloud indexing of regulated code or data. Carry this
       constraint into P5.5.
 - [ ] **Schedule** a periodic repo-wide/full-history PII audit (e.g. Octopii, local only) via

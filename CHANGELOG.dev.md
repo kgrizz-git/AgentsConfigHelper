@@ -7,6 +7,19 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Phase 5.5 docs-accuracy follow-ups.** Fixed broken relative doc links
+  in `ci/README.md`, `hooks/README.md`, and `policies/commits-and-branches.md`;
+  removed `inventory/medical-data-security.md`,
+  `hooks/phi-security-approvals.json.example`,
+  `prompts/strict-phi-agent-guidance.md`, and the strict sensitive-data scripts
+  (`hooks/scripts/check_sensitive_data.py` and
+  `hooks/scripts/check_commit_message_sensitive_data.py`); cleaned up all
+  references across docs, prompts, policies, hooks, and tests; aligned
+  `docs/supported-tools.md` display names with `ToolDescriptorRegistry`; added a
+  test that asserts every catalog display name appears in
+  `docs/supported-tools.md`; reconciled stale claims in
+  `.context/project-profile.md`; and removed the resolved
+  `changelog-conventions` item from `TO_DO.md`.
 - **Semgrep SAST in CI (2026-08-16).** New non-blocking `semgrep` job runs
   `semgrep scan --config p/default --metrics off` (installed with
   `pip install --only-binary :all:` so no dependency setup scripts run —

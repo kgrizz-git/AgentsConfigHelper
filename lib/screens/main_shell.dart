@@ -6,6 +6,7 @@ import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
+import 'package:agents_config_helper/utils/open_directory.dart';
 import 'package:agents_config_helper/widgets/add_path_dialog.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/history_modal.dart';
@@ -217,6 +218,21 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
+  Future<void> _openBackupsFolder() async {
+    final configService = ref.read(configServiceProvider);
+    final opened = await openDirectory(
+      configService.backupService.backupDirectory,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the backups folder.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   IconData _getIconForTool(ToolId toolId) {
     // Exhaustive over ToolId so a newly added tool fails to compile until it
     // gets an explicit icon, rather than silently falling through.
@@ -284,6 +300,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                           PopupMenuItem(
                             value: _showManageProjectRootsDialog,
                             child: const Text('Manage Project Roots'),
+                          ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem(
+                            value: () => unawaited(_openBackupsFolder()),
+                            child: const Text('Open Backups Folder'),
                           ),
                         ],
                       ),

@@ -73,7 +73,7 @@ covers most local multi-agent workflows without the infrastructure cost.
 | data-pipeline | python, cloud-and-infra, scientific-domain (if scientific data) |
 | design | frontend-design-ux, cloud-and-infra |
 | agentic | ai-agent-platforms, harness-engineering, catalog-skills-agents, rag |
-| medical domain or regulated data classification | medical-data-security, security-quality, github-apps (only after data-flow approval) |
+| medical domain or regulated data classification | sensitive-data-leak-prevention, security-quality, github-apps (only after data-flow approval) |
 | existing codebase >~50 files, or agent context feels wasteful | agent-tooling-efficiency, knowledge-graph-code-mapping |
 | any | security-quality (always), github-apps (if using GitHub CI) |
 

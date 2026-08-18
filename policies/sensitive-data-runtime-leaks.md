@@ -20,7 +20,7 @@ customer data). For `public`/`internal` projects it is advisory.
 
 | Rule | Default check | Tier |
 | --- | --- | --- |
-| Runtime artifact dirs (logs, caches, temp/scratch exports) are gitignored | `.gitignore` entries + strict `check_sensitive_data.py` blocks any that get staged | hard gate (via existing guard) |
+| Runtime artifact dirs (logs, caches, temp/scratch exports) are gitignored | `.gitignore` entries block them from being tracked | hard gate |
 | A one-command clear/purge exists for local logs/caches/temp artifacts | `make clean-sensitive` (or documented script) present | soft gate |
 | Sensitive-capable sinks are inventoried | Sinks listed in `.context/project-profile.md` / runbook | advisory |
 | Logs/errors do not emit sensitive markers | Tests exercise log/error paths and assert absence of PII/PHI/secret/username/host/path markers | soft gate |
@@ -35,7 +35,7 @@ Do not add one as a false gate — rely on review, tests, and the data-flow scan
 
 1. Read [`prompts/sensitive-data-leak-prevention.md`](../prompts/sensitive-data-leak-prevention.md)
    for the leak-surface control table and redaction patterns.
-2. Gitignore runtime artifact dirs; keep them under the strict guard's coverage anyway.
+2. Gitignore runtime artifact dirs and keep them out of tracked files.
 3. Add a `clean-sensitive` target/script and document it in the runbook.
 4. Add log/error-path tests that assert no sensitive markers appear in output.
 5. Inventory sinks (log paths, temp dirs, caches, exports, telemetry destinations) in the project
@@ -45,7 +45,5 @@ Do not add one as a false gate — rely on review, tests, and the data-flow scan
 
 ## Related
 
-- [`prompts/strict-phi-agent-guidance.md`](../prompts/strict-phi-agent-guidance.md) — repo/history side.
 - [`policies/security-baseline.md`](security-baseline.md), [`policies/github-repository-hygiene.md`](github-repository-hygiene.md) — secrets, gates, hygiene tiers.
-- [`inventory/medical-data-security.md`](../inventory/medical-data-security.md) — HoundDog, Presidio, redaction tooling.
 - [`inventory/cloud-and-infra.md`](../inventory/cloud-and-infra.md) — *Observability & error monitoring*: self-hosted Sentry/GlitchTip/OpenTelemetry for keeping event data on your own infra.
