@@ -145,11 +145,11 @@ def check_link(url: str) -> tuple[str, str] | None:
     # defense in depth against a dynamic value reaching urlopen.
     if parts.scheme not in ("http", "https"):
         return (url, "unsupported URL scheme — only http/https are checked")
-    request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
+    request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})  # noqa: S310
     try:
         # Scheme restricted to http/https above; this is a documentation link
         # from a tracked markdown file, not user input.
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # nosemgrep: dynamic-urllib-use-detected
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # nosemgrep: dynamic-urllib-use-detected  # noqa: S310
             final = response.geturl()
             # A GitHub repo redirect means the project was renamed or transferred.
             if host == "github.com" and final.rstrip("/") != url.rstrip("/"):

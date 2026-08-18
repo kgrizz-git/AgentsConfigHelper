@@ -1,7 +1,7 @@
 # Plan: Resolve open GitHub code-scanning alerts
 
 **Repo:** `kgrizz-git/AgentsConfigHelper`
-**Status:** complete — shipped in PR #8 (commit `53c6d46`).
+**Status:** changes shipped in PR #8 (commit `53c6d46`); closure of alerts #2, #3, #5 pending CI and Security-tab confirmation.
 **Dependabot alerts:** none. **Secret scanning:** none.
 
 ## Background / root cause
