@@ -24,19 +24,19 @@ def run(script: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 class TodoLimitsTests(unittest.TestCase):
     def tearDown(self) -> None:
-        backlog = ROOT / "to_do.md"
+        backlog = ROOT / "backlog.md"
         if backlog.exists():
             backlog.unlink()
 
     def test_todo_limits_soft_warn(self) -> None:
-        backlog = ROOT / "to_do.md"
+        backlog = ROOT / "backlog.md"
         backlog.write_text("\n".join(str(i) for i in range(160)) + "\n", encoding="utf-8")
         result = run("check_todo_limits.py", str(backlog))
         self.assertEqual(result.returncode, 0)
         self.assertIn("WARN", result.stderr)
 
     def test_todo_limits_hard_error(self) -> None:
-        backlog = ROOT / "to_do.md"
+        backlog = ROOT / "backlog.md"
         backlog.write_text("\n".join(str(i) for i in range(310)) + "\n", encoding="utf-8")
         result = run("check_todo_limits.py", str(backlog))
         self.assertEqual(result.returncode, 1)

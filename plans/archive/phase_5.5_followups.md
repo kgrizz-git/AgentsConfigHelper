@@ -1,6 +1,6 @@
 # Plan: Phase 5.5 Follow-ups (chore)
 
-**Status:** active
+**Status:** completed
 **Created:** 2026-08-17
 **Parent phase:** `plans/archive/phase_5.5_docs.md` (merged via PR #6)
 **Master plan anchor:** `plans/active/initial_master_plan.md` → "Phase 5.5: Documentation Accuracy & Polish"
