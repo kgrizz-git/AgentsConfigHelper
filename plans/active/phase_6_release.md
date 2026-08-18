@@ -32,8 +32,7 @@ C (widget-layer refactor) is deferred — see below.
 
 **Why:** The master plan names this the headline Phase 6 goal. Current state (verified
 2026-08-18): `lib/screens/main_shell.dart` already surfaces errors via `on Object catch`
-in 3 places (lines 72, 169, 192) rendering an "Error loading config" dialog and
-inline `'Error: ...'` UI. So the bare premise ("single generic error string") is stale — the
+in 3 places (lines 72, 169, 192) rendering a SnackBar and inline `'Error: ...'` text. So the bare premise ("single generic error string") is stale — the
 real gap is **per-format recovery** and **position-accurate diagnostics**, exactly as the
 master plan's 2026-08-13 suggestion anticipated.
 
@@ -59,7 +58,8 @@ master plan's 2026-08-13 suggestion anticipated.
 - **Recovery dialog (replaces SnackBar):** When `_loadConfig` fails (`main_shell.dart:72`),
   the current SnackBar + inline error text has no affordances. Replace the SnackBar with a
   recovery dialog offering:
-  - **"Open raw editor"** — opens the file in a raw-text-only mode. Implementation:
+  - **"Open raw editor"** — pop the recovery dialog first, then open the file in a
+    raw-text-only mode. Implementation:
     1. Re-read the file (`File(path).readAsString()`) — the failed `loadDiscoveredConfig`
        discards the bytes, so the placeholder's `originalContent` cannot come from the load
        attempt. Handle the file having been deleted since the failed load (show an error and
@@ -73,13 +73,20 @@ master plan's 2026-08-13 suggestion anticipated.
     4. The raw-only mode must hide structured sections (rules/permissions editor) and the
        History button. After a successful save, flip back to the full editor — the saved
        content is parseable by construction.
-  - **"View backups"** — opens `HistoryModal` with the placeholder `ToolConfig` (it only
-    needs `config.filePath` and `config.toolName` — `history_modal.dart:105–107`). This
-    lets the user browse and pick from all available backups, not just the latest.
-    `restoreBackup` (`backup_service.dart:84–105`) overwrites the target without first
-    backing it up — the HistoryModal's restore path at `main_shell.dart:126–151` already
-    handles the backup-before-restore correctly. When no backups exist, hide this action
-    (check via `configService.backupService.listBackups`).
+  - **"View backups"** — pop the recovery dialog first, then `setState { _error = null;
+    _activeConfig = placeholder; _hasUnsavedChanges = false; }` (same as the raw-editor
+    transition — `_activeConfig` must be non-null to pass `_showHistoryModal`'s guard at
+    `main_shell.dart:117`), then open `HistoryModal` with the placeholder `ToolConfig` (it
+    only needs `config.filePath` and `config.toolName` — `history_modal.dart:105–107`). This
+    lets the user browse and pick from all available backups, not just the latest. When no
+    backups exist, hide this action (check via `configService.backupService.listBackups`).
+    **Restore safety:** the existing restore path at `main_shell.dart:140–146` calls
+    `restoreBackup` (`backup_service.dart:84–105`) which is `backupFile.copy(targetPath)`
+    with no preceding `createBackup` — it overwrites the target without preserving the
+    current file. Add `configService.backupService.createBackup(targetPath)` before
+    `restoreBackup` in the restore flow (one line, matches the app's backup-before-write
+    convention in `config_service.dart:87` and `:195`). This fix applies to all restore
+    paths, not just the recovery dialog.
   - **"Skip"** — dismisses the dialog and deselects the file.
   - **"Remove"** — only for files whose path is present in the manual preferences list
     (order-independent check — not `configItem.isManual`, which is false for catalog-first
@@ -92,17 +99,16 @@ master plan's 2026-08-13 suggestion anticipated.
 
 ### A2. Line/column error reporting
 
-- JSON/JSONC: `FormatException` from `jsonDecode` has an `offset` property. Surface
-  line/col in the error UI where the parser provides it. `JsoncCleaner.clean` is
+- JSON/JSONC: `FormatException` from `jsonDecode` has an `offset` property (not line/col).
+  Derive line/col from the offset against the original content. `JsoncCleaner.clean` is
   length-preserving (replaces characters in-place with spaces, never inserts or removes), so
-  the offset from the cleaned decode is the same offset into the user's raw file. Compute
-  line/col from that offset against the original content — no mapping or "approximate"
-  labeling needed.
+  the offset from the cleaned decode is the same offset into the user's raw file — no mapping
+  or "approximate" labeling needed.
 - YAML: `loadYaml` throws `YamlException` (which extends `SourceSpanFormatException`)
   carrying a nullable `span` (line/col/watermark), but `yaml_config_parser.dart:33`
   currently wraps it in a generic `ConfigParseException`, discarding position. Fix: extract
-  `span?.start.offset` from the caught exception before wrapping. `span` is nullable, so the
-  message-only fallback (below) covers cases where it's null.
+  `span!.start.line` and `span!.start.column` from the caught exception before wrapping.
+  `span` is nullable, so the message-only fallback (below) covers cases where it's null.
 - TOML: `TomlDocument.parse` throws `TomlParserException` with `line`/`column`/`offset`/
   `source`, but `toml_config_parser.dart:32` wraps it generically. Fix: same pattern —
   extract position before wrapping. Note: the TOML getter is `column` (not `col`).
@@ -140,7 +146,8 @@ master plan's 2026-08-13 suggestion anticipated.
 
 - Unit tests per parser for corrupted-input recovery (assert no overwrite + correct error
   surfaced).
-- Widget test for the corrupted-file dialog (offer raw-editor-open; remove/skip actions).
+- Widget test for the corrupt-file recovery dialog (raw-editor-open / view-backups / skip /
+  conditional remove).
 - Edge case: empty file recovery. Parsers already handle empty content via `isContentEmpty`
   (returns an empty `ToolConfig`), and the normal editor already renders for this case. The
   A4 test should assert this **existing** behavior (empty file → normal editor, not corrupt
