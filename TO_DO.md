@@ -7,30 +7,12 @@
 
 ## Follow-ups from Phase 5.5 (docs accuracy)
 
-- [ ] Add a "Reveal backups folder" action in the UI (backup retention/pruning already shipped).
-- [ ] Reconcile or regenerate `.context/project-profile.md` to match shipped code — its "sync", "call external CLIs", "diff/undo", and open backup-location question are stale. (Gitignored, not shipped; tracked here.)
+- [x] ~~Add a "Reveal backups folder" action in the UI~~ — done (F6, 2026-08-17).
+- [x] ~~Reconcile or regenerate `.context/project-profile.md`~~ — done (F4, 2026-08-17).
 - [ ] Add a README screenshot or GIF to `assets/screenshots/` (blocked on user — an agent cannot capture a running Flutter desktop GUI). README currently shows a placeholder badge.
-- [ ] **Add the cross-doc drift guard** (deferred from Phase 5.5 M3). Assert in a test that
-      every `ToolDescriptorRegistry.catalog[i].displayName` appears in
-      `docs/supported-tools.md` — names as source of truth, so it catches omissions and
-      substitutions, not just a count. Note the doc currently uses `Codex CLI` and `agy-acp`
-      where the registry says `Codex` and `Agy-ACP`, so the naming must be reconciled in one
-      direction first or the test fails on 2 of 9. Do **not** add a count-only assertion
-      (`tool_descriptor_registry_test.dart` already locks `catalog.length`) and do **not** use
-      an inline-HTML marker.
-- [ ] **Fix broken relative links** flagged by `ci/scripts/check_doc_links.py` (5 real, all
-      pre-existing; the `tmp/` hits are gitignored scratch and can be ignored):
-  - [ ] `ci/README.md:9` → `../.github/workflows/template-checks.yml`
-  - [ ] `ci/README.md:48` → `examples/strict-sensitive-data.yml`
-  - [ ] `hooks/README.md:86` → `../ci/examples/strict-sensitive-data.yml`
-  - [ ] `inventory/medical-data-security.md:55` → `../ci/examples/strict-sensitive-data.yml`
-  - [ ] `policies/commits-and-branches.md:65` → `../ci/examples/open-prs-advisory.yml`
-  - [ ] Advisory (not broken): `inventory/harness-engineering.md` points at
-        `oreolion/ai-sync-plugin`, which now redirects to `Oreolion/ai-sync` — re-evaluate the
-        entry and refresh its review date rather than deleting it.
-- [ ] Reconcile `policies/changelog-conventions.md` with the de-templated changelogs — it
-      still uses template-consumer framing (`:20`, `:36`) while `AGENTS.md` and `CHANGELOG.md`
-      now say "user-facing". Both files link to it as the authority.
+- [x] ~~Add the cross-doc drift guard~~ — done (F3, 2026-08-17).
+- [x] ~~Fix broken relative links~~ — done (F1, 2026-08-17).
+- [x] ~~Reconcile `policies/changelog-conventions.md`~~ — done during Phase 5.5 (2026-08-16).
 
 ## Tool-support gaps (discovery expansion — see Phase 9 of the master plan)
 

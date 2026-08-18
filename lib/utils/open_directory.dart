@@ -8,14 +8,14 @@ import 'package:url_launcher/url_launcher.dart';
 /// `xdg-open` (Linux), or `explorer` (Windows). The directory is created if
 /// it does not already exist. Returns `true` if a launcher reported success.
 Future<bool> openDirectory(Directory directory) async {
-  // The asynchronous check avoids blocking the UI thread.
-  // ignore: avoid_slow_async_io
-  if (!await directory.exists()) {
-    await directory.create(recursive: true);
-  }
-
-  final uri = Uri.directory(directory.path);
   try {
+    // The asynchronous check avoids blocking the UI thread.
+    // ignore: avoid_slow_async_io
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
+
+    final uri = Uri.directory(directory.path);
     final launched = await launchUrl(
       uri,
       mode: LaunchMode.externalApplication,

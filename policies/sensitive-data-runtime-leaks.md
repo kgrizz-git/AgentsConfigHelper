@@ -20,7 +20,7 @@ customer data). For `public`/`internal` projects it is advisory.
 
 | Rule | Default check | Tier |
 | --- | --- | --- |
-| Runtime artifact dirs (logs, caches, temp/scratch exports) are gitignored | `.gitignore` entries block them from being tracked | hard gate |
+| Runtime artifact dirs (logs, caches, temp/scratch exports) are gitignored | `.gitignore` entries prevent accidental staging; use `.forbidden-paths` + `check_forbidden_paths.py` for index enforcement | soft gate |
 | A one-command clear/purge exists for local logs/caches/temp artifacts | `make clean-sensitive` (or documented script) present | soft gate |
 | Sensitive-capable sinks are inventoried | Sinks listed in `.context/project-profile.md` / runbook | advisory |
 | Logs/errors do not emit sensitive markers | Tests exercise log/error paths and assert absence of PII/PHI/secret/username/host/path markers | soft gate |

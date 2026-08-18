@@ -43,6 +43,11 @@ repos:
 
       # Structural sensitive-data gates (see policies/sensitive-data-scan-gates.md).
       # Each is inert until its root config file exists, so it is safe to leave wired.
+      #
+      # The check-sensitive-data and check-commit-message-sensitive-data hooks
+      # were removed in Phase 5.5 follow-ups (2026-08-17): the scripts targeted
+      # repo-specific medical/PHI patterns that do not apply to this project.
+      # See plans/archive/phase_5.5_followups.md and CHANGELOG.dev.md.
       # - id: check-gitignore-protected
       #   name: "security: protected .gitignore rules"
       #   entry: python hooks/scripts/check_gitignore_protected.py
