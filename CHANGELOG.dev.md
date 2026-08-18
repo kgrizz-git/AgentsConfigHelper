@@ -30,6 +30,13 @@ Internal / developer-facing changes that do not belong in the public
   platform code. Also hardened `ci/scripts/check_doc_links.py` to restrict the
   `urllib` scheme to http/https at the sink (Semgrep `dynamic-urllib-use`
   audit finding).
+- **Code-scanning alert resolution (2026-08-18).** Resolved open GitHub
+  code-scanning alerts #2, #3, and #5. Dependabot: added `cooldown` with
+  `default-days: 7` to `pub` and `github-actions` ecosystems (alerts #2, #3).
+  Semgrep: changed bare `# nosemgrep` to rule-specific
+  `# nosemgrep: dynamic-urllib-use-detected` on the `urllib.request.urlopen`
+  call in `check_doc_links.py` (alert #5); runtime http/https scheme guard
+  remains as defense-in-depth.
 - **Nitpick resolution round (2026-08-16).** Tests: `discovered_config_test` drops the const-identical equality check for a real props
   comparison plus inequality and `fromPath` id/normalization coverage;
   `text_config_parser_test` covers the `originalContent` argument and
