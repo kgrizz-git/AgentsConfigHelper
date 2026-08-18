@@ -37,6 +37,21 @@ void main() {
       );
     });
 
+    test('ConfigParseException has line/column for invalid YAML', () {
+      try {
+        parser.parse(
+          'rules:\n  - item\n  invalid: [}',
+          filePath: testPath,
+          toolName: testTool,
+        );
+        fail('Expected ConfigParseException');
+      } on ConfigParseException catch (e) {
+        expect(e.line, isNotNull);
+        expect(e.column, isNotNull);
+        expect(e.line, greaterThan(0));
+      }
+    });
+
     test('safely extracts rules and converts Yaml structures deeply', () {
       const yamlStr = '''
 rules:

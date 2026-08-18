@@ -31,6 +31,21 @@ void main() {
       );
     });
 
+    test('ConfigParseException has line/column for invalid TOML', () {
+      try {
+        parser.parse(
+          'rules = ["ok"\nbad = = toml',
+          filePath: testPath,
+          toolName: testTool,
+        );
+        fail('Expected ConfigParseException');
+      } on ConfigParseException catch (e) {
+        expect(e.line, isNotNull);
+        expect(e.column, isNotNull);
+        expect(e.line, greaterThan(0));
+      }
+    });
+
     test('safely extracts rules', () {
       const tomlStr = '''
 rules = ["rule1", "rule2"]

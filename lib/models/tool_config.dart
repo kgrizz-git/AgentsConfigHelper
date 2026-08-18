@@ -37,6 +37,7 @@ class ToolConfig extends Equatable {
     this.permissions = const [],
     Map<String, Object?> rawSettings = const {},
     this.originalContent = '',
+    this.parseWarnings = const [],
   }) : rawSettings = UnmodifiableMapView(rawSettings);
 
   /// The display name of the configured tool.
@@ -60,6 +61,10 @@ class ToolConfig extends Equatable {
   /// The original raw string content of the configuration file.
   final String originalContent;
 
+  /// Non-blocking warnings produced while parsing the file, e.g. that the
+  /// content was treated as JSONC after strict JSON decoding failed.
+  final List<String> parseWarnings;
+
   /// Returns a copy with the supplied fields replaced.
   ToolConfig copyWith({
     String? toolName,
@@ -69,6 +74,7 @@ class ToolConfig extends Equatable {
     List<String>? permissions,
     Map<String, Object?>? rawSettings,
     String? originalContent,
+    List<String>? parseWarnings,
   }) {
     return ToolConfig(
       toolName: toolName ?? this.toolName,
@@ -78,6 +84,7 @@ class ToolConfig extends Equatable {
       permissions: permissions ?? this.permissions,
       rawSettings: rawSettings ?? this.rawSettings,
       originalContent: originalContent ?? this.originalContent,
+      parseWarnings: parseWarnings ?? this.parseWarnings,
     );
   }
 
@@ -90,5 +97,6 @@ class ToolConfig extends Equatable {
     permissions,
     rawSettings,
     originalContent,
+    parseWarnings,
   ];
 }

@@ -31,7 +31,19 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
     try {
       doc = loadYaml(content);
     } catch (e) {
-      throw ConfigParseException('Invalid YAML syntax: $e');
+      // YamlException carries a nullable SourceSpan; extract the 0-based
+      // start position so ConfigParseException can surface line/column.
+      int? line;
+      int? column;
+      if (e is YamlException) {
+        line = e.span?.start.line;
+        column = e.span?.start.column;
+      }
+      throw ConfigParseException(
+        'Invalid YAML syntax: $e',
+        line: line,
+        column: column,
+      );
     }
 
     if (doc == null) {

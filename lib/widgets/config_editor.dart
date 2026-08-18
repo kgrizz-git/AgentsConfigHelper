@@ -5,6 +5,7 @@ import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/utils/open_directory.dart';
+import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ class ConfigEditor extends StatefulWidget {
     required this.resolvePath,
     required this.onShowHistory,
     this.onDirtyChanged,
+    this.rawOnly = false,
     super.key,
   });
 
@@ -37,6 +39,11 @@ class ConfigEditor extends StatefulWidget {
 
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
+
+  /// When true, renders the file as a raw-text-only editor: structured
+  /// sections and the history button are hidden. Used for corrupt files that
+  /// cannot be parsed into structured fields.
+  final bool rawOnly;
 
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
@@ -303,7 +310,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   Widget _buildRawDiffSection(String original, String updated) {
-    return _RawDiffView(original: original, updated: updated);
+    return RawDiffView(original: original, updated: updated);
   }
 
   @override
@@ -330,15 +337,18 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.history),
-                      label: const Text('History & Backups'),
-                      onPressed: widget.onShowHistory,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textPrimaryDark,
-                        side: const BorderSide(color: AppColors.borderDark),
+                    if (!widget.rawOnly)
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.history),
+                        label: const Text('History & Backups'),
+                        onPressed: widget.onShowHistory,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textPrimaryDark,
+                          side: const BorderSide(
+                            color: AppColors.borderDark,
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -398,6 +408,39 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 const SizedBox(height: 16),
                 const Divider(color: AppColors.borderDark),
 
+                if (widget.config.parseWarnings.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  for (final warning in widget.config.parseWarnings) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.1),
+                        border: Border.all(color: AppColors.warning),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: AppColors.warning,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              warning,
+                              style: AppTextStyles.uiSecondary.copyWith(
+                                color: AppColors.warning,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+
                 // Form Body
                 Expanded(
                   child: AbsorbPointer(
@@ -409,7 +452,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                           bottom: 80,
                         ), // padding for floating bar
                         children: [
-                          if (_supportsStructuredFields) ...[
+                          if (_supportsStructuredFields && !widget.rawOnly) ...[
                             _buildSectionHeader('Rules'),
                             const Text(
                               'Define custom rules for this agent.',
@@ -558,114 +601,6 @@ class _ConfigEditorState extends State<ConfigEditor> {
             ),
         ],
       ),
-    );
-  }
-}
-
-/// Shows the before/after raw file content in the review dialog, truncating
-/// each side to a preview of 20 lines until the user expands it.
-class _RawDiffView extends StatefulWidget {
-  const _RawDiffView({required this.original, required this.updated});
-
-  final String original;
-  final String updated;
-
-  @override
-  State<_RawDiffView> createState() => _RawDiffViewState();
-}
-
-class _RawDiffViewState extends State<_RawDiffView> {
-  static const int _maxPreviewLines = 20;
-  bool _showFull = false;
-
-  bool get _isTruncated =>
-      _lineCount(widget.original) > _maxPreviewLines ||
-      _lineCount(widget.updated) > _maxPreviewLines;
-
-  static int _lineCount(String text) => text.split('\n').length;
-
-  String _displayText(String text) {
-    if (text.isEmpty) return '(Empty)';
-    if (_showFull) return text;
-    final lines = text.split('\n');
-    if (lines.length <= _maxPreviewLines) return text;
-    final preview = lines.take(_maxPreviewLines).join('\n');
-    return '$preview\n(${lines.length - _maxPreviewLines} more lines)';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Raw File Content',
-          style: AppTextStyles.uiSubheader.copyWith(
-            color: AppColors.primaryAccent,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.black12,
-            border: Border.all(color: AppColors.borderDark),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Before:',
-                style: AppTextStyles.uiSecondary.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.redAccent,
-                ),
-              ),
-              const SizedBox(height: 4),
-              SelectableText(
-                _displayText(widget.original),
-                style: AppTextStyles.codeBase.copyWith(
-                  color: AppColors.textSecondaryDark,
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Divider(color: AppColors.borderDark),
-              ),
-              Text(
-                'After:',
-                style: AppTextStyles.uiSecondary.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.greenAccent,
-                ),
-              ),
-              const SizedBox(height: 4),
-              SelectableText(
-                _displayText(widget.updated),
-                style: AppTextStyles.codeBase.copyWith(
-                  color: AppColors.textPrimaryDark,
-                ),
-              ),
-              if (_isTruncated) ...[
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _showFull = !_showFull;
-                    });
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryAccent,
-                  ),
-                  child: Text(_showFull ? 'Show less' : 'Show full content'),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
