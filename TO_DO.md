@@ -60,7 +60,14 @@
       `ConfigService.saveConfig`/`saveRawConfig` directly, and `HistoryModal`
       reaches data via `backupListProvider`. Consider a dedicated save
       controller/notifier so widgets stay presentation-only (Qodo architecture
-      findings — deferred, not blocking).
+      findings — deferred, likely not worth doing). The current save callback
+      in `MainShell` is already a clean 3-step orchestration (call service,
+      invalidate provider, setState) that `AGENTS.md` explicitly permits.
+      Extracting a full Riverpod controller would create split-brain state
+      (controller updates via Riverpod while loading/error/dirty stays as
+      setState) with no user-facing benefit. Only revisit if a concrete
+      testability gap emerges that the existing `onSave` injection point on
+      `ConfigEditor` cannot cover.
 - [ ] Revisit TOML lossless round-trip: `ConfigService.saveRawConfig` re-serializes
       through `parser.serialize` when structured edits diverge from the raw
       baseline, which drops comments/whitespace for TOML (serializer is not

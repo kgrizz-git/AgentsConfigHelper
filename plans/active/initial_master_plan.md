@@ -105,13 +105,14 @@ Phase 6 release narrative.
 
 > **Note:** The Master Plan itself also contains stale "sync" language (Goal line, Phase 2 "Integrate CLI hooks", Phase 2 "`.bak` creation") that this phase should reconcile while editing the docs.
 
-## Phase 6: Polish, Error Handling & Release
+## Phase 6: Polish, Error Handling & Build Readiness
 
-**Goal:** Get it ready for a local machine release.
+**Goal:** Get it ready for a local build.
 
 * Handle corrupted configs and parsing errors gracefully.
 * Finalize macOS, Windows, and Linux build settings (icons and permissions).
 * Draft user release notes.
+* Fold in manual-path removal bug fix from TO_DO.md (Qodo #10).
 * **Detailed Plan:** `plans/active/phase_6_release.md` (**DRAFT — NEEDS REVIEW**; supersedes the stub below).
 
 > **Suggestion (2026-08-13):** Current parse-error handling is a single generic error string in `main_shell.dart`. Phase 6 should define per-format recovery (offer raw-editor open, show line/col of syntax error, never auto-overwrite a corrupted file) and formalize the JSONC fallback-warning path described in `phase_2.5_jsonc.md`.
