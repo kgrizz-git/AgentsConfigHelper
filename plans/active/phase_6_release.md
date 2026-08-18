@@ -49,39 +49,67 @@ master plan's 2026-08-13 suggestion anticipated.
   good on-disk file without explicit user action. Audit `ConfigEditor` + `ConfigService`
   (`saveConfig` @ `lib/services/config_service.dart:78`, `saveRawConfig` @ `:126`) to
   confirm this holds, and add a regression test.
-- **Structured-merge write path (must be audited):** `saveRawConfig` has a second write
-  path at lines 167–187 where it merges structured edits (rules/permissions from the
-  structured editor) on top of raw text. This merge re-serializes through the parser and
-  overwrites the on-disk file. If the user only edited raw text but the structured editor
-  was also touched, the merge result may not match the user's intent. A1's safety invariant
-  must cover this path: the structured editor should be disabled or gated behind a confirm
-  while the file is in a parse-error state, and the merge path should be audited to confirm
-  it only activates when the user explicitly touched the structured editor.
-- **Raw editor as sole write path for corrupt files:** When a file fails to parse, the
-  structured editor must not be shown (currently correct — `_loadConfig` sets `_error` and
-  leaves `_activeConfig` null at `main_shell.dart:55–71`, so `ConfigEditor` is never
-  rendered for a corrupt file). Make this an explicit, tested invariant rather than an
-  implicit side effect of the null check.
+- **Structured-merge write path (already safe by construction):** `saveRawConfig` merges
+  structured edits on top of raw text at lines 167–187, but only when the baseline parses
+  AND the structured editor was touched (lines 150–163). For corrupt files, the baseline
+  parse fails and the merge is skipped entirely — the raw text is written verbatim. Add a
+  regression test asserting this: `saveRawConfig` with an unparseable baseline writes the
+  raw content without merging. No gate or disable logic is needed — the merge is structurally
+  unreachable for corrupt files.
+- **Recovery dialog (replaces SnackBar):** When `_loadConfig` fails (`main_shell.dart:72`),
+  the current SnackBar + inline error text has no affordances. Replace the SnackBar with a
+  recovery dialog offering:
+  - **"Open raw editor"** — opens the file in a raw-text-only mode. Implementation:
+    1. Re-read the file (`File(path).readAsString()`) — the failed `loadDiscoveredConfig`
+       discards the bytes, so the placeholder's `originalContent` cannot come from the load
+       attempt. Handle the file having been deleted since the failed load (show an error and
+       skip).
+    2. Construct a placeholder `ToolConfig(toolName: ..., filePath: ..., format: ...,
+       originalContent: rawFileContent)` with empty rules/permissions.
+    3. `setState { _error = null; _activeConfig = placeholder; _hasUnsavedChanges = false; }`.
+       Clearing `_error` is required because the editor area renders `'Error: $_error'`
+       *before* the `_activeConfig` check (`main_shell.dart:420–428`); without clearing it,
+       the raw editor never renders.
+    4. The raw-only mode must hide structured sections (rules/permissions editor) and the
+       History button. After a successful save, flip back to the full editor — the saved
+       content is parseable by construction.
+  - **"View backups"** — opens `HistoryModal` with the placeholder `ToolConfig` (it only
+    needs `config.filePath` and `config.toolName` — `history_modal.dart:105–107`). This
+    lets the user browse and pick from all available backups, not just the latest.
+    `restoreBackup` (`backup_service.dart:84–105`) overwrites the target without first
+    backing it up — the HistoryModal's restore path at `main_shell.dart:126–151` already
+    handles the backup-before-restore correctly. When no backups exist, hide this action
+    (check via `configService.backupService.listBackups`).
+  - **"Skip"** — dismisses the dialog and deselects the file.
+  - **"Remove"** — only for files whose path is present in the manual preferences list
+    (order-independent check — not `configItem.isManual`, which is false for catalog-first
+    dual-provenance files). This pre-B implementation remains correct post-B; the gate
+    becomes `fromManual` once B lands. For catalog-discovered files with no manual
+    preference entry, omit "remove" (no mechanism to hide a catalog entry).
+- **Sidebar polish:** `_activeConfigId` is set before load (`main_shell.dart:59`) and never
+  cleared on failure, so the sidebar keeps the corrupt file highlighted as "active" while
+  the editor shows an error. Clear `_activeConfigId` on load failure.
 
 ### A2. Line/column error reporting
 
 - JSON/JSONC: `FormatException` from `jsonDecode` has an `offset` property. Surface
-  line/col in the error UI where the parser provides it. **Caveat:** when the JSONC
-  fallback path triggers (`json_config_parser.dart:45–56`), the inner `FormatException`
-  has an offset **into the cleaned string** (comments/trailing commas stripped), which is
-  NOT the same offset as the user's raw file. Surfacing that offset directly would point
-  the user at the wrong character. Either map the offset back to the original content
-  (track which character ranges were blanked by `JsoncCleaner.clean`), or explicitly
-  document the offset as "approximate, after comment stripping" in the error UI.
-- YAML: `loadYaml` throws `YamlException` which carries `span` (line/col/watermark), but
-  `yaml_config_parser.dart:33` currently wraps it in a generic `ConfigParseException`,
-  discarding position. Fix: extract `span` from the caught exception before wrapping.
-- TOML: `TomlDocument.parse` throws `TomlParserException` with `line`/`col`, but
-  `toml_config_parser.dart:32` wraps it generically. Fix: same pattern — extract position
-  before wrapping.
+  line/col in the error UI where the parser provides it. `JsoncCleaner.clean` is
+  length-preserving (replaces characters in-place with spaces, never inserts or removes), so
+  the offset from the cleaned decode is the same offset into the user's raw file. Compute
+  line/col from that offset against the original content — no mapping or "approximate"
+  labeling needed.
+- YAML: `loadYaml` throws `YamlException` (which extends `SourceSpanFormatException`)
+  carrying a nullable `span` (line/col/watermark), but `yaml_config_parser.dart:33`
+  currently wraps it in a generic `ConfigParseException`, discarding position. Fix: extract
+  `span?.start.offset` from the caught exception before wrapping. `span` is nullable, so the
+  message-only fallback (below) covers cases where it's null.
+- TOML: `TomlDocument.parse` throws `TomlParserException` with `line`/`column`/`offset`/
+  `source`, but `toml_config_parser.dart:32` wraps it generically. Fix: same pattern —
+  extract position before wrapping. Note: the TOML getter is `column` (not `col`).
 - Fallback (all formats): when the underlying exception has no position info, show message
   only. This is the common case for non-syntax errors (e.g. "YAML root must be a map").
-- Reuse the existing error UI hooks in `main_shell.dart` rather than rebuilding them.
+- The recovery dialog (A1) replaces the SnackBar; the inline `'Error: ...'` text
+  (`main_shell.dart:420–427`) stays as fallback for non-parse errors (e.g. network, perms).
 
 ### A3. Formalize the JSONC fallback-warning path
 
@@ -101,7 +129,12 @@ master plan's 2026-08-13 suggestion anticipated.
   happen to be valid strict JSON (no fallback needed, no warning needed). Do NOT warn when
   `isContentEmpty` returns true.
 - The UI consumes `parseWarnings` to show a non-blocking banner (e.g. "Parsed as JSONC —
-  comments preserved"). The warning is informational; it does not block the save path.
+  comments preserved") in the main shell editor area. The warning is informational; it does
+  not block the save path. The banner also appears after save: `saveRawConfig` returns a
+  re-parsed `ToolConfig` that carries the warning if the saved content triggered the JSONC
+  fallback. Note that adding `parseWarnings` to `ToolConfig.props` changes `Equatable`
+  equality, which feeds `ConfigEditor.didUpdateWidget` (`config_editor.dart:69`) — harmless
+  but worth one sentence in the implementation so the implementer isn't surprised.
 
 ### A4. Tests
 
@@ -109,8 +142,10 @@ master plan's 2026-08-13 suggestion anticipated.
   surfaced).
 - Widget test for the corrupted-file dialog (offer raw-editor-open; remove/skip actions).
 - Edge case: empty file recovery. Parsers already handle empty content via `isContentEmpty`
-  (returns an empty `ToolConfig`), but the recovery UX should also handle it gracefully —
-  don't show "corrupt file" for an empty config; show the raw editor with an empty buffer.
+  (returns an empty `ToolConfig`), and the normal editor already renders for this case. The
+  A4 test should assert this **existing** behavior (empty file → normal editor, not corrupt
+  dialog) rather than framing it as new work. The widget test only needs to cover the
+  corrupt-file dialog for non-empty unparseable content.
 
 ---
 
@@ -126,15 +161,19 @@ provenance (manual **and** catalog) cannot be represented.
 The actual failure mode depends on discovery order (user/project targets run before manual
 paths — `discovery_service.dart:150–227`):
 
-- **Catalog-first** (the common case): the file is discovered via its catalog target with
+- **Catalog-first** (the dominant, real bug — this is the only order within a single
+  `discoverConfigs` run): the file is discovered via its catalog target with
   `isManual: false`. When the same path appears in the manual list, the dedup guard at
   line 37 returns `false` without setting `isManual`. Result: **the sidebar "remove" button
   never appears** — the user has no affordance to remove the manual entry from their
-  preferences. This is worse than a silent no-op: there is no affordance at all.
-- **Manual-first** (rare): `isManual` is `true`, the remove button appears, `removeManualPath`
-  deletes the preference entry, but the file is rediscovered via its catalog target on the
-  next refresh with `isManual: false`. Result: **the file silently reappears** after the
-  sidebar refreshes.
+  preferences.
+- **Manual-first** (only reachable via unit-level call ordering, transient catalog-pass
+  failure, or glob truncation — not a realistic end-to-end scenario): `isManual` is `true`,
+  the remove button appears, `removeManualPath` deletes the preference entry, but the file
+  is rediscovered via its catalog target on the next refresh with `isManual: false`. Result:
+  **the file silently reappears**. Keep order-independence tests at the unit level (calling
+  `addIfValid` in both orders) as a valid design property, but don't imply this is a common
+  repro.
 
 `removeManualPath` (`lib/state/providers.dart:141` → `DiscoveryPreferencesStore.removeManualPath`
 `lib/services/discovery_preferences_store.dart:282`) only deletes the preference entry in
@@ -169,12 +208,17 @@ both cases.
    `lib/state/providers.dart`, `lib/models/discovered_config.dart`. Re-verify
    `DiscoveryRequest.manualPaths` handling (`discovery_service.dart:189`) and the
    `Equatable` props list (`discovered_config.dart:116`) after adding fields.
-6. **Tests:** a unit test asserting that removing a dual-provenance file keeps the
+6. **Out of scope:** symlink aliases produce different normalized paths, so they bypass the
+   dedup key and create duplicate sidebar rows with independent provenance. This is a
+   pre-existing issue, not a regression from the provenance fix — explicitly out of scope
+   for this workstream.
+7. **Tests:** a unit test asserting that removing a dual-provenance file keeps the
    catalog entry, and that removing a manual-only file drops it entirely; a regression test
    for the original silent-no-op; a test that provenance is correct regardless of discovery
-   order (manual-first vs catalog-first); a test that the sidebar "remove" button appears
-   for catalog-first dual-provenance files (currently missing — the dedup guard prevents
-   `isManual` from being set, so the button never shows).
+   order (manual-first vs catalog-first — unit-level, calling `addIfValid` in both orders);
+   a test that the sidebar "remove" button appears for catalog-first dual-provenance files
+   (currently missing — the dedup guard prevents `isManual` from being set, so the button
+   never shows).
 
 ---
 
@@ -215,8 +259,10 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
 - **Windows:** verify `windows/CMakeLists.txt` + runner icon/metadata.
 - **Linux:** verify `linux/CMakeLists.txt` + runner icon/metadata.
 - **[REVIEW]** Decide icon assets: are final icons available, or do we ship placeholder
-  icons for this build? (README screenshot is still user-blocked per TO_DO.md — release
-  notes should not claim a screenshot that doesn't exist.)
+  icons for this build? Default to the Flutter template icons if final art is not ready;
+  mark the acceptance criterion "placeholder icons verified present; final art deferred."
+  README screenshot is still user-blocked per TO_DO.md — release notes should not claim a
+  screenshot that doesn't exist.
 
 ---
 
@@ -251,13 +297,15 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
 
 ## Acceptance criteria (proposed)
 
-- [ ] Corrupt configs never auto-overwrite on-disk originals; raw-editor recovery offered;
-      per-format line/col (or documented fallback) shown. (A1–A3)
+- [ ] Corrupt configs never auto-overwrite on-disk originals; recovery dialog offers raw
+      editor, view-backups (when backups exist), and skip; per-format line/col (or
+      documented fallback) shown. (A1–A3)
 - [ ] Unit + widget tests for parse-error recovery pass, including empty-file edge case. (A4)
 - [ ] Removing a manual path removes manual-only files and keeps catalog-backed files;
       remove button appears for dual-provenance files (catalog-first case); no silent
       reappearance after refresh; provenance correct regardless of discovery order. (B)
-- [ ] `flutter build` succeeds for macOS, Windows, Linux with icons/metadata in place. (D)
+- [ ] `flutter build` succeeds for macOS, Windows, Linux with placeholder icons/metadata
+      in place; final icon art deferred. (D)
 - [ ] Release notes drafted from CHANGELOG + supported-tool list, reviewed. (E)
 - [ ] All new behavior covered by tests; `flutter analyze --fatal-infos` and
       `flutter test` green.
@@ -265,24 +313,26 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
 ## Test plan
 
 - Parser-level corrupted-input tests (JSON/JSONC/YAML/TOML) — no-overwrite + correct error.
-- Widget test: corrupted-file dialog (raw-editor-open / skip).
-- Edge case: empty file shows raw editor, not "corrupt" error.
+- Widget test: corrupt-file recovery dialog (raw-editor-open / view-backups / skip).
+- Widget test: empty file loads into normal editor (existing behavior — assert it stays).
 - Discovery unit tests: dual-provenance removal (B); manual-only removal; order-independence.
 
 ## Files touched (anticipated)
 
 - `lib/models/discovered_config.dart` (B)
 - `lib/models/tool_config.dart` (A3 — `parseWarnings` field)
+- `lib/parsers/config_parser.dart` (A2 — add nullable `line`/`column` to `ConfigParseException`)
 - `lib/services/discovery_service.dart` (B)
 - `lib/state/providers.dart` (B)
 - `lib/services/discovery_preferences_store.dart` (B)
-- `lib/screens/main_shell.dart` (A)
-- `lib/widgets/config_editor.dart` (A)
+- `lib/screens/main_shell.dart` (A — recovery dialog, sidebar polish)
+- `lib/widgets/config_editor.dart` (A — raw-only mode for corrupt files)
 - `lib/parsers/json_config_parser.dart` (A3)
 - `lib/parsers/yaml_config_parser.dart` (A2)
-- `lib/parsers/toml_config_parser.dart` (A2)
+- `lib/parsers/toml_config_parser.dart` (A2 — note: TOML getter is `column`, not `col`)
 - `macos/`, `windows/`, `linux/` build metadata (D)
 - `docs/`, `CHANGELOG.md`, release notes (E)
+- `TO_DO.md` (B — update stale Qodo #10 wording)
 
 ## Reviewer checklist (NEEDS REVIEW)
 

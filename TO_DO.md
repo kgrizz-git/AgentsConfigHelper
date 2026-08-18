@@ -73,12 +73,13 @@
       baseline, which drops comments/whitespace for TOML (serializer is not
       AST-preserving). See ADR referenced in `toml_config_parser.dart`.
 - [ ] Fix manual-path removal for files also discovered via a catalog target
-      (Qodo #10): `DiscoveryService.addIfValid` mutates an existing discovered
-      item to `isManual: true` instead of tracking manual provenance separately,
-      so `removeManualPath` deletes only the preference entry and the file is
-      rediscovered via its user/project scope on refresh — the sidebar "remove"
-      silently no-ops. Disambiguate manual provenance so removal only affects
-      manual-only items. Touches `lib/services/discovery_service.dart`,
+      (Qodo #10): `DiscoveryService.addIfValid` returns `false` for duplicates
+      without setting `isManual` (the dedup guard at lines 27–37 prevents it),
+      so `removeManualPath` only deletes the preference entry and the file is
+      rediscovered via its catalog target on the next refresh. The dominant
+      bug is that the sidebar "remove" button never appears for catalog-first
+      dual-provenance files. Disambiguate manual provenance so removal works
+      correctly. Touches `lib/services/discovery_service.dart`,
       `lib/state/providers.dart`, `lib/models/discovered_config.dart`.
 - [ ] Adjust the Qodo dashboard settings for Python false positives — **only if the
       noise persists**. The repo-side fix already shipped (Dart-vs-Python note in
