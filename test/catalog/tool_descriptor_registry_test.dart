@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
@@ -127,6 +129,20 @@ void main() {
         () => ToolDescriptorRegistry.matchPath(path),
         throwsA(isA<ValidationException>()),
       );
+    });
+
+    test('display names are documented in supported-tools.md', () {
+      final doc = File('docs/supported-tools.md').readAsStringSync();
+
+      for (final descriptor in ToolDescriptorRegistry.catalog) {
+        expect(
+          doc.contains(descriptor.displayName),
+          isTrue,
+          reason:
+              '${descriptor.displayName} is missing from '
+              'docs/supported-tools.md',
+        );
+      }
     });
   });
 }

@@ -95,11 +95,7 @@ alerts are owned and triaged.
 
 Local hooks make feedback fast; CI makes the control unavoidable. Run the same checker in
 both places and make the CI job a required check. Keep finding output minimal: report a path,
-line number, rule ID, and remediation—not the sensitive match itself. For medical or regulated
-repositories, the first-party strict gate scans every Git-indexed file (not just a PR diff),
-including tests and `.xlsx` internals, and fails closed on images, DICOM, extensionless, and
-opaque files unless an exact file hash has named human approval. See
-[`inventory/medical-data-security.md`](../inventory/medical-data-security.md).
+line number, rule ID, and remediation—not the sensitive match itself.
 
 For the same tier, install a `commit-msg` gate. File approvals must never apply to immutable
 commit prose: reject PII/PHI, local paths/usernames/hostnames, private network addresses, and

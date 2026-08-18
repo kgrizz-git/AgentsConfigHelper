@@ -182,9 +182,6 @@ fi
 phase "PS  Sensitive data (conditional)"
 if grep -qiE "^Data classification:.*regulated" .context/project-profile.md 2>/dev/null; then
     echo "  classification = regulated — gates are REQUIRED:"
-    [ -f .phi-security-approvals.json ] \
-        && pass "approval inventory present (confirm a human authored it)" \
-        || miss "no .phi-security-approvals.json"
     [ -f .gitignore-protected ] \
         && pass ".gitignore-protected present" \
         || miss "no .gitignore-protected"

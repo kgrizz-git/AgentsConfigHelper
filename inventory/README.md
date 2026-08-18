@@ -58,7 +58,6 @@ links and renamed projects — evidence a tool needs re-evaluating.
 - [python.md](python.md) — Python project defaults, formatting, testing, type checking
 - [scientific-domain.md](scientific-domain.md) — medical imaging (pydicom, SimpleITK), EM/FDTD simulation (meep, openEMS, gprMax), general scientific stack
 - [financial-modeling.md](financial-modeling.md) — market data (yfinance, FRED), quant libraries (QuantLib, PyPortfolioOpt, empyrical), backtesting (backtrader, vectorbt), modeling patterns
-- [medical-data-security.md](medical-data-security.md) — strict PII/PHI guard setup, human approval inventory, and medical-data scanning options
 
 ### Design & frontend
 

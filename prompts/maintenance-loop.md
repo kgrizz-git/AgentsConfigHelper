@@ -118,7 +118,7 @@ contents through a SaaS scanner without the data-residency/BAA review in
 
 ```bash
 # OCR + NLP + regex over images/PDFs/docs in the working tree (pin a reviewed commit).
-# See inventory/medical-data-security.md for setup and cautions.
+# Run locally on an approved runner and redact matches from logs.
 python octopii.py <local-checkout-path>
 
 # Sweep past commits for anything a current-tree scan would miss.

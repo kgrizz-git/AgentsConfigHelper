@@ -41,12 +41,10 @@ in step 3 — do not load all 18 files by default.
 
 **Medical or regulated data trigger:** if the user indicates PII, PHI, clinical/FHIR/HL7/DICOM,
 or similarly regulated data, read
-[`prompts/strict-phi-agent-guidance.md`](strict-phi-agent-guidance.md),
-[`prompts/sensitive-data-leak-prevention.md`](sensitive-data-leak-prevention.md), and
-[`inventory/medical-data-security.md`](../inventory/medical-data-security.md) before creating
-fixtures or configuring external tools. Have a human create the exact-file approval inventory,
-wire the strict local hook and required CI job, and protect those controls with CODEOWNERS before
-the first relevant commit. Do not let an agent add approval entries. Beyond keeping data out of
+[`prompts/sensitive-data-leak-prevention.md`](sensitive-data-leak-prevention.md) before creating
+fixtures or configuring external tools. Have a human own any approval inventory or gate
+configuration, wire the chosen local hooks and required CI jobs, and protect those controls with
+CODEOWNERS before the first relevant commit. Do not let an agent add approval entries. Beyond keeping data out of
 the repo, design the code so it does not leak PII/PHI/secrets/usernames/IPs/hostnames/paths into
 logs, temp files, test/CI output, caches, telemetry, or third-party/AI calls (in production *or*
 development): sanitize at the boundary, gitignore and document any sensitive-capable sinks, and

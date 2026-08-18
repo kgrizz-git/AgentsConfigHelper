@@ -108,7 +108,7 @@ main() {
     info "Based on your project type, you may want to remove irrelevant content:"
     echo ""
     info "Medical/PII data projects:"
-    echo "  - Keep: inventory/medical-data-security.md, hooks/scripts/check_sensitive_data.py"
+    echo "  - Keep: prompts/sensitive-data-leak-prevention.md"
     echo "  - Remove: irrelevant domain-specific inventories"
     echo ""
     info "Web/frontend projects:"

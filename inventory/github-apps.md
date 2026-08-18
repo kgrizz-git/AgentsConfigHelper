@@ -44,7 +44,6 @@ Privacy code scanner that traces sensitive-data flows through code, logs, files,
 SDKs, and AI paths. It offers local CLI/Docker and IDE scanning as well as GitHub/GitLab/Bitbucket
 integrations that can block PRs. For this template, HoundDog is **local CLI/Docker only until
 further user authorization**: do not use its IDE, cloud, API-key, or SCM/GitHub integration.
-See [`inventory/medical-data-security.md`](medical-data-security.md).
 
 ## Vulnerability & license scanning
 

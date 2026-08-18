@@ -87,9 +87,7 @@ These tools supplement—never prove—the rule that production and real regulat
 not enter source control. Run them locally or on an approved runner, redact matches from logs,
 and validate recall and false positives using synthetic fixtures before making a check block a
 PR. See [`policies/github-repository-hygiene.md`](../policies/github-repository-hygiene.md)
-for the required-check and data-handling model. For a strict first-party hook, human approval
-inventory, and medical setup instructions, see
-[`inventory/medical-data-security.md`](medical-data-security.md).
+for the required-check and data-handling model.
 
 | Tool | Best fit | Notes |
 | --- | --- | --- |
