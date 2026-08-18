@@ -56,10 +56,15 @@ master plan's 2026-08-13 suggestion anticipated.
   raw content without merging. No gate or disable logic is needed — the merge is structurally
   unreachable for corrupt files.
 - **Recovery dialog (replaces SnackBar):** When `_loadConfig` fails (`main_shell.dart:72`),
-  the current SnackBar + inline error text has no affordances. Replace the SnackBar with a
-  recovery dialog offering:
+  the current SnackBar + inline error text has no affordances. The `on Object` catch fires
+  for parse errors, missing files, and permission/IO errors alike. Show the recovery dialog
+  for `ConfigParseException` and `FileSystemException` (both missing-file and permission
+  cases degrade gracefully in the dialog: raw re-read fails → error, View-backups may list
+  nothing, Remove gated on manual prefs). Keep the SnackBar for all other exceptions
+  (`UnsupportedError`, unexpected `Error`s). The dialog offers:
   - **"Open raw editor"** — pop the recovery dialog first, then open the file in a
-    raw-text-only mode. Implementation:
+    raw-text-only mode. Hide this action when the file no longer exists (step 1 would fail).
+    Implementation:
     1. Re-read the file (`File(path).readAsString()`) — the failed `loadDiscoveredConfig`
        discards the bytes, so the placeholder's `originalContent` cannot come from the load
        attempt. Handle the file having been deleted since the failed load (show an error and
@@ -83,10 +88,11 @@ master plan's 2026-08-13 suggestion anticipated.
     **Restore safety:** the existing restore path at `main_shell.dart:140–146` calls
     `restoreBackup` (`backup_service.dart:84–105`) which is `backupFile.copy(targetPath)`
     with no preceding `createBackup` — it overwrites the target without preserving the
-    current file. Add `configService.backupService.createBackup(targetPath)` before
-    `restoreBackup` in the restore flow (one line, matches the app's backup-before-write
-    convention in `config_service.dart:87` and `:195`). This fix applies to all restore
-    paths, not just the recovery dialog.
+    current file. Add `createBackup(targetPath)` before `restoreBackup` in the restore flow,
+    guarded by an exists-check (the target file may have been deleted):
+    `if (await File(targetPath).exists()) { await backupService.createBackup(targetPath); }`
+    — matches the pattern in `config_service.dart:85–88` and `:194–196`. This fix applies to
+    all restore paths, not just the recovery dialog.
   - **"Skip"** — dismisses the dialog and deselects the file.
   - **"Remove"** — only for files whose path is present in the manual preferences list
     (order-independent check — not `configItem.isManual`, which is false for catalog-first
@@ -107,15 +113,16 @@ master plan's 2026-08-13 suggestion anticipated.
 - YAML: `loadYaml` throws `YamlException` (which extends `SourceSpanFormatException`)
   carrying a nullable `span` (line/col/watermark), but `yaml_config_parser.dart:33`
   currently wraps it in a generic `ConfigParseException`, discarding position. Fix: extract
-  `span!.start.line` and `span!.start.column` from the caught exception before wrapping.
+  `span?.start.line` and `span?.start.column` from the caught exception before wrapping.
   `span` is nullable, so the message-only fallback (below) covers cases where it's null.
 - TOML: `TomlDocument.parse` throws `TomlParserException` with `line`/`column`/`offset`/
   `source`, but `toml_config_parser.dart:32` wraps it generically. Fix: same pattern —
   extract position before wrapping. Note: the TOML getter is `column` (not `col`).
 - Fallback (all formats): when the underlying exception has no position info, show message
   only. This is the common case for non-syntax errors (e.g. "YAML root must be a map").
-- The recovery dialog (A1) replaces the SnackBar; the inline `'Error: ...'` text
-  (`main_shell.dart:420–427`) stays as fallback for non-parse errors (e.g. network, perms).
+- The recovery dialog (A1) replaces the SnackBar for `ConfigParseException` and
+  `FileSystemException`; the inline `'Error: ...'` text (`main_shell.dart:420–427`) stays
+  as fallback for `UnsupportedError` and other unexpected failures.
 
 ### A3. Formalize the JSONC fallback-warning path
 
@@ -148,6 +155,9 @@ master plan's 2026-08-13 suggestion anticipated.
   surfaced).
 - Widget test for the corrupt-file recovery dialog (raw-editor-open / view-backups / skip /
   conditional remove).
+- Unit test for restore-path safety: restoring over an existing file preserves it as a
+  backup first; restoring a deleted file skips `createBackup` and succeeds. Directly
+  regression-protects the backup-before-restore fix added in A1.
 - Edge case: empty file recovery. Parsers already handle empty content via `isContentEmpty`
   (returns an empty `ToolConfig`), and the normal editor already renders for this case. The
   A4 test should assert this **existing** behavior (empty file → normal editor, not corrupt
@@ -320,7 +330,9 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
 ## Test plan
 
 - Parser-level corrupted-input tests (JSON/JSONC/YAML/TOML) — no-overwrite + correct error.
-- Widget test: corrupt-file recovery dialog (raw-editor-open / view-backups / skip).
+- Widget test: corrupt-file recovery dialog (raw-editor-open / view-backups / skip /
+  conditional remove).
+- Unit test: restore-path safety (backup-before-restore + exists-guard for deleted files).
 - Widget test: empty file loads into normal editor (existing behavior — assert it stays).
 - Discovery unit tests: dual-provenance removal (B); manual-only removal; order-independence.
 
