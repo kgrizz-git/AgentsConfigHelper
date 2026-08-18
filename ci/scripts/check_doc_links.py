@@ -149,7 +149,7 @@ def check_link(url: str) -> tuple[str, str] | None:
     try:
         # Scheme restricted to http/https above; this is a documentation link
         # from a tracked markdown file, not user input.
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # nosemgrep
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # nosemgrep: dynamic-urllib-use-detected
             final = response.geturl()
             # A GitHub repo redirect means the project was renamed or transferred.
             if host == "github.com" and final.rstrip("/") != url.rstrip("/"):
