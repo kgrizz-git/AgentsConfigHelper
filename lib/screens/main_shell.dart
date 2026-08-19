@@ -421,17 +421,62 @@ class _MainShellState extends ConsumerState<MainShell>
                               await _loadConfig(configItem);
                             },
                             onRemove: configItem.isManual
-                                ? () {
-                                    unawaited(
-                                      ref
+                                ? () async {
+                                    final wasCatalogBacked =
+                                        configItem.fromCatalog;
+                                    // Capture the messenger before the await so
+                                    // we keep BuildContext use before the gap.
+                                    final messenger = ScaffoldMessenger.of(
+                                      context,
+                                    );
+                                    try {
+                                      await ref
                                           .read(
                                             discoveryControllerProvider
                                                 .notifier,
                                           )
                                           .removeManualPath(
                                             configItem.filePath,
+                                          );
+                                      if (!mounted) return;
+                                      // A dual-provenance file (also
+                                      // auto-discovered via a catalog target)
+                                      // stays in the sidebar after its manual
+                                      // entry is removed, so without feedback
+                                      // the Remove button looks like a no-op.
+                                      if (wasCatalogBacked) {
+                                        messenger.showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Removed from manual paths; '
+                                              'still auto-detected and listed.',
+                                            ),
                                           ),
-                                    );
+                                        );
+                                      } else {
+                                        // Manual-only file: the sidebar row
+                                        // disappears, so clear any stale editor
+                                        // state pointing at the removed file.
+                                        if (_activeConfigId == configItem.id) {
+                                          setState(() {
+                                            _activeConfig = null;
+                                            _activeConfigId = null;
+                                            _hasUnsavedChanges = false;
+                                          });
+                                        }
+                                      }
+                                    } on Object catch (e) {
+                                      if (mounted) {
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Could not remove path: $e',
+                                            ),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
                                   }
                                 : null,
                           );

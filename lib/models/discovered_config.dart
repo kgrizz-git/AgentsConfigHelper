@@ -14,7 +14,8 @@ class DiscoveredConfig extends Equatable {
     required this.kind,
     required this.format,
     required this.sourceLabel,
-    this.isManual = false,
+    this.fromCatalog = false,
+    this.fromManual = false,
   });
 
   /// Factory that automatically derives the [id] from the normalized
@@ -26,7 +27,8 @@ class DiscoveredConfig extends Equatable {
     required ConfigFormat format,
     required String sourceLabel,
     ToolDescriptor? descriptor,
-    bool isManual = false,
+    bool fromCatalog = false,
+    bool fromManual = false,
   }) {
     final normalizedPath = p.normalize(filePath);
     return DiscoveredConfig(
@@ -37,7 +39,8 @@ class DiscoveredConfig extends Equatable {
       kind: kind,
       format: format,
       sourceLabel: sourceLabel,
-      isManual: isManual,
+      fromCatalog: fromCatalog,
+      fromManual: fromManual,
     );
   }
 
@@ -65,8 +68,15 @@ class DiscoveredConfig extends Equatable {
   /// "Unknown configuration".
   final String sourceLabel;
 
+  /// True if this source was discovered via a catalog target (user or project).
+  final bool fromCatalog;
+
   /// True if this source was explicitly added manually by the user.
-  final bool isManual;
+  final bool fromManual;
+
+  /// True if this source was explicitly added manually by the user.
+  /// Derived from [fromManual] for backward compatibility.
+  bool get isManual => fromManual;
 
   /// Returns a copy of this object with updated fields.
   DiscoveredConfig copyWith({
@@ -77,7 +87,8 @@ class DiscoveredConfig extends Equatable {
     ConfigSourceKind? kind,
     ConfigFormat? format,
     String? sourceLabel,
-    bool? isManual,
+    bool? fromCatalog,
+    bool? fromManual,
   }) {
     final nextKind = kind ?? this.kind;
     final nextFilePath = filePath != null
@@ -93,15 +104,13 @@ class DiscoveredConfig extends Equatable {
     return DiscoveredConfig(
       id: nextId,
       filePath: nextFilePath,
-      // If descriptor was explicitly passed as null, we can't easily
-      // distinguish it with standard copyWith unless we use a wrapper, but
-      // for our usage this is fine.
       descriptor: descriptor ?? this.descriptor,
       scope: scope ?? this.scope,
       kind: nextKind,
       format: format ?? this.format,
       sourceLabel: sourceLabel ?? this.sourceLabel,
-      isManual: isManual ?? this.isManual,
+      fromCatalog: fromCatalog ?? this.fromCatalog,
+      fromManual: fromManual ?? this.fromManual,
     );
   }
 
@@ -114,6 +123,7 @@ class DiscoveredConfig extends Equatable {
     kind,
     format,
     sourceLabel,
-    isManual,
+    fromCatalog,
+    fromManual,
   ];
 }

@@ -85,6 +85,14 @@ flutter build macos --release   # build release binary
   what actually shipped, not just what was proposed.
 - When a phase's plan is fully complete, archive it: move the file from `plans/active/`
   to `plans/archive/` rather than deleting it.
+- **Phase-completion review (mandatory):** when a phase is finished (all its workstreams
+  implemented and the build/test gate is green), spawn a **fresh, independent agent** to
+  review the phase before merge/archive. The reviewer must not be the agent(s) that
+  implemented the phase. Have it run `flutter analyze --fatal-infos` + `flutter test`,
+  read the changed files, check correctness/safety, and look for bugs, gaps, and doc drift;
+  it writes its review to `tmp/` (timestamped) and returns a severity-rated verdict. Act on
+  blocking findings, then proceed. Keep the implementing agents and the reviewer separate so
+  the review is genuinely independent.
 - Log changes in the appropriate changelog: user-facing changes go in
   `CHANGELOG.md`; developer-only changes (hooks internals, tests/CI) go in
   `CHANGELOG.dev.md`. See `policies/changelog-conventions.md`.

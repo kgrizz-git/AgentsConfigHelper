@@ -161,6 +161,16 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
           await ref
               .read(discoveryControllerProvider.notifier)
               .removeManualPath(configItem.filePath);
+          if (configItem.fromCatalog && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Removed from manual paths — still listed via '
+                  'auto-detection.',
+                ),
+              ),
+            );
+          }
         } on Object {
           // Removal failure is non-fatal; the manual path stays in preferences.
         }
