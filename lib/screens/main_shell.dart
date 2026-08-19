@@ -204,7 +204,7 @@ class _MainShellState extends ConsumerState<MainShell>
       }
     } on Object catch (e) {
       if (mounted) {
-        if (savedConfig != null) {
+        if (savedConfig != null && _activeConfigId == null) {
           setState(() {
             _activeConfig = savedConfig;
             _hasUnsavedChanges = savedDirty;
