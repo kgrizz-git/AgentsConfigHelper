@@ -91,13 +91,14 @@ void main() {
 
       state.bumpLoadGeneration();
       const newerId = 'newer-load';
-      state.activeConfigId = newerId;
-      state.activeConfig = ToolConfig(
-        toolName: 'Newer',
-        filePath: '/tmp/newer.json',
-        format: ConfigFormat.json,
-      );
-      state.error = null;
+      state
+        ..activeConfigId = newerId
+        ..activeConfig = ToolConfig(
+          toolName: 'Newer',
+          filePath: '/tmp/newer.json',
+          format: ConfigFormat.json,
+        )
+        ..error = null;
       await _pumpFrames(tester);
 
       await tester.tap(find.text('Skip'));
