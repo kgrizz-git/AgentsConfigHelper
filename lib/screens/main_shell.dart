@@ -162,6 +162,8 @@ class _MainShellState extends ConsumerState<MainShell>
   Future<void> _removeManualConfig(DiscoveredConfig configItem) async {
     final wasCatalogBacked = configItem.fromCatalog;
     final messenger = ScaffoldMessenger.of(context);
+    ToolConfig? savedConfig;
+    var savedDirty = false;
     try {
       if (!wasCatalogBacked &&
           _activeConfigId == configItem.id &&
@@ -170,6 +172,8 @@ class _MainShellState extends ConsumerState<MainShell>
           'Discard & Remove',
         );
         if (!shouldDiscard || !mounted) return;
+        savedConfig = _activeConfig;
+        savedDirty = _hasUnsavedChanges;
         setState(() {
           _activeConfig = null;
           _activeConfigId = null;
@@ -200,6 +204,12 @@ class _MainShellState extends ConsumerState<MainShell>
       }
     } on Object catch (e) {
       if (mounted) {
+        if (savedConfig != null) {
+          setState(() {
+            _activeConfig = savedConfig;
+            _hasUnsavedChanges = savedDirty;
+          });
+        }
         messenger.showSnackBar(
           SnackBar(
             content: Text('Could not remove path: $e'),

@@ -580,7 +580,6 @@ void main() {
       expect(find.text('No configuration selected'), findsOneWidget);
       expect(find.text('unsaved rule'), findsNothing);
 
-      // Complete the async removal.
       prefsStore.removeCompleter.complete();
       await tester.pumpAndSettle();
     },
