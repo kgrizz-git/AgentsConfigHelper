@@ -38,6 +38,12 @@ Internal / developer-facing changes that do not belong in the public
   call in `check_doc_links.py` (alert #5); runtime http/https scheme guard
   remains as defense-in-depth. Closure of alerts #2, #3, #5 pending CI and
   Security-tab confirmation.
+- **Phase 6A: parse-error recovery (2026-08-18).** Recovery dialog for corrupt
+  config files (`RecoveryHandler` mixin in `lib/screens/recovery_handler.dart`).
+  Line/column diagnostics on `ConfigParseException` (JSON from offset, YAML from
+  `SourceSpan`, TOML from `TomlParserException`). JSONC fallback warning via
+  `ToolConfig.parseWarnings`. Restore safety: backup-before-restore with
+  exists-guard. `RawDiffView` extracted to `lib/widgets/raw_diff_view.dart`.
 - **Nitpick resolution round (2026-08-16).** Tests: `discovered_config_test` drops the const-identical equality check for a real props
   comparison plus inequality and `fromPath` id/normalization coverage;
   `text_config_parser_test` covers the `originalContent` argument and

@@ -38,7 +38,43 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     int generation,
   ) async {
     final configService = ref.read(configServiceProvider);
-    final resolvedPath = configService.resolvePath(configItem.filePath);
+
+    // Guard path resolution — the initial load may have failed because
+    // the home directory couldn't be resolved (~), so resolvePath can throw.
+    final String resolvedPath;
+    try {
+      resolvedPath = configService.resolvePath(configItem.filePath);
+    } on Object {
+      if (!mounted || generation != loadGeneration) return;
+      // Can't resolve the path at all — show the dialog with no actions
+      // beyond Skip so the user can at least dismiss.
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.backgroundDark,
+          title: const Text(
+            'Configuration could not be loaded',
+            style: AppTextStyles.uiHeader,
+          ),
+          content: Text(
+            errorValue.toString(),
+            style: AppTextStyles.uiSecondary,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Skip'),
+            ),
+          ],
+        ),
+      );
+      setState(() {
+        error = null;
+        activeConfigId = null;
+        activeConfig = null;
+      });
+      return;
+    }
 
     var manualPaths = const <String>[];
     try {
@@ -50,10 +86,22 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       // A failed preferences load degrades to "no remove action".
     }
 
-    // Checking file existence asynchronously avoids blocking the UI thread.
-    // ignore: avoid_slow_async_io — desktop tool, not a hot loop
-    final fileExists = await File(resolvedPath).exists();
-    final backups = await configService.backupService.listBackups(resolvedPath);
+    // Guard each filesystem check independently so a single failure
+    // doesn't abort the entire dialog.
+    var fileExists = false;
+    try {
+      // ignore: avoid_slow_async_io — desktop tool, not a hot loop
+      fileExists = await File(resolvedPath).exists();
+    } on Object {
+      // File existence check failed — degrade to "no raw editor" action.
+    }
+
+    var backups = const <File>[];
+    try {
+      backups = await configService.backupService.listBackups(resolvedPath);
+    } on Object {
+      // Backup listing failed — degrade to "no view backups" action.
+    }
 
     if (!mounted || generation != loadGeneration) return;
 
@@ -108,11 +156,13 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
           activeConfigId = null;
           activeConfig = null;
         });
-        unawaited(
-          ref
+        try {
+          await ref
               .read(discoveryControllerProvider.notifier)
-              .removeManualPath(configItem.filePath),
-        );
+              .removeManualPath(configItem.filePath);
+        } on Object {
+          // Removal failure is non-fatal; the manual path stays in preferences.
+        }
       case null:
         setState(() {
           error = null;

@@ -181,6 +181,11 @@ class _MainShellState extends ConsumerState<MainShell>
               final targetPath = configService.resolvePath(
                 activeConfig.filePath,
               );
+              // Read the backup content first — createBackup prunes entries
+              // beyond the 10-backup cap, which could delete the very backup
+              // being restored if it's the oldest. Reading first avoids the
+              // race.
+              final backupContent = await File(backupPath).readAsBytes();
               // Preserve the current on-disk file before overwriting it with
               // the restored snapshot, matching saveConfig/saveRawConfig. The
               // exists-check keeps a deleted target (restore-as-recreate) from
@@ -190,10 +195,7 @@ class _MainShellState extends ConsumerState<MainShell>
               if (await File(targetPath).exists()) {
                 await configService.backupService.createBackup(targetPath);
               }
-              await configService.backupService.restoreBackup(
-                backupPath,
-                targetPath,
-              );
+              await File(targetPath).writeAsBytes(backupContent);
               final configItem = _activeDiscoveredConfig;
               if (configItem != null && mounted) {
                 await _loadConfig(configItem);
