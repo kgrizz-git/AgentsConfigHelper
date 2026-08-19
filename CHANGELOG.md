@@ -31,6 +31,9 @@ uses [Semantic Versioning](https://semver.org/).
   (dual-provenance). The sidebar Remove button appears for these files, and removing
   the manual entry keeps the catalog-backed entry instead of silently no-op'ing or
   re-detecting the file after refresh.
+- Removing a manual-only configuration that has unsaved edits now asks for discard
+  confirmation before clearing the editor (matching load/restore behavior); cancelling
+  leaves both the editor and the manual-path preference unchanged.
 
 ## [0.1.0] - 2026-08-17
 

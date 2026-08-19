@@ -449,7 +449,6 @@ void main() {
           (i) => i.filePath == dual.path,
         );
 
-        // Manual-only: fromManual true, fromCatalog false.
         expect(manualOnlyConfig.fromManual, isTrue);
         expect(manualOnlyConfig.fromCatalog, isFalse);
         expect(manualOnlyConfig.isManual, isTrue);

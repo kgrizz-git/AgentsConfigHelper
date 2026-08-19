@@ -72,15 +72,6 @@
       through `parser.serialize` when structured edits diverge from the raw
       baseline, which drops comments/whitespace for TOML (serializer is not
       AST-preserving). See ADR referenced in `toml_config_parser.dart`.
-- [x] **DONE (Phase 6B, 2026-08-18):** Fix manual-path removal for files also discovered
-      via a catalog target (Qodo #10). Replaced the single `isManual` bool with separate
-      `fromCatalog`/`fromManual` provenance flags (`DiscoveredConfig`); `isManual` is now a
-      derived getter. `DiscoveryService.addIfValid` unions provenance on a duplicate path
-      instead of silently returning `false`, so dual-provenance files keep `fromManual: true`
-      (sidebar Remove button now appears) and `removeManualPath` strips only manual provenance,
-      keeping catalog-backed files. Touches `lib/models/discovered_config.dart` and
-      `lib/services/discovery_service.dart` only (the semantic change lives entirely in
-      discovery; `providers.dart`/`discovery_preferences_store.dart` needed no changes).
 - [ ] Adjust the Qodo dashboard settings for Python false positives — **only if the
       noise persists**. The repo-side fix already shipped (Dart-vs-Python note in
       `AGENTS.md`, `.pr_agent.toml` with scoped `extra_instructions`, no checks
