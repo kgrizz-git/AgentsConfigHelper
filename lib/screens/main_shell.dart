@@ -453,17 +453,25 @@ class _MainShellState extends ConsumerState<MainShell>
                                             ),
                                           ),
                                         );
-                                      } else {
-                                        // Manual-only file: the sidebar row
-                                        // disappears, so clear any stale editor
-                                        // state pointing at the removed file.
-                                        if (_activeConfigId == configItem.id) {
-                                          setState(() {
-                                            _activeConfig = null;
-                                            _activeConfigId = null;
-                                            _hasUnsavedChanges = false;
-                                          });
-                                        }
+                                        return;
+                                      }
+                                      // Manual-only file: the sidebar row
+                                      // disappears. If it is the active editor
+                                      // and has unsaved edits, confirm discard
+                                      // first (matching load/restore behavior)
+                                      // so removal never silently drops edits.
+                                      if (_activeConfigId == configItem.id &&
+                                          _hasUnsavedChanges) {
+                                        final shouldDiscard =
+                                            await _confirmDiscardChanges();
+                                        if (!shouldDiscard || !mounted) return;
+                                      }
+                                      if (_activeConfigId == configItem.id) {
+                                        setState(() {
+                                          _activeConfig = null;
+                                          _activeConfigId = null;
+                                          _hasUnsavedChanges = false;
+                                        });
                                       }
                                     } on Object catch (e) {
                                       if (mounted) {

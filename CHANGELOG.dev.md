@@ -7,6 +7,10 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Mandatory phase-completion independent review.** `AGENTS.md` now requires a fresh,
+  independent agent to review each completed phase (run `flutter analyze --fatal-infos` +
+  `flutter test`, inspect changed files, severity-rated verdict) before merge/archive. The
+  reviewer must not be the implementing agent(s).
 - **RecoveryHandler widget tests.** Added `test/screens/recovery_handler_test.dart`
   (12 cases) covering the corrupt-file recovery dialog via a harness mixin widget;
   filesystem setup and I/O flushes use `WidgetTester.runAsync` because `dart:io`
