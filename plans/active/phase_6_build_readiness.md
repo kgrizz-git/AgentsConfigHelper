@@ -149,13 +149,13 @@ master plan's 2026-08-13 suggestion anticipated.
   equality, which feeds `ConfigEditor.didUpdateWidget` (`config_editor.dart:69`) — harmless
   but worth one sentence in the implementation so the implementer isn't surprised.
 
-### A4. Tests ✓ (partial — recovery dialog widget test deferred)
+### A4. Tests ✓
 
 - [x] Unit tests per parser for corrupted-input recovery (assert no overwrite + correct error
       surfaced). — 6 new tests (JSON position, JSONC warning, YAML position, TOML position)
-- [ ] Widget test for the corrupt-file recovery dialog (raw-editor-open / view-backups / skip /
-      conditional remove). — **deferred**: `_showRecoveryDialog` does real filesystem I/O
-      that doesn't complete in Flutter's widget test framework.
+- [x] Widget test for the corrupt-file recovery dialog (raw-editor-open / view-backups / skip /
+      conditional remove). — 12 tests in `test/screens/recovery_handler_test.dart`
+      (harness mixin + `WidgetTester.runAsync` for real `dart:io` I/O).
 - [x] Unit test for restore-path safety: restoring over an existing file preserves it as a
       backup first; restoring a deleted file skips `createBackup` and succeeds. — 2 new tests
 - [x] Edge case: empty file recovery. — 1 new widget test (empty file → normal editor)
@@ -315,7 +315,7 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
       documented fallback) shown. (A1–A3) — **shipped 2026-08-18**
 - [x] Unit + widget tests for parse-error recovery pass, including empty-file edge case. (A4)
       — **shipped 2026-08-18** (parser position tests, restore-path safety, empty-file widget
-      test; recovery dialog widget test deferred due to real async I/O in test framework)
+      test, recovery-dialog widget tests in `test/screens/recovery_handler_test.dart`)
 - [ ] Removing a manual path removes manual-only files and keeps catalog-backed files;
       remove button appears for dual-provenance files (catalog-first case); no silent
       reappearance after refresh; provenance correct regardless of discovery order. (B)
@@ -324,18 +324,15 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
 - [ ] Release notes drafted from CHANGELOG + supported-tool list, reviewed. (E)
 - [x] All new parser, model, and service behavior covered by tests; `flutter analyze
       --fatal-infos` and `flutter test` green. Recovery dialog logic (action gating,
-      generation guards) not unit-tested — gating is inside `showDialog` callback;
-      dialog widget test deferred due to real async FS I/O.
-      — **135 tests pass, analyze clean (2026-08-18)**
+      generation guards) covered by `test/screens/recovery_handler_test.dart`.
+      — **154 tests pass, analyze clean (2026-08-18)**
 
 ## Test plan
 
 - [x] Parser-level corrupted-input tests (JSON/JSONC/YAML/TOML) — position info on error +
       JSONC fallback warning. (4 JSON + 1 YAML + 1 TOML = 6 new tests)
-- [ ] Widget test: corrupt-file recovery dialog (raw-editor-open / view-backups / skip /
-      conditional remove). — **deferred**: `_showRecoveryDialog` does real filesystem I/O
-      (`File.exists()`, `BackupService.listBackups()`) that doesn't complete in Flutter's
-      widget test framework. Behavior covered by parser + service-level tests.
+- [x] Widget test: corrupt-file recovery dialog (raw-editor-open / view-backups / skip /
+      conditional remove). — 12 tests in `test/screens/recovery_handler_test.dart`.
 - [x] Unit test: restore-path safety (backup-before-restore + exists-guard for deleted files).
       (2 new tests in `backup_service_test.dart`)
 - [x] Widget test: empty file loads into normal editor (existing behavior — assert it stays).

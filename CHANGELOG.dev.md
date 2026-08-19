@@ -7,6 +7,14 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **RecoveryHandler widget tests.** Added `test/screens/recovery_handler_test.dart`
+  (12 cases) covering the corrupt-file recovery dialog via a harness mixin widget;
+  filesystem setup and I/O flushes use `WidgetTester.runAsync` because `dart:io`
+  futures do not complete in the widget test fake-async zone. Harness helpers
+  live in `recovery_handler_test_harness.dart` so each file stays under the
+  700-line pre-commit limit. The raw-editor
+  read-failure case swaps the file for a directory after the dialog appears so
+  `readAsString()` throws on Windows as well as POSIX (no `chmod 000`).
 - **Phase 5.5 docs-accuracy follow-ups.** Fixed broken relative doc links
   in `ci/README.md`, `hooks/README.md`, and `policies/commits-and-branches.md`;
   removed `inventory/medical-data-security.md`,
