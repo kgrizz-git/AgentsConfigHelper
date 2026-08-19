@@ -430,6 +430,22 @@ class _MainShellState extends ConsumerState<MainShell>
                                       context,
                                     );
                                     try {
+                                      // Confirm discard before any mutation so
+                                      // cancelling changes neither the editor
+                                      // nor the manual preference.
+                                      // Only the active, dirty, manual-only
+                                      // configuration needs this guard; a
+                                      // dual-provenance (catalog-backed) file
+                                      // keeps its row, so no edit loss occurs.
+                                      if (!wasCatalogBacked &&
+                                          _activeConfigId == configItem.id &&
+                                          _hasUnsavedChanges) {
+                                        final shouldDiscard =
+                                            await _confirmDiscardChanges();
+                                        if (!shouldDiscard || !mounted) {
+                                          return;
+                                        }
+                                      }
                                       await ref
                                           .read(
                                             discoveryControllerProvider
@@ -456,16 +472,8 @@ class _MainShellState extends ConsumerState<MainShell>
                                         return;
                                       }
                                       // Manual-only file: the sidebar row
-                                      // disappears. If it is the active editor
-                                      // and has unsaved edits, confirm discard
-                                      // first (matching load/restore behavior)
-                                      // so removal never silently drops edits.
-                                      if (_activeConfigId == configItem.id &&
-                                          _hasUnsavedChanges) {
-                                        final shouldDiscard =
-                                            await _confirmDiscardChanges();
-                                        if (!shouldDiscard || !mounted) return;
-                                      }
+                                      // disappears; clear the now-stale editor
+                                      // state for that file.
                                       if (_activeConfigId == configItem.id) {
                                         setState(() {
                                           _activeConfig = null;
