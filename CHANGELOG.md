@@ -14,6 +14,11 @@ uses [Semantic Versioning](https://semver.org/).
 - "Open Backups Folder" menu action in the sidebar that opens the app's
   timestamped backups directory in the platform file manager.
 
+### Fixed
+
+- Restoring a backup recreates a missing parent directory (for example after
+  the live config folder was deleted), matching `BackupService.restoreBackup`.
+
 ## [0.1.0] - 2026-08-17
 
 ### Added

@@ -68,6 +68,7 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
           ],
         ),
       );
+      if (!mounted || generation != loadGeneration) return;
       setState(() {
         error = null;
         activeConfigId = null;

@@ -59,11 +59,53 @@ void main() {
       expect(find.text('Remove'), findsNothing);
 
       await tester.tap(find.text('Skip'));
-      await _pumpFrames(tester);
+      await _awaitRecovery(tester, state);
 
       expect(state.error, isNull);
       expect(state.activeConfigId, isNull);
       expect(state.activeConfig, isNull);
+    });
+
+    testWidgets('unresolved-path Skip does not clear a newer load', (
+      tester,
+    ) async {
+      final tempDir = await _createTempDir(tester, 'recovery_handler_test_');
+      addTearDown(() => _deleteTempDir(tester, tempDir));
+      final backupDir = Directory(p.join(tempDir.path, 'backups'));
+
+      final configService = ConfigService(
+        backupService: BackupService(backupDirectory: backupDir),
+        homeDirectoryResolver: () => null,
+      );
+      final harnessKey = GlobalKey<_RecoveryHarnessState>();
+      final config = _discoveredConfigForPath('~/missing.json');
+
+      final state = await _pumpHarness(
+        tester: tester,
+        harnessKey: harnessKey,
+        configService: configService,
+        prefsStore: _FakePreferencesStore(),
+        discoveredConfig: config,
+        errorValue: 'Cannot resolve home',
+      );
+
+      state.bumpLoadGeneration();
+      const newerId = 'newer-load';
+      state.activeConfigId = newerId;
+      state.activeConfig = ToolConfig(
+        toolName: 'Newer',
+        filePath: '/tmp/newer.json',
+        format: ConfigFormat.json,
+      );
+      state.error = null;
+      await _pumpFrames(tester);
+
+      await tester.tap(find.text('Skip'));
+      await _awaitRecovery(tester, state);
+
+      expect(state.activeConfigId, newerId);
+      expect(state.activeConfig?.toolName, 'Newer');
+      expect(state.error, isNull);
     });
 
     testWidgets('skip on existing file shows raw editor action only', (
@@ -95,7 +137,7 @@ void main() {
       expect(find.text('Skip'), findsOneWidget);
 
       await tester.tap(find.text('Skip'));
-      await _pumpFrames(tester);
+      await _awaitRecovery(tester, state);
 
       expect(state.error, isNull);
       expect(state.activeConfigId, isNull);
@@ -126,7 +168,7 @@ void main() {
         discoveredConfig: config,
       );
 
-      await _tapRecoveryAction(tester, 'Open raw editor');
+      await _tapRecoveryAction(tester, state, 'Open raw editor');
 
       expect(state.rawRecoveryMode, isTrue);
       expect(state.activeConfig?.originalContent, fileContent);
@@ -162,7 +204,7 @@ void main() {
 
       expect(find.text('View backups'), findsOneWidget);
 
-      await _tapRecoveryAction(tester, 'View backups');
+      await _tapRecoveryAction(tester, state, 'View backups');
 
       expect(state.historyModalShown, isTrue);
       expect(state.rawRecoveryMode, isTrue);
@@ -203,7 +245,7 @@ void main() {
 
       expect(find.text('Remove'), findsOneWidget);
 
-      await _tapRecoveryAction(tester, 'Remove');
+      await _tapRecoveryAction(tester, state, 'Remove');
 
       expect(state.error, isNull);
       expect(state.activeConfigId, isNull);
@@ -244,7 +286,7 @@ void main() {
         await Directory(configPath).create();
       });
 
-      await _tapRecoveryAction(tester, 'Open raw editor');
+      await _tapRecoveryAction(tester, state, 'Open raw editor');
 
       expect(
         find.textContaining('Could not open the raw editor:'),
@@ -291,7 +333,7 @@ void main() {
       expect(find.text('Skip'), findsOneWidget);
 
       await tester.tap(find.text('Skip'));
-      await _pumpFrames(tester);
+      await _awaitRecovery(tester, state);
 
       expect(state.error, isNull);
       expect(state.activeConfigId, isNull);
@@ -322,7 +364,7 @@ void main() {
       state.bumpLoadGeneration();
       await _pumpFrames(tester);
 
-      await _tapRecoveryAction(tester, 'Open raw editor');
+      await _tapRecoveryAction(tester, state, 'Open raw editor');
 
       expect(state.rawRecoveryMode, isFalse);
       expect(state.historyModalShown, isFalse);
@@ -355,7 +397,7 @@ void main() {
       expect(find.text('Skip'), findsOneWidget);
 
       await tester.tap(find.text('Skip'));
-      await _pumpFrames(tester);
+      await _awaitRecovery(tester, state);
 
       expect(state.error, isNull);
       expect(state.activeConfigId, isNull);
@@ -392,7 +434,7 @@ void main() {
       expect(find.text('View backups'), findsOneWidget);
       expect(find.text('Open raw editor'), findsNothing);
 
-      await _tapRecoveryAction(tester, 'View backups');
+      await _tapRecoveryAction(tester, state, 'View backups');
 
       expect(state.historyModalShown, isTrue);
       expect(state.rawRecoveryMode, isTrue);
@@ -457,7 +499,7 @@ void main() {
         discoveredConfig: config,
       );
 
-      await _tapRecoveryAction(tester, 'Remove');
+      await _tapRecoveryAction(tester, state, 'Remove');
 
       expect(state.error, isNull);
       expect(state.activeConfigId, isNull);

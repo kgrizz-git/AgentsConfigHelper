@@ -195,7 +195,10 @@ class _MainShellState extends ConsumerState<MainShell>
               if (await File(targetPath).exists()) {
                 await configService.backupService.createBackup(targetPath);
               }
-              await File(targetPath).writeAsBytes(backupContent);
+              await configService.backupService.writeRestoredFile(
+                targetPath,
+                backupContent,
+              );
               final configItem = _activeDiscoveredConfig;
               if (configItem != null && mounted) {
                 await _loadConfig(configItem);

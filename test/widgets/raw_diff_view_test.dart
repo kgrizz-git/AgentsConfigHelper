@@ -49,7 +49,6 @@ void main() {
         ),
       );
 
-      // Should show truncation button.
       expect(find.text('Show full content'), findsOneWidget);
       expect(find.text('Show less'), findsNothing);
     });

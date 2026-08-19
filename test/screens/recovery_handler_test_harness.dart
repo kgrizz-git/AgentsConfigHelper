@@ -93,6 +93,7 @@ class _RecoveryHarnessState extends ConsumerState<_RecoveryHarness>
   bool rawRecoveryMode = false;
 
   bool historyModalShown = false;
+  bool recoverySettled = false;
 
   @override
   void showHistoryModal() {
@@ -103,7 +104,12 @@ class _RecoveryHarnessState extends ConsumerState<_RecoveryHarness>
     setState(() => _loadGeneration++);
   }
 
-  Future<void> startRecovery() async {
+  Future<void> startRecovery() {
+    recoverySettled = false;
+    return _startRecovery();
+  }
+
+  Future<void> _startRecovery() async {
     error = 'pending error';
     activeConfigId = widget.discoveredConfig.id;
     activeConfig = ToolConfig(
@@ -111,11 +117,15 @@ class _RecoveryHarnessState extends ConsumerState<_RecoveryHarness>
       filePath: widget.discoveredConfig.filePath,
       format: widget.discoveredConfig.format,
     );
-    await showRecoveryDialog(
-      widget.discoveredConfig,
-      widget.errorValue,
-      _loadGeneration,
-    );
+    try {
+      await showRecoveryDialog(
+        widget.discoveredConfig,
+        widget.errorValue,
+        _loadGeneration,
+      );
+    } finally {
+      recoverySettled = true;
+    }
   }
 
   @override
@@ -144,14 +154,33 @@ Future<void> _flushAsyncIo(WidgetTester tester, {int milliseconds = 50}) async {
   await tester.pump();
 }
 
-Future<void> _tapRecoveryAction(WidgetTester tester, String label) async {
+Future<void> _awaitRecovery(
+  WidgetTester tester,
+  _RecoveryHarnessState state,
+) async {
+  // Do not await the recovery Future inside runAsync: showDialog
+  // continuations live in the fake-async zone and that deadlocks.
+  // Flush real I/O, then pump, until the harness marks the flow done.
+  for (var attempt = 0; attempt < 40; attempt++) {
+    if (state.recoverySettled) {
+      await tester.pump();
+      return;
+    }
+    await _flushAsyncIo(tester);
+  }
+  fail('Recovery did not settle within 40 I/O flushes');
+}
+
+Future<void> _tapRecoveryAction(
+  WidgetTester tester,
+  _RecoveryHarnessState state,
+  String label,
+) async {
   final action = find.widgetWithText(TextButton, label);
   expect(action, findsOneWidget);
   await tester.tap(action);
   await tester.pump();
-  for (var i = 0; i < 5; i++) {
-    await _flushAsyncIo(tester);
-  }
+  await _awaitRecovery(tester, state);
 }
 
 Future<void> _pumpFrames(WidgetTester tester, {int count = 3}) async {

@@ -203,7 +203,6 @@ void main() {
     test('restore of deleted file skips createBackup and succeeds', () async {
       final backupPath = await backupService.createBackup(originalFile.path);
 
-      // Delete the original file.
       await originalFile.delete();
       // Synchronous existence checks keep this filesystem assertion concise.
       // ignore: avoid_slow_async_io
@@ -217,6 +216,18 @@ void main() {
       await backupService.restoreBackup(backupPath, originalFile.path);
 
       expect(await originalFile.readAsString(), equals('{"key": "value"}'));
+    });
+
+    test('writeRestoredFile creates missing parent directories', () async {
+      final backupPath = await backupService.createBackup(originalFile.path);
+      final bytes = await File(backupPath).readAsBytes();
+      final nestedTarget = File(
+        p.join(tempDir.path, 'gone', 'nested', 'config.json'),
+      );
+
+      await backupService.writeRestoredFile(nestedTarget.path, bytes);
+
+      expect(await nestedTarget.readAsString(), equals('{"key": "value"}'));
     });
   });
 }

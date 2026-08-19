@@ -15,6 +15,9 @@ Internal / developer-facing changes that do not belong in the public
   700-line pre-commit limit. The raw-editor
   read-failure case swaps the file for a directory after the dialog appears so
   `readAsString()` throws on Windows as well as POSIX (no `chmod 000`).
+  Recovery action tests poll a harness completion flag (flush I/O + pump)
+  instead of a fixed 250 ms delay, because awaiting the dialog Future inside
+  `runAsync` deadlocks with fake-async.
 - **Phase 5.5 docs-accuracy follow-ups.** Fixed broken relative doc links
   in `ci/README.md`, `hooks/README.md`, and `policies/commits-and-branches.md`;
   removed `inventory/medical-data-security.md`,
@@ -234,6 +237,12 @@ Internal / developer-facing changes that do not belong in the public
   indexes and local state.
 - `docs/NAVIGATION.md`: fixed five links to template directories that never existed
   (`templates/adrs/`, `briefs/`, `plans/`, `designs/` → the actual flat files).
+
+### Fixed
+
+- Unresolved-path recovery Skip now re-checks `mounted` and `loadGeneration`
+  before clearing editor state. Restore-from-history writes through
+  `BackupService.writeRestoredFile` so missing parent directories are created.
 
 ## [0.4.4] - 2026-07-09
 
