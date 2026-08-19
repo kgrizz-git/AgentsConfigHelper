@@ -130,13 +130,19 @@ class _MainShellState extends ConsumerState<MainShell>
     }
   }
 
-  Future<bool> _confirmDiscardChanges() async {
+  /// Asks the user to confirm discarding unsaved changes before a destructive
+  /// action. [actionLabel] names that action on the confirm button (e.g.
+  /// "Discard & Load" when switching configs, "Discard & Remove" when removing
+  /// the manual path), keeping the dialog copy honest about what will happen.
+  Future<bool> _confirmDiscardChanges([
+    String actionLabel = 'Discard & Load',
+  ]) async {
     final shouldDiscard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Discard unsaved changes?'),
         content: const Text(
-          'Loading another configuration will discard your unsaved changes.',
+          'This will discard your unsaved changes.',
         ),
         actions: [
           TextButton(
@@ -145,12 +151,63 @@ class _MainShellState extends ConsumerState<MainShell>
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Discard & Load'),
+            child: Text(actionLabel),
           ),
         ],
       ),
     );
     return shouldDiscard ?? false;
+  }
+
+  Future<void> _removeManualConfig(DiscoveredConfig configItem) async {
+    final wasCatalogBacked = configItem.fromCatalog;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      if (!wasCatalogBacked &&
+          _activeConfigId == configItem.id &&
+          _hasUnsavedChanges) {
+        final shouldDiscard = await _confirmDiscardChanges(
+          'Discard & Remove',
+        );
+        if (!shouldDiscard || !mounted) return;
+        setState(() {
+          _activeConfig = null;
+          _activeConfigId = null;
+          _hasUnsavedChanges = false;
+        });
+      }
+      await ref
+          .read(discoveryControllerProvider.notifier)
+          .removeManualPath(configItem.filePath);
+      if (!mounted) return;
+      if (wasCatalogBacked) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Removed from manual paths; '
+              'still auto-detected and listed.',
+            ),
+          ),
+        );
+        return;
+      }
+      if (_activeConfigId == configItem.id) {
+        setState(() {
+          _activeConfig = null;
+          _activeConfigId = null;
+          _hasUnsavedChanges = false;
+        });
+      }
+    } on Object catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Could not remove path: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -421,79 +478,7 @@ class _MainShellState extends ConsumerState<MainShell>
                               await _loadConfig(configItem);
                             },
                             onRemove: configItem.isManual
-                                ? () async {
-                                    final wasCatalogBacked =
-                                        configItem.fromCatalog;
-                                    // Capture the messenger before the await so
-                                    // we keep BuildContext use before the gap.
-                                    final messenger = ScaffoldMessenger.of(
-                                      context,
-                                    );
-                                    try {
-                                      // Confirm discard before any mutation so
-                                      // cancelling changes neither the editor
-                                      // nor the manual preference.
-                                      // Only the active, dirty, manual-only
-                                      // configuration needs this guard; a
-                                      // dual-provenance (catalog-backed) file
-                                      // keeps its row, so no edit loss occurs.
-                                      if (!wasCatalogBacked &&
-                                          _activeConfigId == configItem.id &&
-                                          _hasUnsavedChanges) {
-                                        final shouldDiscard =
-                                            await _confirmDiscardChanges();
-                                        if (!shouldDiscard || !mounted) {
-                                          return;
-                                        }
-                                      }
-                                      await ref
-                                          .read(
-                                            discoveryControllerProvider
-                                                .notifier,
-                                          )
-                                          .removeManualPath(
-                                            configItem.filePath,
-                                          );
-                                      if (!mounted) return;
-                                      // A dual-provenance file (also
-                                      // auto-discovered via a catalog target)
-                                      // stays in the sidebar after its manual
-                                      // entry is removed, so without feedback
-                                      // the Remove button looks like a no-op.
-                                      if (wasCatalogBacked) {
-                                        messenger.showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Removed from manual paths; '
-                                              'still auto-detected and listed.',
-                                            ),
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      // Manual-only file: the sidebar row
-                                      // disappears; clear the now-stale editor
-                                      // state for that file.
-                                      if (_activeConfigId == configItem.id) {
-                                        setState(() {
-                                          _activeConfig = null;
-                                          _activeConfigId = null;
-                                          _hasUnsavedChanges = false;
-                                        });
-                                      }
-                                    } on Object catch (e) {
-                                      if (mounted) {
-                                        messenger.showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Could not remove path: $e',
-                                            ),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  }
+                                ? () => _removeManualConfig(configItem)
                                 : null,
                           );
                         },

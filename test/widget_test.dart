@@ -5,6 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:agents_config_helper/main.dart';
@@ -23,6 +24,7 @@ import 'package:agents_config_helper/state/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 class _FakeConfigService extends ConfigService {
   _FakeConfigService(BackupService backupService)
@@ -54,26 +56,43 @@ class _EmptyConfigService extends ConfigService {
 }
 
 class _FakeDiscoveryService extends DiscoveryService {
+  _FakeDiscoveryService({this.includeManualPaths = false});
+
+  final bool includeManualPaths;
+
   @override
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
-    return DiscoveryResult(
-      items: [
-        DiscoveredConfig.fromPath(
-          filePath: '~/.claude/settings.json',
-          scope: ConfigLocationScope.user,
-          kind: ConfigSourceKind.structuredConfig,
-          format: ConfigFormat.json,
-          sourceLabel: 'Claude Code',
-        ),
-        DiscoveredConfig.fromPath(
-          filePath: '~/.cursor/permissions.json',
-          scope: ConfigLocationScope.user,
-          kind: ConfigSourceKind.structuredConfig,
-          format: ConfigFormat.json,
-          sourceLabel: 'Cursor',
-        ),
-      ],
-    );
+    final items = <DiscoveredConfig>[
+      DiscoveredConfig.fromPath(
+        filePath: '~/.claude/settings.json',
+        scope: ConfigLocationScope.user,
+        kind: ConfigSourceKind.structuredConfig,
+        format: ConfigFormat.json,
+        sourceLabel: 'Claude Code',
+      ),
+      DiscoveredConfig.fromPath(
+        filePath: '~/.cursor/permissions.json',
+        scope: ConfigLocationScope.user,
+        kind: ConfigSourceKind.structuredConfig,
+        format: ConfigFormat.json,
+        sourceLabel: 'Cursor',
+      ),
+    ];
+    if (includeManualPaths) {
+      for (final manualPath in request.manualPaths) {
+        items.add(
+          DiscoveredConfig.fromPath(
+            filePath: p.normalize(manualPath),
+            scope: ConfigLocationScope.manual,
+            kind: ConfigSourceKind.structuredConfig,
+            format: ConfigFormat.json,
+            sourceLabel: 'Manual Config',
+            fromManual: true,
+          ),
+        );
+      }
+    }
+    return DiscoveryResult(items: items);
   }
 }
 
@@ -128,6 +147,37 @@ class _FakePreferencesStore implements IDiscoveryPreferencesStore {
     removedProjectRoots.add(path);
     addedProjectRoots.remove(path);
   }
+}
+
+class _DelayedPreferencesStore implements IDiscoveryPreferencesStore {
+  _DelayedPreferencesStore(this._manualPaths);
+
+  final List<String> _manualPaths;
+  Completer<void> removeCompleter = Completer<void>();
+
+  @override
+  Future<DiscoveryPreferencesResult> load() async {
+    return DiscoveryPreferencesResult(
+      preferences: DiscoveryPreferences(
+        manualFilePaths: _manualPaths.toList(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> addManualPath(String path) async {}
+
+  @override
+  Future<void> removeManualPath(String path) async {
+    await removeCompleter.future;
+    _manualPaths.remove(path);
+  }
+
+  @override
+  Future<void> addProjectRoot(String path) async {}
+
+  @override
+  Future<void> removeProjectRoot(String path) async {}
 }
 
 void main() {
@@ -420,4 +470,119 @@ void main() {
     // Should show the normal editor area (not an error).
     expect(find.text('No configuration selected'), findsNothing);
   });
+
+  testWidgets(
+    'removal dialog shows "Discard & Remove" for dirty manual config',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final configService = _FakeConfigService(
+        BackupService(backupDirectory: Directory.systemTemp),
+      );
+      final prefsStore = _DelayedPreferencesStore(['/tmp/manual-config.json']);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            configServiceProvider.overrideWithValue(configService),
+            discoveryServiceProvider.overrideWithValue(
+              _FakeDiscoveryService(includeManualPaths: true),
+            ),
+            discoveryPreferencesStoreProvider.overrideWithValue(prefsStore),
+          ],
+          child: const MaterialApp(home: MainShell()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Load the manual config and make it dirty.
+      await tester.tap(find.text('Manual Config'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Item').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).at(1),
+        'unsaved rule',
+      );
+      await tester.pumpAndSettle();
+
+      // Tap the remove button on the manual sidebar item.
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      // The dialog must appear with removal-specific copy.
+      expect(find.text('Discard unsaved changes?'), findsOneWidget);
+      expect(find.text('Discard & Remove'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+
+      // Cancel preserves the editor.
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('unsaved rule'), findsOneWidget);
+
+      // Re-open and confirm.
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard & Remove'));
+      await tester.pumpAndSettle();
+
+      // Editor cleared — no stale state.
+      expect(find.text('No configuration selected'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'confirming removal clears editor before async preference I/O',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final configService = _FakeConfigService(
+        BackupService(backupDirectory: Directory.systemTemp),
+      );
+      final prefsStore = _DelayedPreferencesStore(['/tmp/manual-config.json']);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            configServiceProvider.overrideWithValue(configService),
+            discoveryServiceProvider.overrideWithValue(
+              _FakeDiscoveryService(includeManualPaths: true),
+            ),
+            discoveryPreferencesStoreProvider.overrideWithValue(prefsStore),
+          ],
+          child: const MaterialApp(home: MainShell()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Load the manual config and make it dirty.
+      await tester.tap(find.text('Manual Config'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Item').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).at(1),
+        'unsaved rule',
+      );
+      await tester.pumpAndSettle();
+
+      // Open removal dialog and confirm.
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard & Remove'));
+      await tester.pumpAndSettle();
+
+      // The editor must be cleared synchronously — before
+      // removeCompleter resolves — so edits during async
+      // preference I/O cannot be silently lost.
+      expect(find.text('No configuration selected'), findsOneWidget);
+      expect(find.text('unsaved rule'), findsNothing);
+
+      // Complete the async removal.
+      prefsStore.removeCompleter.complete();
+      await tester.pumpAndSettle();
+    },
+  );
 }
