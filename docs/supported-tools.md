@@ -1,6 +1,6 @@
 # Supported Tools
 
-Last reviewed: 2026-08-17
+Last reviewed: 2026-08-18
 
 Config format reference for each supported AI agent and IDE. Used by AgentsConfigHelper
 to auto-detect, parse, visualize, and edit settings across tools.
@@ -19,6 +19,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Antigravity | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` | action(target) + presets |
 | Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — (host ACP config, e.g. Zed `agent_servers`, is not managed by this app) | via agy hooks | ACP permission bridge |
 | VS Code / GitHub Copilot _(deferred)_ | Markdown | — | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` | instructions only (no permission model) |
+| LM Studio _(deferred)_ | JSON | — | — | — | local LLM runner with model management and API server settings |
 
 ---
 
@@ -584,6 +585,43 @@ dedicated raw-text editor exists (see "Detection and Registry → Deferred Sourc
   under deferred-tools work.
 
 Adding VS Code / GitHub Copilot as a first-class supported tool is tracked in the master plan.
+
+---
+
+## LM Studio
+
+> **Status:** Deferred — listed for parity/tracking; no dedicated parser or auto-discovery
+> yet. LM Studio is a local LLM runner with model management and API server settings.
+
+### LM Studio Config paths
+
+LM Studio config paths and format need to be researched. Typical locations may include:
+
+- User settings: `~/.lmstudio/` or platform-specific app data directories
+- Model cache: Local model storage paths
+- API server configuration: Port, host, and endpoint settings
+
+### LM Studio Config format
+
+Config format needs to be researched. Likely JSON or similar structured format for:
+
+- Model management (downloaded models, aliases)
+- API server settings (host, port, CORS)
+- Runtime parameters (temperature, max tokens, context window)
+
+### LM Studio Permissions model
+
+As a local LLM runner, LM Studio likely does not have a traditional permission model for tool access. Instead, it may have:
+
+- Network access controls for the API server
+- File system access for model storage
+- Sandbox or containerization options
+
+### LM Studio CLI
+
+`lmstudio` (CLI interface if available)
+
+**Sources:** Research needed from LM Studio documentation
 
 ## Permissions model taxonomy
 

@@ -2,14 +2,25 @@ import 'package:agents_config_helper/models/tool_config.dart';
 
 /// Base exception for configuration parsing errors.
 class ConfigParseException implements Exception {
-  /// Creates a parsing exception with a user-facing [message].
-  const ConfigParseException(this.message);
+  /// Creates a parsing exception with a user-facing [message] and optional
+  /// 1-based [line]/[column] position in the source content.
+  const ConfigParseException(this.message, {this.line, this.column});
 
   /// The reason parsing or serialization failed.
   final String message;
 
+  /// The 1-based line of the error in the source content, when known.
+  final int? line;
+
+  /// The 1-based column of the error in the source content, when known.
+  final int? column;
+
   @override
-  String toString() => 'ConfigParseException: $message';
+  String toString() {
+    final hasPosition = line != null && column != null;
+    final position = hasPosition ? ' at line $line, column $column' : '';
+    return 'ConfigParseException: $message$position';
+  }
 }
 
 /// A pure interface for parsing tool configurations from strings.

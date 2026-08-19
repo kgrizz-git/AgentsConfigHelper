@@ -14,12 +14,20 @@ class _Edit {
 
 /// Parses and serializes JSON and JSONC configuration files.
 class JsonConfigParser with ConfigParserMixin implements ConfigParser {
+  /// Shown when strict JSON decoding fails and the content is retried as
+  /// JSONC (comments/trailing commas) instead.
+  static const String jsoncFallbackWarning =
+      'Parsed as JSONC — comments and trailing commas were detected and '
+      'are preserved on save.';
+
   /// Parses raw JSON or JSONC content into a [ToolConfig].
   ///
   /// If strict JSON decoding fails, the content is first run through
-  /// [JsoncCleaner] to strip comments and trailing commas before retrying.
-  /// Empty or entirely-whitespace content preserves `content` as
-  /// `originalContent` and returns an otherwise-empty [ToolConfig].
+  /// [JsoncCleaner] to strip comments and trailing commas before retrying,
+  /// and the returned config carries a [ToolConfig.parseWarnings] entry so
+  /// the caller can surface the fallback. Empty or entirely-whitespace
+  /// content preserves `content` as `originalContent` and returns an
+  /// otherwise-empty [ToolConfig].
   @override
   ToolConfig parse(
     String content, {
@@ -43,6 +51,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
     }
 
     Object? decoded;
+    var jsoncFallbackUsed = false;
     try {
       decoded = jsonDecode(content);
     } on FormatException {
@@ -50,8 +59,14 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       try {
         final cleanContent = JsoncCleaner.clean(content);
         decoded = jsonDecode(cleanContent);
+        jsoncFallbackUsed = true;
       } on FormatException catch (e) {
-        throw ConfigParseException('Invalid JSON/JSONC syntax: ${e.message}');
+        final position = _lineColumnFromOffset(content, e.offset);
+        throw ConfigParseException(
+          'Invalid JSON/JSONC syntax: ${e.message}',
+          line: position?.$1,
+          column: position?.$2,
+        );
       }
     }
 
@@ -61,6 +76,9 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
         filePath: filePath,
         format: resolvedFormat,
         originalContent: content,
+        parseWarnings: jsoncFallbackUsed
+            ? const [jsoncFallbackWarning]
+            : const [],
       );
     }
 
@@ -81,7 +99,28 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       permissions: permissions,
       originalContent: content,
       rawSettings: decoded,
+      parseWarnings: jsoncFallbackUsed
+          ? const [jsoncFallbackWarning]
+          : const [],
     );
+  }
+
+  /// Derives 1-based line/column coordinates from a character [offset] into
+  /// [content]. Returns null when the offset is out of range. Used to turn
+  /// [FormatException.offset] into editor-style positions.
+  static (int, int)? _lineColumnFromOffset(String content, int? offset) {
+    if (offset == null || offset < 0 || offset > content.length) return null;
+    var line = 1;
+    var column = 1;
+    for (var i = 0; i < offset; i++) {
+      if (content[i] == '\n') {
+        line++;
+        column = 1;
+      } else {
+        column++;
+      }
+    }
+    return (line, column);
   }
 
   /// Serializes a [ToolConfig] back into JSON/JSONC content.

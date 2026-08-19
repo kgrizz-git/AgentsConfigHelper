@@ -284,5 +284,50 @@ void main() {
         expect(reparsed.rawSettings.containsKey('rules'), isFalse);
       }
     });
+
+    test('ConfigParseException has line/column for invalid JSON', () {
+      try {
+        parser.parse(
+          '{\n  "key": }\n',
+          filePath: testPath,
+          toolName: testTool,
+        );
+        fail('Expected ConfigParseException');
+      } on ConfigParseException catch (e) {
+        expect(e.line, isNotNull);
+        expect(e.column, isNotNull);
+        expect(e.line, greaterThan(0));
+      }
+    });
+
+    test('JSONC fallback adds parseWarnings for .json with comments', () {
+      const jsonc = '{\n  // comment\n  "rules": ["a"]\n}';
+      final config = parser.parse(
+        jsonc,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
+      expect(config.parseWarnings, isNotEmpty);
+      expect(config.parseWarnings.first, contains('JSONC'));
+    });
+
+    test('no parseWarnings for .jsonc that is valid strict JSON', () {
+      const strict = '{"rules": ["a"]}';
+      final config = parser.parse(
+        strict,
+        filePath: 'test.jsonc',
+        toolName: 'Test',
+      );
+      expect(config.parseWarnings, isEmpty);
+    });
+
+    test('no parseWarnings for empty content', () {
+      final config = parser.parse(
+        '',
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
+      expect(config.parseWarnings, isEmpty);
+    });
   });
 }

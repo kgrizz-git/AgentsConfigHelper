@@ -7,6 +7,17 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **RecoveryHandler widget tests.** Added `test/screens/recovery_handler_test.dart`
+  (12 cases) covering the corrupt-file recovery dialog via a harness mixin widget;
+  filesystem setup and I/O flushes use `WidgetTester.runAsync` because `dart:io`
+  futures do not complete in the widget test fake-async zone. Harness helpers
+  live in `recovery_handler_test_harness.dart` so each file stays under the
+  700-line pre-commit limit. The raw-editor
+  read-failure case swaps the file for a directory after the dialog appears so
+  `readAsString()` throws on Windows as well as POSIX (no `chmod 000`).
+  Recovery action tests poll a harness completion flag (flush I/O + pump)
+  instead of a fixed 250 ms delay, because awaiting the dialog Future inside
+  `runAsync` deadlocks with fake-async.
 - **Phase 5.5 docs-accuracy follow-ups.** Fixed broken relative doc links
   in `ci/README.md`, `hooks/README.md`, and `policies/commits-and-branches.md`;
   removed `inventory/medical-data-security.md`,
@@ -38,6 +49,12 @@ Internal / developer-facing changes that do not belong in the public
   call in `check_doc_links.py` (alert #5); runtime http/https scheme guard
   remains as defense-in-depth. Closure of alerts #2, #3, #5 pending CI and
   Security-tab confirmation.
+- **Phase 6A: parse-error recovery (2026-08-18).** Recovery dialog for corrupt
+  config files (`RecoveryHandler` mixin in `lib/screens/recovery_handler.dart`).
+  Line/column diagnostics on `ConfigParseException` (JSON from offset, YAML from
+  `SourceSpan`, TOML from `TomlParserException`). JSONC fallback warning via
+  `ToolConfig.parseWarnings`. Restore safety: backup-before-restore with
+  exists-guard. `RawDiffView` extracted to `lib/widgets/raw_diff_view.dart`.
 - **Nitpick resolution round (2026-08-16).** Tests: `discovered_config_test` drops the const-identical equality check for a real props
   comparison plus inequality and `fromPath` id/normalization coverage;
   `text_config_parser_test` covers the `originalContent` argument and
@@ -220,6 +237,12 @@ Internal / developer-facing changes that do not belong in the public
   indexes and local state.
 - `docs/NAVIGATION.md`: fixed five links to template directories that never existed
   (`templates/adrs/`, `briefs/`, `plans/`, `designs/` → the actual flat files).
+
+### Fixed
+
+- Unresolved-path recovery Skip now re-checks `mounted` and `loadGeneration`
+  before clearing editor state. Restore-from-history writes through
+  `BackupService.writeRestoredFile` so missing parent directories are created.
 
 ## [0.4.4] - 2026-07-09
 

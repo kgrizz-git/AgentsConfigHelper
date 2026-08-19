@@ -176,5 +176,58 @@ void main() {
         expect(backups.first.path, equals(lastBackupPath));
       },
     );
+
+    test(
+      'restore over existing file should be preceded by createBackup '
+      'to preserve current contents',
+      () async {
+        // Simulate the A1 safety pattern: backup before restore.
+        final backupPath = await backupService.createBackup(originalFile.path);
+
+        // Modify the original to simulate user edits.
+        await originalFile.writeAsString('{"key": "edited"}');
+
+        // Backup the edited version before restoring (the A1 fix).
+        await backupService.createBackup(originalFile.path);
+
+        // Restore the original backup.
+        await backupService.restoreBackup(backupPath, originalFile.path);
+        expect(await originalFile.readAsString(), equals('{"key": "value"}'));
+
+        // The edited version should be available as a backup.
+        final backups = await backupService.listBackups(originalFile.path);
+        expect(backups.length, greaterThanOrEqualTo(2));
+      },
+    );
+
+    test('restore of deleted file skips createBackup and succeeds', () async {
+      final backupPath = await backupService.createBackup(originalFile.path);
+
+      await originalFile.delete();
+      // Synchronous existence checks keep this filesystem assertion concise.
+      // ignore: avoid_slow_async_io
+      expect(await originalFile.exists(), isFalse);
+
+      // The A1 pattern: guard createBackup with exists-check.
+      // ignore: avoid_slow_async_io
+      if (await originalFile.exists()) {
+        await backupService.createBackup(originalFile.path);
+      }
+      await backupService.restoreBackup(backupPath, originalFile.path);
+
+      expect(await originalFile.readAsString(), equals('{"key": "value"}'));
+    });
+
+    test('writeRestoredFile creates missing parent directories', () async {
+      final backupPath = await backupService.createBackup(originalFile.path);
+      final bytes = await File(backupPath).readAsBytes();
+      final nestedTarget = File(
+        p.join(tempDir.path, 'gone', 'nested', 'config.json'),
+      );
+
+      await backupService.writeRestoredFile(nestedTarget.path, bytes);
+
+      expect(await nestedTarget.readAsString(), equals('{"key": "value"}'));
+    });
   });
 }

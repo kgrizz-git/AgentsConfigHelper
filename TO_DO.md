@@ -46,6 +46,8 @@
         (note `agyAcp` already models the ACP session bridge separately).
   - [ ] **Promote VS Code / GitHub Copilot** from deferred docs-only to a first-class
         `ToolDescriptor` (already stubbed in `docs/supported-tools.md`).
+  - [ ] **LM Studio** — not supported at all; add `ToolId` + config paths (local LLM runner
+        with model management and API server settings).
 
 ## Deferred from PR #5 review (Qodo / SonarCloud)
 
@@ -58,18 +60,26 @@
       `ConfigService.saveConfig`/`saveRawConfig` directly, and `HistoryModal`
       reaches data via `backupListProvider`. Consider a dedicated save
       controller/notifier so widgets stay presentation-only (Qodo architecture
-      findings — deferred, not blocking).
+      findings — deferred, likely not worth doing). The current save callback
+      in `MainShell` is already a clean 3-step orchestration (call service,
+      invalidate provider, setState) that `AGENTS.md` explicitly permits.
+      Extracting a full Riverpod controller would create split-brain state
+      (controller updates via Riverpod while loading/error/dirty stays as
+      setState) with no user-facing benefit. Only revisit if a concrete
+      testability gap emerges that the existing `onSave` injection point on
+      `ConfigEditor` cannot cover.
 - [ ] Revisit TOML lossless round-trip: `ConfigService.saveRawConfig` re-serializes
       through `parser.serialize` when structured edits diverge from the raw
       baseline, which drops comments/whitespace for TOML (serializer is not
       AST-preserving). See ADR referenced in `toml_config_parser.dart`.
 - [ ] Fix manual-path removal for files also discovered via a catalog target
-      (Qodo #10): `DiscoveryService.addIfValid` mutates an existing discovered
-      item to `isManual: true` instead of tracking manual provenance separately,
-      so `removeManualPath` deletes only the preference entry and the file is
-      rediscovered via its user/project scope on refresh — the sidebar "remove"
-      silently no-ops. Disambiguate manual provenance so removal only affects
-      manual-only items. Touches `lib/services/discovery_service.dart`,
+      (Qodo #10): `DiscoveryService.addIfValid` returns `false` for duplicates
+      without setting `isManual` (the dedup guard at lines 27–37 prevents it),
+      so `removeManualPath` only deletes the preference entry and the file is
+      rediscovered via its catalog target on the next refresh. The dominant
+      bug is that the sidebar "remove" button never appears for catalog-first
+      dual-provenance files. Disambiguate manual provenance so removal works
+      correctly. Touches `lib/services/discovery_service.dart`,
       `lib/state/providers.dart`, `lib/models/discovered_config.dart`.
 - [ ] Adjust the Qodo dashboard settings for Python false positives — **only if the
       noise persists**. The repo-side fix already shipped (Dart-vs-Python note in

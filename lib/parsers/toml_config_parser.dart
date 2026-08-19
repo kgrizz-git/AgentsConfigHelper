@@ -29,7 +29,19 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
     try {
       doc = TomlDocument.parse(content);
     } catch (e) {
-      throw ConfigParseException('Invalid TOML syntax: $e');
+      // TomlParserException exposes 1-based line/column getters; surface
+      // them on the wrapped exception when the underlying error is one.
+      int? line;
+      int? column;
+      if (e is TomlParserException) {
+        line = e.line;
+        column = e.column;
+      }
+      throw ConfigParseException(
+        'Invalid TOML syntax: $e',
+        line: line,
+        column: column,
+      );
     }
 
     final rawMap = doc.toMap();

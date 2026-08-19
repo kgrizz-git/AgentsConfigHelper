@@ -39,6 +39,20 @@ class _FakeConfigService extends ConfigService {
   }
 }
 
+class _EmptyConfigService extends ConfigService {
+  _EmptyConfigService(BackupService backupService)
+    : super(backupService: backupService);
+
+  @override
+  Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
+    return ToolConfig(
+      toolName: 'Claude',
+      filePath: config.filePath,
+      format: ConfigFormat.json,
+    );
+  }
+}
+
 class _FakeDiscoveryService extends DiscoveryService {
   @override
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
@@ -370,4 +384,40 @@ void main() {
       );
     },
   );
+
+  testWidgets('empty config loads into normal editor, not recovery dialog', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final configService = _EmptyConfigService(
+      BackupService(backupDirectory: Directory.systemTemp),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          configServiceProvider.overrideWithValue(configService),
+          discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+          discoveryPreferencesStoreProvider.overrideWithValue(
+            _FakePreferencesStore(),
+          ),
+        ],
+        child: const MaterialApp(home: MainShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Claude Code'));
+    await tester.pumpAndSettle();
+
+    // Should NOT show recovery dialog.
+    expect(
+      find.text('Configuration could not be loaded'),
+      findsNothing,
+    );
+    // Should show the normal editor area (not an error).
+    expect(find.text('No configuration selected'), findsNothing);
+  });
 }

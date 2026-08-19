@@ -92,16 +92,25 @@ class BackupService {
       );
     }
 
-    final targetFile = File(targetPath);
-    // Ensure the target directory exists before restoring
-    final targetDir = targetFile.parent;
+    await _ensureParentDirectory(targetPath);
+    await backupFile.copy(targetPath);
+  }
+
+  /// Writes restored [bytes] to [targetPath], creating missing parent
+  /// directories first. Used when the caller already read the backup into
+  /// memory (so retention pruning cannot delete the selected snapshot).
+  Future<void> writeRestoredFile(String targetPath, List<int> bytes) async {
+    await _ensureParentDirectory(targetPath);
+    await File(targetPath).writeAsBytes(bytes);
+  }
+
+  Future<void> _ensureParentDirectory(String targetPath) async {
+    final targetDir = File(targetPath).parent;
     // The asynchronous check avoids blocking the UI thread.
     // ignore: avoid_slow_async_io
     if (!await targetDir.exists()) {
       await targetDir.create(recursive: true);
     }
-
-    await backupFile.copy(targetPath);
   }
 
   /// Lists all backups for the given [originalPath].

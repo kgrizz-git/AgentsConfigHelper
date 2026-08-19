@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/parsers/config_parser.dart';
+import 'package:agents_config_helper/screens/recovery_handler.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -24,14 +27,44 @@ class MainShell extends ConsumerStatefulWidget {
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends ConsumerState<MainShell>
+    with RecoveryHandler<MainShell> {
   ToolConfig? _activeConfig;
   String? _activeConfigId;
   DiscoveredConfig? _activeDiscoveredConfig;
   bool _isLoading = false;
   bool _hasUnsavedChanges = false;
+  bool _rawRecoveryMode = false;
   String? _error;
   var _loadGeneration = 0;
+
+  @override
+  int get loadGeneration => _loadGeneration;
+
+  @override
+  ToolConfig? get activeConfig => _activeConfig;
+  @override
+  set activeConfig(ToolConfig? v) => _activeConfig = v;
+
+  @override
+  String? get activeConfigId => _activeConfigId;
+  @override
+  set activeConfigId(String? v) => _activeConfigId = v;
+
+  @override
+  String? get error => _error;
+  @override
+  set error(String? v) => _error = v;
+
+  @override
+  bool get hasUnsavedChanges => _hasUnsavedChanges;
+  @override
+  set hasUnsavedChanges(bool v) => _hasUnsavedChanges = v;
+
+  @override
+  bool get rawRecoveryMode => _rawRecoveryMode;
+  @override
+  set rawRecoveryMode(bool v) => _rawRecoveryMode = v;
 
   @override
   void initState() {
@@ -59,6 +92,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       _activeConfigId = configItem.id;
       _activeDiscoveredConfig = configItem;
       _hasUnsavedChanges = false;
+      _rawRecoveryMode = false;
     });
     try {
       final configService = ref.read(configServiceProvider);
@@ -73,13 +107,19 @@ class _MainShellState extends ConsumerState<MainShell> {
       if (mounted && generation == _loadGeneration) {
         setState(() {
           _error = error.toString();
+          // Don't keep the failed file highlighted as active in the sidebar.
+          _activeConfigId = null;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading config: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (error is ConfigParseException || error is FileSystemException) {
+          await showRecoveryDialog(configItem, error, generation);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error loading config: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } finally {
       if (mounted && generation == _loadGeneration) {
@@ -113,7 +153,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     return shouldDiscard ?? false;
   }
 
-  void _showHistoryModal() {
+  @override
+  void showHistoryModal() {
     if (_activeConfig == null) return;
 
     unawaited(
@@ -140,9 +181,23 @@ class _MainShellState extends ConsumerState<MainShell> {
               final targetPath = configService.resolvePath(
                 activeConfig.filePath,
               );
-              await configService.backupService.restoreBackup(
-                backupPath,
+              // Read the backup content first — createBackup prunes entries
+              // beyond the 10-backup cap, which could delete the very backup
+              // being restored if it's the oldest. Reading first avoids the
+              // race.
+              final backupContent = await File(backupPath).readAsBytes();
+              // Preserve the current on-disk file before overwriting it with
+              // the restored snapshot, matching saveConfig/saveRawConfig. The
+              // exists-check keeps a deleted target (restore-as-recreate) from
+              // failing the backup step.
+              // Checking file existence asynchronously avoids blocking the UI.
+              // ignore: avoid_slow_async_io
+              if (await File(targetPath).exists()) {
+                await configService.backupService.createBackup(targetPath);
+              }
+              await configService.backupService.writeRestoredFile(
                 targetPath,
+                backupContent,
               );
               final configItem = _activeDiscoveredConfig;
               if (configItem != null && mounted) {
@@ -475,12 +530,16 @@ class _MainShellState extends ConsumerState<MainShell> {
               if (mounted) {
                 setState(() {
                   _activeConfig = updated;
+                  // A successful save re-parses the content, so the full
+                  // editor can take over again.
+                  _rawRecoveryMode = false;
                 });
               }
               return updated;
             },
             resolvePath: configService.resolvePath,
-            onShowHistory: _showHistoryModal,
+            onShowHistory: showHistoryModal,
+            rawOnly: _rawRecoveryMode,
             onDirtyChanged: (hasUnsavedChanges) {
               if (mounted) {
                 setState(() {
