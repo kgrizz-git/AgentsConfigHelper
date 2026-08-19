@@ -11,13 +11,26 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- "Open Backups Folder" menu action in the sidebar that opens the app's
+- **Corrupted-config recovery.** When a config file fails to parse, a recovery dialog
+  offers: open the file in a raw text editor, view backups, skip, and (for manually-added
+  files) remove. The app never auto-overwrites a corrupted on-disk file.
+- **Position-accurate parse errors.** Parse failures now report the 1-based line and column
+  for JSON, JSONC, YAML, and TOML (derived from the underlying parser exception).
+- **JSONC fallback warning.** When a `.json` file contains comments or trailing commas and is
+  silently treated as JSONC, a non-blocking banner informs the user.
+- **Open Backups Folder** menu action in the sidebar that opens the app's
   timestamped backups directory in the platform file manager.
 
 ### Fixed
 
-- Restoring a backup recreates a missing parent directory (for example after
-  the live config folder was deleted), matching `BackupService.restoreBackup`.
+- **Restore safety.** Restoring a backup now preserves the current on-disk file as a new
+  backup first (the existing file is backed up before the snapshot is applied), and recreates
+  a missing parent directory (for example after the live config folder was deleted), matching
+  `BackupService.restoreBackup`.
+- Manual-path removal now works for files also discovered via catalog auto-detection
+  (dual-provenance). The sidebar Remove button appears for these files, and removing
+  the manual entry keeps the catalog-backed entry instead of silently no-op'ing or
+  re-detecting the file after refresh.
 
 ## [0.1.0] - 2026-08-17
 

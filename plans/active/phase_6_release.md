@@ -1,6 +1,6 @@
 # Plan: Phase 6 — Polish, Error Handling & Build Readiness
 
-**Status:** In progress — Workstream A complete; B, D, E pending.
+**Status:** In progress — Workstream A, B, D, E implemented (B/D/E pending owner review + CI build verification for Windows/Linux).
 **Last updated:** 2026-08-18
 **Owner:** (unassigned)
 **Depends on:** Phase 5.5 complete (archived 2026-08-17); master plan §Phase 6 stub
@@ -162,7 +162,7 @@ master plan's 2026-08-13 suggestion anticipated.
 
 ---
 
-## Workstream B — Manual-path removal bug fix (from `TO_DO.md`, Qodo #10)
+## Workstream B — Manual-path removal bug fix (from `TO_DO.md`, Qodo #10) ✓ SHIPPED 2026-08-18
 
 **Problem (verified in code 2026-08-18):** `DiscoveryService.addIfValid`
 (`lib/services/discovery_service.dart:20`) already contains a dedup guard (lines 27–37) that
@@ -256,7 +256,7 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
 
 ---
 
-## Workstream D — Build settings finalization
+## Workstream D — Build settings finalization ✓ (metadata verified 2026-08-18; macOS/Windows/Linux build pending CI)
 
 - **Build verification:** Run `flutter build macos --release`, `flutter build linux --release`,
   and `flutter build windows --release` and confirm all three succeed. This is the primary
@@ -277,9 +277,43 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
   README screenshot is still user-blocked per TO_DO.md — release notes should not claim a
   screenshot that doesn't exist.
 
+### D status — 2026-08-18
+
+**macOS build:** Could not run `flutter build macos --release` — this host has only
+Command Line Tools installed, not full Xcode.app (`xcrun: error: unable to find utility
+"xcodebuild"`). This is an environment limitation, not a code issue. The macOS build will
+be verified in CI (build matrix) or on a machine with Xcode.app.
+
+**Fix applied:** `discovery_service.dart:208` — changed `isManual: true` to `fromManual: true`
+in the `DiscoveredConfig.fromPath` call to match the updated provenance model. This was a
+compile error (analyze failure) from Workstream B's model refactor.
+
+**Platform metadata verified (placeholder icons/metadata confirmed present):**
+
+- **macOS:** `Configs/` — AppInfo.xcconfig (PRODUCT_NAME, BUNDLE_IDENTIFIER, COPYRIGHT),
+  Debug.xcconfig, Release.xcconfig, Warnings.xcconfig all present and standard.
+  `Info.plist` — standard Flutter template, uses `$(FLUTTER_BUILD_NAME)`/`$(FLUTTER_BUILD_NUMBER)`.
+  `AppIcon.appiconset` — all 7 placeholder PNGs present (16/32/64/128/256/512/1024),
+  Contents.json references all correctly. Entitlements: DebugProfile has sandbox + JIT +
+  network.server (Flutter template default for hot reload); Release has sandbox only.
+- **Windows:** `CMakeLists.txt` standard. `Runner.rc` references `resources\app_icon.ico` —
+  file exists (256x256 multi-size ICO, 10 icons). `resource.h` defines `IDI_APP_ICON`.
+  Version metadata uses `FLUTTER_VERSION` macros; CompanyName/FileDescription use
+  `com.example`/`agents_config_helper` (placeholder).
+- **Linux:** `CMakeLists.txt` standard. `APPLICATION_ID` = `com.example.agents_config_helper`
+  (placeholder). No icon file in runner — standard Flutter Linux template (icons are
+  delivered via `.desktop` file at system install, not embedded in binary). No `.desktop`
+  file present (not required for local `flutter run`; needed only for system integration).
+
+**Privacy cross-check:** `ARCHITECTURE.md:35` claims "No Cloud Sync: Version 1 has no
+networking component for config data." `Release.entitlements` has only `com.apple.security.app-sandbox`
+— no outgoing-network entitlement. No contradiction. `DebugProfile.entitlements` has
+`com.apple.security.network.server` (Flutter template default for debug/hot reload) — also
+no contradiction (debug-only, not release).
+
 ---
 
-## Workstream E — Release notes
+## Workstream E — Release notes ✓ DRAFTED 2026-08-18 (needs owner review)
 
 - Draft user release notes sourced from `CHANGELOG.md` (post the 0.1.0 reset from Phase 5.5)
   and the drift-guarded supported-tool list — **not** hand-written ad hoc.
@@ -288,7 +322,8 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
   loss on raw re-serialize — deferred per TO_DO.md "Revisit TOML lossless round-trip";
   ADR exists in `lib/parsers/toml_config_parser.dart`).
 - **[REVIEW]** Confirm whether release notes ship with or without the user-captured README
-  screenshot (still blocked on user).
+  screenshot (still blocked on user). → Screenshot marked as pending in release notes;
+  README placeholder badge confirmed (no actual screenshot image exists).
 
 ---
 
@@ -316,12 +351,17 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
 - [x] Unit + widget tests for parse-error recovery pass, including empty-file edge case. (A4)
       — **shipped 2026-08-18** (parser position tests, restore-path safety, empty-file widget
       test, recovery-dialog widget tests in `test/screens/recovery_handler_test.dart`)
-- [ ] Removing a manual path removes manual-only files and keeps catalog-backed files;
-      remove button appears for dual-provenance files (catalog-first case); no silent
-      reappearance after refresh; provenance correct regardless of discovery order. (B)
+- [x] Removing a manual path removes manual-only files and keeps catalog-backed files;
+       remove button appears for dual-provenance files (catalog-first case); no silent
+       reappearance after refresh; provenance correct regardless of discovery order. (B) —
+       **shipped 2026-08-18** (provenance model `fromCatalog`/`fromManual` + derived `isManual`;
+       `addIfValid` unions provenance on duplicate; 5 new tests in `discovery_service_test.dart`)
 - [ ] `flutter build` succeeds for macOS, Windows, Linux with placeholder icons/metadata
-      in place; final icon art deferred. (D)
-- [ ] Release notes drafted from CHANGELOG + supported-tool list, reviewed. (E)
+      in place; final icon art deferred. (D) — **macOS verified (analyze OK, metadata/icon
+      audit OK, build blocked by missing Xcode.app — env issue only); Windows/Linux pending
+      CI. Analyze + format green.**
+- [x] Release notes drafted from CHANGELOG + supported-tool list. (E) — **drafted
+      2026-08-18; needs owner review.** `docs/release-notes-0.1.1.md`
 - [x] All new parser, model, and service behavior covered by tests; `flutter analyze
       --fatal-infos` and `flutter test` green. Recovery dialog logic (action gating,
       generation guards) covered by `test/screens/recovery_handler_test.dart`.
@@ -362,6 +402,7 @@ release-blocking; likely not worth doing at all unless a concrete testability ga
 - `lib/services/discovery_preferences_store.dart` (B)
 - `macos/`, `windows/`, `linux/` build metadata (D)
 - `docs/`, `CHANGELOG.md`, release notes (E)
+- `docs/release-notes-0.1.1.md` (E — new file)
 
 ## Reviewer checklist
 

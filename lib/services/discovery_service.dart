@@ -17,10 +17,9 @@ class DiscoveryService {
     final seenPaths = <String>{};
 
     // Returns true only when [config] is newly added to [items].
-    Future<bool> addIfValid(
-      DiscoveredConfig config, {
-      bool isManual = false,
-    }) async {
+    // When a duplicate path is found, the existing entry's provenance is
+    // updated (union) so discovery order does not matter.
+    Future<bool> addIfValid(DiscoveredConfig config) async {
       // Dedup by a platform-aware key: case-insensitive on Windows so a manual
       // entry and a catalog target that differ only in case don't produce two
       // sidebar rows for the same file.
@@ -28,12 +27,30 @@ class DiscoveryService {
           ? config.filePath.toLowerCase()
           : config.filePath;
       if (seenPaths.contains(pathKey)) {
-        // Already discovered via a catalog (user/project) target. A coinciding
-        // manual entry must NOT flip it to manual: `isManual` stays true only
-        // for files whose sole provenance is the manual list. Otherwise the
-        // sidebar's remove action (gated on `isManual`) would appear for a
-        // catalog-backed file that `removeManualPath` cannot make disappear —
-        // it is rediscovered via its catalog target on the next refresh.
+        // Merge provenance into the existing entry. Scope stays as-is (set
+        // from the first match at discovery time).
+        final idx = items.indexWhere(
+          (item) =>
+              (Platform.isWindows
+                  ? item.filePath.toLowerCase()
+                  : item.filePath) ==
+              pathKey,
+        );
+        // The seenPaths/items invariants are kept in lockstep, but guard
+        // defensively so a future divergence is a clean no-op rather than a
+        // RangeError.
+        if (idx < 0) {
+          seenPaths.add(pathKey);
+          return false;
+        }
+        final existing = items[idx];
+        // Only provenance flags are passed; id/filePath/kind are unchanged, so
+        // copyWith keeps the existing id stable (it re-derives id only when
+        // kind/filePath differ). Scope stays as-is from the first match.
+        items[idx] = existing.copyWith(
+          fromCatalog: existing.fromCatalog || config.fromCatalog,
+          fromManual: existing.fromManual || config.fromManual,
+        );
         return false;
       }
 
@@ -45,7 +62,7 @@ class DiscoveryService {
           items.add(config);
           seenPaths.add(pathKey);
           return true;
-        } else if (isManual) {
+        } else if (config.fromManual) {
           // File.exists() is false for a directory; report that distinctly so
           // the user isn't told a path that plainly exists "does not exist".
           // ignore: avoid_slow_async_io
@@ -85,6 +102,7 @@ class DiscoveryService {
           format: target.format,
           sourceLabel: descriptor.displayName,
           descriptor: descriptor,
+          fromCatalog: true,
         );
         await addIfValid(config);
       } else {
@@ -121,6 +139,7 @@ class DiscoveryService {
                 format: target.format,
                 sourceLabel: descriptor.displayName,
                 descriptor: descriptor,
+                fromCatalog: true,
               );
               await addIfValid(config);
             }
@@ -198,17 +217,14 @@ class DiscoveryService {
         final config = DiscoveredConfig.fromPath(
           filePath: normalizedPath,
           scope: match.scope,
-          // match.kind is the kind of the specific target that matched.
-          // For unmatched/unknown manual files there's no target at all, so
-          // fall back to structuredConfig.
           kind: match.kind ?? ConfigSourceKind.structuredConfig,
           format: match.format,
           sourceLabel: match.sourceLabel,
           descriptor: match.descriptor,
-          isManual: true,
+          fromManual: true,
         );
 
-        await addIfValid(config, isManual: true);
+        await addIfValid(config);
       } on ValidationException catch (e) {
         warnings.add(
           DiscoveryWarning(

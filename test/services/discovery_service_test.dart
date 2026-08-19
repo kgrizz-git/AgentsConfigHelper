@@ -83,7 +83,7 @@ void main() {
 
     test(
       'discoverConfigs deduplicates a manual path matching a catalog target '
-      'without flipping it to manual',
+      'and sets both provenance flags',
       () async {
         final manualFile = File(
           p.join(mockHome.path, '.claude', 'settings.json'),
@@ -97,14 +97,15 @@ void main() {
 
         final result = await discoveryService.discoverConfigs(request);
 
-        // Should only appear once, prioritized as user target (it's first).
+        // Should only appear once.
         expect(result.items.length, equals(1));
         expect(result.items.first.scope, equals(ConfigLocationScope.user));
-        // A file also discovered via a catalog target keeps catalog
-        // provenance: isManual stays false so the sidebar never offers a
-        // remove action that removeManualPath cannot honor (the file would be
-        // rediscovered anyway).
-        expect(result.items.first.isManual, isFalse);
+        // Dual provenance: both fromCatalog and fromManual are true.
+        // isManual (derived getter) is true so the sidebar remove button
+        // appears, and removeManualPath strips only the manual provenance.
+        expect(result.items.first.fromCatalog, isTrue);
+        expect(result.items.first.fromManual, isTrue);
+        expect(result.items.first.isManual, isTrue);
         expect(result.warnings, isEmpty);
       },
     );
@@ -133,9 +134,8 @@ void main() {
         expect(result.items.first.filePath, equals(validManualFile.path));
         expect(result.items.first.scope, equals(ConfigLocationScope.manual));
         expect(result.items.first.sourceLabel, equals('Unknown configuration'));
-        // A manually-added path that isn't otherwise discovered must still
-        // be flagged as manual, or the sidebar's "remove" affordance (which
-        // is gated on isManual) never appears for it.
+        expect(result.items.first.fromCatalog, isFalse);
+        expect(result.items.first.fromManual, isTrue);
         expect(result.items.first.isManual, isTrue);
 
         expect(result.warnings.length, equals(2));
@@ -340,8 +340,8 @@ void main() {
     );
 
     test(
-      'manual path that is also auto-discovered stays non-manual '
-      '(catalog provenance wins)',
+      'manual path that is also auto-discovered has dual provenance '
+      'and loses manual flag after removal',
       () async {
         // Create a file that is auto-discoverable via the user-scope scan.
         final claudeFile = File(
@@ -359,15 +359,15 @@ void main() {
           requestWithManual,
         );
 
-        // The item appears exactly once and is NOT flagged manual: it is a
-        // real catalog config, so removeManualPath must not appear to own it
-        // (removing the manual entry can't make it disappear).
+        // Dual provenance: both flags are true, isManual getter is true.
         expect(result1.items.length, equals(1));
-        expect(result1.items.first.isManual, isFalse);
+        expect(result1.items.first.fromCatalog, isTrue);
+        expect(result1.items.first.fromManual, isTrue);
+        expect(result1.items.first.isManual, isTrue);
         expect(result1.items.first.filePath, equals(claudeFile.path));
 
         // Second scan: the same path is no longer in manualPaths. The item is
-        // still present (a real config) and still non-manual.
+        // still present (a real config) with only catalog provenance.
         final requestWithoutManual = DiscoveryRequest(
           normalizedHomePath: mockHome.path,
         );
@@ -378,6 +378,138 @@ void main() {
 
         expect(result2.items.length, equals(1));
         expect(result2.items.first.filePath, equals(claudeFile.path));
+        expect(result2.items.first.fromCatalog, isTrue);
+        expect(result2.items.first.fromManual, isFalse);
+        expect(result2.items.first.isManual, isFalse);
+      },
+    );
+
+    test(
+      'regression: catalog-first dual-provenance file shows remove button '
+      '(isManual is true via fromManual)',
+      () async {
+        // The original bug: catalog discovery runs first and sets
+        // isManual:false. When the same path appears in manualPaths, the
+        // dedup guard returned false without setting isManual, so the
+        // sidebar remove button never appeared.
+        final file = File(
+          p.join(mockHome.path, '.claude', 'settings.json'),
+        );
+        await file.create(recursive: true);
+
+        final request = DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+          manualPaths: [file.path],
+        );
+
+        final result = await discoveryService.discoverConfigs(request);
+
+        expect(result.items.length, equals(1));
+        // Both provenance flags are true.
+        expect(result.items.first.fromCatalog, isTrue);
+        expect(result.items.first.fromManual, isTrue);
+        // The derived getter is true, so the sidebar remove button appears.
+        expect(result.items.first.isManual, isTrue);
+      },
+    );
+
+    test(
+      'provenance is correct for manual-only and catalog+manual files in one '
+      'discovery pass (order-independence is guaranteed by the union logic)',
+      () async {
+        // NOTE: discoverConfigs always processes catalog targets before manual
+        // paths, so both orders cannot be exercised at the discoverConfigs
+        // level (addIfValid is a private closure). Order-independence holds by
+        // construction: addIfValid unions provenance on a duplicate, so
+        // whichever source is seen first, the later source's flag is OR'd in.
+        // This test
+        // asserts the resulting flags for both a manual-only and a
+        // catalog+manual (dual-provenance) file.
+        // Manual-only file: no catalog target matches.
+        final manualOnly = File(p.join(mockHome.path, 'custom.json'));
+        await manualOnly.create(recursive: true);
+
+        // Dual-provenance file: matches a catalog target AND manual list.
+        final dual = File(
+          p.join(mockHome.path, '.claude', 'settings.json'),
+        );
+        await dual.create(recursive: true);
+
+        final request = DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+          manualPaths: [manualOnly.path, dual.path],
+        );
+
+        final result = await discoveryService.discoverConfigs(request);
+
+        final manualOnlyConfig = result.items.firstWhere(
+          (i) => i.filePath == manualOnly.path,
+        );
+        final dualConfig = result.items.firstWhere(
+          (i) => i.filePath == dual.path,
+        );
+
+        // Manual-only: fromManual true, fromCatalog false.
+        expect(manualOnlyConfig.fromManual, isTrue);
+        expect(manualOnlyConfig.fromCatalog, isFalse);
+        expect(manualOnlyConfig.isManual, isTrue);
+
+        // Dual-provenance: both flags true.
+        expect(dualConfig.fromManual, isTrue);
+        expect(dualConfig.fromCatalog, isTrue);
+        expect(dualConfig.isManual, isTrue);
+      },
+    );
+
+    test(
+      'removing manual-only file drops it entirely '
+      '(re-discovery without manual path)',
+      () async {
+        final manualOnly = File(p.join(mockHome.path, 'custom.json'));
+        await manualOnly.create(recursive: true);
+
+        // First discovery: file is manual-only.
+        final requestWith = DiscoveryRequest(
+          manualPaths: [manualOnly.path],
+        );
+        final result1 = await discoveryService.discoverConfigs(requestWith);
+        expect(result1.items.length, equals(1));
+        expect(result1.items.first.isManual, isTrue);
+
+        // Simulate removeManualPath: re-discover without the manual path.
+        const requestWithout = DiscoveryRequest();
+        final result2 = await discoveryService.discoverConfigs(requestWithout);
+        expect(result2.items, isEmpty);
+      },
+    );
+
+    test(
+      'removing manual from dual-provenance file keeps catalog entry',
+      () async {
+        final file = File(
+          p.join(mockHome.path, '.claude', 'settings.json'),
+        );
+        await file.create(recursive: true);
+
+        // First discovery: dual provenance.
+        final requestWith = DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+          manualPaths: [file.path],
+        );
+        final result1 = await discoveryService.discoverConfigs(requestWith);
+        expect(result1.items.length, equals(1));
+        expect(result1.items.first.fromCatalog, isTrue);
+        expect(result1.items.first.fromManual, isTrue);
+
+        // Simulate removeManualPath: re-discover without manual path.
+        // Catalog entry remains.
+        final requestWithout = DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+        );
+        final result2 = await discoveryService.discoverConfigs(requestWithout);
+        expect(result2.items.length, equals(1));
+        expect(result2.items.first.fromCatalog, isTrue);
+        expect(result2.items.first.fromManual, isFalse);
         expect(result2.items.first.isManual, isFalse);
       },
     );
