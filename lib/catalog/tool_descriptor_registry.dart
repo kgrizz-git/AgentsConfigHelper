@@ -490,15 +490,16 @@ class ToolDescriptorRegistry {
       id: ToolId.copilot,
       displayName: 'GitHub Copilot',
       targets: [
-        // Editable CLI settings (JSONC). Prefer this over config.json.
+        // Editable CLI settings (JSONC). Both this and config.json are
+        // discovered when present; this is the user-editable settings file.
         ConfigTarget(
           relativePath: '.copilot/settings.json',
           format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
         ),
-        // Managed CLI application state (auth, plugins). Kept for visibility;
-        // prefer settings.json for user-editable preferences.
+        // Managed CLI application state (auth, plugins). Surfaced for
+        // visibility alongside settings.json — not a precedence/hide rule.
         ConfigTarget(
           relativePath: '.copilot/config.json',
           format: ConfigFormat.json,

@@ -31,8 +31,9 @@
 ## GitHub Copilot
 
 - **Copilot CLI editable settings:** `~/.copilot/settings.json` (Windows: `%USERPROFILE%\.copilot\`)
-- **Copilot CLI managed state:** `~/.copilot/config.json` (auth/plugins; not the primary
-  editable settings file — older user settings migrate to `settings.json`)
+- **Copilot CLI managed state:** `~/.copilot/config.json` (auth/plugins; also
+  discovered when present — user-editable settings live in `settings.json`;
+  older user settings migrate to `settings.json`)
 - **Copilot CLI MCP:** `~/.copilot/mcp-config.json`
 - **CLI personal instructions:** `~/.copilot/copilot-instructions.md` and
   `~/.copilot/instructions/**/*.instructions.md`

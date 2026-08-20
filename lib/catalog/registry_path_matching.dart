@@ -78,8 +78,10 @@ class RegistryPathMatching {
   }
 
   /// Normalizes [path] to forward slashes for glob comparison.
-  static String _canonicalizeForMatch(String path) =>
-      path.replaceAll(r'\', '/');
+  static String _canonicalizeForMatch(String path) {
+    // r'\' is a one-character backslash (raw string ends before the closing quote).
+    return path.replaceAll(r'\', '/');
+  }
 
   /// Matches a normalized absolute path against [catalog].
   ///

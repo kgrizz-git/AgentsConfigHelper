@@ -63,7 +63,7 @@ location of that kind.
 | Kilo | JSONC + Markdown | `~/.config/kilo/kilo.jsonc` | `kilo.jsonc` / `.kilo/kilo.jsonc` | `~/.config/kilo/AGENTS.md`, `.kilo/agents/*.md` (+ shared `AGENTS.md`) |
 | Cline | JSON + Markdown | `~/.cline/data/settings/global-settings.json` | — | `.clinerules/`, `.clinerules`, `.cline/rules/*.md` (+ shared `AGENTS.md`) |
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets (weights not discovered) |
-| GitHub Copilot | JSONC + Markdown | `~/.copilot/settings.json` (+ managed `config.json`, `mcp-config.json`) | `.github/copilot/settings.json` | `.github/copilot-instructions.md` (+ shared `AGENTS.md`) |
+| GitHub Copilot | JSONC + Markdown | `~/.copilot/settings.json` (+ managed `config.json`, `mcp-config.json`) | `.github/copilot/settings.json` (+ `settings.local.json`) | `.github/copilot-instructions.md` (+ shared `AGENTS.md`) |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool [agents.md](https://agents.md/) convention |
 
 ## Getting Started

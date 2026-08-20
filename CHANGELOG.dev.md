@@ -9,12 +9,12 @@ Internal / developer-facing changes that do not belong in the public
 
 - **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
   (no longer requires spawning a fresh agent to review each finished phase).
-- **Copilot discovery paths (CodeRabbit):** Prefer `~/.copilot/settings.json` and
+- **Copilot discovery paths (CodeRabbit):** Discover `~/.copilot/settings.json` and
   `.github/copilot/settings.json` / `settings.local.json` as editable settings;
-  keep `config.json` as managed app state. Document Copilot loading shared
-  `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
-  make glob visit/match caps injectable on `DiscoveryService`; per-entry
-  `handleError` on recursive listing.
+  also surface managed `config.json` when present (no hide/precedence rule).
+  Document Copilot loading shared `AGENTS.md`. Canonicalize Windows separators
+  in `RegistryPathMatching.isMatch`; make glob visit/match caps injectable on
+  `DiscoveryService`; per-entry `handleError` on recursive listing.
 
 ### Added
 

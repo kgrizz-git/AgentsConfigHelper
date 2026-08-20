@@ -23,7 +23,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — (host ACP config, e.g. Zed `agent_servers`, is not managed by this app) | via agy hooks | ACP permission bridge |
 | Kilo | JSONC | `~/.config/kilo/kilo.jsonc` | `kilo.jsonc` / `.kilo/kilo.jsonc` | `~/.config/kilo/AGENTS.md`, agents `*.md` (+ shared) | allow/deny strings |
 | Cline | JSON + Markdown | `~/.cline/data/settings/*.json` | — | `.clinerules/` / `.clinerules`, `.cline/rules/*.md` (+ shared) | global settings |
-| GitHub Copilot | JSON + Markdown | `~/.copilot/config.json` | — | `.github/copilot-instructions.md` | instructions only (no permission model) |
+| GitHub Copilot | JSONC + Markdown | `~/.copilot/settings.json` (+ managed `config.json`) | `.github/copilot/settings.json` (+ local) | `.github/copilot-instructions.md` (+ shared) | instructions only (no permission model) |
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets | local LLM runner |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool agents.md convention | instructions only |
 
@@ -565,7 +565,7 @@ loads shared project/user [AGENTS.md](#agentsmd-shared).
 | Scope | Path |
 | --- | --- |
 | CLI user settings (editable) | `~/.copilot/settings.json` |
-| CLI managed app state | `~/.copilot/config.json` (auth/plugins; prefer `settings.json` for preferences) |
+| CLI managed app state | `~/.copilot/config.json` (auth/plugins; also discovered when present — editable settings live in `settings.json`) |
 | CLI MCP config | `~/.copilot/mcp-config.json` |
 | CLI personal instructions | `~/.copilot/copilot-instructions.md`, `~/.copilot/instructions/**/*.instructions.md` |
 | Repo/project settings | `.github/copilot/settings.json`, `.github/copilot/settings.local.json` (gitignore local) |

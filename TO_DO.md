@@ -78,6 +78,19 @@ settings with no repo/global file).
       org-level Compliance-tool toggle. Both live at qodo.ai, not in this repo —
       nothing to change here unless the dashboard is the cause.
 
+## Deferred from Phase 10 / CodeRabbit Hy3 review
+
+- [ ] **Discovery `handleError` stack traces** — per-entry glob listing warnings
+      currently record `$error` only; consider logging `StackTrace` via the app
+      logger (if/when one exists) for harder permission/IO failures.
+- [ ] **Exact-match case-sensitivity tests** — add an explicit unit test for the
+      non-glob `Platform.isWindows` case-insensitive branch in
+      `RegistryPathMatching.isMatch` (POSIX remains case-sensitive).
+- [ ] **Copilot `config.json` write policy** — file is labeled managed CLI state
+      (auth/plugins) but remains a writable `structuredConfig` target. Decide
+      whether to warn, mark read-only in UI, or leave editable; track as a
+      follow-up (pre-existing risk, not introduced by Phase 10).
+
 ## AI Agent Integration
 
 - [ ] If we ever integrate AI agent calls directly into the app (e.g., for automated config fixes), ensure that any secret-bearing configuration files (like `models.json` or `kilo.jsonc`) have their API keys and sensitive environment variables redacted *before* the context is sent to the agents.
