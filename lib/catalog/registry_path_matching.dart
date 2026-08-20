@@ -58,10 +58,9 @@ class RegistryPathMatching {
     final expected = _canonicalizeForMatch(expectedPattern);
     final actual = _canonicalizeForMatch(actualNormalizedPath);
     if (!expected.contains('*')) {
-      if (Platform.isWindows) {
-        return expected.toLowerCase() == actual.toLowerCase();
-      }
-      return expected == actual;
+      // Use path.equals so relative-vs-absolute coercion still works (string
+      // == does not). On Windows, path.equals is also case-insensitive.
+      return p.equals(expected, actual);
     }
     // Escape first, then restore glob wildcards. Handle `**/` before `**`
     // before `*` so nested globs keep correct semantics. After canonicalizing

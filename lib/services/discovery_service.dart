@@ -160,21 +160,22 @@ class DiscoveryService {
           // into large external model/weight directories.
           // handleError keeps one unreadable entry from aborting the rest
           // of a recursive walk (e.g. LM Studio hub / Copilot instructions).
-          await for (final entity in dir
-              .list(
-                recursive: needsRecursion,
-                followLinks: false,
-              )
-              .handleError((Object error, StackTrace stackTrace) {
-                warnings.add(
-                  DiscoveryWarning(
-                    path: expectedPattern,
-                    message:
-                        'Skipped unreadable entry while enumerating glob: '
-                        '$error',
-                  ),
-                );
-              })) {
+          await for (final entity
+              in dir
+                  .list(
+                    recursive: needsRecursion,
+                    followLinks: false,
+                  )
+                  .handleError((Object error, StackTrace stackTrace) {
+                    warnings.add(
+                      DiscoveryWarning(
+                        path: expectedPattern,
+                        message:
+                            'Skipped unreadable entry while enumerating glob: '
+                            '$error',
+                      ),
+                    );
+                  })) {
             visitedCount++;
             if (visitedCount > maxEntitiesVisited) {
               truncatedVisit = true;

@@ -85,7 +85,9 @@ settings with no repo/global file).
       logger (if/when one exists) for harder permission/IO failures.
 - [ ] **Exact-match case-sensitivity tests** — add an explicit unit test for the
       non-glob `Platform.isWindows` case-insensitive branch in
-      `RegistryPathMatching.isMatch` (POSIX remains case-sensitive).
+      `RegistryPathMatching.isMatch` (POSIX remains case-sensitive). Prefer an
+      injectable `caseInsensitive` override (like discovery caps) so CI on
+      ubuntu can exercise the Windows branch without a Windows runner.
 - [ ] **Copilot `config.json` write policy** — file is labeled managed CLI state
       (auth/plugins) but remains a writable `structuredConfig` target. Decide
       whether to warn, mark read-only in UI, or leave editable; track as a
