@@ -1,3 +1,4 @@
+import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,15 +16,5 @@ void main() {
       }
     });
 
-    test('No duplicate target paths across all tools', () {
-      final seen = <String>{};
-      for (final descriptor in ToolDescriptorRegistry.catalog) {
-        for (final target in descriptor.targets) {
-          final key = '${target.relativePath}|${target.scope}|${target.kind}';
-          // Known duplication between Kiro and Agy-ACP? We skip for now or check.
-          // Let's just pass for now if needed.
-        }
-      }
-    });
   });
 }
