@@ -78,3 +78,7 @@
       disabled), so what remains is the Python-3.8-baseline assumption and any
       org-level Compliance-tool toggle. Both live at qodo.ai, not in this repo —
       nothing to change here unless the dashboard is the cause.
+
+## AI Agent Integration
+
+- [ ] If we ever integrate AI agent calls directly into the app (e.g., for automated config fixes), ensure that any secret-bearing configuration files (like `models.json` or `kilo.jsonc`) have their API keys and sensitive environment variables redacted *before* the context is sent to the agents.
