@@ -79,24 +79,11 @@ class DiscoveryController extends _$DiscoveryController {
         ? p.normalize(copilotHomeRaw)
         : null;
 
-    // Cline documents ~/Cline/Rules as a fallback only when
-    // ~/Documents/Cline/Rules is absent.
-    var enableClineRulesFallback = true;
-    if (homeDir != null) {
-      final documentsRules = Directory(
-        p.join(homeDir, 'Documents', 'Cline', 'Rules'),
-      );
-      // Checking directory existence asynchronously avoids blocking the UI.
-      // ignore: avoid_slow_async_io
-      enableClineRulesFallback = !await documentsRules.exists();
-    }
-
     final request = DiscoveryRequest(
       normalizedHomePath: homeDir,
       normalizedProjectRoots: prefs.projectRoots,
       manualPaths: prefs.manualFilePaths,
       normalizedCopilotHomePath: copilotHome,
-      enableClineRulesFallback: enableClineRulesFallback,
     );
 
     final result = await discoveryService.discoverConfigs(request);

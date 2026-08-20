@@ -6,7 +6,7 @@ class DiscoveryRequest {
     this.normalizedProjectRoots = const [],
     this.manualPaths = const [],
     this.normalizedCopilotHomePath,
-    this.enableClineRulesFallback = true,
+    this.enableClineRulesFallback,
   });
 
   /// The normalized absolute path to the user's home directory, or null if
@@ -26,7 +26,7 @@ class DiscoveryRequest {
 
   /// Whether to discover the Linux/WSL `~/Cline/Rules` fallback.
   ///
-  /// Set to false when `~/Documents/Cline/Rules` exists so legacy-path files
-  /// are not surfaced as active global Cline rules.
-  final bool enableClineRulesFallback;
+  /// When null (default), discovery auto-detects by checking whether
+  /// `~/Documents/Cline/Rules` exists. Tests may force `true`/`false`.
+  final bool? enableClineRulesFallback;
 }

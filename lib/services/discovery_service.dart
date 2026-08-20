@@ -32,6 +32,7 @@ class DiscoveryService {
     final items = <DiscoveredConfig>[];
     final warnings = <DiscoveryWarning>[];
     final seenPaths = <String>{};
+    final enableClineRulesFallback = await _resolveClineRulesFallback(request);
 
     // Returns true only when [config] is newly added to [items].
     // When a duplicate path is found, the existing entry's provenance is
@@ -238,32 +239,11 @@ class DiscoveryService {
     }
 
     // 1. User targets
-    if (request.normalizedHomePath != null) {
-      for (final descriptor in ToolDescriptorRegistry.catalog) {
-        for (final target in descriptor.targets) {
-          if (target.scope == ConfigLocationScope.user) {
-            if (!request.enableClineRulesFallback &&
-                RegistryPathMatching.isClineRulesFallbackTarget(
-                  target.relativePath,
-                )) {
-              continue;
-            }
-            final expectedPattern =
-                RegistryPathMatching.resolveUserTargetPattern(
-                  normalizedHomePath: request.normalizedHomePath!,
-                  relativePath: target.relativePath,
-                  normalizedCopilotHomePath: request.normalizedCopilotHomePath,
-                );
-            await processTarget(
-              expectedPattern,
-              target,
-              descriptor,
-              ConfigLocationScope.user,
-            );
-          }
-        }
-      }
-    }
+    await _discoverUserTargets(
+      request: request,
+      enableClineRulesFallback: enableClineRulesFallback,
+      processTarget: processTarget,
+    );
 
     // 2. Project targets
     for (final root in request.normalizedProjectRoots) {
@@ -293,7 +273,7 @@ class DiscoveryService {
           normalizedHomePath: request.normalizedHomePath,
           normalizedProjectRoots: request.normalizedProjectRoots,
           normalizedCopilotHomePath: request.normalizedCopilotHomePath,
-          enableClineRulesFallback: request.enableClineRulesFallback,
+          enableClineRulesFallback: enableClineRulesFallback,
         );
 
         final config = DiscoveredConfig.fromPath(
@@ -325,5 +305,60 @@ class DiscoveryService {
     }
 
     return DiscoveryResult(items: items, warnings: warnings);
+  }
+
+  /// Enumerates catalog user-scope targets for [request].
+  Future<void> _discoverUserTargets({
+    required DiscoveryRequest request,
+    required bool enableClineRulesFallback,
+    required Future<void> Function(
+      String expectedPattern,
+      ConfigTarget target,
+      ToolDescriptor descriptor,
+      ConfigLocationScope scope,
+    )
+    processTarget,
+  }) async {
+    final home = request.normalizedHomePath;
+    if (home == null) return;
+    for (final descriptor in ToolDescriptorRegistry.catalog) {
+      for (final target in descriptor.targets) {
+        if (target.scope != ConfigLocationScope.user) continue;
+        if (!enableClineRulesFallback &&
+            RegistryPathMatching.isClineRulesFallbackTarget(
+              target.relativePath,
+            )) {
+          continue;
+        }
+        final expectedPattern = RegistryPathMatching.resolveUserTargetPattern(
+          normalizedHomePath: home,
+          relativePath: target.relativePath,
+          normalizedCopilotHomePath: request.normalizedCopilotHomePath,
+        );
+        await processTarget(
+          expectedPattern,
+          target,
+          descriptor,
+          ConfigLocationScope.user,
+        );
+      }
+    }
+  }
+
+  /// Resolves whether the Cline `~/Cline/Rules` fallback should be scanned.
+  ///
+  /// Explicit [DiscoveryRequest.enableClineRulesFallback] wins; otherwise
+  /// auto-detects by checking `~/Documents/Cline/Rules`.
+  Future<bool> _resolveClineRulesFallback(DiscoveryRequest request) async {
+    final override = request.enableClineRulesFallback;
+    if (override != null) return override;
+    final home = request.normalizedHomePath;
+    if (home == null) return true;
+    final documentsRules = Directory(
+      p.join(home, 'Documents', 'Cline', 'Rules'),
+    );
+    // Checking directory existence asynchronously avoids blocking the UI.
+    // ignore: avoid_slow_async_io
+    return !await documentsRules.exists();
   }
 }
