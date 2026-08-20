@@ -122,12 +122,6 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
-        ConfigTarget(
-          relativePath: '.devin/rules/*.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
       ],
     ),
     ToolDescriptor(
@@ -154,12 +148,6 @@ class ToolDescriptorRegistry {
         ),
         ConfigTarget(
           relativePath: 'AGENTS.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
-        ConfigTarget(
-          relativePath: '.devin/rules/*.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
@@ -243,12 +231,6 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.instructionDocument,
         ),
         ConfigTarget(
-          relativePath: '.devin/rules/*.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
-        ConfigTarget(
           relativePath: 'CLAUDE.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.project,
@@ -278,18 +260,18 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
-        ConfigTarget(
-          relativePath: '.devin/rules/*.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
       ],
     ),
     ToolDescriptor(
       id: ToolId.devin,
       displayName: 'Devin',
       targets: [
+        ConfigTarget(
+          relativePath: '.devin/rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
         ConfigTarget(
           relativePath: '.config/devin/config.json',
           format: ConfigFormat.json,
@@ -310,12 +292,6 @@ class ToolDescriptorRegistry {
         ),
         ConfigTarget(
           relativePath: 'AGENTS.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
-        ConfigTarget(
-          relativePath: '.devin/rules/*.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
