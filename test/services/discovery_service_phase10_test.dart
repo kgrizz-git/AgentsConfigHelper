@@ -329,5 +329,81 @@ void main() {
         );
       },
     );
+
+    test(
+      'visit cap counts unreadable entries from handleError',
+      () async {
+        // Recursive listing of many chmod-000 directories emits error events
+        // that must still count toward maxGlobEntitiesVisited.
+        const capped = DiscoveryService(maxGlobEntitiesVisited: 40);
+        final modelsDir = Directory(
+          p.join(mockHome.path, '.lmstudio', 'hub', 'models'),
+        );
+        await modelsDir.create(recursive: true);
+        for (var i = 0; i < 80; i++) {
+          final denied = Directory(p.join(modelsDir.path, 'denied$i'));
+          await denied.create();
+          await Process.run('chmod', ['000', denied.path]);
+          addTearDown(() async {
+            await Process.run('chmod', ['755', denied.path]);
+          });
+        }
+
+        final result = await capped.discoverConfigs(
+          DiscoveryRequest(normalizedHomePath: mockHome.path),
+        );
+
+        expect(
+          result.warnings.any(
+            (w) =>
+                w.path.contains('.lmstudio') &&
+                (w.message.contains('40-entity visit cap') ||
+                    w.message.contains(
+                      'Skipped unreadable entry while enumerating',
+                    )),
+          ),
+          isTrue,
+        );
+        final skipWarnings = result.warnings
+            .where(
+              (w) => w.message.contains(
+                'Skipped unreadable entry while enumerating',
+              ),
+            )
+            .length;
+        // Cap should bound error-driven warnings (plus at most one visit-cap
+        // notice); without counting errors this would approach 80.
+        expect(skipWarnings, lessThanOrEqualTo(45));
+      },
+      skip: Platform.isWindows
+          ? 'chmod-based permission denial is POSIX only'
+          : false,
+    );
+
+    test(
+      'ignores relative COPILOT_HOME override',
+      () async {
+        final settings = File(
+          p.join(mockHome.path, '.copilot', 'settings.json'),
+        );
+        await settings.create(recursive: true);
+
+        final result = await discoveryService.discoverConfigs(
+          DiscoveryRequest(
+            normalizedHomePath: mockHome.path,
+            normalizedCopilotHomePath: 'relative-copilot-home',
+          ),
+        );
+
+        expect(
+          result.warnings.any(
+            (w) => w.message.contains('not an absolute path'),
+          ),
+          isTrue,
+        );
+        // Falls back to ~/.copilot under the real home path.
+        expect(result.items.any((i) => i.filePath == settings.path), isTrue);
+      },
+    );
   });
 }

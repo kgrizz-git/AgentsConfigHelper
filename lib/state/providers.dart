@@ -75,9 +75,7 @@ class DiscoveryController extends _$DiscoveryController {
     final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
 
     final copilotHomeRaw = nonEmptyEnvironmentVariable('COPILOT_HOME');
-    final copilotHome = copilotHomeRaw != null
-        ? p.normalize(copilotHomeRaw)
-        : null;
+    final copilotHome = absoluteNormalizedPath(copilotHomeRaw);
 
     final request = DiscoveryRequest(
       normalizedHomePath: homeDir,
@@ -97,6 +95,18 @@ class DiscoveryController extends _$DiscoveryController {
       ...prefsWarnings,
       ...result.warnings,
     ];
+
+    if (copilotHomeRaw != null && copilotHome == null) {
+      warnings.insert(
+        0,
+        DiscoveryWarning(
+          path: copilotHomeRaw,
+          message:
+              'Ignoring COPILOT_HOME because it is not an absolute path '
+              '(got "$copilotHomeRaw").',
+        ),
+      );
+    }
 
     if (homeDir == null) {
       // Surface this rather than silently skipping all user-scope
