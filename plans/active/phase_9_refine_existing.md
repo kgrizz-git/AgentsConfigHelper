@@ -17,13 +17,14 @@ This phase addresses the tool-support gaps and refactoring for **existing tools*
 
 **Goal:** Ensure the 9 tools already in the registry are fully covered across all their config and rules locations.
 
-*Research protocol:* Check upstream documentation, inspect default installation paths on macOS/Linux/Windows, and record findings in `.context/research/2026-08-19-discovery-targets.md`. Be sure to identify correct Windows path equivalents (e.g., `%APPDATA%`, `%LOCALAPPDATA%`, `%USERPROFILE%`).
+*Research protocol:* Check upstream documentation, inspect default installation paths on macOS/Linux/Windows, and record findings in `docs/research/2026-08-19-discovery-targets.md`. Be sure to identify correct Windows path equivalents (e.g., `%APPDATA%`, `%LOCALAPPDATA%`, `%USERPROFILE%`).
 
 - [ ] **Kiro:** Confirm if a project-level `permissions.yaml` or equivalent exists. Currently only `.kiro/steering/*.md` is mapped. Add it if it exists.
 - [ ] **Antigravity CLI:** Confirm if a project-level settings file exists upstream.
 - [ ] **Agy-ACP / Zed contradiction:** Resolve the doc/code contradiction for Zed `agent_servers`. `supported-tools.md:657` documents it as part of Agy-ACP, but the registry omits it. Either add the cross-tool target or update the docs to mark it "documented but not auto-discovered."
 - [ ] **Cursor (Agent):** We currently map `~/.cursor/permissions.json`. Confirm if a global user-scope `.cursorrules` equivalent exists and map it if so.
 - [ ] **Codex:** Add missing Starlark rules paths (`~/.codex/rules/default.rules` and `.codex/rules/*.rules`) to the registry targets.
+- [ ] **Re-verify:** Check each tool's paths against upstream documentation. Refresh `docs/research/2026-08-19-discovery-targets.md`.
 - [ ] **Sync:** Update `docs/supported-tools.md` to match any path additions from this audit. Ensure it explicitly lists whether each file is handled by a structured parser or the raw editor fallback.
 
 ## Workstream B: Tool Splitting (Refining Existing Tools)

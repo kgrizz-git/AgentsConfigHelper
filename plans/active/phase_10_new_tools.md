@@ -19,7 +19,7 @@ This phase adds first-class support for new requested tools (Kilo, Cline, LM Stu
 - [ ] **Cline:** Research global and project-level config/rules paths. Identify Windows path equivalents.
 - [ ] **LM Studio:** Research local LLM runner model management and API server settings paths.
 - [ ] **GitHub Copilot:** Research `.github/copilot-instructions.md` and any global settings equivalents.
-- [ ] **Record Findings:** Document the discovered paths in `.context/research/2026-08-19-new-tools-paths.md`.
+- [ ] **Record Findings:** Document the discovered paths in `docs/research/2026-08-19-new-tools-paths.md`.
 
 ## Workstream B: Tool Integration
 
