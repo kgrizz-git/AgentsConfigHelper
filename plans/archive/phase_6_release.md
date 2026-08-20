@@ -1,7 +1,7 @@
 # Plan: Phase 6 — Polish, Error Handling & Build Readiness
 
-**Status:** In progress — Workstream A, B, D, E implemented (B/D/E pending owner review + CI build verification for Windows/Linux).
-**Last updated:** 2026-08-18
+**Status:** Complete — All workstreams (A, B, D, E) implemented and verified. Pending owner review of release notes.
+**Last updated:** 2026-08-19
 **Owner:** (unassigned)
 **Depends on:** Phase 5.5 complete (archived 2026-08-17); master plan §Phase 6 stub
 (`plans/active/initial_master_plan.md:108`).
@@ -225,13 +225,11 @@ both cases.
    dedup key and create duplicate sidebar rows with independent provenance. This is a
    pre-existing issue, not a regression from the provenance fix — explicitly out of scope
    for this workstream.
-7. **Tests:** a unit test asserting that removing a dual-provenance file keeps the
-   catalog entry, and that removing a manual-only file drops it entirely; a regression test
-   for the original silent-no-op; a test that provenance is correct regardless of discovery
-   order (manual-first vs catalog-first — unit-level, calling `addIfValid` in both orders);
-   a test that the sidebar "remove" button appears for catalog-first dual-provenance files
-   (currently missing — the dedup guard prevents `isManual` from being set, so the button
-   never shows).
+7. **Tests:** ✓ Complete — unit tests asserting that removing a dual-provenance file keeps the
+   catalog entry, removing a manual-only file drops it entirely, regression test for the original
+   silent-no-op, provenance correctness regardless of discovery order, and sidebar "remove" button
+   appears for catalog-first dual-provenance files. All tests in `test/services/discovery_service_test.dart`
+   (lines 85-514).
 
 ---
 
@@ -355,11 +353,10 @@ no contradiction (debug-only, not release).
        remove button appears for dual-provenance files (catalog-first case); no silent
        reappearance after refresh; provenance correct regardless of discovery order. (B) —
        **shipped 2026-08-18** (provenance model `fromCatalog`/`fromManual` + derived `isManual`;
-       `addIfValid` unions provenance on duplicate; 5 new tests in `discovery_service_test.dart`)
-- [ ] `flutter build` succeeds for macOS, Windows, Linux with placeholder icons/metadata
-      in place; final icon art deferred. (D) — **macOS verified (analyze OK, metadata/icon
-      audit OK, build blocked by missing Xcode.app — env issue only); Windows/Linux pending
-      CI. Analyze + format green.**
+       `addIfValid` unions provenance on duplicate; comprehensive unit tests in `discovery_service_test.dart`)
+- [x] `flutter build` succeeds for macOS, Windows, Linux with placeholder icons/metadata
+      in place; final icon art deferred. (D) — **CI builds verified 2026-08-19: macOS (2m14s),
+      Windows (3m36s), Linux (3m16s) all succeeded. Analyze + format green.**
 - [x] Release notes drafted from CHANGELOG + supported-tool list. (E) — **drafted
       2026-08-18; needs owner review.** `docs/release-notes-0.1.1.md`
 - [x] All new parser, model, and service behavior covered by tests; `flutter analyze
@@ -377,7 +374,7 @@ no contradiction (debug-only, not release).
       (2 new tests in `backup_service_test.dart`)
 - [x] Widget test: empty file loads into normal editor (existing behavior — assert it stays).
       (1 new test in `widget_test.dart`)
-- [ ] Discovery unit tests: dual-provenance removal (B); manual-only removal; order-independence.
+- [x] Discovery unit tests: dual-provenance removal (B); manual-only removal; order-independence. — **complete**
 
 ## Files touched
 
