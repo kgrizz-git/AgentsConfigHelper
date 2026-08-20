@@ -217,7 +217,7 @@ class DiscoveryService {
         final config = DiscoveredConfig.fromPath(
           filePath: normalizedPath,
           scope: match.scope,
-          kind: match.kind ?? ConfigSourceKind.structuredConfig,
+          kind: match.kind,
           format: match.format,
           sourceLabel: match.sourceLabel,
           descriptor: match.descriptor,

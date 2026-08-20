@@ -18,6 +18,9 @@ enum ToolId {
   /// Cursor.
   cursor,
 
+  /// Cursor IDE.
+  cursorIde,
+
   /// Kiro.
   kiro,
 
@@ -26,6 +29,12 @@ enum ToolId {
 
   /// Antigravity.
   antigravity,
+
+  /// Antigravity IDE.
+  antigravityIde,
+
+  /// Antigravity Desktop App.
+  antigravityApp,
 
   /// Agy-ACP.
   agyAcp,

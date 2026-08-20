@@ -9,8 +9,8 @@ class RegistryMatchResult {
     required this.scope,
     required this.format,
     required this.sourceLabel,
+    required this.kind,
     this.descriptor,
-    this.kind,
   });
 
   /// The matched tool descriptor, or null if this is an unknown manual file.
@@ -25,9 +25,8 @@ class RegistryMatchResult {
   /// The label for the source (e.g. tool name or 'Unknown configuration').
   final String sourceLabel;
 
-  /// The kind of the specific [ConfigTarget] that matched, or null if this
-  /// is an unknown manual file with no matching catalog target.
-  final ConfigSourceKind? kind;
+  /// The kind of the specific [ConfigTarget] that matched.
+  final ConfigSourceKind kind;
 }
 
 /// Exception thrown when a file extension is unsupported.
@@ -99,6 +98,18 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.structuredConfig,
         ),
         ConfigTarget(
+          relativePath: '.codex/rules/default.rules',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.codex/rules/*.rules',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
           relativePath: '.codex/AGENTS.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
@@ -161,8 +172,38 @@ class ToolDescriptorRegistry {
       ],
     ),
     ToolDescriptor(
+      id: ToolId.cursorIde,
+      displayName: 'Cursor IDE',
+      targets: [
+        ConfigTarget(
+          relativePath: 'Library/Application Support/Cursor/User/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.config/Cursor/User/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: 'AppData/Roaming/Cursor/User/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.cursor/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+      ],
+    ),
+    ToolDescriptor(
       id: ToolId.cursor,
-      displayName: 'Cursor',
+      displayName: 'Cursor Agent',
       targets: [
         ConfigTarget(
           relativePath: '.cursor/permissions.json',
@@ -231,6 +272,12 @@ class ToolDescriptorRegistry {
       displayName: 'Devin',
       targets: [
         ConfigTarget(
+          relativePath: '.devin/rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
           relativePath: '.config/devin/config.json',
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
@@ -257,8 +304,32 @@ class ToolDescriptorRegistry {
       ],
     ),
     ToolDescriptor(
+      id: ToolId.antigravityIde,
+      displayName: 'Antigravity IDE',
+      targets: [
+        ConfigTarget(
+          relativePath: '.gemini/antigravity-ide/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+      ],
+    ),
+    ToolDescriptor(
+      id: ToolId.antigravityApp,
+      displayName: 'Antigravity App',
+      targets: [
+        ConfigTarget(
+          relativePath: '.gemini/antigravity-app/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+      ],
+    ),
+    ToolDescriptor(
       id: ToolId.antigravity,
-      displayName: 'Antigravity',
+      displayName: 'Antigravity CLI',
       targets: [
         ConfigTarget(
           relativePath: '.gemini/antigravity-cli/settings.json',
@@ -270,6 +341,12 @@ class ToolDescriptorRegistry {
           relativePath: '.gemini/GEMINI.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'GEMINI.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
         ConfigTarget(
@@ -385,6 +462,7 @@ class ToolDescriptorRegistry {
         // target; keep the manual-path fallback identical so both paths agree.
         format = ConfigFormat.text;
       case '.txt':
+      case '.rules':
         format = ConfigFormat.text;
       default:
         // Try fallback to text if no extension
@@ -398,9 +476,23 @@ class ToolDescriptorRegistry {
         }
     }
 
+    final ConfigSourceKind kind;
+    switch (format) {
+      case ConfigFormat.json:
+      case ConfigFormat.jsonc:
+      case ConfigFormat.yaml:
+      case ConfigFormat.toml:
+      case ConfigFormat.unknown:
+        kind = ConfigSourceKind.structuredConfig;
+      case ConfigFormat.markdown:
+      case ConfigFormat.text:
+        kind = ConfigSourceKind.instructionDocument;
+    }
+
     return RegistryMatchResult(
       scope: ConfigLocationScope.manual,
       format: format,
+      kind: kind,
       sourceLabel: 'Unknown configuration',
     );
   }

@@ -13,10 +13,13 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Codex | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `AGENTS.md` | sandbox + permission profiles |
 | Opencode | JSON | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `AGENTS.md` | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
-| Cursor | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `AGENTS.md`/`CLAUDE.md` | allowlist + classifier |
+| Cursor Agent | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `AGENTS.md`/`CLAUDE.md` | allowlist + classifier |
+| Cursor IDE | JSON | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
 | Kiro | YAML | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` + `AGENTS.md` | capability-based |
 | Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `AGENTS.md` | scope-based allow/deny |
-| Antigravity | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` | action(target) + presets |
+| Antigravity CLI | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` + `GEMINI.md` | action(target) + presets |
+| Antigravity IDE | JSON | `~/.gemini/antigravity-ide/settings.json` | — | — | — |
+| Antigravity App | JSON | `~/.gemini/antigravity-app/settings.json` | — | — | — |
 | Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — (host ACP config, e.g. Zed `agent_servers`, is not managed by this app) | via agy hooks | ACP permission bridge |
 | VS Code / GitHub Copilot _(deferred)_ | Markdown | — | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` | instructions only (no permission model) |
 | LM Studio _(deferred)_ | JSON | — | — | — | local LLM runner with model management and API server settings |
@@ -260,15 +263,17 @@ JSON. Schema at `https://paseo.sh/schemas/paseo.config.v1.json`.
 
 ---
 
-## Cursor
+## Cursor Agent and Cursor IDE
 
 ### Cursor Config paths
 
 | Scope | Path |
 | --- | --- |
+| User IDE | `~/Library/Application Support/Cursor/User/settings.json` (macOS)<br>`~/.config/Cursor/User/settings.json` (Linux)<br>`~/AppData/Roaming/Cursor/User/settings.json` (Windows) |
 | User permissions | `~/.cursor/permissions.json` |
 | User CLI config | `~/.cursor/cli-config.json` |
 | User MCP | `~/.cursor/mcp.json` |
+| Project IDE | `.cursor/settings.json` |
 | Project rules | `.cursor/rules/*.mdc` |
 | Project permissions | `<workspace>/.cursor/permissions.json` |
 | Project MCP | `.cursor/mcp.json` |
@@ -463,9 +468,29 @@ rules:
 
 ---
 
-## Antigravity (agy)
+## Antigravity IDE
 
-### Antigravity (agy) Config paths
+### Antigravity IDE Config paths
+
+| Scope | Path |
+| --- | --- |
+| User settings | `~/.gemini/antigravity-ide/settings.json` |
+
+---
+
+## Antigravity App
+
+### Antigravity App Config paths
+
+| Scope | Path |
+| --- | --- |
+| User settings | `~/.gemini/antigravity-app/settings.json` |
+
+---
+
+## Antigravity CLI
+
+### Antigravity CLI Config paths
 
 | Scope | Path |
 | --- | --- |
@@ -479,7 +504,7 @@ rules:
 | Workspace skills | `<workspace>/.agents/skills/` |
 | Project config | `~/.gemini/config/projects/` |
 
-### Antigravity (agy) Config format
+### Antigravity CLI Config format
 
 ```json
 {
@@ -494,7 +519,7 @@ rules:
 }
 ```
 
-### Antigravity (agy) Permissions
+### Antigravity CLI Permissions
 
 - **Presets:** `request-review` (default), `proceed-in-sandbox`, `always-proceed`, `strict`
 - **Actions:** `read_file`, `write_file`, `read_url`, `execute_url`, `command`, `unsandboxed`, `mcp`
@@ -502,7 +527,7 @@ rules:
 - **Precedence:** Deny > Ask > Allow
 - **Write implies Read** on same path
 
-### Antigravity (agy) Rules
+### Antigravity CLI Rules
 
 | Scope | Path |
 | --- | --- |
@@ -515,7 +540,7 @@ rules:
 - Workflows: `.agents/workflows/*.md` (invoked via `/workflow-name`)
 - Skills: `.agents/skills/SKILL.md`
 
-### Antigravity (agy) CLI
+### CLI usage
 
 `agy`, `agy -p` (non-interactive), `agy --model`, `agy --sandbox`, `agy --dangerously-skip-permissions`, `agy models`, `agy agents`
 
@@ -569,7 +594,7 @@ that restricts which tools the agent may use. Agent Skills are packaged separate
 | JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
 | TOML | Codex | `toml` Dart package |
 | YAML | Kiro (permissions), Paseo (hub/workflows) | `yaml` Dart package |
-| Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — **deferred** (see below) | raw-text editor (planned) |
+| Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — **deferred** (see below) | raw-text editor |
 
 ## Deferred / not yet supported
 
@@ -654,7 +679,7 @@ permission-prompt bridge — the feature that distinguishes it from upstream.
 | Private hooks dir | `/tmp/agy-acp-hooks-{PID}/.agents/hooks.json` (auto-created, deleted on Drop) |
 | agy conversation DBs | `~/.gemini/antigravity-cli/conversations/*.db` |
 | agy auth/settings | `~/.gemini/antigravity-cli/settings.json` |
-| Zed host config | `~/.config/zed/settings.json` (`agent_servers` section) |
+| Zed host config | `~/.config/zed/settings.json` (`agent_servers` section) (documented but not auto-discovered) |
 
 ### Agy-ACP Config format
 
@@ -747,4 +772,4 @@ In Phase 1, only exact parser-supported structured config files are automaticall
 
 ### Deferred Sources
 
-Raw editing of these sources is available via the raw-text editor. What remains deferred is their **discovery, parsing, and validation**: Markdown rules, system prompts, glob-matched directories, and instruction sources (like `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.mdc` files) do not yet appear in sidebar discovery.
+Raw editing of these sources is available via the raw-text editor. What remains deferred is their **structured parsing and validation**: Markdown rules, system prompts, glob-matched directories, and instruction sources (like `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.mdc` files) now appear in sidebar discovery, but are not parsed as structured data.
