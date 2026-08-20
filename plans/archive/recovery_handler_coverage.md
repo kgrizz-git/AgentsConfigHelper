@@ -103,8 +103,8 @@ Cover the `listBackups` failure branch if it can be done without a production
 change (e.g. a `BackupService` subclass that throws). Same for
 `removeManualPath` throwing — fake store throws; removal is non-fatal.
 
-- [x] `listBackups` throws → View backups absent
-- [x] `removeManualPath` throws → non-fatal
+- [x] Subcase 10a: `listBackups` throws → View backups absent
+- [x] Subcase 10b: `removeManualPath` throws → non-fatal
 
 ## Docs / changelog (after tests pass)
 
