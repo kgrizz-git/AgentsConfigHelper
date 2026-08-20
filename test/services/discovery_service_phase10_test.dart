@@ -238,6 +238,33 @@ void main() {
     });
 
     test(
+      'discovers Copilot under COPILOT_HOME when home path is null',
+      () async {
+        final copilotHome = await Directory.systemTemp.createTemp(
+          'copilot_home_only_',
+        );
+        addTearDown(() async {
+          // Checking existence asynchronously avoids blocking the test isolate.
+          // ignore: avoid_slow_async_io
+          if (await copilotHome.exists()) {
+            await copilotHome.delete(recursive: true);
+          }
+        });
+
+        final settings = File(p.join(copilotHome.path, 'settings.json'));
+        await settings.create(recursive: true);
+
+        final result = await discoveryService.discoverConfigs(
+          DiscoveryRequest(
+            normalizedCopilotHomePath: copilotHome.path,
+          ),
+        );
+
+        expect(result.items.any((i) => i.filePath == settings.path), isTrue);
+      },
+    );
+
+    test(
       'single-segment glob does not miss direct children amid deep noise',
       () async {
         // Low visit cap: if recursion were wrongly enabled for `*.mdc`,

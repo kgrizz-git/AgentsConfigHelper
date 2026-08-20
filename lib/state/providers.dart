@@ -104,11 +104,14 @@ class DiscoveryController extends _$DiscoveryController {
       // identical to "nothing found".
       warnings.insert(
         0,
-        const DiscoveryWarning(
+        DiscoveryWarning(
           path: '',
-          message:
-              "Could not resolve the user's home directory; user-scope "
-              'configurations were not searched.',
+          message: copilotHome != null
+              ? "Could not resolve the user's home directory; non-Copilot "
+                    'user-scope configurations were not searched '
+                    '(COPILOT_HOME is still searched).'
+              : "Could not resolve the user's home directory; user-scope "
+                    'configurations were not searched.',
         ),
       );
     }

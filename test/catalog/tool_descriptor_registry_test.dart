@@ -367,6 +367,13 @@ void main() {
         ).descriptor,
         isNull,
       );
+      expect(
+        ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(copilotHome, 'settings.json')),
+          normalizedCopilotHomePath: copilotHome,
+        ).descriptor?.id,
+        ToolId.copilot,
+      );
     });
 
     test('skips Cline Rules fallback match when disabled', () {

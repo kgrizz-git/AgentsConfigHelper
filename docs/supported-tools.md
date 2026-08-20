@@ -564,7 +564,7 @@ loads shared project/user [AGENTS.md](#agentsmd-shared).
 
 | Scope | Path |
 | --- | --- |
-| CLI user settings (editable) | `~/.copilot/settings.json` (or `$COPILOT_HOME/settings.json` when `COPILOT_HOME` is set) |
+| CLI user settings (editable) | `~/.copilot/settings.json` (or `$COPILOT_HOME/settings.json` when `COPILOT_HOME` is set; still searched if OS home is unresolved) |
 | CLI managed app state | `~/.copilot/config.json` (auth/plugins; also discovered when present — editable settings live in `settings.json`) |
 | CLI MCP config | `~/.copilot/mcp-config.json` |
 | CLI personal instructions | `~/.copilot/copilot-instructions.md`, `~/.copilot/instructions/**/*.instructions.md` |

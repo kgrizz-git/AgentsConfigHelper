@@ -312,6 +312,9 @@ class DiscoveryService {
   }
 
   /// Enumerates catalog user-scope targets for [request].
+  ///
+  /// When home is unresolved but `COPILOT_HOME` is set, only Copilot CLI user
+  /// targets are enumerated against that override directory.
   Future<void> _discoverUserTargets({
     required DiscoveryRequest request,
     required bool enableClineRulesFallback,
@@ -324,10 +327,16 @@ class DiscoveryService {
     processTarget,
   }) async {
     final home = request.normalizedHomePath;
-    if (home == null) return;
+    final copilotHome = request.normalizedCopilotHomePath;
+    if (home == null && copilotHome == null) return;
+
     for (final descriptor in ToolDescriptorRegistry.catalog) {
       for (final target in descriptor.targets) {
         if (target.scope != ConfigLocationScope.user) continue;
+        if (home == null &&
+            !RegistryPathMatching.isCopilotCliUserTarget(target.relativePath)) {
+          continue;
+        }
         if (!enableClineRulesFallback &&
             RegistryPathMatching.isClineRulesFallbackTarget(
               target.relativePath,
@@ -337,8 +346,9 @@ class DiscoveryService {
         final expectedPattern = RegistryPathMatching.resolveUserTargetPattern(
           normalizedHomePath: home,
           relativePath: target.relativePath,
-          normalizedCopilotHomePath: request.normalizedCopilotHomePath,
+          normalizedCopilotHomePath: copilotHome,
         );
+        if (expectedPattern == null) continue;
         await processTarget(
           expectedPattern,
           target,

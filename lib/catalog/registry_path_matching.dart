@@ -43,6 +43,9 @@ class ValidationException implements Exception {
 
 /// Path glob matching and catalog lookup helpers for [ToolDescriptor] lists.
 class RegistryPathMatching {
+  /// ASCII backslash — avoid raw `r'\'` (easy to misread) and escaped `'\\'`.
+  static const _pathSeparatorBackslash = '\u005c';
+
   /// Forward-slash prefix for Copilot CLI user configs under the home tree.
   static const copilotCliUserPrefix = '.copilot/';
 
@@ -57,11 +60,14 @@ class RegistryPathMatching {
   static bool isClineRulesFallbackTarget(String relativePath) =>
       _forwardSlashes(relativePath).startsWith(clineRulesFallbackPrefix);
 
-  /// Resolves a user-scope [relativePath] under [normalizedHomePath], honoring
-  /// [normalizedCopilotHomePath] for Copilot CLI targets (replaces `~/.copilot`).
-  static String resolveUserTargetPattern({
-    required String normalizedHomePath,
+  /// Resolves a user-scope [relativePath], honoring [normalizedCopilotHomePath]
+  /// for Copilot CLI targets (replaces `~/.copilot`).
+  ///
+  /// Returns null when the target cannot be resolved (no home for non-Copilot
+  /// targets, or no Copilot home for Copilot targets when home is also absent).
+  static String? resolveUserTargetPattern({
     required String relativePath,
+    String? normalizedHomePath,
     String? normalizedCopilotHomePath,
   }) {
     if (normalizedCopilotHomePath != null &&
@@ -71,10 +77,12 @@ class RegistryPathMatching {
       ).substring(copilotCliUserPrefix.length);
       return p.normalize(p.join(normalizedCopilotHomePath, rest));
     }
+    if (normalizedHomePath == null) return null;
     return p.normalize(p.join(normalizedHomePath, relativePath));
   }
 
-  static String _forwardSlashes(String path) => path.replaceAll(r'\', '/');
+  static String _forwardSlashes(String path) =>
+      path.replaceAll(_pathSeparatorBackslash, '/');
 
   /// Returns true if [actualNormalizedPath] matches [expectedPattern].
   ///
@@ -108,10 +116,8 @@ class RegistryPathMatching {
   }
 
   /// Normalizes [path] to forward slashes for glob comparison.
-  static String _canonicalizeForMatch(String path) {
-    // r'\' is a one-character backslash (raw string ends before the closing quote).
-    return path.replaceAll(r'\', '/');
-  }
+  static String _canonicalizeForMatch(String path) =>
+      path.replaceAll(_pathSeparatorBackslash, '/');
 
   /// Matches a normalized absolute path against [catalog].
   ///
@@ -131,8 +137,12 @@ class RegistryPathMatching {
   }) {
     for (final descriptor in catalog) {
       for (final target in descriptor.targets) {
-        if (target.scope == ConfigLocationScope.user &&
-            normalizedHomePath != null) {
+        if (target.scope == ConfigLocationScope.user) {
+          final canResolveUserTarget =
+              normalizedHomePath != null ||
+              (normalizedCopilotHomePath != null &&
+                  isCopilotCliUserTarget(target.relativePath));
+          if (!canResolveUserTarget) continue;
           if (!enableClineRulesFallback &&
               isClineRulesFallbackTarget(target.relativePath)) {
             continue;
@@ -142,6 +152,7 @@ class RegistryPathMatching {
             relativePath: target.relativePath,
             normalizedCopilotHomePath: normalizedCopilotHomePath,
           );
+          if (expected == null) continue;
           if (isMatch(expected, normalizedAbsolutePath)) {
             return RegistryMatchResult(
               descriptor: descriptor,
