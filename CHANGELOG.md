@@ -10,6 +10,9 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
+- **Expanded configuration discovery:** Added auto-discovery and raw-text editing support for Antigravity's `GEMINI.md`, Codex's Starlark `.rules` files, and Devin's `.devin/rules/*.md`.
+- **Tool Sidebar Refinement:** Cursor has been split into 'Cursor IDE' and 'Cursor Agent' to cleanly separate the IDE settings from the agent constraints. Antigravity has been split into 'Antigravity IDE', 'Antigravity App', and 'Antigravity CLI' to provide accurate file discovery for each distinct tool surface.
+
 
 - **Corrupted-config recovery.** When a config file fails to parse, a recovery dialog
   offers: open the file in a raw text editor, view backups, skip, and (for manually-added
