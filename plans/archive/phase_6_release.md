@@ -391,7 +391,7 @@ no contradiction (debug-only, not release).
 - `lib/widgets/raw_diff_view.dart` — diff viewer widget (new file, extracted)
 - `TO_DO.md` — updated Qodo #10 wording
 
-**Pending (B, D, E):**
+**Pending (D, E):**
 
 - `lib/models/discovered_config.dart` (B — provenance model)
 - `lib/services/discovery_service.dart` (B — discovery-order independence)

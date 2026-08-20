@@ -19,9 +19,9 @@ This phase addresses the tool-support gaps and refactoring for **existing tools*
 
 *Research protocol:* Check upstream documentation, inspect default installation paths on macOS/Linux/Windows, and record findings in `docs/research/2026-08-19-discovery-targets.md`. Be sure to identify correct Windows path equivalents (e.g., `%APPDATA%`, `%LOCALAPPDATA%`, `%USERPROFILE%`).
 
-- [ ] **Kiro:** Confirm if a project-level `permissions.yaml` or equivalent exists. Currently only `.kiro/steering/*.md` is mapped. Add it if it exists.
+- [ ] **Kiro:** Confirm if a project-level `permissions.yaml` or equivalent exists. Currently only `.kiro/steering/*.md` is mapped. Classify this specific hash-based path as manual/not auto-discovered since the mapping cannot be reliably resolved purely from the CWD.
 - [ ] **Antigravity CLI:** Confirm if a project-level settings file exists upstream.
-- [ ] **Agy-ACP / Zed contradiction:** Resolve the doc/code contradiction for Zed `agent_servers`. `supported-tools.md:657` documents it as part of Agy-ACP, but the registry omits it. Either add the cross-tool target or update the docs to mark it "documented but not auto-discovered."
+- [ ] **Agy-ACP / Zed contradiction:** Resolve the doc/code contradiction for Zed `agent_servers`. `supported-tools.md:657` documents it as part of Agy-ACP, but the registry omits it. Update the docs to explicitly mark it "documented but not auto-discovered" to preserve the existing ownership contract.
 - [ ] **Cursor (Agent):** We currently map `~/.cursor/permissions.json`. Confirm if a global user-scope `.cursorrules` equivalent exists and map it if so.
 - [ ] **Codex:** Add missing Starlark rules paths (`~/.codex/rules/default.rules` and `.codex/rules/*.rules`) to the registry targets.
 - [ ] **Re-verify:** Check each tool's paths against upstream documentation. Refresh `docs/research/2026-08-19-discovery-targets.md`.

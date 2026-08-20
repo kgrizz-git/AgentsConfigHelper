@@ -13,7 +13,7 @@
 ## Cline
 
 - **Global Settings/API:** `~/.cline/data/settings/` (Specifically `global-settings.json`, `cline_mcp_settings.json`, and `providers.json`)
-- **Global Rules:** `~/.cline/rules/`
+- **Global Rules:** `~/.cline/rules/` (Windows: `%USERPROFILE%\.cline\rules\`)
 - **Project Rules:** `.clinerules` and `.cline/rules/*.md`
 
 ## LM Studio
@@ -24,7 +24,7 @@
 
 ## GitHub Copilot
 
-- **Copilot CLI:** `~/.copilot/config.json` and `mcp-config.json` (Windows: `%USERPROFILE%\.copilot\`)
+- **Copilot CLI:** `~/.copilot/config.json` and `~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\`)
 - **VS Code Extension:** Managed via `settings.json`. No default global instructions file exists (relies on project-level `.github/copilot-instructions.md`).
 - **JetBrains Plugin:**
   - macOS/Linux: `~/.config/github-copilot/intellij/global-copilot-instructions.md`

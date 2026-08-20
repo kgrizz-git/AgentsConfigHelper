@@ -34,6 +34,7 @@ This phase adds first-class support for new requested tools (Kilo, Cline, LM Stu
 
 **Goal:** Ensure the new tools integrate smoothly into the UI and discovery pipeline.
 
+- [ ] **Secret Handling Policy:** Define a security policy for secret-bearing files (e.g., Kilo's `models.json`). Keys must be masked in the UI diff preview. Furthermore, backups of secret-bearing project files must be routed to the app's secure global backup directory rather than writing a `.bak` file into the project directory, to guarantee they are never accidentally committed. Add regression tests for this behavior.
 - [ ] **Hook Integration:** Check if any of the new paths (like Kilo's or Cline's rules files) should be ignored or monitored by the `gitleaks` or `hygiene` pre-commit hooks.
 - [ ] **Documentation Sync:** Update `docs/supported-tools.md` and the `README.md` table to list the newly supported tools.
 - [ ] **Changelog:** Add an entry to `CHANGELOG.md` detailing the new tool support.
