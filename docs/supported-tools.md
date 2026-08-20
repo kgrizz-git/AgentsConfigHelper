@@ -564,7 +564,8 @@ global instructions. VS Code Copilot settings still live in the host `settings.j
 | Scope | Path |
 | --- | --- |
 | CLI user config | `~/.copilot/config.json`, `~/.copilot/mcp-config.json` |
-| Project instructions | `.github/copilot-instructions.md` (repo root) |
+| CLI personal instructions | `~/.copilot/copilot-instructions.md`, `~/.copilot/instructions/**/*.instructions.md` |
+| Project instructions | `.github/copilot-instructions.md`, `.github/instructions/**/*.instructions.md` |
 | JetBrains global instructions | `~/.config/github-copilot/intellij/global-copilot-instructions.md` (Windows: `%LOCALAPPDATA%\github-copilot\intellij\...`) |
 | User/agent settings (VS Code) | VS Code `settings.json` (`github.copilot.*`; extra agent-file dirs via `chat.agentFilesLocations`) — not auto-discovered |
 | Agent definitions | `.github/agents/<name>.agent.md` (legacy: `.github/chatmodes/*.chatmode.md`) — not yet in the registry |
@@ -620,10 +621,10 @@ still auto-discovered and opened in the raw-text editor where registered):
 
 ### Kilo Config paths
 
-- **User settings:** `~/.config/kilo/kilo.jsonc`
+- **User settings:** `~/.config/kilo/kilo.jsonc` or `~/.config/kilo/kilo.json`
 - **User models cache (optional):** `~/.config/kilo/models.json`
 - **User rules / agents:** `~/.config/kilo/AGENTS.md` and `~/.config/kilo/agents/*.md`
-- **Project settings:** `kilo.jsonc` or `.kilo/kilo.jsonc`
+- **Project settings:** `kilo.jsonc` / `kilo.json`, or `.kilo/kilo.jsonc` / `.kilo/kilo.json`
 - **Project agents:** `.kilo/agents/*.md`
 - **Project rules:** shared root `AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
 
@@ -637,7 +638,7 @@ All edits are backed up only under the app support directory (never sibling `.ba
 ### Cline Config paths
 
 - **User settings:** `~/.cline/data/settings/global-settings.json`, `cline_mcp_settings.json`, `providers.json` (often secret-bearing)
-- **User rules:** `~/.cline/rules/*.md`, `~/Documents/Cline/Rules/*.md`
+- **User rules:** `~/.cline/rules/*.md`, `~/Documents/Cline/Rules/*.{md,txt}`, Linux/WSL fallback `~/Cline/Rules/*.{md,txt}`
 - **Project rules:** `.clinerules/` (`.md`/`.txt`), legacy `.clinerules` file, and `.cline/rules/*.md`
 - **Also loads:** shared root `AGENTS.md` / `~/.agents/AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
 

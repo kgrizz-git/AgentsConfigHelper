@@ -8,4 +8,6 @@ policies/
 CHANGELOG.md
 CHANGELOG.dev.md
 DESIGN.md
+# Idea backlog with intentional dense / repeated section headings (same class
+# of exception as CHANGELOG.md). Maintainer: kgrizz-git (PR #17 / Phase 10).
 docs/PRODUCT_IDEAS.md

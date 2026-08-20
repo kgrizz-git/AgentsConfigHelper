@@ -1,45 +1,9 @@
+import 'package:agents_config_helper/catalog/registry_path_matching.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
-import 'package:path/path.dart' as p;
 
-/// Result of matching a path against the tool descriptor registry.
-class RegistryMatchResult {
-  /// Creates a registry match result.
-  RegistryMatchResult({
-    required this.scope,
-    required this.format,
-    required this.sourceLabel,
-    required this.kind,
-    this.descriptor,
-  });
-
-  /// The matched tool descriptor, or null if this is an unknown manual file.
-  final ToolDescriptor? descriptor;
-
-  /// The matched scope.
-  final ConfigLocationScope scope;
-
-  /// The determined configuration format.
-  final ConfigFormat format;
-
-  /// The label for the source (e.g. tool name or 'Unknown configuration').
-  final String sourceLabel;
-
-  /// The kind of the specific [ConfigTarget] that matched.
-  final ConfigSourceKind kind;
-}
-
-/// Exception thrown when a file extension is unsupported.
-class ValidationException implements Exception {
-  /// Creates a validation exception.
-  ValidationException(this.message);
-
-  /// The validation error message.
-  final String message;
-
-  @override
-  String toString() => message;
-}
+export 'package:agents_config_helper/catalog/registry_path_matching.dart'
+    show RegistryMatchResult, ValidationException;
 
 /// Registry of all supported tool configurations for discovery.
 class ToolDescriptorRegistry {
@@ -349,6 +313,12 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
         ),
+        ConfigTarget(
+          relativePath: '.config/kilo/kilo.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
         // Optional/legacy cache file; may be absent on current installs.
         // Secrets more commonly live in kilo.jsonc (provider apiKey) —
         // backups for all of these still go to the app support directory.
@@ -377,8 +347,20 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.structuredConfig,
         ),
         ConfigTarget(
+          relativePath: 'kilo.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
           relativePath: '.kilo/kilo.jsonc',
           format: ConfigFormat.jsonc,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.kilo/kilo.json',
+          format: ConfigFormat.json,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),
@@ -444,10 +426,29 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
-        // Compatibility path still documented by Cline for global rules.
+        // Compatibility paths documented by Cline for global rules.
         ConfigTarget(
           relativePath: 'Documents/Cline/Rules/*.md',
           format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'Documents/Cline/Rules/*.txt',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        // Linux/WSL fallback when Documents/Cline/Rules is absent.
+        ConfigTarget(
+          relativePath: 'Cline/Rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'Cline/Rules/*.txt',
+          format: ConfigFormat.text,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.instructionDocument,
         ),
@@ -502,7 +503,25 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.structuredConfig,
         ),
         ConfigTarget(
+          relativePath: '.copilot/copilot-instructions.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.copilot/instructions/**/*.instructions.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
           relativePath: '.github/copilot-instructions.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.github/instructions/**/*.instructions.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
@@ -554,121 +573,19 @@ class ToolDescriptorRegistry {
     return null;
   }
 
-  /// Returns true if [actualNormalizedPath] matches [expectedPattern],
-  /// treating any `*` in the pattern as a wildcard for a single path
-  /// segment.
-  static bool isMatch(String expectedPattern, String actualNormalizedPath) {
-    if (!expectedPattern.contains('*')) {
-      return p.equals(expectedPattern, actualNormalizedPath);
-    }
-    final regexStr = RegExp.escape(
-      expectedPattern,
-    ).replaceAll(r'\*', r'[^/\\]*');
-    final regex = RegExp('^$regexStr\$');
-    return regex.hasMatch(actualNormalizedPath);
-  }
+  /// See [RegistryPathMatching.isMatch].
+  static bool isMatch(String expectedPattern, String actualNormalizedPath) =>
+      RegistryPathMatching.isMatch(expectedPattern, actualNormalizedPath);
 
-  /// Matches a normalized absolute path against the catalog.
-  ///
-  /// Checks for an exact match against known user targets
-  /// (if [normalizedHomePath] is provided) and known project targets
-  /// (if [normalizedProjectRoots] are provided).
-  /// If no exact match is found, treats it as a manual file and attempts
-  /// to derive the format.
-  /// Throws a [ValidationException] if the extension is unsupported.
+  /// See [RegistryPathMatching.matchPath].
   static RegistryMatchResult matchPath(
     String normalizedAbsolutePath, {
     String? normalizedHomePath,
     List<String> normalizedProjectRoots = const [],
-  }) {
-    // 1. Try exact matches first
-    for (final descriptor in catalog) {
-      for (final target in descriptor.targets) {
-        if (target.scope == ConfigLocationScope.user &&
-            normalizedHomePath != null) {
-          final expected = p.normalize(
-            p.join(normalizedHomePath, target.relativePath),
-          );
-          if (isMatch(expected, normalizedAbsolutePath)) {
-            return RegistryMatchResult(
-              descriptor: descriptor,
-              scope: ConfigLocationScope.user,
-              format: target.format,
-              sourceLabel: descriptor.displayName,
-              kind: target.kind,
-            );
-          }
-        } else if (target.scope == ConfigLocationScope.project) {
-          for (final root in normalizedProjectRoots) {
-            final expected = p.normalize(
-              p.join(root, target.relativePath),
-            );
-            if (isMatch(expected, normalizedAbsolutePath)) {
-              return RegistryMatchResult(
-                descriptor: descriptor,
-                scope: ConfigLocationScope.project,
-                format: target.format,
-                sourceLabel: descriptor.displayName,
-                kind: target.kind,
-              );
-            }
-          }
-        }
-      }
-    }
-
-    // 2. Fallback to manual unknown file. We must validate the extension.
-    final ext = p.extension(normalizedAbsolutePath).toLowerCase();
-    ConfigFormat format;
-    switch (ext) {
-      case '.json':
-        format = ConfigFormat.json;
-      case '.jsonc':
-        format = ConfigFormat.jsonc;
-      case '.yaml':
-      case '.yml':
-        format = ConfigFormat.yaml;
-      case '.toml':
-        format = ConfigFormat.toml;
-      case '.md':
-        format = ConfigFormat.markdown;
-      case '.mdc':
-        // Cursor .mdc rule files resolve to text via the catalog project
-        // target; keep the manual-path fallback identical so both paths agree.
-        format = ConfigFormat.text;
-      case '.txt':
-      case '.rules':
-        format = ConfigFormat.text;
-      default:
-        // Try fallback to text if no extension
-        if (ext.isEmpty ||
-            p.basename(normalizedAbsolutePath) == '.cursorrules') {
-          format = ConfigFormat.text;
-        } else {
-          throw ValidationException(
-            'Unsupported configuration file extension: $ext',
-          );
-        }
-    }
-
-    final ConfigSourceKind kind;
-    switch (format) {
-      case ConfigFormat.json:
-      case ConfigFormat.jsonc:
-      case ConfigFormat.yaml:
-      case ConfigFormat.toml:
-      case ConfigFormat.unknown:
-        kind = ConfigSourceKind.structuredConfig;
-      case ConfigFormat.markdown:
-      case ConfigFormat.text:
-        kind = ConfigSourceKind.instructionDocument;
-    }
-
-    return RegistryMatchResult(
-      scope: ConfigLocationScope.manual,
-      format: format,
-      kind: kind,
-      sourceLabel: 'Unknown configuration',
-    );
-  }
+  }) => RegistryPathMatching.matchPath(
+    normalizedAbsolutePath,
+    catalog: catalog,
+    normalizedHomePath: normalizedHomePath,
+    normalizedProjectRoots: normalizedProjectRoots,
+  );
 }

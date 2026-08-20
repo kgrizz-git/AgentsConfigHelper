@@ -121,6 +121,18 @@ class DiscoveryService {
           // ignore: avoid_slow_async_io
           if (!await dir.exists()) return;
 
+          // Only recurse when the remaining pattern has more than one
+          // segment (or a `**`). Single-segment globs like `*.mdc` must
+          // stay non-recursive so deep noise cannot exhaust the visit cap
+          // before direct children are seen.
+          final remaining = p.relative(expectedPattern, from: dirPath);
+          final remainingSegments = remaining
+              .split(RegExp(r'[/\\]'))
+              .where((s) => s.isNotEmpty)
+              .toList();
+          final needsRecursion =
+              remaining.contains('**') || remainingSegments.length > 1;
+
           var matchCount = 0;
           var visitedCount = 0;
           var truncatedMatches = false;
@@ -135,7 +147,7 @@ class DiscoveryService {
           // followLinks: false avoids symlink cycles and accidental walks
           // into large external model/weight directories.
           await for (final entity in dir.list(
-            recursive: true,
+            recursive: needsRecursion,
             followLinks: false,
           )) {
             visitedCount++;

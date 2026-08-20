@@ -261,6 +261,35 @@ void main() {
       );
     });
 
+    test('matches Copilot nested ** instructions glob', () {
+      const homePath = 'home_test';
+      final pattern = p.normalize(
+        p.join(homePath, '.copilot/instructions/**/*.instructions.md'),
+      );
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(
+            p.join(
+              homePath,
+              '.copilot/instructions/style/code.instructions.md',
+            ),
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(
+            p.join(homePath, '.copilot/instructions/code.instructions.md'),
+          ),
+        ),
+        isTrue,
+      );
+    });
+
     test('nested glob path falls back to manual unknown', () {
       const projectRoot = '/root';
       final path = p.normalize(

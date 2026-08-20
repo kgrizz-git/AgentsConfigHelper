@@ -4,11 +4,11 @@
 
 ## Kilo
 
-- **Global Config:** `~/.config/kilo/kilo.jsonc` (Windows: `%USERPROFILE%\.config\kilo\kilo.jsonc`)
+- **Global Config:** `~/.config/kilo/kilo.jsonc` or `kilo.json` (Windows: `%USERPROFILE%\.config\kilo\`)
 - **Global Models cache (optional/legacy):** `~/.config/kilo/models.json` — may be absent on current installs; not the primary credentials store
 - **Secrets note:** Official docs warn that `provider.*.options.apiKey` (and similar) can appear in `kilo.jsonc`. Prefer env vars for credentials. Never commit config that contains secrets.
 - **Global Rules / agents:** `~/.config/kilo/AGENTS.md` and `~/.config/kilo/agents/*.md`
-- **Project Config:** `kilo.jsonc` or `.kilo/kilo.jsonc` (`.kilo/` wins if both exist)
+- **Project Config:** `kilo.jsonc` / `kilo.json`, or `.kilo/kilo.jsonc` / `.kilo/kilo.json` (`.kilo/` wins if both exist)
 - **Project agents:** `.kilo/agents/*.md`
 - **Project Rules:** root `AGENTS.md` is registered under the shared **AGENTS.md (shared)**
   catalog entry (not under Kilo), because Codex, Opencode, Cursor, Kiro, Devin, Kilo, and
@@ -17,7 +17,8 @@
 ## Cline
 
 - **Global Settings/API:** `~/.cline/data/settings/` — specifically `global-settings.json`, `cline_mcp_settings.json`, and `providers.json` (providers often holds API keys)
-- **Global Rules:** `~/.cline/rules/` and compatibility path `~/Documents/Cline/Rules/`
+- **Global Rules:** `~/.cline/rules/`, `~/Documents/Cline/Rules/`, and Linux/WSL
+  fallback `~/Cline/Rules/`
 - **Project Rules (primary):** `.clinerules/` directory of `.md` / `.txt` files
 - **Project Rules (legacy/alternate):** `.clinerules` file and `.cline/rules/*.md`
 
@@ -30,7 +31,11 @@
 ## GitHub Copilot
 
 - **Copilot CLI:** `~/.copilot/config.json` and `~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\`)
-- **VS Code Extension:** Managed via `settings.json`. No default global instructions file exists (relies on project-level `.github/copilot-instructions.md`).
+- **CLI personal instructions:** `~/.copilot/copilot-instructions.md` and
+  `~/.copilot/instructions/**/*.instructions.md`
+- **Project instructions:** `.github/copilot-instructions.md` and
+  `.github/instructions/**/*.instructions.md`
+- **VS Code Extension:** Managed via `settings.json` (not a dedicated auto-discovered instructions file beyond project `.github/` paths).
 - **JetBrains Plugin:**
   - macOS/Linux: `~/.config/github-copilot/intellij/global-copilot-instructions.md`
   - Windows: `%LOCALAPPDATA%\github-copilot\intellij\global-copilot-instructions.md` (registered as `AppData/Local/...` under the user home, matching the Cursor IDE Windows path pattern)
