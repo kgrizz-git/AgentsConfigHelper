@@ -9,8 +9,8 @@ class RegistryMatchResult {
     required this.scope,
     required this.format,
     required this.sourceLabel,
+    required this.kind,
     this.descriptor,
-    this.kind,
   });
 
   /// The matched tool descriptor, or null if this is an unknown manual file.
@@ -25,9 +25,8 @@ class RegistryMatchResult {
   /// The label for the source (e.g. tool name or 'Unknown configuration').
   final String sourceLabel;
 
-  /// The kind of the specific [ConfigTarget] that matched, or null if this
-  /// is an unknown manual file with no matching catalog target.
-  final ConfigSourceKind? kind;
+  /// The kind of the specific [ConfigTarget] that matched.
+  final ConfigSourceKind kind;
 }
 
 /// Exception thrown when a file extension is unsupported.
@@ -184,6 +183,12 @@ class ToolDescriptorRegistry {
         ),
         ConfigTarget(
           relativePath: '.config/Cursor/User/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: 'AppData/Roaming/Cursor/User/settings.json',
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
@@ -471,9 +476,23 @@ class ToolDescriptorRegistry {
         }
     }
 
+    final ConfigSourceKind kind;
+    switch (format) {
+      case ConfigFormat.json:
+      case ConfigFormat.jsonc:
+      case ConfigFormat.yaml:
+      case ConfigFormat.toml:
+      case ConfigFormat.unknown:
+        kind = ConfigSourceKind.structuredConfig;
+      case ConfigFormat.markdown:
+      case ConfigFormat.text:
+        kind = ConfigSourceKind.instructionDocument;
+    }
+
     return RegistryMatchResult(
       scope: ConfigLocationScope.manual,
       format: format,
+      kind: kind,
       sourceLabel: 'Unknown configuration',
     );
   }

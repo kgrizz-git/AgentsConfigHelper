@@ -7,6 +7,7 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Registry invariant tests.** Added `test/catalog/registry_invariants_test.dart` to verify that `ConfigFormat.markdown` and `ConfigFormat.text` are never routed to the structured parser.
 - **Mandatory phase-completion independent review.** `AGENTS.md` now requires a fresh,
   independent agent to review each completed phase (run `flutter analyze --fatal-infos` +
   `flutter test`, inspect changed files, severity-rated verdict) before merge/archive. The

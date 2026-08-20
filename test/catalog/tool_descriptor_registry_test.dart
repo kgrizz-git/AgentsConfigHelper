@@ -52,7 +52,7 @@ void main() {
       expect(match.format, ConfigFormat.toml);
     });
 
-    test('falls back to manual unknown for unsupported paths', () {
+    test('falls back to manual unknown for unsupported JSON path', () {
       const path = 'home_test/some_manual_path.json';
 
       final match = ToolDescriptorRegistry.matchPath(path);
@@ -60,6 +60,32 @@ void main() {
       expect(match.descriptor, isNull);
       expect(match.scope, ConfigLocationScope.manual);
       expect(match.format, ConfigFormat.json);
+      expect(match.kind, ConfigSourceKind.structuredConfig);
+      expect(match.sourceLabel, 'Unknown configuration');
+    });
+
+    test('manual .rules fallback is an instructionDocument', () {
+      const path = '/root/.codex/rules/foo.rules';
+
+      // No project roots provided, so it falls back to manual
+      final match = ToolDescriptorRegistry.matchPath(path);
+
+      expect(match.descriptor, isNull);
+      expect(match.scope, ConfigLocationScope.manual);
+      expect(match.format, ConfigFormat.text);
+      expect(match.kind, ConfigSourceKind.instructionDocument);
+      expect(match.sourceLabel, 'Unknown configuration');
+    });
+
+    test('manual .md fallback is an instructionDocument', () {
+      const path = '/root/some/docs.md';
+
+      final match = ToolDescriptorRegistry.matchPath(path);
+
+      expect(match.descriptor, isNull);
+      expect(match.scope, ConfigLocationScope.manual);
+      expect(match.format, ConfigFormat.markdown);
+      expect(match.kind, ConfigSourceKind.instructionDocument);
       expect(match.sourceLabel, 'Unknown configuration');
     });
 
@@ -109,6 +135,32 @@ void main() {
       );
     });
 
+    test('matches Devin glob within a single path segment', () {
+      const projectRoot = '/root';
+      final pattern = p.normalize(p.join(projectRoot, '.devin/rules/*.md'));
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(p.join(projectRoot, '.devin/rules/feature.md')),
+        ),
+        isTrue,
+      );
+    });
+
+    test('matches Codex glob within a single path segment', () {
+      const projectRoot = '/root';
+      final pattern = p.normalize(p.join(projectRoot, '.codex/rules/*.rules'));
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(p.join(projectRoot, '.codex/rules/linter.rules')),
+        ),
+        isTrue,
+      );
+    });
+
     test('nested glob path falls back to manual unknown', () {
       const projectRoot = '/root';
       final path = p.normalize(
@@ -122,6 +174,8 @@ void main() {
 
       expect(match.descriptor, isNull);
       expect(match.scope, ConfigLocationScope.manual);
+      expect(match.format, ConfigFormat.text);
+      expect(match.kind, ConfigSourceKind.instructionDocument);
       expect(match.sourceLabel, 'Unknown configuration');
     });
 
