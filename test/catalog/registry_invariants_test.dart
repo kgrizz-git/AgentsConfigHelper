@@ -1,5 +1,5 @@
-import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
+import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
