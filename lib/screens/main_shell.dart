@@ -363,6 +363,8 @@ class _MainShellState extends ConsumerState<MainShell>
         return Icons.code;
       case ToolId.cursor:
         return Icons.edit;
+      case ToolId.cursorIde:
+        return Icons.integration_instructions;
       case ToolId.opencode:
         return Icons.open_in_browser;
       case ToolId.paseo:
@@ -373,6 +375,10 @@ class _MainShellState extends ConsumerState<MainShell>
         return Icons.developer_mode;
       case ToolId.antigravity:
         return Icons.rocket_launch;
+      case ToolId.antigravityIde:
+        return Icons.computer;
+      case ToolId.antigravityApp:
+        return Icons.desktop_windows;
       case ToolId.codex:
         return Icons.book;
       case ToolId.agyAcp:

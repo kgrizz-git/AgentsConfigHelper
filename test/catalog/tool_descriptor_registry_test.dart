@@ -8,17 +8,20 @@ import 'package:path/path.dart' as p;
 
 void main() {
   group('ToolDescriptorRegistry', () {
-    test('contains exactly nine user descriptors in order', () {
-      expect(ToolDescriptorRegistry.catalog.length, 9);
+    test('contains exactly 12 user descriptors in order', () {
+      expect(ToolDescriptorRegistry.catalog.length, 12);
       expect(ToolDescriptorRegistry.catalog[0].id, ToolId.claudeCode);
       expect(ToolDescriptorRegistry.catalog[1].id, ToolId.codex);
       expect(ToolDescriptorRegistry.catalog[2].id, ToolId.opencode);
       expect(ToolDescriptorRegistry.catalog[3].id, ToolId.paseo);
-      expect(ToolDescriptorRegistry.catalog[4].id, ToolId.cursor);
-      expect(ToolDescriptorRegistry.catalog[5].id, ToolId.kiro);
-      expect(ToolDescriptorRegistry.catalog[6].id, ToolId.devin);
-      expect(ToolDescriptorRegistry.catalog[7].id, ToolId.antigravity);
-      expect(ToolDescriptorRegistry.catalog[8].id, ToolId.agyAcp);
+      expect(ToolDescriptorRegistry.catalog[4].id, ToolId.cursorIde);
+      expect(ToolDescriptorRegistry.catalog[5].id, ToolId.cursor);
+      expect(ToolDescriptorRegistry.catalog[6].id, ToolId.kiro);
+      expect(ToolDescriptorRegistry.catalog[7].id, ToolId.devin);
+      expect(ToolDescriptorRegistry.catalog[8].id, ToolId.antigravityIde);
+      expect(ToolDescriptorRegistry.catalog[9].id, ToolId.antigravityApp);
+      expect(ToolDescriptorRegistry.catalog[10].id, ToolId.antigravity);
+      expect(ToolDescriptorRegistry.catalog[11].id, ToolId.agyAcp);
     });
 
     test('matches user target successfully', () {

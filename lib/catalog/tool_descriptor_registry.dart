@@ -99,6 +99,18 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.structuredConfig,
         ),
         ConfigTarget(
+          relativePath: '.codex/rules/default.rules',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.codex/rules/*.rules',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
           relativePath: '.codex/AGENTS.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
@@ -106,6 +118,12 @@ class ToolDescriptorRegistry {
         ),
         ConfigTarget(
           relativePath: 'AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.devin/rules/*.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
@@ -140,6 +158,12 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
+        ConfigTarget(
+          relativePath: '.devin/rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
       ],
     ),
     ToolDescriptor(
@@ -161,8 +185,32 @@ class ToolDescriptorRegistry {
       ],
     ),
     ToolDescriptor(
+      id: ToolId.cursorIde,
+      displayName: 'Cursor IDE',
+      targets: [
+        ConfigTarget(
+          relativePath: 'Library/Application Support/Cursor/User/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.config/Cursor/User/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.cursor/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+      ],
+    ),
+    ToolDescriptor(
       id: ToolId.cursor,
-      displayName: 'Cursor',
+      displayName: 'Cursor Agent',
       targets: [
         ConfigTarget(
           relativePath: '.cursor/permissions.json',
@@ -190,6 +238,12 @@ class ToolDescriptorRegistry {
         ),
         ConfigTarget(
           relativePath: 'AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.devin/rules/*.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
@@ -224,6 +278,12 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
+        ConfigTarget(
+          relativePath: '.devin/rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
       ],
     ),
     ToolDescriptor(
@@ -254,11 +314,41 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
+        ConfigTarget(
+          relativePath: '.devin/rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+      ],
+    ),
+    ToolDescriptor(
+      id: ToolId.antigravityIde,
+      displayName: 'Antigravity IDE',
+      targets: [
+        ConfigTarget(
+          relativePath: '.gemini/antigravity-ide/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+      ],
+    ),
+    ToolDescriptor(
+      id: ToolId.antigravityApp,
+      displayName: 'Antigravity App',
+      targets: [
+        ConfigTarget(
+          relativePath: '.gemini/antigravity-app/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
       ],
     ),
     ToolDescriptor(
       id: ToolId.antigravity,
-      displayName: 'Antigravity',
+      displayName: 'Antigravity CLI',
       targets: [
         ConfigTarget(
           relativePath: '.gemini/antigravity-cli/settings.json',
@@ -270,6 +360,12 @@ class ToolDescriptorRegistry {
           relativePath: '.gemini/GEMINI.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'GEMINI.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
         ConfigTarget(
@@ -385,6 +481,7 @@ class ToolDescriptorRegistry {
         // target; keep the manual-path fallback identical so both paths agree.
         format = ConfigFormat.text;
       case '.txt':
+      case '.rules':
         format = ConfigFormat.text;
       default:
         // Try fallback to text if no extension

@@ -13,10 +13,13 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Codex | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `AGENTS.md` | sandbox + permission profiles |
 | Opencode | JSON | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `AGENTS.md` | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
-| Cursor | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `AGENTS.md`/`CLAUDE.md` | allowlist + classifier |
+| Cursor Agent | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `AGENTS.md`/`CLAUDE.md` | allowlist + classifier |
+| Cursor IDE | JSON | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
 | Kiro | YAML | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` + `AGENTS.md` | capability-based |
 | Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `AGENTS.md` | scope-based allow/deny |
-| Antigravity | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` | action(target) + presets |
+| Antigravity CLI | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` + `GEMINI.md` | action(target) + presets |
+| Antigravity IDE | JSON | `~/.gemini/antigravity-ide/settings.json` | — | — | — |
+| Antigravity App | JSON | `~/.gemini/antigravity-app/settings.json` | — | — | — |
 | Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — (host ACP config, e.g. Zed `agent_servers`, is not managed by this app) | via agy hooks | ACP permission bridge |
 | VS Code / GitHub Copilot _(deferred)_ | Markdown | — | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` | instructions only (no permission model) |
 | LM Studio _(deferred)_ | JSON | — | — | — | local LLM runner with model management and API server settings |
@@ -260,7 +263,7 @@ JSON. Schema at `https://paseo.sh/schemas/paseo.config.v1.json`.
 
 ---
 
-## Cursor
+## Cursor Agent and Cursor IDE
 
 ### Cursor Config paths
 
