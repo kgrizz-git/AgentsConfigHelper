@@ -57,7 +57,7 @@ void main() {
           p.join(tempDir.path, 'project', 'models.json'),
         );
         await secretFile.create(recursive: true);
-        await secretFile.writeAsString('{"api_key": "sk-1234"}');
+        await secretFile.writeAsString('{"api_key": "fixture-value"}');
 
         final backupPath = await backupService.createBackup(secretFile.path);
 

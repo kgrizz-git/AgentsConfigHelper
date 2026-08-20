@@ -30,11 +30,18 @@
 
 ## GitHub Copilot
 
-- **Copilot CLI:** `~/.copilot/config.json` and `~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\`)
+- **Copilot CLI editable settings:** `~/.copilot/settings.json` (Windows: `%USERPROFILE%\.copilot\`)
+- **Copilot CLI managed state:** `~/.copilot/config.json` (auth/plugins; not the primary
+  editable settings file — older user settings migrate to `settings.json`)
+- **Copilot CLI MCP:** `~/.copilot/mcp-config.json`
 - **CLI personal instructions:** `~/.copilot/copilot-instructions.md` and
   `~/.copilot/instructions/**/*.instructions.md`
+- **Repo/project settings:** `.github/copilot/settings.json` and
+  `.github/copilot/settings.local.json` (personal; gitignore)
 - **Project instructions:** `.github/copilot-instructions.md` and
   `.github/instructions/**/*.instructions.md`
+- **Shared AGENTS.md:** project `AGENTS.md` and `~/.agents/AGENTS.md` (catalog entry
+  `AGENTS.md (shared)`)
 - **VS Code Extension:** Managed via `settings.json` (not a dedicated auto-discovered instructions file beyond project `.github/` paths).
 - **JetBrains Plugin:**
   - macOS/Linux: `~/.config/github-copilot/intellij/global-copilot-instructions.md`

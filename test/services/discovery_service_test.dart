@@ -18,7 +18,7 @@ void main() {
       mockProject = await Directory.systemTemp.createTemp(
         'discovery_test_project_',
       );
-      discoveryService = DiscoveryService();
+      discoveryService = const DiscoveryService();
     });
 
     tearDown(() async {
@@ -291,7 +291,10 @@ void main() {
           result.warnings.any(
             (w) =>
                 w.path.contains('.cursor') &&
-                w.message.contains('Error enumerating glob target'),
+                (w.message.contains('Error enumerating glob target') ||
+                    w.message.contains(
+                      'Skipped unreadable entry while enumerating glob',
+                    )),
           ),
           isTrue,
         );

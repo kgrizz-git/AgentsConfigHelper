@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:path/path.dart' as p;
@@ -48,19 +50,36 @@ class RegistryPathMatching {
   /// `*` matches a single path segment; `**` matches zero or more segments
   /// (including across separators). A trailing `**/` may match zero segments
   /// so that `dir/**/*.ext` also matches direct children of `dir`.
+  ///
+  /// Both sides are compared with forward-slash separators so recursive
+  /// patterns work when the actual path has normalized Windows backslashes.
+  /// Matching is case-insensitive on Windows.
   static bool isMatch(String expectedPattern, String actualNormalizedPath) {
-    if (!expectedPattern.contains('*')) {
-      return p.equals(expectedPattern, actualNormalizedPath);
+    final expected = _canonicalizeForMatch(expectedPattern);
+    final actual = _canonicalizeForMatch(actualNormalizedPath);
+    if (!expected.contains('*')) {
+      if (Platform.isWindows) {
+        return expected.toLowerCase() == actual.toLowerCase();
+      }
+      return expected == actual;
     }
     // Escape first, then restore glob wildcards. Handle `**/` before `**`
-    // before `*` so nested globs keep correct semantics.
-    final regexStr = RegExp.escape(expectedPattern)
-        .replaceAll(r'\*\*/', r'(?:.*[/\\])?')
+    // before `*` so nested globs keep correct semantics. After canonicalizing
+    // to `/`, only forward-slash forms are needed.
+    final regexStr = RegExp.escape(expected)
+        .replaceAll(r'\*\*/', '(?:.*/)?')
         .replaceAll(r'\*\*', '.*')
-        .replaceAll(r'\*', r'[^/\\]*');
-    final regex = RegExp('^$regexStr\$');
-    return regex.hasMatch(actualNormalizedPath);
+        .replaceAll(r'\*', '[^/]*');
+    final regex = RegExp(
+      '^$regexStr\$',
+      caseSensitive: !Platform.isWindows,
+    );
+    return regex.hasMatch(actual);
   }
+
+  /// Normalizes [path] to forward slashes for glob comparison.
+  static String _canonicalizeForMatch(String path) =>
+      path.replaceAll(r'\', '/');
 
   /// Matches a normalized absolute path against [catalog].
   ///

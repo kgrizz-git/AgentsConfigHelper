@@ -46,6 +46,7 @@ This phase adds first-class support for new requested tools (Kilo, Cline, LM Stu
 - Ensure new glob patterns match the canonical upstream filename casing.
 - Review follow-ups (2026-08-20): LM Studio hub globs use `models/*/*/…` (publisher/model); Cline discovers `.clinerules/` directories; discovery glob walks use recursive listing with match + visit caps and `followLinks: false`.
 - Shared project `AGENTS.md` is a separate `ToolId.agentsMd` catalog entry (not owned by Kilo/Codex/etc.).
+- CodeRabbit follow-ups (2026-08-20): Copilot editable settings use `settings.json` (user + `.github/copilot/`); `config.json` kept as managed state; Windows `**/` matching canonicalizes separators; discovery caps are injectable; glob listing uses per-entry `handleError`.
 
 **Test Strategy:**
 

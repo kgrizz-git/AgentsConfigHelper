@@ -555,24 +555,30 @@ rules:
 
 ## GitHub Copilot
 
-First-class discovery covers Copilot CLI configs, project instructions, and JetBrains
-global instructions. VS Code Copilot settings still live in the host `settings.json`
-(not auto-discovered as a dedicated target).
+First-class discovery covers Copilot CLI settings, MCP config, project/repo settings,
+instructions, and JetBrains global instructions. VS Code Copilot host settings still live
+in the editor `settings.json` (not auto-discovered as a dedicated target). Copilot also
+loads shared project/user [AGENTS.md](#agentsmd-shared).
 
 ### GitHub Copilot Config paths
 
 | Scope | Path |
 | --- | --- |
-| CLI user config | `~/.copilot/config.json`, `~/.copilot/mcp-config.json` |
+| CLI user settings (editable) | `~/.copilot/settings.json` |
+| CLI managed app state | `~/.copilot/config.json` (auth/plugins; prefer `settings.json` for preferences) |
+| CLI MCP config | `~/.copilot/mcp-config.json` |
 | CLI personal instructions | `~/.copilot/copilot-instructions.md`, `~/.copilot/instructions/**/*.instructions.md` |
+| Repo/project settings | `.github/copilot/settings.json`, `.github/copilot/settings.local.json` (gitignore local) |
 | Project instructions | `.github/copilot-instructions.md`, `.github/instructions/**/*.instructions.md` |
+| Shared agent instructions | Project `AGENTS.md`, `~/.agents/AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared)) |
 | JetBrains global instructions | `~/.config/github-copilot/intellij/global-copilot-instructions.md` (Windows: `%LOCALAPPDATA%\github-copilot\intellij\...`) |
 | User/agent settings (VS Code) | VS Code `settings.json` (`github.copilot.*`; extra agent-file dirs via `chat.agentFilesLocations`) — not auto-discovered |
 | Agent definitions | `.github/agents/<name>.agent.md` (legacy: `.github/chatmodes/*.chatmode.md`) — not yet in the registry |
 
 ### GitHub Copilot Config format
 
-JSON for CLI config. Plain **Markdown** for instructions and agents. Plain instruction
+JSONC for CLI/repo `settings.json` (and `settings.local.json`). JSON for MCP config and
+managed `config.json`. Plain **Markdown** for instructions and agents. Plain instruction
 files (`copilot-instructions.md`) have no structured permission model — Copilot reads
 them and applies the host IDE's trust/sandbox settings. Custom agents, defined in
 `.agent.md` files with YAML frontmatter (name, description, tools), do carry a structured
@@ -599,7 +605,7 @@ agent frontmatter.
 
 | Format | Tools | Parser approach |
 | --- | --- | --- |
-| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP, Kilo, Cline, Copilot CLI, LM Studio | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
+| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP, Kilo, Cline, Copilot CLI (`settings.json`), LM Studio | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
 | TOML | Codex | `toml` Dart package |
 | YAML | Kiro (permissions), Paseo (hub/workflows), LM Studio (`model.yaml`) | `yaml` Dart package |
 | Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — raw-text editor | raw-text editor |
@@ -685,7 +691,8 @@ appear first in the catalog.
 | Kilo | Yes | Also has `~/.config/kilo/AGENTS.md` and `.kilo/agents/*.md` |
 | Cline | Yes | Also documents `~/.agents/AGENTS.md` for global rules |
 | Claude Code | No (uses `CLAUDE.md`) | — |
-| Paseo / LM Studio / Copilot / Antigravity | No (other instruction formats) | — |
+| GitHub Copilot | Yes | Alongside `.github/copilot-instructions.md` / `*.instructions.md` |
+| Paseo / LM Studio / Antigravity | No (other instruction formats) | — |
 
 ### AGENTS.md (shared) Config format
 

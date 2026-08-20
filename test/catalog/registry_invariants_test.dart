@@ -15,7 +15,8 @@ void main() {
         expect(
           catalogToolIds.contains(id),
           isTrue,
-          reason: 'ToolId.$id is missing from ToolDescriptorRegistry.catalog',
+          reason:
+              'ToolId.${id.name} is missing from ToolDescriptorRegistry.catalog',
         );
       }
     });

@@ -15,7 +15,7 @@ void main() {
   setUp(() async {
     mockHome = await Directory.systemTemp.createTemp('discovery_home_');
     mockProject = await Directory.systemTemp.createTemp('discovery_project_');
-    discoveryService = DiscoveryService();
+    discoveryService = const DiscoveryService();
   });
 
   tearDown(() async {
@@ -171,6 +171,9 @@ void main() {
     test(
       'single-segment glob does not miss direct children amid deep noise',
       () async {
+        // Low visit cap: if recursion were wrongly enabled for `*.mdc`,
+        // deep noise would trip the cap before the direct sibling is seen.
+        const capped = DiscoveryService(maxGlobEntitiesVisited: 40);
         final rulesDir = Directory(
           p.join(mockProject.path, '.cursor', 'rules'),
         );
@@ -178,15 +181,13 @@ void main() {
         final direct = File(p.join(rulesDir.path, 'keep.mdc'));
         await direct.create();
 
-        // Deep noise that would exhaust a recursive visit cap before the
-        // direct sibling is reached if recursion were always enabled.
         final deep = Directory(p.join(rulesDir.path, 'archive', 'nested'));
         await deep.create(recursive: true);
-        for (var i = 0; i < 5100; i++) {
+        for (var i = 0; i < 80; i++) {
           await File(p.join(deep.path, 'noise$i.bin')).create();
         }
 
-        final result = await discoveryService.discoverConfigs(
+        final result = await capped.discoverConfigs(
           DiscoveryRequest(normalizedProjectRoots: [mockProject.path]),
         );
 
@@ -206,14 +207,13 @@ void main() {
       () async {
         // Nested glob under a large tree of non-matching files must stop
         // walking (visit cap) rather than scanning forever waiting for matches.
+        const capped = DiscoveryService(maxGlobEntitiesVisited: 40);
         final modelsDir = Directory(
           p.join(mockHome.path, '.lmstudio', 'hub', 'models'),
         );
         await modelsDir.create(recursive: true);
 
-        // Create many non-matching files under models/ so the visit cap
-        // trips before any publisher/model model.yaml is found.
-        for (var i = 0; i < 5100; i++) {
+        for (var i = 0; i < 80; i++) {
           await File(p.join(modelsDir.path, 'noise$i.bin')).create();
         }
 
@@ -221,13 +221,13 @@ void main() {
           normalizedHomePath: mockHome.path,
         );
 
-        final result = await discoveryService.discoverConfigs(request);
+        final result = await capped.discoverConfigs(request);
 
         expect(
           result.warnings.any(
             (w) =>
                 w.path.contains('.lmstudio') &&
-                w.message.contains('5000-entity visit cap'),
+                w.message.contains('40-entity visit cap'),
           ),
           isTrue,
         );

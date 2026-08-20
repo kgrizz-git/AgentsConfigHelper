@@ -25,7 +25,7 @@ ConfigService configService(Ref ref) {
 /// agent configuration files.
 @Riverpod(keepAlive: true)
 DiscoveryService discoveryService(Ref ref) {
-  return DiscoveryService();
+  return const DiscoveryService();
 }
 
 /// Provides the [IDiscoveryPreferencesStore] singleton used to persist

@@ -290,6 +290,63 @@ void main() {
       );
     });
 
+    test('matches ** glob when actual path uses Windows separators', () {
+      // Patterns from path.join may use `\`; discovery also feeds `\` paths
+      // on Windows after normalize. Matching must canonicalize both sides.
+      const pattern =
+          r'C:\Users\home_test\.copilot\instructions\**\*.instructions.md';
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          r'C:\Users\home_test\.copilot\instructions\style\code.instructions.md',
+        ),
+        isTrue,
+      );
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          r'C:\Users\home_test\.copilot\instructions\code.instructions.md',
+        ),
+        isTrue,
+      );
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          r'C:\Users\home_test\.copilot\other\code.instructions.md',
+        ),
+        isFalse,
+      );
+    });
+
+    test('matches Copilot settings.json targets', () {
+      const homePath = 'home_test';
+      const projectRoot = '/root';
+
+      expect(
+        ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(homePath, '.copilot/settings.json')),
+          normalizedHomePath: homePath,
+        ).descriptor?.id,
+        ToolId.copilot,
+      );
+      expect(
+        ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(projectRoot, '.github/copilot/settings.json')),
+          normalizedProjectRoots: [projectRoot],
+        ).descriptor?.id,
+        ToolId.copilot,
+      );
+      expect(
+        ToolDescriptorRegistry.matchPath(
+          p.normalize(
+            p.join(projectRoot, '.github/copilot/settings.local.json'),
+          ),
+          normalizedProjectRoots: [projectRoot],
+        ).descriptor?.id,
+        ToolId.copilot,
+      );
+    });
+
     test('nested glob path falls back to manual unknown', () {
       const projectRoot = '/root';
       final path = p.normalize(

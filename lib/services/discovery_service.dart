@@ -9,6 +9,22 @@ import 'package:path/path.dart' as p;
 /// Service responsible for discovering AI agent configuration files
 /// on the local filesystem.
 class DiscoveryService {
+  /// Creates a discovery service.
+  ///
+  /// [maxGlobMatches] caps matching files per glob target (sidebar bound).
+  /// [maxGlobEntitiesVisited] caps filesystem entries visited per glob so
+  /// large non-matching trees cannot hang discovery.
+  const DiscoveryService({
+    this.maxGlobMatches = 100,
+    this.maxGlobEntitiesVisited = 5000,
+  });
+
+  /// Maximum matching entries retained per glob target.
+  final int maxGlobMatches;
+
+  /// Maximum filesystem entities visited per glob enumeration.
+  final int maxGlobEntitiesVisited;
+
   /// Scans the file system for configuration files based on the given
   /// [request].
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
@@ -137,19 +153,28 @@ class DiscoveryService {
           var visitedCount = 0;
           var truncatedMatches = false;
           var truncatedVisit = false;
-          // Cap matching entries so the sidebar stays bounded.
-          const maxEntries = 100;
-          // Cap filesystem walks independently: nested globs (e.g. LM Studio
-          // hub trees) can contain thousands of non-matching files; without
-          // this, discovery would hang until the whole tree is scanned.
-          const maxEntitiesVisited = 5000;
+          final maxEntries = maxGlobMatches;
+          final maxEntitiesVisited = maxGlobEntitiesVisited;
 
           // followLinks: false avoids symlink cycles and accidental walks
           // into large external model/weight directories.
-          await for (final entity in dir.list(
-            recursive: needsRecursion,
-            followLinks: false,
-          )) {
+          // handleError keeps one unreadable entry from aborting the rest
+          // of a recursive walk (e.g. LM Studio hub / Copilot instructions).
+          await for (final entity in dir
+              .list(
+                recursive: needsRecursion,
+                followLinks: false,
+              )
+              .handleError((Object error, StackTrace stackTrace) {
+                warnings.add(
+                  DiscoveryWarning(
+                    path: expectedPattern,
+                    message:
+                        'Skipped unreadable entry while enumerating glob: '
+                        '$error',
+                  ),
+                );
+              })) {
             visitedCount++;
             if (visitedCount > maxEntitiesVisited) {
               truncatedVisit = true;

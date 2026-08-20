@@ -9,9 +9,19 @@ Internal / developer-facing changes that do not belong in the public
 
 - **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
   (no longer requires spawning a fresh agent to review each finished phase).
+- **Copilot discovery paths (CodeRabbit):** Prefer `~/.copilot/settings.json` and
+  `.github/copilot/settings.json` / `settings.local.json` as editable settings;
+  keep `config.json` as managed app state. Document Copilot loading shared
+  `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
+  make glob visit/match caps injectable on `DiscoveryService`; per-entry
+  `handleError` on recursive listing.
 
 ### Added
 
+- **`docs/PRODUCT_IDEAS.md`:** Long-form product/exploration notes; markdownlint-ignored
+  (same class as CHANGELOG — intentional long lines).
+- **Phase 10 plan completion notes** in `plans/active/phase_10_new_tools.md` and
+  related `TO_DO.md` backlog for GitHub workflows / review-tool configs.
 - **Registry invariant tests.** Added `test/catalog/registry_invariants_test.dart` to verify that `ConfigFormat.markdown` and `ConfigFormat.text` are never routed to the structured parser.
 - **RecoveryHandler widget tests.** Added `test/screens/recovery_handler_test.dart`
   (12 cases) covering the corrupt-file recovery dialog via a harness mixin widget;
