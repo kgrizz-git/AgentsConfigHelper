@@ -37,10 +37,12 @@ Because the work is additive and modifies many tools, it is split into focused w
 
 **Goal:** Add first-class support for new requested tools.
 
+- [ ] **Research/Verify:** Check upstream documentation/schemas for these tools before adding to ensure accurate paths and metadata.
 - [ ] **Kilo:** Add `ToolId` and config paths. Update `docs/supported-tools.md`.
 - [ ] **Cline:** Add `ToolId` and config paths. Update `docs/supported-tools.md`.
 - [ ] **LM Studio:** Add `ToolId` and config paths (local LLM runner with model management and API server settings). Update `docs/supported-tools.md`.
 - [ ] **VS Code / GitHub Copilot:** Promote from deferred docs-only to a first-class `ToolDescriptor`. Add `.github/copilot-instructions.md`. Update `docs/supported-tools.md`.
+- [ ] **Parser Validation:** Verify parser logic for the new tools passes the existing test suite.
 
 ## Workstream D: Markdown & Starlark Discovery (Parser Integration)
 
@@ -49,6 +51,16 @@ Because the work is additive and modifies many tools, it is split into focused w
 - [ ] **Markdown Rules Discovery:** Ensure `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`, Codex `.rules`, and Devin `.devin/rules/*.md` appear in the sidebar.
 - [ ] **Starlark & Plain Text Support:** Hook Codex `.rules` and deprecated Cursor `.cursorrules` into the raw-text editor.
 - [ ] **Parser Registry Update:** Ensure `lib/catalog/tool_descriptor_registry.dart` and `DiscoveryService.defaultRelativePaths` reflect all supported tools and deferred sources.
+
+## Workstream E: Verification & Migration
+
+**Goal:** Ensure existing tool configurations continue to parse correctly after registry refactoring, and handle migration gracefully.
+
+- [ ] **Config Migration Path:** Define how existing `antigravity` and `cursor` entries in users' local configs are upgraded to the new split descriptors (or verify the app handles the transition gracefully).
+- [ ] **Regression Test:** Ensure existing tool configurations continue to parse correctly after registry refactoring.
+- [ ] **Hook Integration:** Check if any of the new paths (like Kilo's or Cline's rules files) should be ignored or monitored by the `gitleaks` or `hygiene` hooks.
+- [ ] **Documentation Sync:** Run a final consistency check between `docs/supported-tools.md` and `lib/catalog/tool_descriptor_registry.dart` to ensure all paths, formats, and permissions are correctly mapped.
+- [ ] **Phase Review:** Schedule the mandatory "independent review" as defined in `AGENTS.md` upon completion of this phase.
 
 ## Implementation Notes
 
