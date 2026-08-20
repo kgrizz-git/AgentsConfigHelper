@@ -16,7 +16,8 @@ Internal / developer-facing changes that do not belong in the public
   when `~/Documents/Cline/Rules` is absent. Document Copilot loading shared
   `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
   make glob visit/match caps injectable on `DiscoveryService`; per-entry
-  `handleError` on recursive listing.
+  `handleError` on recursive listing (prefer `FileSystemException.path` in
+  warnings when available).
 
 ### Added
 

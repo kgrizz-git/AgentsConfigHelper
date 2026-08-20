@@ -169,9 +169,13 @@ class DiscoveryService {
                     followLinks: false,
                   )
                   .handleError((Object error, StackTrace stackTrace) {
+                    final failingPath =
+                        error is FileSystemException && error.path != null
+                        ? error.path!
+                        : expectedPattern;
                     warnings.add(
                       DiscoveryWarning(
-                        path: expectedPattern,
+                        path: failingPath,
                         message:
                             'Skipped unreadable entry while enumerating glob: '
                             '$error',

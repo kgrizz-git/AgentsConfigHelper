@@ -81,13 +81,13 @@ settings with no repo/global file).
 ## Deferred from Phase 10 / CodeRabbit Hy3 review
 
 - [ ] **Discovery `handleError` stack traces** — per-entry glob listing warnings
-      currently record `$error` only; consider logging `StackTrace` via the app
-      logger (if/when one exists) for harder permission/IO failures.
-- [ ] **Exact-match case-sensitivity tests** — add an explicit unit test for the
-      non-glob `Platform.isWindows` case-insensitive branch in
-      `RegistryPathMatching.isMatch` (POSIX remains case-sensitive). Prefer an
+      now prefer `FileSystemException.path` when present; still record `$error`
+      only (no stack). Consider logging `StackTrace` via the app logger
+      (if/when one exists) for harder permission/IO failures.
+- [ ] **Windows case-insensitivity tests** — non-glob matching uses `path.equals`
+      (platform-aware); globs use `caseSensitive: !Platform.isWindows`. Add an
       injectable `caseInsensitive` override (like discovery caps) so CI on
-      ubuntu can exercise the Windows branch without a Windows runner.
+      ubuntu can exercise both Windows behaviors without a Windows runner.
 - [ ] **Copilot `config.json` write policy** — file is labeled managed CLI state
       (auth/plugins) but remains a writable `structuredConfig` target. Decide
       whether to warn, mark read-only in UI, or leave editable; track as a
