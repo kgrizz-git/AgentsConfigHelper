@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 
 /// Result of matching a path against the tool descriptor registry.
 class RegistryMatchResult {
-  /// Creates a registry match result.
   RegistryMatchResult({
     required this.scope,
     required this.format,
@@ -33,7 +32,6 @@ class RegistryMatchResult {
 
 /// Exception thrown when a file extension is unsupported.
 class ValidationException implements Exception {
-  /// Creates a validation exception.
   ValidationException(this.message);
 
   /// The validation error message.
@@ -45,6 +43,39 @@ class ValidationException implements Exception {
 
 /// Path glob matching and catalog lookup helpers for [ToolDescriptor] lists.
 class RegistryPathMatching {
+  /// Forward-slash prefix for Copilot CLI user configs under the home tree.
+  static const copilotCliUserPrefix = '.copilot/';
+
+  /// Forward-slash prefix for the Cline Linux/WSL global-rules fallback.
+  static const clineRulesFallbackPrefix = 'Cline/Rules/';
+
+  /// Whether [relativePath] is a Copilot CLI user target under `.copilot/`.
+  static bool isCopilotCliUserTarget(String relativePath) =>
+      _forwardSlashes(relativePath).startsWith(copilotCliUserPrefix);
+
+  /// Whether [relativePath] is the Cline `~/Cline/Rules` fallback target.
+  static bool isClineRulesFallbackTarget(String relativePath) =>
+      _forwardSlashes(relativePath).startsWith(clineRulesFallbackPrefix);
+
+  /// Resolves a user-scope [relativePath] under [normalizedHomePath], honoring
+  /// [normalizedCopilotHomePath] for Copilot CLI targets (replaces `~/.copilot`).
+  static String resolveUserTargetPattern({
+    required String normalizedHomePath,
+    required String relativePath,
+    String? normalizedCopilotHomePath,
+  }) {
+    if (normalizedCopilotHomePath != null &&
+        isCopilotCliUserTarget(relativePath)) {
+      final rest = _forwardSlashes(
+        relativePath,
+      ).substring(copilotCliUserPrefix.length);
+      return p.normalize(p.join(normalizedCopilotHomePath, rest));
+    }
+    return p.normalize(p.join(normalizedHomePath, relativePath));
+  }
+
+  static String _forwardSlashes(String path) => path.replaceAll(r'\', '/');
+
   /// Returns true if [actualNormalizedPath] matches [expectedPattern].
   ///
   /// `*` matches a single path segment; `**` matches zero or more segments
@@ -95,13 +126,21 @@ class RegistryPathMatching {
     required List<ToolDescriptor> catalog,
     String? normalizedHomePath,
     List<String> normalizedProjectRoots = const [],
+    String? normalizedCopilotHomePath,
+    bool enableClineRulesFallback = true,
   }) {
     for (final descriptor in catalog) {
       for (final target in descriptor.targets) {
         if (target.scope == ConfigLocationScope.user &&
             normalizedHomePath != null) {
-          final expected = p.normalize(
-            p.join(normalizedHomePath, target.relativePath),
+          if (!enableClineRulesFallback &&
+              isClineRulesFallbackTarget(target.relativePath)) {
+            continue;
+          }
+          final expected = resolveUserTargetPattern(
+            normalizedHomePath: normalizedHomePath,
+            relativePath: target.relativePath,
+            normalizedCopilotHomePath: normalizedCopilotHomePath,
           );
           if (isMatch(expected, normalizedAbsolutePath)) {
             return RegistryMatchResult(

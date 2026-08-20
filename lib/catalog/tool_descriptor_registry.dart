@@ -427,6 +427,8 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.instructionDocument,
         ),
         // Compatibility paths documented by Cline for global rules.
+        // Documents/Cline/Rules is primary; ~/Cline/Rules is only discovered
+        // when that Documents location is absent (see DiscoveryRequest).
         ConfigTarget(
           relativePath: 'Documents/Cline/Rules/*.md',
           format: ConfigFormat.markdown,
@@ -604,10 +606,14 @@ class ToolDescriptorRegistry {
     String normalizedAbsolutePath, {
     String? normalizedHomePath,
     List<String> normalizedProjectRoots = const [],
+    String? normalizedCopilotHomePath,
+    bool enableClineRulesFallback = true,
   }) => RegistryPathMatching.matchPath(
     normalizedAbsolutePath,
     catalog: catalog,
     normalizedHomePath: normalizedHomePath,
     normalizedProjectRoots: normalizedProjectRoots,
+    normalizedCopilotHomePath: normalizedCopilotHomePath,
+    enableClineRulesFallback: enableClineRulesFallback,
   );
 }

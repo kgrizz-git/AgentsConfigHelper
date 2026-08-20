@@ -564,7 +564,7 @@ loads shared project/user [AGENTS.md](#agentsmd-shared).
 
 | Scope | Path |
 | --- | --- |
-| CLI user settings (editable) | `~/.copilot/settings.json` |
+| CLI user settings (editable) | `~/.copilot/settings.json` (or `$COPILOT_HOME/settings.json` when `COPILOT_HOME` is set) |
 | CLI managed app state | `~/.copilot/config.json` (auth/plugins; also discovered when present — editable settings live in `settings.json`) |
 | CLI MCP config | `~/.copilot/mcp-config.json` |
 | CLI personal instructions | `~/.copilot/copilot-instructions.md`, `~/.copilot/instructions/**/*.instructions.md` |
@@ -644,7 +644,8 @@ All edits are backed up only under the app support directory (never sibling `.ba
 ### Cline Config paths
 
 - **User settings:** `~/.cline/data/settings/global-settings.json`, `cline_mcp_settings.json`, `providers.json` (often secret-bearing)
-- **User rules:** `~/.cline/rules/*.md`, `~/Documents/Cline/Rules/*.{md,txt}`, Linux/WSL fallback `~/Cline/Rules/*.{md,txt}`
+- **User rules:** `~/.cline/rules/*.md`, `~/Documents/Cline/Rules/*.{md,txt}`; Linux/WSL
+  `~/Cline/Rules/*.{md,txt}` is discovered only when the Documents location is absent
 - **Project rules:** `.clinerules/` (`.md`/`.txt`), legacy `.clinerules` file, and `.cline/rules/*.md`
 - **Also loads:** shared root `AGENTS.md` / `~/.agents/AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
 

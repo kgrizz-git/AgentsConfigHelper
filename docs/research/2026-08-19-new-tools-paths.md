@@ -30,7 +30,9 @@
 
 ## GitHub Copilot
 
-- **Copilot CLI editable settings:** `~/.copilot/settings.json` (Windows: `%USERPROFILE%\.copilot\`)
+- **Copilot CLI editable settings:** `~/.copilot/settings.json` (Windows: `%USERPROFILE%\.copilot\`);
+  when `COPILOT_HOME` is set, that directory replaces `~/.copilot` for CLI user files
+  (`settings.json`, `config.json`, `mcp-config.json`, personal instructions)
 - **Copilot CLI managed state:** `~/.copilot/config.json` (auth/plugins; also
   discovered when present — user-editable settings live in `settings.json`;
   older user settings migrate to `settings.json`)

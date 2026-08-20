@@ -169,6 +169,75 @@ void main() {
     );
 
     test(
+      'skips Cline ~/Cline/Rules when Documents/Cline/Rules exists',
+      () async {
+        final documentsRule = File(
+          p.join(mockHome.path, 'Documents', 'Cline', 'Rules', 'active.md'),
+        );
+        await documentsRule.create(recursive: true);
+        final fallbackRule = File(
+          p.join(mockHome.path, 'Cline', 'Rules', 'legacy.md'),
+        );
+        await fallbackRule.create(recursive: true);
+
+        final result = await discoveryService.discoverConfigs(
+          DiscoveryRequest(
+            normalizedHomePath: mockHome.path,
+            enableClineRulesFallback: false,
+          ),
+        );
+
+        expect(
+          result.items.any((i) => i.filePath == documentsRule.path),
+          isTrue,
+        );
+        expect(
+          result.items.any((i) => i.filePath == fallbackRule.path),
+          isFalse,
+        );
+      },
+    );
+
+    test('discovers Copilot CLI files under COPILOT_HOME', () async {
+      final copilotHome = await Directory.systemTemp.createTemp(
+        'copilot_home_',
+      );
+      addTearDown(() async {
+        // Checking existence asynchronously avoids blocking the test isolate.
+        // ignore: avoid_slow_async_io
+        if (await copilotHome.exists()) {
+          await copilotHome.delete(recursive: true);
+        }
+      });
+
+      final settings = File(p.join(copilotHome.path, 'settings.json'));
+      await settings.create(recursive: true);
+      final instructions = File(
+        p.join(copilotHome.path, 'copilot-instructions.md'),
+      );
+      await instructions.create(recursive: true);
+      // Default ~/.copilot location should not be required when override set.
+      final defaultSettings = File(
+        p.join(mockHome.path, '.copilot', 'settings.json'),
+      );
+      await defaultSettings.create(recursive: true);
+
+      final result = await discoveryService.discoverConfigs(
+        DiscoveryRequest(
+          normalizedHomePath: mockHome.path,
+          normalizedCopilotHomePath: copilotHome.path,
+        ),
+      );
+
+      expect(result.items.any((i) => i.filePath == settings.path), isTrue);
+      expect(result.items.any((i) => i.filePath == instructions.path), isTrue);
+      expect(
+        result.items.any((i) => i.filePath == defaultSettings.path),
+        isFalse,
+      );
+    });
+
+    test(
       'single-segment glob does not miss direct children amid deep noise',
       () async {
         // Low visit cap: if recursion were wrongly enabled for `*.mdc`,

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:agents_config_helper/catalog/registry_path_matching.dart';
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/discovery_request.dart';
@@ -241,9 +242,18 @@ class DiscoveryService {
       for (final descriptor in ToolDescriptorRegistry.catalog) {
         for (final target in descriptor.targets) {
           if (target.scope == ConfigLocationScope.user) {
-            final expectedPattern = p.normalize(
-              p.join(request.normalizedHomePath!, target.relativePath),
-            );
+            if (!request.enableClineRulesFallback &&
+                RegistryPathMatching.isClineRulesFallbackTarget(
+                  target.relativePath,
+                )) {
+              continue;
+            }
+            final expectedPattern =
+                RegistryPathMatching.resolveUserTargetPattern(
+                  normalizedHomePath: request.normalizedHomePath!,
+                  relativePath: target.relativePath,
+                  normalizedCopilotHomePath: request.normalizedCopilotHomePath,
+                );
             await processTarget(
               expectedPattern,
               target,
@@ -282,6 +292,8 @@ class DiscoveryService {
           normalizedPath,
           normalizedHomePath: request.normalizedHomePath,
           normalizedProjectRoots: request.normalizedProjectRoots,
+          normalizedCopilotHomePath: request.normalizedCopilotHomePath,
+          enableClineRulesFallback: request.enableClineRulesFallback,
         );
 
         final config = DiscoveredConfig.fromPath(

@@ -12,9 +12,11 @@ Internal / developer-facing changes that do not belong in the public
 - **Copilot discovery paths (CodeRabbit):** Discover `~/.copilot/settings.json` and
   `.github/copilot/settings.json` / `settings.local.json` as editable settings;
   also surface managed `config.json` when present (no hide/precedence rule).
-  Document Copilot loading shared `AGENTS.md`. Canonicalize Windows separators
-  in `RegistryPathMatching.isMatch`; make glob visit/match caps injectable on
-  `DiscoveryService`; per-entry `handleError` on recursive listing.
+  Honor `COPILOT_HOME` for CLI user files. Discover Cline `~/Cline/Rules` only
+  when `~/Documents/Cline/Rules` is absent. Document Copilot loading shared
+  `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
+  make glob visit/match caps injectable on `DiscoveryService`; per-entry
+  `handleError` on recursive listing.
 
 ### Added
 

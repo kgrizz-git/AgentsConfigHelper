@@ -347,6 +347,49 @@ void main() {
       );
     });
 
+    test('matches Copilot settings under COPILOT_HOME override', () {
+      const homePath = 'home_test';
+      const copilotHome = 'custom_copilot_home';
+
+      expect(
+        ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(copilotHome, 'settings.json')),
+          normalizedHomePath: homePath,
+          normalizedCopilotHomePath: copilotHome,
+        ).descriptor?.id,
+        ToolId.copilot,
+      );
+      expect(
+        ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(homePath, '.copilot/settings.json')),
+          normalizedHomePath: homePath,
+          normalizedCopilotHomePath: copilotHome,
+        ).descriptor,
+        isNull,
+      );
+    });
+
+    test('skips Cline Rules fallback match when disabled', () {
+      const homePath = 'home_test';
+      final fallback = p.normalize(p.join(homePath, 'Cline/Rules/legacy.md'));
+
+      expect(
+        ToolDescriptorRegistry.matchPath(
+          fallback,
+          normalizedHomePath: homePath,
+        ).descriptor?.id,
+        ToolId.cline,
+      );
+      expect(
+        ToolDescriptorRegistry.matchPath(
+          fallback,
+          normalizedHomePath: homePath,
+          enableClineRulesFallback: false,
+        ).descriptor,
+        isNull,
+      );
+    });
+
     test('nested glob path falls back to manual unknown', () {
       const projectRoot = '/root';
       final path = p.normalize(
