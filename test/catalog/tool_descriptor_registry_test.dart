@@ -8,8 +8,8 @@ import 'package:path/path.dart' as p;
 
 void main() {
   group('ToolDescriptorRegistry', () {
-    test('contains exactly 12 user descriptors in order', () {
-      expect(ToolDescriptorRegistry.catalog.length, 12);
+    test('contains exactly 17 user descriptors in order', () {
+      expect(ToolDescriptorRegistry.catalog.length, 17);
       expect(ToolDescriptorRegistry.catalog[0].id, ToolId.claudeCode);
       expect(ToolDescriptorRegistry.catalog[1].id, ToolId.codex);
       expect(ToolDescriptorRegistry.catalog[2].id, ToolId.opencode);
@@ -22,6 +22,22 @@ void main() {
       expect(ToolDescriptorRegistry.catalog[9].id, ToolId.antigravityApp);
       expect(ToolDescriptorRegistry.catalog[10].id, ToolId.antigravity);
       expect(ToolDescriptorRegistry.catalog[11].id, ToolId.agyAcp);
+      expect(ToolDescriptorRegistry.catalog[12].id, ToolId.kilo);
+      expect(ToolDescriptorRegistry.catalog[13].id, ToolId.cline);
+      expect(ToolDescriptorRegistry.catalog[14].id, ToolId.lmStudio);
+      expect(ToolDescriptorRegistry.catalog[15].id, ToolId.copilot);
+      expect(ToolDescriptorRegistry.catalog[16].id, ToolId.agentsMd);
+    });
+
+    test('project AGENTS.md resolves to the shared descriptor', () {
+      const projectRoot = '/root';
+      final match = ToolDescriptorRegistry.matchPath(
+        p.normalize(p.join(projectRoot, 'AGENTS.md')),
+        normalizedProjectRoots: [projectRoot],
+      );
+      expect(match.descriptor?.id, ToolId.agentsMd);
+      expect(match.sourceLabel, 'AGENTS.md (shared)');
+      expect(match.kind, ConfigSourceKind.instructionDocument);
     });
 
     test('matches user target successfully', () {
@@ -160,6 +176,90 @@ void main() {
         isTrue,
       );
     });
+    test('matches Kilo agents glob within a single path segment', () {
+      const homePath = 'home_test';
+      final pattern = p.normalize(p.join(homePath, '.config/kilo/agents/*.md'));
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(p.join(homePath, '.config/kilo/agents/researcher.md')),
+        ),
+        isTrue,
+      );
+    });
+
+    test('matches Cline rules glob within a single path segment', () {
+      const projectRoot = '/root';
+      final pattern = p.normalize(p.join(projectRoot, '.cline/rules/*.md'));
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(p.join(projectRoot, '.cline/rules/coding.md')),
+        ),
+        isTrue,
+      );
+    });
+
+    test('matches LM Studio nested publisher/model glob path', () {
+      const homePath = 'home_test';
+      final pattern = p.normalize(
+        p.join(homePath, '.lmstudio/hub/models/*/*/model.yaml'),
+      );
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(
+            p.join(
+              homePath,
+              '.lmstudio/hub/models/bytedance/seed-oss-36b/model.yaml',
+            ),
+          ),
+        ),
+        isTrue,
+      );
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(
+            p.join(
+              homePath,
+              '.lmstudio/hub/models/llama-3-8b-instruct/model.yaml',
+            ),
+          ),
+        ),
+        isFalse,
+      );
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(
+            p.join(
+              homePath,
+              '.lmstudio/hub/models/bytedance/seed-oss-36b/v1/model.yaml',
+            ),
+          ),
+        ),
+        isFalse,
+      );
+    });
+
+    test('matches Cline .clinerules directory entries', () {
+      const projectRoot = '/root';
+      final pattern = p.normalize(p.join(projectRoot, '.clinerules/*.md'));
+
+      expect(
+        ToolDescriptorRegistry.isMatch(
+          pattern,
+          p.normalize(p.join(projectRoot, '.clinerules/01-coding.md')),
+        ),
+        isTrue,
+      );
+    });
 
     test('nested glob path falls back to manual unknown', () {
       const projectRoot = '/root';
@@ -200,6 +300,23 @@ void main() {
               'docs/supported-tools.md',
         );
       }
+    });
+
+    test('tool H2 headings in supported-tools.md are unique', () {
+      // Guards against duplicated sections (e.g. deferred + first-class
+      // copies of the same tool) that a simple contains() check would miss.
+      final lines = File('docs/supported-tools.md').readAsLinesSync();
+      final h2Counts = <String, int>{};
+      for (final line in lines) {
+        if (line.startsWith('## ') && !line.startsWith('### ')) {
+          h2Counts.update(line, (c) => c + 1, ifAbsent: () => 1);
+        }
+      }
+      final duplicates = h2Counts.entries
+          .where((e) => e.value > 1)
+          .map((e) => '${e.key} (x${e.value})')
+          .toList();
+      expect(duplicates, isEmpty, reason: duplicates.join(', '));
     });
   });
 }

@@ -108,30 +108,53 @@ class DiscoveryService {
       } else {
         // Bounded glob enumeration
         try {
-          final dirPath = p.dirname(expectedPattern);
+          // Extract the deepest non-glob directory prefix to start the search
+          var dirPath = p.dirname(expectedPattern);
+          while (dirPath.contains('*') || dirPath.contains('?')) {
+            final nextDirPath = p.dirname(dirPath);
+            if (nextDirPath == dirPath) break;
+            dirPath = nextDirPath;
+          }
           final dir = Directory(dirPath);
           // Checking directory existence asynchronously avoids blocking
           // the UI thread.
           // ignore: avoid_slow_async_io
           if (!await dir.exists()) return;
 
-          var count = 0;
-          var truncated = false;
+          var matchCount = 0;
+          var visitedCount = 0;
+          var truncatedMatches = false;
+          var truncatedVisit = false;
+          // Cap matching entries so the sidebar stays bounded.
           const maxEntries = 100;
+          // Cap filesystem walks independently: nested globs (e.g. LM Studio
+          // hub trees) can contain thousands of non-matching files; without
+          // this, discovery would hang until the whole tree is scanned.
+          const maxEntitiesVisited = 5000;
 
-          await for (final entity in dir.list()) {
+          // followLinks: false avoids symlink cycles and accidental walks
+          // into large external model/weight directories.
+          await for (final entity in dir.list(
+            recursive: true,
+            followLinks: false,
+          )) {
+            visitedCount++;
+            if (visitedCount > maxEntitiesVisited) {
+              truncatedVisit = true;
+              break;
+            }
             if (entity is File &&
                 ToolDescriptorRegistry.isMatch(expectedPattern, entity.path)) {
-              if (count >= maxEntries) {
+              if (matchCount >= maxEntries) {
                 // A further matching entry exists beyond the cap, so results
                 // are genuinely truncated.
-                truncated = true;
+                truncatedMatches = true;
                 break;
               }
               // Count every matching entry, not just newly-added ones, so the
               // cap bounds the work done per glob even when many matches are
               // duplicates already discovered via another target.
-              count++;
+              matchCount++;
               final config = DiscoveredConfig.fromPath(
                 filePath: entity.path,
                 scope: scope,
@@ -145,13 +168,22 @@ class DiscoveryService {
             }
           }
 
-          if (truncated) {
+          if (truncatedMatches) {
             warnings.add(
               DiscoveryWarning(
                 path: expectedPattern,
                 message:
                     'Glob enumeration hit the $maxEntries-entry cap; '
                     'some matches may have been omitted.',
+              ),
+            );
+          } else if (truncatedVisit) {
+            warnings.add(
+              DiscoveryWarning(
+                path: expectedPattern,
+                message:
+                    'Glob enumeration hit the $maxEntitiesVisited-entity '
+                    'visit cap; some matches may have been omitted.',
               ),
             );
           }

@@ -115,12 +115,6 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.instructionDocument,
         ),
-        ConfigTarget(
-          relativePath: 'AGENTS.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
       ],
     ),
     ToolDescriptor(
@@ -143,12 +137,6 @@ class ToolDescriptorRegistry {
           relativePath: '.config/opencode/AGENTS.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
-        ConfigTarget(
-          relativePath: 'AGENTS.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
       ],
@@ -230,12 +218,6 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.instructionDocument,
         ),
         ConfigTarget(
-          relativePath: 'AGENTS.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
-        ConfigTarget(
           relativePath: 'CLAUDE.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.project,
@@ -255,12 +237,6 @@ class ToolDescriptorRegistry {
         ),
         ConfigTarget(
           relativePath: '.kiro/steering/*.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
-        ConfigTarget(
-          relativePath: 'AGENTS.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
@@ -293,12 +269,6 @@ class ToolDescriptorRegistry {
           relativePath: '.config/devin/AGENTS.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
-          kind: ConfigSourceKind.instructionDocument,
-        ),
-        ConfigTarget(
-          relativePath: 'AGENTS.md',
-          format: ConfigFormat.markdown,
-          scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
       ],
@@ -366,6 +336,211 @@ class ToolDescriptorRegistry {
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
+        ),
+      ],
+    ),
+    ToolDescriptor(
+      id: ToolId.kilo,
+      displayName: 'Kilo',
+      targets: [
+        ConfigTarget(
+          relativePath: '.config/kilo/kilo.jsonc',
+          format: ConfigFormat.jsonc,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        // Optional/legacy cache file; may be absent on current installs.
+        // Secrets more commonly live in kilo.jsonc (provider apiKey) —
+        // backups for all of these still go to the app support directory.
+        ConfigTarget(
+          relativePath: '.config/kilo/models.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.config/kilo/AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.config/kilo/agents/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: 'kilo.jsonc',
+          format: ConfigFormat.jsonc,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.kilo/kilo.jsonc',
+          format: ConfigFormat.jsonc,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.kilo/agents/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+      ],
+    ),
+    ToolDescriptor(
+      id: ToolId.cline,
+      displayName: 'Cline',
+      targets: [
+        ConfigTarget(
+          relativePath: '.cline/data/settings/global-settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.cline/data/settings/cline_mcp_settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.cline/data/settings/providers.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.cline/rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.clinerules',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        // Official primary workspace rules layout is a directory of
+        // .md/.txt files (see docs.cline.bot/customization/cline-rules).
+        ConfigTarget(
+          relativePath: '.clinerules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.clinerules/*.txt',
+          format: ConfigFormat.text,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.cline/rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        // Compatibility path still documented by Cline for global rules.
+        ConfigTarget(
+          relativePath: 'Documents/Cline/Rules/*.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+      ],
+    ),
+    ToolDescriptor(
+      id: ToolId.lmStudio,
+      displayName: 'LM Studio',
+      targets: [
+        ConfigTarget(
+          relativePath: '.lmstudio/settings.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        // Hub layout is publisher/model-name (two path segments), e.g.
+        // .lmstudio/hub/models/bytedance/seed-oss-36b/model.yaml.
+        ConfigTarget(
+          relativePath: '.lmstudio/hub/models/*/*/model.yaml',
+          format: ConfigFormat.yaml,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.lmstudio/hub/models/*/*/manifest.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.lmstudio/hub/presets/*.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+      ],
+    ),
+    ToolDescriptor(
+      id: ToolId.copilot,
+      displayName: 'GitHub Copilot',
+      targets: [
+        ConfigTarget(
+          relativePath: '.copilot/config.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.copilot/mcp-config.json',
+          format: ConfigFormat.json,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+        ),
+        ConfigTarget(
+          relativePath: '.github/copilot-instructions.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath:
+              '.config/github-copilot/intellij/global-copilot-instructions.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath:
+              'AppData/Local/github-copilot/intellij/global-copilot-instructions.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+      ],
+    ),
+    // Cross-tool [agents.md](https://agents.md/) convention — not owned by
+    // any single agent. Tool-specific copies (e.g. ~/.codex/AGENTS.md) stay
+    // on those tools' descriptors.
+    ToolDescriptor(
+      id: ToolId.agentsMd,
+      displayName: 'AGENTS.md (shared)',
+      targets: [
+        ConfigTarget(
+          relativePath: 'AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.project,
+          kind: ConfigSourceKind.instructionDocument,
+        ),
+        ConfigTarget(
+          relativePath: '.agents/AGENTS.md',
+          format: ConfigFormat.markdown,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
         ),
       ],
     ),

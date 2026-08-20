@@ -1,26 +1,31 @@
 # Phase 10: New Tools Discovery Paths
 
-**Date:** 2026-08-19
+**Date:** 2026-08-19 (updated 2026-08-20 after review)
 
 ## Kilo
 
 - **Global Config:** `~/.config/kilo/kilo.jsonc` (Windows: `%USERPROFILE%\.config\kilo\kilo.jsonc`)
-- **Global Models/Providers:** `~/.config/kilo/models.json` (Stores custom API keys, base URLs, and model definitions)
-- **Global Rules:** `~/.config/kilo/AGENTS.md` and `~/.config/kilo/agents/*.md`
-- **Project Config:** `kilo.jsonc` or `.kilo/kilo.jsonc`
-- **Project Rules:** `AGENTS.md`
+- **Global Models cache (optional/legacy):** `~/.config/kilo/models.json` — may be absent on current installs; not the primary credentials store
+- **Secrets note:** Official docs warn that `provider.*.options.apiKey` (and similar) can appear in `kilo.jsonc`. Prefer env vars for credentials. Never commit config that contains secrets.
+- **Global Rules / agents:** `~/.config/kilo/AGENTS.md` and `~/.config/kilo/agents/*.md`
+- **Project Config:** `kilo.jsonc` or `.kilo/kilo.jsonc` (`.kilo/` wins if both exist)
+- **Project agents:** `.kilo/agents/*.md`
+- **Project Rules:** root `AGENTS.md` is registered under the shared **AGENTS.md (shared)**
+  catalog entry (not under Kilo), because Codex, Opencode, Cursor, Kiro, Devin, Kilo, and
+  Cline all load it. Tool-specific copies stay on each tool (e.g. `~/.config/kilo/AGENTS.md`).
 
 ## Cline
 
-- **Global Settings/API:** `~/.cline/data/settings/` (Specifically `global-settings.json`, `cline_mcp_settings.json`, and `providers.json`)
-- **Global Rules:** `~/.cline/rules/` (Windows: `%USERPROFILE%\.cline\rules\`)
-- **Project Rules:** `.clinerules` and `.cline/rules/*.md`
+- **Global Settings/API:** `~/.cline/data/settings/` — specifically `global-settings.json`, `cline_mcp_settings.json`, and `providers.json` (providers often holds API keys)
+- **Global Rules:** `~/.cline/rules/` and compatibility path `~/Documents/Cline/Rules/`
+- **Project Rules (primary):** `.clinerules/` directory of `.md` / `.txt` files
+- **Project Rules (legacy/alternate):** `.clinerules` file and `.cline/rules/*.md`
 
 ## LM Studio
 
 - **Global Settings:** `~/.lmstudio/settings.json` (Windows: `%USERPROFILE%\.lmstudio\settings.json`)
-- **Model Metadata:** `~/.lmstudio/hub/models/` (Stores `model.yaml` and `manifest.json` for model configurations, separate from weights)
-- **Presets:** `~/.lmstudio/hub/presets/`
+- **Model Metadata (hub):** `~/.lmstudio/hub/models/<publisher>/<model>/model.yaml` and `manifest.json` (two path segments under `models/`; weights live separately under `~/.lmstudio/models/` and are intentionally not discovered)
+- **Presets:** `~/.lmstudio/hub/presets/*.json`
 
 ## GitHub Copilot
 
@@ -28,4 +33,20 @@
 - **VS Code Extension:** Managed via `settings.json`. No default global instructions file exists (relies on project-level `.github/copilot-instructions.md`).
 - **JetBrains Plugin:**
   - macOS/Linux: `~/.config/github-copilot/intellij/global-copilot-instructions.md`
-  - Windows: `%LOCALAPPDATA%\github-copilot\intellij\global-copilot-instructions.md`
+  - Windows: `%LOCALAPPDATA%\github-copilot\intellij\global-copilot-instructions.md` (registered as `AppData/Local/...` under the user home, matching the Cursor IDE Windows path pattern)
+
+## Secret-bearing backup policy
+
+All backups created by `BackupService` are written exclusively under the app support
+`backups/` directory — never as sibling `.bak` files next to the original. This is
+mandatory for secret-bearing configs (Cline `providers.json`, Kilo `kilo.jsonc` with
+inline API keys, optional `models.json`, Copilot MCP configs, etc.) so project trees
+never gain commit-able backup artifacts.
+
+## Hook Integration Note
+
+No `.pre-commit-config.yaml` changes are needed for the new tools. Existing tools like
+`gitleaks` correctly scan all repo content automatically. Combined with the global-only
+backup policy above, secret-bearing configs edited through this app do not bleed into
+git history via `.bak` siblings. The standard gitleaks hook remains sufficient without
+path-specific exemptions.

@@ -5,13 +5,14 @@ Internal / developer-facing changes that do not belong in the public
 
 ## Unreleased
 
+### Changed
+
+- **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
+  (no longer requires spawning a fresh agent to review each finished phase).
+
 ### Added
 
 - **Registry invariant tests.** Added `test/catalog/registry_invariants_test.dart` to verify that `ConfigFormat.markdown` and `ConfigFormat.text` are never routed to the structured parser.
-- **Mandatory phase-completion independent review.** `AGENTS.md` now requires a fresh,
-  independent agent to review each completed phase (run `flutter analyze --fatal-infos` +
-  `flutter test`, inspect changed files, severity-rated verdict) before merge/archive. The
-  reviewer must not be the implementing agent(s).
 - **RecoveryHandler widget tests.** Added `test/screens/recovery_handler_test.dart`
   (12 cases) covering the corrupt-file recovery dialog via a harness mixin widget;
   filesystem setup and I/O flushes use `WidgetTester.runAsync` because `dart:io`

@@ -1,6 +1,6 @@
 # Supported Tools
 
-Last reviewed: 2026-08-18
+Last reviewed: 2026-08-20
 
 Config format reference for each supported AI agent and IDE. Used by AgentsConfigHelper
 to auto-detect, parse, visualize, and edit settings across tools.
@@ -10,19 +10,22 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Tool | Config format | User config | Project config | Rules file | Permissions model |
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | JSON | `~/.claude/settings.json` | `.claude/settings.json` | `CLAUDE.md` | allow/ask/deny arrays |
-| Codex | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `AGENTS.md` | sandbox + permission profiles |
-| Opencode | JSON | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `AGENTS.md` | per-tool allow/ask/deny |
+| Codex | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `~/.codex/AGENTS.md` (+ shared) | sandbox + permission profiles |
+| Opencode | JSON | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared) | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
-| Cursor Agent | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `AGENTS.md`/`CLAUDE.md` | allowlist + classifier |
+| Cursor Agent | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `CLAUDE.md` (+ shared) | allowlist + classifier |
 | Cursor IDE | JSON | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
-| Kiro | YAML | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` + `AGENTS.md` | capability-based |
-| Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `AGENTS.md` | scope-based allow/deny |
+| Kiro | YAML | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` (+ shared) | capability-based |
+| Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `~/.config/devin/AGENTS.md` (+ shared) | scope-based allow/deny |
 | Antigravity CLI | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` + `GEMINI.md` | action(target) + presets |
 | Antigravity IDE | JSON | `~/.gemini/antigravity-ide/settings.json` | — | — | — |
 | Antigravity App | JSON | `~/.gemini/antigravity-app/settings.json` | — | — | — |
 | Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — (host ACP config, e.g. Zed `agent_servers`, is not managed by this app) | via agy hooks | ACP permission bridge |
-| VS Code / GitHub Copilot _(deferred)_ | Markdown | — | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` | instructions only (no permission model) |
-| LM Studio _(deferred)_ | JSON | — | — | — | local LLM runner with model management and API server settings |
+| Kilo | JSONC | `~/.config/kilo/kilo.jsonc` | `kilo.jsonc` / `.kilo/kilo.jsonc` | `~/.config/kilo/AGENTS.md`, agents `*.md` (+ shared) | allow/deny strings |
+| Cline | JSON + Markdown | `~/.cline/data/settings/*.json` | — | `.clinerules/` / `.clinerules`, `.cline/rules/*.md` (+ shared) | global settings |
+| GitHub Copilot | JSON + Markdown | `~/.copilot/config.json` | — | `.github/copilot-instructions.md` | instructions only (no permission model) |
+| LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets | local LLM runner |
+| AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool agents.md convention | instructions only |
 
 ---
 
@@ -550,36 +553,40 @@ rules:
 
 ---
 
-## VS Code / GitHub Copilot
+## GitHub Copilot
 
-> **Status:** Deferred — listed for parity/tracking; no dedicated parser or auto-discovery
-> yet. Instructions are plain Markdown and fall under the deferred Markdown sources.
+First-class discovery covers Copilot CLI configs, project instructions, and JetBrains
+global instructions. VS Code Copilot settings still live in the host `settings.json`
+(not auto-discovered as a dedicated target).
 
-### VS Code / GitHub Copilot Config paths
+### GitHub Copilot Config paths
 
 | Scope | Path |
 | --- | --- |
+| CLI user config | `~/.copilot/config.json`, `~/.copilot/mcp-config.json` |
 | Project instructions | `.github/copilot-instructions.md` (repo root) |
-| User/agent settings | VS Code `settings.json` (`github.copilot.*`; extra agent-file dirs via `chat.agentFilesLocations`) |
-| Agent definitions | `.github/agents/<name>.agent.md` (legacy: `.github/chatmodes/*.chatmode.md`) |
+| JetBrains global instructions | `~/.config/github-copilot/intellij/global-copilot-instructions.md` (Windows: `%LOCALAPPDATA%\github-copilot\intellij\...`) |
+| User/agent settings (VS Code) | VS Code `settings.json` (`github.copilot.*`; extra agent-file dirs via `chat.agentFilesLocations`) — not auto-discovered |
+| Agent definitions | `.github/agents/<name>.agent.md` (legacy: `.github/chatmodes/*.chatmode.md`) — not yet in the registry |
 
-### VS Code / GitHub Copilot Config format
+### GitHub Copilot Config format
 
-Plain **Markdown** for both instructions and agents. Plain instruction files
-(`copilot-instructions.md`) have no structured permission model — Copilot reads them and
-applies the host IDE's trust/sandbox settings. Custom agents, defined in `.agent.md` files
-with YAML frontmatter (name, description, tools), do carry a structured `tools` allow-list
-that restricts which tools the agent may use. Agent Skills are packaged separately as
-`SKILL.md` files (an open standard shared across Copilot surfaces), not as agent frontmatter.
+JSON for CLI config. Plain **Markdown** for instructions and agents. Plain instruction
+files (`copilot-instructions.md`) have no structured permission model — Copilot reads
+them and applies the host IDE's trust/sandbox settings. Custom agents, defined in
+`.agent.md` files with YAML frontmatter (name, description, tools), do carry a structured
+`tools` allow-list that restricts which tools the agent may use. Agent Skills are packaged
+separately as `SKILL.md` files (an open standard shared across Copilot surfaces), not as
+agent frontmatter.
 
-### VS Code / GitHub Copilot Rules
+### GitHub Copilot Rules
 
 - **Instructions:** `.github/copilot-instructions.md` — project-level guidance, plain Markdown.
 - **Agents:** `.github/agents/<name>.agent.md` with frontmatter.
 - **Chat modes (legacy):** `.github/chatmodes/*.chatmode.md` — superseded by custom agents;
   rename to `.agent.md` to migrate.
 
-### VS Code / GitHub Copilot CLI
+### GitHub Copilot CLI
 
 `code` (VS Code), `copilot` (GitHub Copilot CLI), `gh copilot` (GitHub CLI command for running Copilot CLI; preview).
 
@@ -591,62 +598,97 @@ that restricts which tools the agent may use. Agent Skills are packaged separate
 
 | Format | Tools | Parser approach |
 | --- | --- | --- |
-| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
+| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP, Kilo, Cline, Copilot CLI, LM Studio | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
 | TOML | Codex | `toml` Dart package |
-| YAML | Kiro (permissions), Paseo (hub/workflows) | `yaml` Dart package |
-| Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — **deferred** (see below) | raw-text editor |
+| YAML | Kiro (permissions), Paseo (hub/workflows), LM Studio (`model.yaml`) | `yaml` Dart package |
+| Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — raw-text editor | raw-text editor |
 
 ## Deferred / not yet supported
 
-These sources are known but intentionally excluded from V1 auto-discovery until a
-dedicated raw-text editor exists (see "Detection and Registry → Deferred Sources"):
+These sources are known but intentionally excluded from V1 structured editing (they are
+still auto-discovered and opened in the raw-text editor where registered):
 
 - **Markdown rules** — `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, Kiro steering, Cursor `.mdc`
-  (YAML frontmatter + markdown body), Codex `.rules`, Devin `.devin/rules/*.md`.
+  (YAML frontmatter + markdown body), Codex `.rules`, Devin `.devin/rules/*.md`,
+  Cline `.clinerules/`, Copilot instructions.
 - **Starlark** — Codex command rules (`.codex/rules/*.rules`).
 - **Plain text** — Cursor `.cursorrules` (deprecated).
-- **VS Code / GitHub Copilot** — instructions live in `.github/copilot-instructions.md`
-  (Markdown); not given a dedicated tool entry or parser yet. Tracked in the master plan
-  under deferred-tools work.
-
-Adding VS Code / GitHub Copilot as a first-class supported tool is tracked in the master plan.
 
 ---
 
-## LM Studio
+## Kilo
 
-> **Status:** Deferred — listed for parity/tracking; no dedicated parser or auto-discovery
-> yet. LM Studio is a local LLM runner with model management and API server settings.
+### Kilo Config paths
+
+- **User settings:** `~/.config/kilo/kilo.jsonc`
+- **User models cache (optional):** `~/.config/kilo/models.json`
+- **User rules / agents:** `~/.config/kilo/AGENTS.md` and `~/.config/kilo/agents/*.md`
+- **Project settings:** `kilo.jsonc` or `.kilo/kilo.jsonc`
+- **Project agents:** `.kilo/agents/*.md`
+- **Project rules:** shared root `AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
+
+### Kilo Config format
+
+JSONC. Secrets (e.g. `provider.*.options.apiKey`) must not be committed; prefer env vars.
+All edits are backed up only under the app support directory (never sibling `.bak` files).
+
+## Cline
+
+### Cline Config paths
+
+- **User settings:** `~/.cline/data/settings/global-settings.json`, `cline_mcp_settings.json`, `providers.json` (often secret-bearing)
+- **User rules:** `~/.cline/rules/*.md`, `~/Documents/Cline/Rules/*.md`
+- **Project rules:** `.clinerules/` (`.md`/`.txt`), legacy `.clinerules` file, and `.cline/rules/*.md`
+- **Also loads:** shared root `AGENTS.md` / `~/.agents/AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
+
+### Cline Config format
+
+JSON and Markdown / plain text.
+
+## LM Studio
 
 ### LM Studio Config paths
 
-LM Studio config paths and format need to be researched. Typical locations may include:
-
-- User settings: `~/.lmstudio/` or platform-specific app data directories
-- Model cache: Local model storage paths
-- API server configuration: Port, host, and endpoint settings
+- **User settings:** `~/.lmstudio/settings.json`
+- **Model metadata:** `~/.lmstudio/hub/models/<publisher>/<model>/model.yaml`, `manifest.json`
+- **Presets:** `~/.lmstudio/hub/presets/*.json`
+- **Not discovered:** weight files under `~/.lmstudio/models/` (too large; not config)
 
 ### LM Studio Config format
 
-Config format needs to be researched. Likely JSON or similar structured format for:
+JSON and YAML.
 
-- Model management (downloaded models, aliases)
-- API server settings (host, port, CORS)
-- Runtime parameters (temperature, max tokens, context window)
+## AGENTS.md (shared)
 
-### LM Studio Permissions model
+Cross-tool instruction file following the [agents.md](https://agents.md/) convention.
+It is **not owned by a single agent** in this app: the sidebar lists it under
+**AGENTS.md (shared)** so it is not mis-attributed to whichever tool happened to
+appear first in the catalog.
 
-As a local LLM runner, LM Studio likely does not have a traditional permission model for tool access. Instead, it may have:
+### AGENTS.md (shared) Config paths
 
-- Network access controls for the API server
-- File system access for model storage
-- Sandbox or containerization options
+| Scope | Path |
+| --- | --- |
+| Project | `AGENTS.md` (repository root) |
+| User (global) | `~/.agents/AGENTS.md` |
 
-### LM Studio CLI
+### Which tools load it
 
-`lmstudio` (CLI interface if available)
+| Tool | Loads project `AGENTS.md`? | Notes |
+| --- | --- | --- |
+| Codex | Yes | Also has tool-specific `~/.codex/AGENTS.md` |
+| Opencode | Yes | Also has `~/.config/opencode/AGENTS.md` |
+| Cursor Agent | Yes | Alongside `.cursor/rules` / `CLAUDE.md` |
+| Kiro | Yes | Alongside `.kiro/steering/*.md` |
+| Devin | Yes | Also has `~/.config/devin/AGENTS.md` |
+| Kilo | Yes | Also has `~/.config/kilo/AGENTS.md` and `.kilo/agents/*.md` |
+| Cline | Yes | Also documents `~/.agents/AGENTS.md` for global rules |
+| Claude Code | No (uses `CLAUDE.md`) | — |
+| Paseo / LM Studio / Copilot / Antigravity | No (other instruction formats) | — |
 
-**Sources:** Research needed from LM Studio documentation
+### AGENTS.md (shared) Config format
+
+Plain Markdown; edited with the raw-text editor.
 
 ## Permissions model taxonomy
 

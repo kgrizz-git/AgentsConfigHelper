@@ -38,6 +38,22 @@ enum ToolId {
 
   /// Agy-ACP.
   agyAcp,
+
+  /// Kilo.
+  kilo,
+
+  /// Cline.
+  cline,
+
+  /// LM Studio.
+  lmStudio,
+
+  /// GitHub Copilot.
+  copilot,
+
+  /// Shared project/user AGENTS.md instruction file (agents.md convention)
+  /// consumed by multiple tools — not owned by a single agent.
+  agentsMd,
 }
 
 /// The location scope of a discovered configuration.

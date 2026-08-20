@@ -52,14 +52,19 @@ location of that kind.
 | Tool | Formats | User config | Project config | Rules / instruction docs |
 | --- | --- | --- | --- | --- |
 | Claude Code | JSON + Markdown | `~/.claude/settings.json` | `.claude/settings.json` | `~/.claude/CLAUDE.md`, `CLAUDE.md`, `.claude/CLAUDE.md` |
-| Codex | TOML + Markdown | `~/.codex/config.toml` | `.codex/config.toml` | `~/.codex/AGENTS.md`, `AGENTS.md` |
-| Opencode | JSONC + Markdown | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md`, `AGENTS.md` |
+| Codex | TOML + Markdown | `~/.codex/config.toml` | `.codex/config.toml` | `~/.codex/AGENTS.md` (+ shared `AGENTS.md`) |
+| Opencode | JSONC + Markdown | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared `AGENTS.md`) |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | — |
-| Cursor | JSON + text/Markdown | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc`, `.cursorrules`, `AGENTS.md`, `CLAUDE.md` |
-| Kiro | YAML + Markdown | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md`, `AGENTS.md` |
-| Devin | JSON + Markdown | `~/.config/devin/config.json` | `.devin/config.json` | `~/.config/devin/AGENTS.md`, `AGENTS.md` |
+| Cursor | JSON + text/Markdown | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc`, `.cursorrules`, `CLAUDE.md` (+ shared `AGENTS.md`) |
+| Kiro | YAML + Markdown | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` (+ shared `AGENTS.md`) |
+| Devin | JSON + Markdown | `~/.config/devin/config.json` | `.devin/config.json` | `~/.config/devin/AGENTS.md` (+ shared `AGENTS.md`) |
 | Antigravity | JSON + Markdown | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md`, `.agents/rules/*.md` |
 | Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — | — |
+| Kilo | JSONC + Markdown | `~/.config/kilo/kilo.jsonc` | `kilo.jsonc` / `.kilo/kilo.jsonc` | `~/.config/kilo/AGENTS.md`, `.kilo/agents/*.md` (+ shared `AGENTS.md`) |
+| Cline | JSON + Markdown | `~/.cline/data/settings/global-settings.json` | — | `.clinerules/`, `.clinerules`, `.cline/rules/*.md` (+ shared `AGENTS.md`) |
+| LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets (weights not discovered) |
+| GitHub Copilot | JSON + Markdown | `~/.copilot/config.json` | — | `.github/copilot-instructions.md` |
+| AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool [agents.md](https://agents.md/) convention |
 
 ## Getting Started
 

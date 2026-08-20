@@ -47,6 +47,34 @@ void main() {
     });
 
     test(
+      'createBackup routes all backups to global dir unconditionally',
+      () async {
+        // Security policy: ALL backups go to the global dir,
+        // and NEVER alongside original file. This prevents secret-bearing
+        // files (like Kilo's models.json) from accidentally being committed
+        // to git via a .bak file.
+        final secretFile = File(
+          p.join(tempDir.path, 'project', 'models.json'),
+        );
+        await secretFile.create(recursive: true);
+        await secretFile.writeAsString('{"api_key": "sk-1234"}');
+
+        final backupPath = await backupService.createBackup(secretFile.path);
+
+        // Verify the backup resides within the dedicated global directory.
+        expect(p.isWithin(backupDir.path, backupPath), isTrue);
+
+        // Explicitly assert it is NOT in the original file's directory.
+        expect(p.isWithin(secretFile.parent.path, backupPath), isFalse);
+
+        // Explicitly assert no .bak files exist in the original directory.
+        final projectFiles = secretFile.parent.listSync();
+        final hasBak = projectFiles.any((f) => f.path.endsWith('.bak'));
+        expect(hasBak, isFalse);
+      },
+    );
+
+    test(
       'createBackup throws FileSystemException if original file missing',
       () async {
         final missingPath = p.join(tempDir.path, 'missing.json');

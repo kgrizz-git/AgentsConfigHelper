@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
-import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/screens/recovery_handler.dart';
+import 'package:agents_config_helper/screens/tool_id_icons.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -355,37 +355,6 @@ class _MainShellState extends ConsumerState<MainShell>
     }
   }
 
-  IconData _getIconForTool(ToolId toolId) {
-    // Exhaustive over ToolId so a newly added tool fails to compile until it
-    // gets an explicit icon, rather than silently falling through.
-    switch (toolId) {
-      case ToolId.claudeCode:
-        return Icons.code;
-      case ToolId.cursor:
-        return Icons.edit;
-      case ToolId.cursorIde:
-        return Icons.integration_instructions;
-      case ToolId.opencode:
-        return Icons.open_in_browser;
-      case ToolId.paseo:
-        return Icons.directions_walk;
-      case ToolId.kiro:
-        return Icons.keyboard;
-      case ToolId.devin:
-        return Icons.developer_mode;
-      case ToolId.antigravity:
-        return Icons.rocket_launch;
-      case ToolId.antigravityIde:
-        return Icons.computer;
-      case ToolId.antigravityApp:
-        return Icons.desktop_windows;
-      case ToolId.codex:
-        return Icons.book;
-      case ToolId.agyAcp:
-        return Icons.api;
-    }
-  }
-
   late final MultiSplitViewController _controller = MultiSplitViewController(
     areas: [
       Area(
@@ -487,7 +456,7 @@ class _MainShellState extends ConsumerState<MainShell>
                             title: configItem.sourceLabel,
                             subtitle: configItem.filePath,
                             icon: configItem.descriptor != null
-                                ? _getIconForTool(configItem.descriptor!.id)
+                                ? iconForToolId(configItem.descriptor!.id)
                                 : Icons.insert_drive_file,
                             isActive: _activeConfigId == configItem.id,
                             onTap: () async {

@@ -4,21 +4,11 @@
 - [ ] Address issues flagged by sonar cloud
 - [ ] institute semantic versioning
 - [ ] check and possibly clarify harness guidance about the use of TO_DO.md, "CHANGELOG.dev.md", "CHANGELOG.md"
+- [ ] Review [`docs/PRODUCT_IDEAS.md`](docs/PRODUCT_IDEAS.md) — a backlog of ideas to make the app more useful, full-featured, user-friendly, and intuitive. Later choose which to implement and write a plan in `plans/active/`.
 
 ## Follow-ups from Phase 5.5 (docs accuracy)
 
 - [ ] Add a README screenshot or GIF to `assets/screenshots/` (blocked on user — an agent cannot capture a running Flutter desktop GUI). README currently shows a placeholder badge.
-
-## Tool-support gaps (discovery expansion — see Phase 9 of the master plan)
-
-- [ ] Expand supported-tool catalog beyond the current 12 entries. Tracked after the
-      2026-08-16 review of registry vs. requested tools:
-  - [ ] **Kilo** — not in `tool_descriptor_registry.dart` or `docs/supported-tools.md`; add `ToolId` + config paths.
-  - [ ] **Cline** — not supported at all; add `ToolId` + config paths.
-  - [ ] **Promote VS Code / GitHub Copilot** from deferred docs-only to a first-class
-        `ToolDescriptor` (already stubbed in `docs/supported-tools.md`).
-  - [ ] **LM Studio** — not supported at all; add `ToolId` + config paths (local LLM runner
-        with model management and API server settings).
 
 ## Deferred from PR #5 review (Qodo / SonarCloud)
 
