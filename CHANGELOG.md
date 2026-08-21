@@ -25,6 +25,16 @@ uses [Semantic Versioning](https://semver.org/).
 - **Open Backups Folder** menu action in the sidebar that opens the app's
   timestamped backups directory in the platform file manager.
 
+### Changed
+
+- **macOS local source builds:** Removed App Sandbox confinement so the app can
+  discover, edit, and back up configurations in the real user home and project
+  directories. The project does not publish a prebuilt macOS binary in this
+  scope; a future binary-distribution path will require separate signing and
+  notarization work. Existing sandbox-container preferences and in-app backup
+  history are not migrated automatically, but original configuration files are
+  unaffected.
+
 ### Fixed
 
 - **Restore safety.** Restoring a backup now preserves the current on-disk file as a new

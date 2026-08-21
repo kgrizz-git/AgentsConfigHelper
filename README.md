@@ -85,6 +85,19 @@ flutter pub get
 flutter run -d macos  # or windows / linux
 ```
 
+### macOS source-build scope
+
+macOS is currently supported through local source builds only. To discover and
+edit configuration files in the real user home and project directories, these
+builds are intentionally not App Sandbox confined. No prebuilt macOS app,
+disk image, installer, or release zip is published from this project until a
+separate Developer ID signing and notarization plan exists.
+
+If you used an earlier sandboxed source build, its manual discovery paths and
+in-app backup history may remain in the old app container rather than appearing
+in the new build. Your original configuration files are never moved or
+modified by this transition.
+
 ### Build release binary
 
 ```bash

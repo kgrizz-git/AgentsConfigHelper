@@ -113,6 +113,84 @@ jobs:
           sarif_file: semgrep.sarif
           category: semgrep
 
+  macos-entitlements:
+    name: macOS entitlements (no App Sandbox)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Assert App Sandbox is absent from entitlements and project metadata
+        run: |
+          set -euo pipefail
+          sandbox_key="com.apple.security.app-sandbox"
+          failed=0
+          project_file="macos/Runner.xcodeproj/project.pbxproj"
+          if [ ! -f "$project_file" ] || [ ! -r "$project_file" ]; then
+            echo "::error file=$project_file::Project file is missing or unreadable"
+            failed=1
+          elif grep -Fq -- 'com.apple.Sandbox' "$project_file"; then
+            echo "::error file=$project_file::App Sandbox capability metadata must be removed"
+            failed=1
+          else
+            grep_status=$?
+            if [ "$grep_status" -eq 1 ]; then
+              echo "OK: $project_file omits App Sandbox capability metadata"
+            else
+              echo "::error file=$project_file::Unable to inspect project metadata"
+              failed=1
+            fi
+          fi
+          if ! entitlements_paths=$(awk '
+            /^[[:space:]]*CODE_SIGN_ENTITLEMENTS[[:space:]]*=/ {
+              value = $0
+              sub(/^[[:space:]]*CODE_SIGN_ENTITLEMENTS[[:space:]]*=[[:space:]]*/, "", value)
+              sub(/[[:space:]]*;[[:space:]]*$/, "", value)
+              print value
+            }
+          ' "$project_file" | sort -u); then
+            echo "::error file=$project_file::Unable to read CODE_SIGN_ENTITLEMENTS values"
+            failed=1
+          elif [ -z "$entitlements_paths" ]; then
+            echo "::error file=$project_file::No CODE_SIGN_ENTITLEMENTS values found"
+            failed=1
+          else
+            while IFS= read -r entitlement_path; do
+              case "$entitlement_path" in
+                ""|/*|*..*|*[!A-Za-z0-9._/-]*)
+                  echo "::error file=$project_file::Unsupported CODE_SIGN_ENTITLEMENTS path"
+                  failed=1
+                  continue
+                  ;;
+              esac
+              entitlements="macos/$entitlement_path"
+              if [ ! -f "$entitlements" ] || [ ! -r "$entitlements" ]; then
+                echo "::error file=$entitlements::Missing or unreadable entitlements file"
+                failed=1
+                continue
+              fi
+              if ! plutil -lint "$entitlements" >/dev/null; then
+                echo "::error file=$entitlements::Entitlements file is not a valid property list"
+                failed=1
+                continue
+              fi
+              if /usr/libexec/PlistBuddy -c "Print :$sandbox_key" "$entitlements" >/dev/null 2>&1; then
+                echo "::error file=$entitlements::App Sandbox must be removed ($sandbox_key present)"
+                failed=1
+              else
+                plistbuddy_status=$?
+                if [ "$plistbuddy_status" -eq 1 ]; then
+                  echo "OK: $entitlements omits $sandbox_key"
+                else
+                  echo "::error file=$entitlements::Unable to inspect App Sandbox entitlement"
+                  failed=1
+                fi
+              fi
+            done <<<"$entitlements_paths"
+          fi
+          exit "$failed"
+
   build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
