@@ -558,8 +558,7 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.instructionDocument,
         ),
         ConfigTarget(
-          relativePath:
-              'AppData/Local/github-copilot/intellij/global-copilot-instructions.md',
+          relativePath: 'AppData/Local/github-copilot/intellij/global-copilot-instructions.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.instructionDocument,
