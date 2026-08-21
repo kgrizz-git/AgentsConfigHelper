@@ -6,6 +6,31 @@
 - [ ] check and possibly clarify harness guidance about the use of TO_DO.md, "CHANGELOG.dev.md", "CHANGELOG.md"
 - [ ] Review [`docs/PRODUCT_IDEAS.md`](docs/PRODUCT_IDEAS.md) — a backlog of ideas to make the app more useful, full-featured, user-friendly, and intuitive. Later choose which to implement and write a plan in `plans/active/`.
 
+## Product follow-ups (prioritized)
+
+- [ ] **High priority — safe exploratory testing environment:** Research and document a
+      repeatable way to exercise discovery and editing against realistic agent/IDE
+      configurations without risking a developer's real files. Compare disposable
+      macOS/Windows/Linux VMs, isolated OS user accounts/home-directory fixtures, and
+      container-based options (noting that desktop GUI and native filesystem behavior may
+      limit Docker's usefulness). Define a recommended workflow, setup/teardown steps,
+      and what can be automated in CI before implementing it.
+- [ ] **Structured configuration presentation:** Expand parsers and UI models so supported
+      configuration formats can present discovered rules, permissions, and settings as
+      focused widgets/cards rather than only raw syntax. Preserve a faithful raw-editor
+      fallback for unsupported or ambiguous content; inventory each tool/format's schema,
+      then prioritize high-value, safely editable fields and add parser/UI tests.
+- [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
+      contextual hover help that explains each setting in plain language and links to the
+      owning tool's authoritative documentation. Design a versioned metadata source,
+      ensure links are tool-specific and reviewable, and keep unknown settings visibly
+      unclassified rather than inventing explanations.
+- [ ] **Desktop window sizing:** Open the app at a more useful default size (target about
+      75% of available screen width and height) and/or persist the user's last valid
+      window size and position. Research Flutter desktop APIs and platform constraints,
+      including sensible minimums and bounds restoration when displays change; add
+      cross-platform tests or manual verification guidance before implementation.
+
 ## Tool-support gaps (discovery expansion)
 
 Track candidates that are not agent/IDE tools but still have useful project- or user-level
