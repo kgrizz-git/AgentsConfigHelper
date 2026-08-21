@@ -373,7 +373,7 @@ void main() {
             .length;
         // Cap should bound error-driven warnings (plus at most one visit-cap
         // notice); without counting errors this would approach 80.
-        expect(skipWarnings, lessThanOrEqualTo(45));
+        expect(skipWarnings, lessThanOrEqualTo(40));
       },
       skip: Platform.isWindows
           ? 'chmod-based permission denial is POSIX only'

@@ -260,6 +260,10 @@ class DiscoveryService {
             in dir
                 .list(recursive: needsRecursion, followLinks: false)
                 .handleError((Object error, StackTrace stackTrace) {
+                  if (visitedCount >= maxEntitiesVisited) {
+                    truncatedVisit = true;
+                    throw const _GlobVisitCapExceeded();
+                  }
                   visitedCount++;
                   final failingPath =
                       error is FileSystemException && error.path != null
@@ -273,16 +277,12 @@ class DiscoveryService {
                           'glob: $error',
                     ),
                   );
-                  if (visitedCount > maxEntitiesVisited) {
-                    truncatedVisit = true;
-                    throw const _GlobVisitCapExceeded();
-                  }
                 })) {
-          visitedCount++;
-          if (visitedCount > maxEntitiesVisited) {
+          if (visitedCount >= maxEntitiesVisited) {
             truncatedVisit = true;
             break;
           }
+          visitedCount++;
           if (entity is File &&
               ToolDescriptorRegistry.isMatch(expectedPattern, entity.path)) {
             if (matchCount >= maxEntries) {

@@ -18,6 +18,7 @@ Internal / developer-facing changes that do not belong in the public
   `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
   make glob visit/match caps injectable on `DiscoveryService`; per-entry
   `handleError` on recursive listing (errors count toward the visit cap;
+  stop at `maxGlobEntitiesVisited` without exceeding it;
   prefer `FileSystemException.path` in warnings when available).
 
 ### Added
