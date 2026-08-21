@@ -21,6 +21,19 @@ String? absoluteNormalizedPath(String? raw) {
   return normalized;
 }
 
+/// Builds the shared warning text used when an absolute-path-only setting
+/// (for example `COPILOT_HOME`) is ignored because [raw] is relative or
+/// `~`-prefixed.
+///
+/// [sourceLabel] names the setting for the user (env var vs request field).
+String ignoredNonAbsolutePathMessage({
+  required String sourceLabel,
+  required String raw,
+}) {
+  return 'Ignoring $sourceLabel because it is not an absolute path '
+      '(got "$raw").';
+}
+
 /// Resolves the current user's home directory from the environment.
 ///
 /// Checks `HOME`/`USERPROFILE` first, then falls back to Windows'

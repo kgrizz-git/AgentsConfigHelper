@@ -101,9 +101,10 @@ class DiscoveryController extends _$DiscoveryController {
         0,
         DiscoveryWarning(
           path: copilotHomeRaw,
-          message:
-              'Ignoring COPILOT_HOME because it is not an absolute path '
-              '(got "$copilotHomeRaw").',
+          message: ignoredNonAbsolutePathMessage(
+            sourceLabel: 'COPILOT_HOME',
+            raw: copilotHomeRaw,
+          ),
         ),
       );
     }

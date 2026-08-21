@@ -17,4 +17,25 @@ void main() {
       expect(absoluteNormalizedPath('~/copilot'), isNull);
     });
   });
+
+  group('ignoredNonAbsolutePathMessage', () {
+    test('uses a shared wording template for all source labels', () {
+      expect(
+        ignoredNonAbsolutePathMessage(
+          sourceLabel: 'COPILOT_HOME',
+          raw: '~/copilot',
+        ),
+        'Ignoring COPILOT_HOME because it is not an absolute path '
+        '(got "~/copilot").',
+      );
+      expect(
+        ignoredNonAbsolutePathMessage(
+          sourceLabel: 'normalizedCopilotHomePath',
+          raw: 'relative-home',
+        ),
+        'Ignoring normalizedCopilotHomePath because it is not an absolute '
+        'path (got "relative-home").',
+      );
+    });
+  });
 }

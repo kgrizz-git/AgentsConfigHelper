@@ -13,7 +13,7 @@ Internal / developer-facing changes that do not belong in the public
   `.github/copilot/settings.json` / `settings.local.json` as editable settings;
   also surface managed `config.json` when present (no hide/precedence rule).
   Honor `COPILOT_HOME` for CLI user files (absolute paths only; relative/`~`
-  values are ignored with a warning). Discover Cline `~/Cline/Rules` only
+  values are ignored with a shared warning helper). Discover Cline `~/Cline/Rules` only
   when `~/Documents/Cline/Rules` is absent. Document Copilot loading shared
   `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
   make glob visit/match caps injectable on `DiscoveryService`; per-entry

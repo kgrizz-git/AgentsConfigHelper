@@ -40,9 +40,10 @@ class DiscoveryService {
       warnings.add(
         DiscoveryWarning(
           path: requestedCopilotHome,
-          message:
-              'Ignoring normalizedCopilotHomePath because it is not an '
-              'absolute path (got "$requestedCopilotHome").',
+          message: ignoredNonAbsolutePathMessage(
+            sourceLabel: 'normalizedCopilotHomePath',
+            raw: requestedCopilotHome,
+          ),
         ),
       );
     }
