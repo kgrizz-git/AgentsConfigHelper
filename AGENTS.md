@@ -100,3 +100,10 @@ flutter build macos --release   # build release binary
 - Record decisions, changed files, verification, and next steps in a handoff before
   changing agents or IDEs.
 - Keep credentials, generated indexes, and local agent state out of version control.
+
+## macOS distribution note
+
+The current macOS workflow is source-build-only and intentionally unsandboxed
+so the app can discover and edit real user configuration files. Do not create
+or publish a prebuilt macOS binary without revisiting
+[`docs/adr/ADR-002-macos-file-access.md`](docs/adr/ADR-002-macos-file-access.md).

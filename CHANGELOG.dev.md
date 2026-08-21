@@ -7,16 +7,17 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
-- **`docs/adr/ADR-002-macos-file-access.md`:** Proposed ADR comparing macOS
-  sandbox Options A/B/C (and rejected dual-variant D), including build-time
-  temporary-exception lists vs runtime security-scoped bookmarks; preferred
-  near-term Option C for source builders / Developer ID distribution.
-  Linked from `ARCHITECTURE.md`.
-- **`plans/active/macos-execution-and-dependency-upgrades.md`:** Phased plan for
-  real-home discovery, Option C entitlements/Hardened Runtime controls, and
-  staged dependency upgrades (mechanized compensating controls in the ADR/plan).
+- **`plans/active/dependency-upgrades.md`:** Separate staged package-upgrade
+  plan with local and CI verification gates; Flutter SDK upgrades are kept out
+  of package-only work.
 
 ### Changed
+
+- **ADR-002 and macOS execution planning:** Accepted an unsandboxed,
+  source-build-only macOS workflow to unblock local discovery and editing;
+  deferred Developer ID, notarization, FFI home resolution, sandbox/bookmark
+  infrastructure, and binary-distribution work. The focused implementation
+  plan is now `plans/active/macos-local-execution.md`.
 
 - **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
   (no longer requires spawning a fresh agent to review each finished phase).

@@ -35,9 +35,8 @@ AgentsConfigHelper is a local-only, cross-platform Flutter desktop app. It abstr
 - **No Cloud Sync**: Version 1 has no networking component for config data.
 - **Tokens in memory only**: The app parses files containing API keys, but does not cache them beyond application memory.
 - **Stateless Parsers**: Parsers must be pure, testable functions with no side effects.
-- **macOS file access**: Options (sandbox + temporary exceptions + bookmarks vs
-  Developer ID unsandboxed) are recorded in
-  [`docs/adr/ADR-002-macos-file-access.md`](docs/adr/ADR-002-macos-file-access.md)
-  (status: proposed; preferred near-term Option C). Temporary-exception path
-  lists are build-time; project/manual grants under a sandboxed design would be
-  runtime bookmarks — see that ADR.
+- **macOS file access**: The current local source-build workflow is
+  unsandboxed so it can discover and edit configurations in the real user home.
+  It does not authorize a prebuilt macOS binary; signing/notarization or any
+  future sandboxed distribution requires a new decision. See
+  [`docs/adr/ADR-002-macos-file-access.md`](docs/adr/ADR-002-macos-file-access.md).
