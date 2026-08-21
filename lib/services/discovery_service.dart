@@ -1,20 +1,52 @@
 import 'dart:io';
+import 'package:agents_config_helper/catalog/registry_path_matching.dart';
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/discovery_request.dart';
 import 'package:agents_config_helper/models/discovery_result.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/services/home_directory_resolver.dart';
 import 'package:path/path.dart' as p;
 
 /// Service responsible for discovering AI agent configuration files
 /// on the local filesystem.
 class DiscoveryService {
+  /// Creates a discovery service.
+  ///
+  /// [maxGlobMatches] caps matching files per glob target (sidebar bound).
+  /// [maxGlobEntitiesVisited] caps filesystem entries visited per glob so
+  /// large non-matching trees cannot hang discovery.
+  const DiscoveryService({
+    this.maxGlobMatches = 100,
+    this.maxGlobEntitiesVisited = 5000,
+  });
+
+  /// Maximum matching entries retained per glob target.
+  final int maxGlobMatches;
+
+  /// Maximum filesystem entities visited per glob enumeration.
+  final int maxGlobEntitiesVisited;
+
   /// Scans the file system for configuration files based on the given
   /// [request].
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
     final items = <DiscoveredConfig>[];
     final warnings = <DiscoveryWarning>[];
     final seenPaths = <String>{};
+    final enableClineRulesFallback = await _resolveClineRulesFallback(request);
+    final requestedCopilotHome = request.normalizedCopilotHomePath;
+    final effectiveCopilotHome = absoluteNormalizedPath(requestedCopilotHome);
+    if (requestedCopilotHome != null && effectiveCopilotHome == null) {
+      warnings.add(
+        DiscoveryWarning(
+          path: requestedCopilotHome,
+          message: ignoredNonAbsolutePathMessage(
+            sourceLabel: 'normalizedCopilotHomePath',
+            raw: requestedCopilotHome,
+          ),
+        ),
+      );
+    }
 
     // Returns true only when [config] is newly added to [items].
     // When a duplicate path is found, the existing entry's provenance is
@@ -106,84 +138,24 @@ class DiscoveryService {
         );
         await addIfValid(config);
       } else {
-        // Bounded glob enumeration
-        try {
-          final dirPath = p.dirname(expectedPattern);
-          final dir = Directory(dirPath);
-          // Checking directory existence asynchronously avoids blocking
-          // the UI thread.
-          // ignore: avoid_slow_async_io
-          if (!await dir.exists()) return;
-
-          var count = 0;
-          var truncated = false;
-          const maxEntries = 100;
-
-          await for (final entity in dir.list()) {
-            if (entity is File &&
-                ToolDescriptorRegistry.isMatch(expectedPattern, entity.path)) {
-              if (count >= maxEntries) {
-                // A further matching entry exists beyond the cap, so results
-                // are genuinely truncated.
-                truncated = true;
-                break;
-              }
-              // Count every matching entry, not just newly-added ones, so the
-              // cap bounds the work done per glob even when many matches are
-              // duplicates already discovered via another target.
-              count++;
-              final config = DiscoveredConfig.fromPath(
-                filePath: entity.path,
-                scope: scope,
-                kind: target.kind,
-                format: target.format,
-                sourceLabel: descriptor.displayName,
-                descriptor: descriptor,
-                fromCatalog: true,
-              );
-              await addIfValid(config);
-            }
-          }
-
-          if (truncated) {
-            warnings.add(
-              DiscoveryWarning(
-                path: expectedPattern,
-                message:
-                    'Glob enumeration hit the $maxEntries-entry cap; '
-                    'some matches may have been omitted.',
-              ),
-            );
-          }
-        } on Object catch (e) {
-          warnings.add(
-            DiscoveryWarning(
-              path: expectedPattern,
-              message: 'Error enumerating glob target: $e',
-            ),
-          );
-        }
+        await _enumerateGlobTarget(
+          expectedPattern: expectedPattern,
+          target: target,
+          descriptor: descriptor,
+          scope: scope,
+          warnings: warnings,
+          addIfValid: addIfValid,
+        );
       }
     }
 
     // 1. User targets
-    if (request.normalizedHomePath != null) {
-      for (final descriptor in ToolDescriptorRegistry.catalog) {
-        for (final target in descriptor.targets) {
-          if (target.scope == ConfigLocationScope.user) {
-            final expectedPattern = p.normalize(
-              p.join(request.normalizedHomePath!, target.relativePath),
-            );
-            await processTarget(
-              expectedPattern,
-              target,
-              descriptor,
-              ConfigLocationScope.user,
-            );
-          }
-        }
-      }
-    }
+    await _discoverUserTargets(
+      request: request,
+      enableClineRulesFallback: enableClineRulesFallback,
+      normalizedCopilotHomePath: effectiveCopilotHome,
+      processTarget: processTarget,
+    );
 
     // 2. Project targets
     for (final root in request.normalizedProjectRoots) {
@@ -212,6 +184,8 @@ class DiscoveryService {
           normalizedPath,
           normalizedHomePath: request.normalizedHomePath,
           normalizedProjectRoots: request.normalizedProjectRoots,
+          normalizedCopilotHomePath: effectiveCopilotHome,
+          enableClineRulesFallback: enableClineRulesFallback,
         );
 
         final config = DiscoveredConfig.fromPath(
@@ -244,4 +218,191 @@ class DiscoveryService {
 
     return DiscoveryResult(items: items, warnings: warnings);
   }
+
+  /// Bounded recursive/non-recursive glob walk for one catalog target.
+  Future<void> _enumerateGlobTarget({
+    required String expectedPattern,
+    required ConfigTarget target,
+    required ToolDescriptor descriptor,
+    required ConfigLocationScope scope,
+    required List<DiscoveryWarning> warnings,
+    required Future<bool> Function(DiscoveredConfig config) addIfValid,
+  }) async {
+    try {
+      var dirPath = p.dirname(expectedPattern);
+      while (dirPath.contains('*') || dirPath.contains('?')) {
+        final nextDirPath = p.dirname(dirPath);
+        if (nextDirPath == dirPath) break;
+        dirPath = nextDirPath;
+      }
+      final dir = Directory(dirPath);
+      // Checking directory existence asynchronously avoids blocking the UI.
+      // ignore: avoid_slow_async_io
+      if (!await dir.exists()) return;
+
+      final remaining = p.relative(expectedPattern, from: dirPath);
+      final remainingSegments = remaining
+          .split(RegExp(r'[/\\]'))
+          .where((s) => s.isNotEmpty)
+          .toList();
+      final needsRecursion =
+          remaining.contains('**') || remainingSegments.length > 1;
+
+      var matchCount = 0;
+      var visitedCount = 0;
+      var truncatedMatches = false;
+      var truncatedVisit = false;
+      final maxEntries = maxGlobMatches;
+      final maxEntitiesVisited = maxGlobEntitiesVisited;
+
+      try {
+        await for (final entity
+            in dir
+                .list(recursive: needsRecursion, followLinks: false)
+                .handleError((Object error, StackTrace stackTrace) {
+                  if (visitedCount >= maxEntitiesVisited) {
+                    truncatedVisit = true;
+                    throw const _GlobVisitCapExceeded();
+                  }
+                  visitedCount++;
+                  final failingPath =
+                      error is FileSystemException && error.path != null
+                      ? error.path!
+                      : expectedPattern;
+                  warnings.add(
+                    DiscoveryWarning(
+                      path: failingPath,
+                      message:
+                          'Skipped unreadable entry while enumerating '
+                          'glob: $error',
+                    ),
+                  );
+                })) {
+          if (visitedCount >= maxEntitiesVisited) {
+            truncatedVisit = true;
+            break;
+          }
+          visitedCount++;
+          if (entity is File &&
+              ToolDescriptorRegistry.isMatch(expectedPattern, entity.path)) {
+            if (matchCount >= maxEntries) {
+              truncatedMatches = true;
+              break;
+            }
+            matchCount++;
+            final config = DiscoveredConfig.fromPath(
+              filePath: entity.path,
+              scope: scope,
+              kind: target.kind,
+              format: target.format,
+              sourceLabel: descriptor.displayName,
+              descriptor: descriptor,
+              fromCatalog: true,
+            );
+            await addIfValid(config);
+          }
+        }
+      } on _GlobVisitCapExceeded {
+        // truncatedVisit already set; stop this glob target.
+      }
+
+      if (truncatedMatches) {
+        warnings.add(
+          DiscoveryWarning(
+            path: expectedPattern,
+            message:
+                'Glob enumeration hit the $maxEntries-entry cap; '
+                'some matches may have been omitted.',
+          ),
+        );
+      } else if (truncatedVisit) {
+        warnings.add(
+          DiscoveryWarning(
+            path: expectedPattern,
+            message:
+                'Glob enumeration hit the $maxEntitiesVisited-entity '
+                'visit cap; some matches may have been omitted.',
+          ),
+        );
+      }
+    } on Object catch (e) {
+      warnings.add(
+        DiscoveryWarning(
+          path: expectedPattern,
+          message: 'Error enumerating glob target: $e',
+        ),
+      );
+    }
+  }
+
+  /// Enumerates catalog user-scope targets for [request].
+  ///
+  /// When home is unresolved but `COPILOT_HOME` is set, only Copilot CLI user
+  /// targets are enumerated against that override directory.
+  Future<void> _discoverUserTargets({
+    required DiscoveryRequest request,
+    required bool enableClineRulesFallback,
+    required String? normalizedCopilotHomePath,
+    required Future<void> Function(
+      String expectedPattern,
+      ConfigTarget target,
+      ToolDescriptor descriptor,
+      ConfigLocationScope scope,
+    )
+    processTarget,
+  }) async {
+    final home = request.normalizedHomePath;
+    final copilotHome = normalizedCopilotHomePath;
+    if (home == null && copilotHome == null) return;
+
+    for (final descriptor in ToolDescriptorRegistry.catalog) {
+      for (final target in descriptor.targets) {
+        if (target.scope != ConfigLocationScope.user) continue;
+        if (home == null &&
+            !RegistryPathMatching.isCopilotCliUserTarget(target.relativePath)) {
+          continue;
+        }
+        if (!enableClineRulesFallback &&
+            RegistryPathMatching.isClineRulesFallbackTarget(
+              target.relativePath,
+            )) {
+          continue;
+        }
+        final expectedPattern = RegistryPathMatching.resolveUserTargetPattern(
+          normalizedHomePath: home,
+          relativePath: target.relativePath,
+          normalizedCopilotHomePath: copilotHome,
+        );
+        if (expectedPattern == null) continue;
+        await processTarget(
+          expectedPattern,
+          target,
+          descriptor,
+          ConfigLocationScope.user,
+        );
+      }
+    }
+  }
+
+  /// Resolves whether the Cline `~/Cline/Rules` fallback should be scanned.
+  ///
+  /// Explicit [DiscoveryRequest.enableClineRulesFallback] wins; otherwise
+  /// auto-detects by checking `~/Documents/Cline/Rules`.
+  Future<bool> _resolveClineRulesFallback(DiscoveryRequest request) async {
+    final override = request.enableClineRulesFallback;
+    if (override != null) return override;
+    final home = request.normalizedHomePath;
+    if (home == null) return true;
+    final documentsRules = Directory(
+      p.join(home, 'Documents', 'Cline', 'Rules'),
+    );
+    // Checking directory existence asynchronously avoids blocking the UI.
+    // ignore: avoid_slow_async_io
+    return !await documentsRules.exists();
+  }
+}
+
+/// Thrown from glob `handleError` when error events exhaust the visit cap.
+class _GlobVisitCapExceeded implements Exception {
+  const _GlobVisitCapExceeded();
 }

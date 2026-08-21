@@ -5,13 +5,29 @@ Internal / developer-facing changes that do not belong in the public
 
 ## Unreleased
 
+### Changed
+
+- **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
+  (no longer requires spawning a fresh agent to review each finished phase).
+- **Copilot discovery paths (CodeRabbit):** Discover `~/.copilot/settings.json` and
+  `.github/copilot/settings.json` / `settings.local.json` as editable settings;
+  also surface managed `config.json` when present (no hide/precedence rule).
+  Honor `COPILOT_HOME` for CLI user files (absolute paths only; relative/`~`
+  values are ignored with a shared warning helper). Discover Cline `~/Cline/Rules` only
+  when `~/Documents/Cline/Rules` is absent. Document Copilot loading shared
+  `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
+  make glob visit/match caps injectable on `DiscoveryService`; per-entry
+  `handleError` on recursive listing (errors count toward the visit cap;
+  stop at `maxGlobEntitiesVisited` without exceeding it;
+  prefer `FileSystemException.path` in warnings when available).
+
 ### Added
 
+- **`docs/PRODUCT_IDEAS.md`:** Long-form product/exploration notes; markdownlint-ignored
+  (same class as CHANGELOG — intentional long lines).
+- **Phase 10 plan completion notes** in `plans/active/phase_10_new_tools.md` and
+  related `TO_DO.md` backlog for GitHub workflows / review-tool configs.
 - **Registry invariant tests.** Added `test/catalog/registry_invariants_test.dart` to verify that `ConfigFormat.markdown` and `ConfigFormat.text` are never routed to the structured parser.
-- **Mandatory phase-completion independent review.** `AGENTS.md` now requires a fresh,
-  independent agent to review each completed phase (run `flutter analyze --fatal-infos` +
-  `flutter test`, inspect changed files, severity-rated verdict) before merge/archive. The
-  reviewer must not be the implementing agent(s).
 - **RecoveryHandler widget tests.** Added `test/screens/recovery_handler_test.dart`
   (12 cases) covering the corrupt-file recovery dialog via a harness mixin widget;
   filesystem setup and I/O flushes use `WidgetTester.runAsync` because `dart:io`

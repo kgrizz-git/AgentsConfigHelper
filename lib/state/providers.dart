@@ -25,7 +25,7 @@ ConfigService configService(Ref ref) {
 /// agent configuration files.
 @Riverpod(keepAlive: true)
 DiscoveryService discoveryService(Ref ref) {
-  return DiscoveryService();
+  return const DiscoveryService();
 }
 
 /// Provides the [IDiscoveryPreferencesStore] singleton used to persist
@@ -74,10 +74,14 @@ class DiscoveryController extends _$DiscoveryController {
     final homeDirRaw = ref.read(homeDirectoryResolverProvider)();
     final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
 
+    final copilotHomeRaw = nonEmptyEnvironmentVariable('COPILOT_HOME');
+    final copilotHome = absoluteNormalizedPath(copilotHomeRaw);
+
     final request = DiscoveryRequest(
       normalizedHomePath: homeDir,
       normalizedProjectRoots: prefs.projectRoots,
       manualPaths: prefs.manualFilePaths,
+      normalizedCopilotHomePath: copilotHome,
     );
 
     final result = await discoveryService.discoverConfigs(request);
@@ -92,17 +96,33 @@ class DiscoveryController extends _$DiscoveryController {
       ...result.warnings,
     ];
 
+    if (copilotHomeRaw != null && copilotHome == null) {
+      warnings.insert(
+        0,
+        DiscoveryWarning(
+          path: copilotHomeRaw,
+          message: ignoredNonAbsolutePathMessage(
+            sourceLabel: 'COPILOT_HOME',
+            raw: copilotHomeRaw,
+          ),
+        ),
+      );
+    }
+
     if (homeDir == null) {
       // Surface this rather than silently skipping all user-scope
       // discovery: an unresolvable home directory otherwise looks
       // identical to "nothing found".
       warnings.insert(
         0,
-        const DiscoveryWarning(
+        DiscoveryWarning(
           path: '',
-          message:
-              "Could not resolve the user's home directory; user-scope "
-              'configurations were not searched.',
+          message: copilotHome != null
+              ? "Could not resolve the user's home directory; non-Copilot "
+                    'user-scope configurations were not searched '
+                    '(COPILOT_HOME is still searched).'
+              : "Could not resolve the user's home directory; user-scope "
+                    'configurations were not searched.',
         ),
       );
     }

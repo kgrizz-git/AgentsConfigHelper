@@ -4,21 +4,49 @@
 - [ ] Address issues flagged by sonar cloud
 - [ ] institute semantic versioning
 - [ ] check and possibly clarify harness guidance about the use of TO_DO.md, "CHANGELOG.dev.md", "CHANGELOG.md"
+- [ ] Review [`docs/PRODUCT_IDEAS.md`](docs/PRODUCT_IDEAS.md) — a backlog of ideas to make the app more useful, full-featured, user-friendly, and intuitive. Later choose which to implement and write a plan in `plans/active/`.
+
+## Tool-support gaps (discovery expansion)
+
+Track candidates that are not agent/IDE tools but still have useful project- or user-level
+config files this app could discover and edit (raw-text / YAML / JSON / TOML as appropriate).
+Research exact paths and formats before adding `ToolId`s; prefer files users actually edit
+over generated CI caches.
+
+### GitHub Actions, workflows, and repo automation
+
+- [ ] **GitHub Actions workflows** — `.github/workflows/*.{yml,yaml}` (CI, release, PR
+      checks). Decide whether to treat each workflow as its own sidebar entry or group under
+      one “GitHub Actions” tool.
+- [ ] **Dependabot** — `.github/dependabot.yml` / `.github/dependabot.yaml`.
+- [ ] **Common `.github/` configs** — e.g. `CODEOWNERS`, `FUNDING.yml`,
+      `ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE*`, `labeler.yml`, `actionlint` config if
+      present. Pick a small high-value subset rather than every file under `.github/`.
+- [ ] **Renovate** (adjacent to Dependabot) — `renovate.json`,
+      `.github/renovate.json`, `renovate.json5` (if we want dependency-bot parity).
+
+### Code quality, security, and docs platforms
+
+Add first-class discovery only where there is a durable on-disk config (skip pure SaaS UI
+settings with no repo/global file).
+
+- [ ] **SonarQube / SonarCloud** — `sonar-project.properties`; also note scanner keys
+      embedded in `build.gradle` / `pom.xml` / CI env (may stay docs-only).
+- [ ] **CodeRabbit** — `.coderabbit.yaml` (repo root; org/UI layers are not files).
+- [ ] **Qodo / PR-Agent** — `.pr_agent.toml` (and any successor Qodo config filenames).
+- [ ] **DeepSource** — `.deepsource.toml`.
+- [ ] **Semgrep** — `.semgrep.yml` / `.semgrep.yaml`, `.semgrep/` rule packs; CI workflow
+      wrappers are covered under GitHub Actions if those are added.
+- [ ] **CodeQL** — `.github/codeql/codeql-config.yml` (and related query-suite configs);
+      workflow YAML may already be covered by Actions discovery.
+- [ ] **Mintlify** — `docs.json` / `mint.json` (docs site config).
+- [ ] **Other common adjacent configs (evaluate)** — `codecov.yml` / `.codecov.yml`,
+      `.pre-commit-config.yaml` (if not already discoverable), `.mdlrc` /
+      `.markdownlint.yaml`, `actionlint.yaml` — only add if they fit the product story.
 
 ## Follow-ups from Phase 5.5 (docs accuracy)
 
 - [ ] Add a README screenshot or GIF to `assets/screenshots/` (blocked on user — an agent cannot capture a running Flutter desktop GUI). README currently shows a placeholder badge.
-
-## Tool-support gaps (discovery expansion — see Phase 9 of the master plan)
-
-- [ ] Expand supported-tool catalog beyond the current 12 entries. Tracked after the
-      2026-08-16 review of registry vs. requested tools:
-  - [ ] **Kilo** — not in `tool_descriptor_registry.dart` or `docs/supported-tools.md`; add `ToolId` + config paths.
-  - [ ] **Cline** — not supported at all; add `ToolId` + config paths.
-  - [ ] **Promote VS Code / GitHub Copilot** from deferred docs-only to a first-class
-        `ToolDescriptor` (already stubbed in `docs/supported-tools.md`).
-  - [ ] **LM Studio** — not supported at all; add `ToolId` + config paths (local LLM runner
-        with model management and API server settings).
 
 ## Deferred from PR #5 review (Qodo / SonarCloud)
 
@@ -49,6 +77,21 @@
       disabled), so what remains is the Python-3.8-baseline assumption and any
       org-level Compliance-tool toggle. Both live at qodo.ai, not in this repo —
       nothing to change here unless the dashboard is the cause.
+
+## Deferred from Phase 10 / CodeRabbit Hy3 review
+
+- [ ] **Discovery `handleError` stack traces** — per-entry glob listing warnings
+      now prefer `FileSystemException.path` when present; still record `$error`
+      only (no stack). Consider logging `StackTrace` via the app logger
+      (if/when one exists) for harder permission/IO failures.
+- [ ] **Windows case-insensitivity tests** — non-glob matching uses `path.equals`
+      (platform-aware); globs use `caseSensitive: !Platform.isWindows`. Add an
+      injectable `caseInsensitive` override (like discovery caps) so CI on
+      ubuntu can exercise both Windows behaviors without a Windows runner.
+- [ ] **Copilot `config.json` write policy** — file is labeled managed CLI state
+      (auth/plugins) but remains a writable `structuredConfig` target. Decide
+      whether to warn, mark read-only in UI, or leave editable; track as a
+      follow-up (pre-existing risk, not introduced by Phase 10).
 
 ## AI Agent Integration
 

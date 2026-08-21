@@ -7,6 +7,20 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Registry Completeness Invariants', () {
+    test('every ToolId is represented in the catalog', () {
+      final catalogToolIds = ToolDescriptorRegistry.catalog
+          .map((d) => d.id)
+          .toSet();
+      for (final id in ToolId.values) {
+        expect(
+          catalogToolIds.contains(id),
+          isTrue,
+          reason:
+              'ToolId.${id.name} is missing from ToolDescriptorRegistry.catalog',
+        );
+      }
+    });
+
     test('ConfigFormat.markdown and text are never structuredConfig', () {
       for (final descriptor in ToolDescriptorRegistry.catalog) {
         for (final target in descriptor.targets) {
@@ -21,7 +35,6 @@ void main() {
     test('no duplicate (relativePath, scope, kind) targets', () {
       final seen = <String, ToolId>{};
       final allowedDuplicates = {
-        'AGENTS.md|ConfigLocationScope.project|ConfigSourceKind.instructionDocument',
         'CLAUDE.md|ConfigLocationScope.project|ConfigSourceKind.instructionDocument',
         'GEMINI.md|ConfigLocationScope.project|ConfigSourceKind.instructionDocument',
       };

@@ -8,6 +8,7 @@
 analyzer:
   exclude:
     - "lib/vendor/**"
+    - "tmp/**"
   language:
     strict-casts: true
   plugins:
