@@ -3,7 +3,7 @@
 Last reviewed: 2026-08-21
 Date: 2026-08-20
 Author: maintainers
-Status: ready to implement
+Status: in progress
 Linked issue/PR: n/a
 
 > This plan replaces the macOS portion of
@@ -22,6 +22,10 @@ ADR-002 accepts an **unsandboxed, source-build-only** workflow. Removing the
 Flutter template's App Sandbox entitlement lets the existing normal-home
 resolver read and write the real user home, which is sufficient for local
 builds.
+
+Removing App Sandbox does not grant Full Disk Access. Normal macOS file
+permissions and privacy controls can still deny discovery or writes in
+protected locations.
 
 This is deliberately small:
 

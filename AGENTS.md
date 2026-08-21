@@ -104,6 +104,8 @@ flutter build macos --release   # build release binary
 ## macOS distribution note
 
 The current macOS workflow is source-build-only and intentionally unsandboxed
-so the app can discover and edit real user configuration files. Do not create
-or publish a prebuilt macOS binary without revisiting
+so the app can discover and edit real user configuration files. Do not publish
+or distribute a prebuilt macOS artifact without revisiting
 [`docs/adr/ADR-002-macos-file-access.md`](docs/adr/ADR-002-macos-file-access.md).
+Local source-build outputs, including `flutter build macos --release`, remain
+supported.

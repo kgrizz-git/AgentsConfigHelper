@@ -37,6 +37,8 @@ AgentsConfigHelper is a local-only, cross-platform Flutter desktop app. It abstr
 - **Stateless Parsers**: Parsers must be pure, testable functions with no side effects.
 - **macOS file access**: The current local source-build workflow is
   unsandboxed so it can discover and edit configurations in the real user home.
-  It does not authorize a prebuilt macOS binary; signing/notarization or any
-  future sandboxed distribution requires a new decision. See
+  Removing App Sandbox does not grant Full Disk Access; macOS file permissions
+  and privacy controls can still deny protected locations. It does not
+  authorize a prebuilt macOS binary; signing/notarization or any future
+  sandboxed distribution requires a new decision. See
   [`docs/adr/ADR-002-macos-file-access.md`](docs/adr/ADR-002-macos-file-access.md).

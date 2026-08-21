@@ -34,6 +34,10 @@ permits the app to perform its core local filesystem workflow. The source
 builder chooses whether to trust and run the source; the app continues to show
 a diff before writes and creates timestamped backups first.
 
+Removing App Sandbox does not grant Full Disk Access. Normal macOS file
+permissions and privacy controls can still deny discovery or writes in
+protected locations.
+
 This decision does **not** authorize distributing an unsigned or ad-hoc-signed
 macOS binary. Do not publish a `.app`, `.dmg`, `.pkg`, or prebuilt release zip
 until this ADR is revisited with a Developer ID signing and notarization plan.

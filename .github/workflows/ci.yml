@@ -145,11 +145,20 @@ jobs:
             fi
           done
           project_file="macos/Runner.xcodeproj/project.pbxproj"
-          if grep -Fq 'com.apple.Sandbox' "$project_file"; then
+          if [ ! -f "$project_file" ] || [ ! -r "$project_file" ]; then
+            echo "::error file=$project_file::Project file is missing or unreadable"
+            failed=1
+          elif grep -Fq -- 'com.apple.Sandbox' "$project_file"; then
             echo "::error file=$project_file::App Sandbox capability metadata must be removed"
             failed=1
           else
-            echo "OK: $project_file omits App Sandbox capability metadata"
+            grep_status=$?
+            if [ "$grep_status" -eq 1 ]; then
+              echo "OK: $project_file omits App Sandbox capability metadata"
+            else
+              echo "::error file=$project_file::Unable to inspect project metadata"
+              failed=1
+            fi
           fi
           exit "$failed"
 
