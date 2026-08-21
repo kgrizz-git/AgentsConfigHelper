@@ -109,7 +109,7 @@ commits, regenerate `lib/state/providers.g.dart`, then run the full gate.
 - [ ] `flutter analyze --fatal-infos`
 - [ ] `flutter test`
 - [ ] `dart format --output=none --set-exit-if-changed .`
-- [ ] `dart run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning`
+- [ ] `flutter pub run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning`
 - [ ] Pull-request CI, including the macOS/Linux/Windows release-build matrix
 - [ ] Check whether the upgrade changes runtime behavior or security posture;
       update `CHANGELOG.md` when it does, otherwise use `CHANGELOG.dev.md`.
