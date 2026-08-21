@@ -7,17 +7,14 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
-- **Ox Alpha Free plan review folded into ADR-002 + active plan:** Mechanized
-  Hardened Runtime / bundle-ID / FFI macOS-host test / prefs migration /
-  parser-hardening compensating controls; Phase 1B split (1B-i resolver, 1B-ii
-  entitlements). Canonical review:
-  `plans/assessments/macos-execution-plan-ox-alpha-free-review-2026-08-21T003700-0400.md`
-  (moved out of gitignored `tmp/` so durable docs do not cite scratch paths).
 - **`docs/adr/ADR-002-macos-file-access.md`:** Proposed ADR comparing macOS
   sandbox Options A/B/C (and rejected dual-variant D), including build-time
   temporary-exception lists vs runtime security-scoped bookmarks; preferred
   near-term Option C for source builders / Developer ID distribution.
   Linked from `ARCHITECTURE.md`.
+- **`plans/active/macos-execution-and-dependency-upgrades.md`:** Phased plan for
+  real-home discovery, Option C entitlements/Hardened Runtime controls, and
+  staged dependency upgrades (mechanized compensating controls in the ADR/plan).
 
 ### Changed
 

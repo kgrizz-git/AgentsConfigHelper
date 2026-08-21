@@ -5,10 +5,6 @@ Date: 2026-08-21
 Status: proposed
 Deciders: maintainers
 Related plan: [`plans/active/macos-execution-and-dependency-upgrades.md`](../../plans/active/macos-execution-and-dependency-upgrades.md)
-Related assessments:
-
-- [`plans/assessments/macos-execution-and-dependency-upgrades-plan-assessment-2026-08-20T235617-0400.md`](../../plans/assessments/macos-execution-and-dependency-upgrades-plan-assessment-2026-08-20T235617-0400.md)
-- [`plans/assessments/macos-execution-plan-ox-alpha-free-review-2026-08-21T003700-0400.md`](../../plans/assessments/macos-execution-plan-ox-alpha-free-review-2026-08-21T003700-0400.md) (Ox Alpha Free; fold M1–M4 into plan/ADR)
 
 ## Context
 

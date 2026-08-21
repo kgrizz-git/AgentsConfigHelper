@@ -45,7 +45,6 @@ Quick navigation guide for AgentsConfigHelper's documentation. Use this to find 
 
 - [`plans/active/`](../plans/active/) — Active implementation plans
 - [`plans/archive/`](../plans/archive/) — Completed plans (history)
-- [`plans/assessments/`](../plans/assessments/) — Timestamped plan reviews (historical; do not rewrite in place without a dated update note)
 - [`TO_DO.md`](../TO_DO.md) — Deferred items and follow-ups
 - [`CHANGELOG.md`](../CHANGELOG.md) — User-facing changes
 - [`CHANGELOG.dev.md`](../CHANGELOG.dev.md) — Developer-only changes
