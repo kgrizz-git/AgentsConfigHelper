@@ -3,7 +3,7 @@
 Last reviewed: 2026-08-21
 Date: 2026-08-20
 Author: maintainers (revised from assessments under `plans/assessments/` and
-`tmp/macos-execution-plan-ox-alpha-free-review-2026-08-21T003700-0400.md`)
+`plans/assessments/macos-execution-plan-ox-alpha-free-review-2026-08-21T003700-0400.md`)
 Status: draft
 Linked issue/PR: n/a
 
