@@ -13,9 +13,9 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Changed
 
-- **Flutter 3.47.1 / Dart 3.13.1 toolchain:** Updated CI and the app SDK floor;
-  upgraded the compatible Riverpod/analyzer family; regenerated providers; and aligned
-  macOS and analyzer configuration with current Flutter tooling.
+- **Flutter 3.47.1 / Dart 3.13.1 toolchain:** Updated CI; upgraded the compatible
+  Riverpod/analyzer family; regenerated providers; and aligned analyzer configuration
+  with current Flutter tooling.
 - **Dependencies (compatible lockfile update):** Ran `flutter pub upgrade`
   without touching `pubspec.yaml` constraints, bumping the transitive dev-only
   test package `vm_service` 15.2.0 → 15.3.0 (the sole `Upgradable` package at

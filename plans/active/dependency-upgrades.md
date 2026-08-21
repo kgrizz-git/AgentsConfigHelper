@@ -42,8 +42,8 @@ direct and development dependencies up to date.
 
 ### Direct-package target inventory (Phase 2 candidates)
 
-Recorded from `flutter pub outdated` at baseline. No constraint in
-`pubspec.yaml` was changed in Phase 1, so every entry below is still pending.
+Recorded from `flutter pub outdated` at baseline. Phase 2 upgrades are now complete;
+the table below shows the initial baseline state before the Phase 2 migration.
 
 | Package | Current | Resolvable | Latest | Notes |
 | --- | --- | --- | --- | --- |
