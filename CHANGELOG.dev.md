@@ -5,6 +5,17 @@ Internal / developer-facing changes that do not belong in the public
 
 ## Unreleased
 
+### Added
+
+- **`docs/adr/ADR-002-macos-file-access.md`:** Proposed ADR comparing macOS
+  sandbox Options A/B/C (and rejected dual-variant D), including build-time
+  temporary-exception lists vs runtime security-scoped bookmarks; preferred
+  near-term Option C for source builders / Developer ID distribution.
+  Linked from `ARCHITECTURE.md`.
+- **`plans/active/macos-execution-and-dependency-upgrades.md`:** Phased plan for
+  real-home discovery, Option C entitlements/Hardened Runtime controls, and
+  staged dependency upgrades (mechanized compensating controls in the ADR/plan).
+
 ### Changed
 
 - **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
