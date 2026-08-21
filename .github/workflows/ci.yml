@@ -113,6 +113,39 @@ jobs:
           sarif_file: semgrep.sarif
           category: semgrep
 
+  macos-entitlements:
+    name: macOS entitlements (no App Sandbox)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Assert no com.apple.security.app-sandbox in entitlements
+        run: |
+          set -euo pipefail
+          sandbox_key="com.apple.security.app-sandbox"
+          failed=0
+          for entitlements in macos/Runner/DebugProfile.entitlements macos/Runner/Release.entitlements; do
+            if [ ! -f "$entitlements" ]; then
+              echo "::error file=$entitlements::Missing entitlements file"
+              failed=1
+              continue
+            fi
+            if ! plutil -lint "$entitlements" >/dev/null; then
+              echo "::error file=$entitlements::Entitlements file is not a valid property list"
+              failed=1
+              continue
+            fi
+            if plutil -p "$entitlements" 2>/dev/null | grep -qx "  \"$sandbox_key\" => .*"; then
+              echo "::error file=$entitlements::App Sandbox must be removed ($sandbox_key present)"
+              failed=1
+            else
+              echo "OK: $entitlements omits $sandbox_key"
+            fi
+          done
+          exit "$failed"
+
   build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
