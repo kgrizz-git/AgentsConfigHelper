@@ -7,8 +7,9 @@ Status: in progress
 Linked issue/PR: n/a
 
 > This plan replaces the macOS portion of
-> `macos-execution-and-dependency-upgrades.md`. Dependency work now lives in
-> `plans/active/dependency-upgrades.md` so it cannot delay the local macOS fix.
+> [`macos-execution-and-dependency-upgrades.md`](../archive/macos-execution-and-dependency-upgrades.md).
+> Dependency work now lives in `plans/active/dependency-upgrades.md` so it
+> cannot delay the local macOS fix.
 
 ## Goal
 
