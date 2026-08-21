@@ -7,6 +7,7 @@ import 'package:agents_config_helper/services/discovery_preferences_store.dart';
 import 'package:agents_config_helper/services/discovery_service.dart';
 import 'package:agents_config_helper/services/home_directory_resolver.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -182,7 +183,7 @@ class DiscoveryController extends _$DiscoveryController {
 
 /// Provides the list of backups on disk for the config at the given file
 /// path, sorted most-recent first.
-final AutoDisposeFutureProviderFamily<List<File>, String> backupListProvider =
+final FutureProviderFamily<List<File>, String> backupListProvider =
     FutureProvider.autoDispose.family<List<File>, String>((
       ref,
       filePath,

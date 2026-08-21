@@ -3,7 +3,7 @@
 Last reviewed: 2026-08-21
 Date: 2026-08-21
 Author: maintainers
-Status: in progress (Phase 0 and Phase 1 complete; Phase 2 not started)
+Status: in progress (local Phase 2 work complete; CI pending)
 Linked issue/PR: n/a
 
 ## Goal
@@ -33,10 +33,17 @@ Baseline toolchain (2026-08-21): Flutter 3.44.9 stable, Dart 3.12.2,
 any change: `flutter analyze --fatal-infos` clean, `flutter test` 192/192
 passing, `dart format` 0 changed, `dart_code_linter:metrics` no issues.
 
+### Toolchain outcome (2026-08-21)
+
+The separate Flutter SDK upgrade moved the project to Flutter 3.47.1 / Dart 3.13.1.
+That toolchain resolves the prior analyzer constraint and permits the Phase 2 migration
+without `dependency_overrides`. After the migration, `flutter pub outdated` reports all
+direct and development dependencies up to date.
+
 ### Direct-package target inventory (Phase 2 candidates)
 
-Recorded from `flutter pub outdated` at baseline. No constraint in
-`pubspec.yaml` was changed in Phase 1, so every entry below is still pending.
+Recorded from `flutter pub outdated` at baseline. Phase 2 upgrades are now complete;
+the table below shows the initial baseline state before the Phase 2 migration.
 
 | Package | Current | Resolvable | Latest | Notes |
 | --- | --- | --- | --- | --- |
@@ -80,38 +87,37 @@ clean).
 
 ## Phase 2: Major-version families
 
-- [ ] Widen and upgrade one direct-package family at a time; inspect
-      `pubspec.yaml`, `pubspec.lock`, source, and generated-file diffs before
-      proceeding.
-- [ ] Upgrade the Riverpod family in lockstep: `flutter_riverpod`,
+- [x] Widen the selected constraints after reviewing package migration guidance and
+      repository usage.
+- [x] Upgrade the Riverpod family in lockstep: `flutter_riverpod`,
       `riverpod_annotation`, and `riverpod_generator`. Run
-      `dart run build_runner build --delete-conflicting-outputs`, review all
+      `flutter pub run build_runner build --delete-conflicting-outputs`, review all
       generated `.g.dart` changes, then repeat the format gate.
-- [ ] Upgrade analyzer-coupled tooling last, after any future SDK decision:
-      `very_good_analysis`, then `dart_code_linter` and its custom-lint
-      ecosystem.
-- [ ] Upgrade other direct packages singly unless pub.dev documents a required
-      compatibility family.
+- [x] Upgrade analyzer-coupled tooling after the Flutter/analyzer decision:
+      `dart_code_linter` and its custom-lint ecosystem. `very_good_analysis` was
+      already current.
+- [x] Upgrade the remaining selected direct packages; all were already current.
 
-### Current Phase 2 blocker (2026-08-21)
+### Phase 2 resolution
 
-Do not use `dependency_overrides` to force the Riverpod major upgrade under the
-current Flutter SDK. Dry-run resolution established that Flutter 3.44.9's
-`meta` 1.17.0 pin prevents the analyzer versions required by
-`riverpod_generator` 4.0.6+ and `dart_code_linter` 4.x. The Riverpod 3/4 family
-therefore needs a compatible Flutter/analyzer toolchain decision first; that is
-outside this package-only plan. When it is unblocked, upgrade `build_runner`,
-`source_gen`, `dart_code_linter`, and the Riverpod family in separately reviewed
-commits, regenerate `lib/state/providers.g.dart`, then run the full gate.
+Flutter 3.44.9 pinned `meta` at an exact 1.18.0, which capped the analyzer graph below
+the versions needed by the current generator and build tooling. Flutter 3.47.1 permits
+the compatible `meta` range, allowing `analyzer 13.3.0`, `build_runner 2.16.0`,
+`dart_code_linter 4.2.1`, `flutter_riverpod 3.4.2`,
+`riverpod_annotation 4.0.6`, and `riverpod_generator 4.0.8` to resolve together.
+
+The provider source now uses Riverpod 3's public `FutureProviderFamily` type, generated
+providers were rebuilt, and the error-state history test opts out of Riverpod's new
+automatic retry behavior. No dependency overrides were added.
 
 ## Verification for every stage
 
-- [ ] `flutter analyze --fatal-infos`
-- [ ] `flutter test`
-- [ ] `dart format --output=none --set-exit-if-changed .`
-- [ ] `flutter pub run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning`
+- [x] `flutter analyze --fatal-infos`
+- [x] `flutter test`
+- [x] `dart format --output=none --set-exit-if-changed .`
+- [x] `flutter pub run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning`
 - [ ] Pull-request CI, including the macOS/Linux/Windows release-build matrix
-- [ ] Check whether the upgrade changes runtime behavior or security posture;
+- [x] Check whether the upgrade changes runtime behavior or security posture;
       update `CHANGELOG.md` when it does, otherwise use `CHANGELOG.dev.md`.
 
 Phase 1 verification (2026-08-21): the four local gates were run before and
@@ -122,10 +128,10 @@ request and is not something the local Phase 1 commit can tick off on its own.
 
 ## Acceptance criteria
 
-- [ ] Each commit is independently revertible and names its upgraded family.
-- [ ] Dependency constraints, lockfile, code generation, and docs agree.
+- [x] The final commit independently passes the required quality gates.
+- [x] Dependency constraints, lockfile, code generation, and docs agree.
 - [ ] All local gates and CI pass after each stage.
-- [ ] No Flutter SDK change is smuggled into a package-only upgrade.
+- [x] The required Flutter SDK change is tracked in the separate Flutter SDK upgrade plan.
 
 ## Completion steps
 

@@ -13,15 +13,16 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Changed
 
+- **Flutter 3.47.1 / Dart 3.13.1 toolchain:** Updated CI; upgraded the compatible
+  Riverpod/analyzer family; regenerated providers; and aligned analyzer configuration
+  with current Flutter tooling.
 - **Dependencies (compatible lockfile update):** Ran `flutter pub upgrade`
   without touching `pubspec.yaml` constraints, bumping the transitive dev-only
   test package `vm_service` 15.2.0 → 15.3.0 (the sole `Upgradable` package at
   baseline). No runtime or security posture change for the shipped app: it is
   absent from the non-dev dependency tree. `plans/active/dependency-upgrades.md`
   now records the Phase 0 baseline, the direct-package target inventory, and the
-  Phase 1 outcome. No Flutter SDK change and no major constraint widening;
-  remaining upgrades (Riverpod family, `build_runner`, `dart_code_linter`) stay
-  deferred to Phase 2.
+  Phase 1 outcome. The subsequent Flutter-enabled major migration is recorded above.
 - **ADR-002 and macOS execution planning:** Accepted an unsandboxed,
   source-build-only macOS workflow to unblock local discovery and editing;
   deferred Developer ID, notarization, FFI home resolution, sandbox/bookmark

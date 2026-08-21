@@ -27,6 +27,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Flutter, Dart, and macOS compatibility:** Upgraded to Flutter 3.47.1 and Dart
+  3.13.1 as the minimum supported versions. Local macOS builds now require macOS 12
+  (Monterey) or later; macOS 10.15 and 11 are no longer supported.
 - **macOS local source builds:** Removed App Sandbox confinement so the app can
   discover, edit, and back up configurations in the real user home and project
   directories. The project does not publish a prebuilt macOS binary in this

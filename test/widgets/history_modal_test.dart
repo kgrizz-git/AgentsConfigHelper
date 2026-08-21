@@ -102,6 +102,7 @@ void main() {
     testWidgets('shows error when provider fails', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          retry: (_, _) => null,
           overrides: [
             backupListProvider(config.filePath).overrideWith(
               (_) async => throw Exception('Disk error'),

@@ -9,6 +9,15 @@ analyzer:
   exclude:
     - "lib/vendor/**"
     - "tmp/**"
+    # Maintainer-approved in plans/active/flutter-sdk-upgrade.md: Flutter-generated
+    # platform scaffolding and build outputs are not application Dart to lint.
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
   language:
     strict-casts: true
   plugins:
