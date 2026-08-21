@@ -121,7 +121,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Assert no com.apple.security.app-sandbox in entitlements
+      - name: Assert App Sandbox is absent from entitlements and project metadata
         run: |
           set -euo pipefail
           sandbox_key="com.apple.security.app-sandbox"
@@ -144,6 +144,13 @@ jobs:
               echo "OK: $entitlements omits $sandbox_key"
             fi
           done
+          project_file="macos/Runner.xcodeproj/project.pbxproj"
+          if grep -Fq 'com.apple.Sandbox' "$project_file"; then
+            echo "::error file=$project_file::App Sandbox capability metadata must be removed"
+            failed=1
+          else
+            echo "OK: $project_file omits App Sandbox capability metadata"
+          fi
           exit "$failed"
 
   build:

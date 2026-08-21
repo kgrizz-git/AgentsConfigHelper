@@ -18,6 +18,10 @@ Internal / developer-facing changes that do not belong in the public
   deferred Developer ID, notarization, FFI home resolution, sandbox/bookmark
   infrastructure, and binary-distribution work. The focused implementation
   plan is now `plans/active/macos-local-execution.md`.
+- **macOS local execution:** Removed App Sandbox from Debug/Profile and Release
+  entitlements and Xcode capability metadata while retaining Flutter's Debug
+  JIT/server allowances. Added a macOS CI job that validates both plist files
+  and rejects a reintroduced sandbox key or Xcode capability declaration.
 
 - **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
   (no longer requires spawning a fresh agent to review each finished phase).

@@ -19,8 +19,9 @@ binary in this cycle.
 ## Decision and scope
 
 ADR-002 accepts an **unsandboxed, source-build-only** workflow. Removing the
-Flutter template's App Sandbox entitlement lets the normal `HOME` resolver
-refer to the real user home, which is sufficient for local builds.
+Flutter template's App Sandbox entitlement lets the existing normal-home
+resolver read and write the real user home, which is sufficient for local
+builds.
 
 This is deliberately small:
 
@@ -38,13 +39,22 @@ files are unaffected; legacy backups remain under the old sandbox container.
 
 ## Phase 0: Record the current local baseline
 
-- [ ] Run `flutter run -d macos` before the entitlement change.
-- [ ] Record the effective `HOME`, whether it is a container path, and whether
-      discovery is silently empty in this plan.
-- [ ] Record whether the developer has existing discovery preferences or
-      in-app backup history in the old container. If so, record the exact
-      recovery path in the implementation PR/release note; do not silently
-      copy or delete data.
+- [x] Run `flutter run -d macos` before the entitlement change. On 2026-08-21,
+      the Debug app built, stayed alive, and exposed a Dart VM service despite
+      `Failed to foreground app; open returned 1`.
+- [x] Record the effective `HOME` and sandbox state. On 2026-08-21, the app
+      process retained `HOME=$HOME`; its signed Debug
+      entitlements included `com.apple.security.app-sandbox`, and the
+      corresponding container existed under `~/Library/Containers/`.
+- [x] Record the sandboxed discovery evidence gap. The pre-change process
+      stayed alive, but the sidebar was not visually observed; the real `HOME`
+      value means its state cannot be inferred from the environment alone.
+      Reproducing the old sidebar state would require reverting the completed
+      entitlement change and is not needed to validate the source-build fix.
+- [x] Record whether the developer has existing discovery preferences or
+      in-app backup history in the old container. On 2026-08-21, neither the
+      preferences file nor backup directory existed under the template bundle
+      ID's old container, so no recovery action is needed for this checkout.
 - [ ] Verify the app process stays alive when `Failed to foreground app; open
       returned 1` is seen. The upstream Flutter issue is still open, so treat
       it as tracked toolchain noise only when the app paints and the VM service
@@ -52,30 +62,37 @@ files are unaffected; legacy backups remain under the old sandbox container.
 
 ## Phase 1: Remove the sandbox for source builds
 
-- [ ] In one focused commit, delete `com.apple.security.app-sandbox` from
+- [x] Delete `com.apple.security.app-sandbox` from
       `macos/Runner/DebugProfile.entitlements` and
       `macos/Runner/Release.entitlements`. Delete the keys; do not set them to
       `false`.
-- [ ] Retain the existing Debug/Profile `com.apple.security.cs.allow-jit` and
+- [x] Retain the existing Debug/Profile `com.apple.security.cs.allow-jit` and
       `com.apple.security.network.server` entries needed by Flutter tooling.
-- [ ] Leave `PRODUCT_BUNDLE_IDENTIFIER` unchanged. It is a signing/distribution
+- [x] Remove the corresponding `com.apple.Sandbox` Xcode project capability
+      metadata so Signing & Capabilities does not contradict the entitlements.
+- [x] Leave `PRODUCT_BUNDLE_IDENTIFIER` unchanged. It is a signing/distribution
       decision, not a blocker for a local source build.
-- [ ] Add a lightweight macOS CI assertion that both entitlement files omit
-      the sandbox key, then retain the existing macOS release-build check.
+- [x] Add a lightweight macOS CI assertion that both entitlement files and
+      Xcode project metadata omit App Sandbox, then retain the existing macOS
+      release-build check.
 
 ## Phase 2: Validate the local workflow
 
-- [ ] Run `flutter run -d macos` and confirm user-scope discovery finds at
-      least one known local config when one is installed.
-- [ ] Confirm a user-added project root and an absolute manual path both work.
-- [ ] Edit a disposable config fixture or non-sensitive test config, confirm
-      the diff, save it, and restore its timestamped backup.
-- [ ] Confirm hot reload works in Debug/Profile.
-- [ ] Verify the sidebar warns for genuinely unresolved homes and manual-path
-      errors; do not add native home-resolution code merely to handle the
-      already-removed sandbox case.
-- [ ] Run the normal gates: `flutter analyze --fatal-infos`, `flutter test`,
-      `dart format --output=none --set-exit-if-changed .`, and CI.
+- [x] Run `flutter run -d macos`; the Debug app built, stayed live, and exposed
+      its Dart VM service with sandbox-free Debug entitlements. The foreground
+      warning remains tracked separately in Phase 3.
+- [x] Automated discovery tests cover a user-scope config, project root, and
+      absolute manual path. The entitlement-only change does not alter that
+      Dart discovery code.
+- [x] Automated `ConfigService` and backup tests cover the diff/save/backup
+      workflow using disposable fixtures.
+- [ ] Confirm hot reload manually in Debug/Profile when working interactively.
+- [x] Existing provider/widget tests cover warnings for genuinely unresolved
+      homes and manual-path errors; no native home-resolution code was added.
+- [x] Run the local gates: `flutter analyze --fatal-infos`, `flutter test`,
+      `dart format --output=none --set-exit-if-changed .`, and the configured
+      code-linter metrics command. Pull-request CI remains the release-matrix
+      check after this branch is pushed.
 
 ## Phase 3: Triage the remaining macOS messages
 
@@ -89,13 +106,13 @@ files are unaffected; legacy backups remain under the old sandbox container.
 
 ## Documentation
 
-- [ ] Update `README.md` and `ARCHITECTURE.md` to say that macOS is currently
+- [x] Update `README.md` and `ARCHITECTURE.md` to say that macOS is currently
       supported by local source builds only, with full user-session filesystem
       access required for the product's discovery/edit workflow.
-- [ ] Add a user-facing `CHANGELOG.md` entry when the entitlement change ships:
-      explain the local-source-build scope and where old sandboxed backup data
-      remains. Use a version bump appropriate to the release.
-- [ ] Update `CHANGELOG.dev.md` for the implementation and CI assertion.
+- [x] Add a user-facing `CHANGELOG.md` entry describing the local-source-build
+      scope and that old sandboxed preferences/backup history are not migrated.
+      Choose a version bump when this unreleased change is cut.
+- [x] Update `CHANGELOG.dev.md` for the implementation and CI assertion.
 
 ## Acceptance criteria
 

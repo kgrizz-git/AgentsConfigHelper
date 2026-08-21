@@ -10,10 +10,15 @@ Related plan: [`plans/active/macos-local-execution.md`](../../plans/active/macos
 
 AgentsConfigHelper needs to discover, edit, and back up configuration files in
 the user's real home directory, user-selected project roots, and manually-added
-absolute paths. Flutter's macOS template enables App Sandbox, which changes
-`HOME` to the application container. The existing environment-based resolver
-then scans that empty container and presents an indistinguishable “No
-configurations found” result.
+absolute paths. Flutter's macOS template enables App Sandbox, which prevents
+the app from reading or writing most of those locations. The existing discovery
+flow can present an indistinguishable “No configurations found” result when
+filesystem access is denied.
+
+The recorded 2026-08-21 Debug baseline retained the real value of `HOME` in the
+app process while the signed app still carried the sandbox entitlement. The
+failure therefore cannot safely be diagnosed from `HOME` alone; the immediate
+fix is to remove the filesystem restriction for the local source-build scope.
 
 The immediate need is for maintainers and contributors to run the app locally
 from source. No Developer ID certificate is available and this project will not
@@ -24,7 +29,7 @@ publish a prebuilt macOS app in this cycle.
 For the current **source-build-only** workflow, remove App Sandbox from the
 Debug/Profile and Release entitlement files.
 
-This lets the existing normal `HOME` resolution address the real user home and
+This lets the existing normal-home resolution access the real user home and
 permits the app to perform its core local filesystem workflow. The source
 builder chooses whether to trust and run the source; the app continues to show
 a diff before writes and creates timestamped backups first.
