@@ -158,8 +158,8 @@ jobs:
           else
             while IFS= read -r entitlement_path; do
               case "$entitlement_path" in
-                /*|*'$('*)
-                  echo "::error file=$project_file::Unsupported CODE_SIGN_ENTITLEMENTS path: $entitlement_path"
+                ""|/*|*..*|*[!A-Za-z0-9._/-]*)
+                  echo "::error file=$project_file::Unsupported CODE_SIGN_ENTITLEMENTS path"
                   failed=1
                   continue
                   ;;
@@ -187,9 +187,7 @@ jobs:
                   failed=1
                 fi
               fi
-            done <<EOF
-          $entitlements_paths
-          EOF
+            done <<<"$entitlements_paths"
           fi
           exit "$failed"
 
