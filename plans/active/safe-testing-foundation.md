@@ -96,8 +96,15 @@ mistaken for credentials.
       edited config, backup, and preference files are actually written.
 - [ ] Decide whether `HOME` alone confines all writes. If it does not, design the single
       test-root override before creating a routine smoke command.
-- [ ] Define the test-root containment rule using normalized absolute paths and
-      platform-aware separators; avoid prefix-only path checks.
+- [ ] Define and implement one canonical/no-follow containment boundary. Create a private
+      root owned by the current user, canonicalize the root and each existing target
+      ancestor, and reject a target unless it is below the canonical root and no path
+      component is a symlink. Recheck after creating parents and immediately before a
+      save, backup, or restore; use platform no-follow file primitives for the final
+      mutation where Dart's path checks alone cannot prevent a symlink-swap race.
+- [ ] Add containment tests for a symlinked root, a symlinked target, a symlinked parent,
+      and a symlink introduced between validation and mutation. Each must be rejected
+      without creating, overwriting, backing up, or restoring an outside path.
 
 ### Phase 1: Build the fixture matrix
 

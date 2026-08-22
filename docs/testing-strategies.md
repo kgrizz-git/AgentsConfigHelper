@@ -31,8 +31,9 @@ are later validation layers for native desktop and permission behavior.
 Recommended sequence:
 
 1. Build a fixture matrix and automated parser/widget regression tests.
-2. Document and use the disposable `HOME` staging-home workflow for daily manual smoke
-   tests, including discovery, edit, diff, backup, and restore checks.
+2. Complete the testing-foundation plan's Phase 0 containment gate. Only then document
+   and use a disposable `HOME` staging-home workflow for daily manual smoke tests,
+   including discovery, edit, diff, backup, and restore checks.
 3. Add an explicit test-only home override or dry-run/write guard only after its service
    boundary covers saves **and** restores; it must reject paths outside the test root.
 4. Use a dedicated user account or VM snapshots for platform-specific, real-world
@@ -50,7 +51,6 @@ AgentsConfigHelper is a Flutter desktop app that reads and writes real configura
 |----------|------------|------------------|---------|------|
 | Virtual Machines | Low | Medium | High | Free (with VirtualBox/VMware) |
 | Docker Containers | Very Low | Low | Medium | Free |
-| macOS Sandbox Profile | Low | High | High | Free |
 | Fake Sample Files | None | Low | Low | Free |
 | Git Version Control | Low | Low | High | Free |
 | Dedicated Test User | Low | Medium | High | Free |
@@ -88,7 +88,7 @@ AgentsConfigHelper is a Flutter desktop app that reads and writes real configura
 # Using VirtualBox (free)
 # Create macOS, Windows, and Linux VMs
 # Install Flutter SDK in each VM
-# Copy real config files into VM for testing
+# Seed the VM from token-free fixtures or carefully reviewed, sanitized reproductions
 # Take snapshots before each test session
 
 # Snapshot workflow
@@ -140,56 +140,7 @@ RUN flutter pub get
 
 ---
 
-### 3. macOS Sandbox Profile
-
-**Approach:** Create a custom macOS sandbox profile that restricts file access to specific test directories.
-
-**Pros:**
-
-- Native macOS testing experience
-- Fine-grained access control
-- Can allow access only to test config files
-- Maintains app's intended security model
-- No performance overhead
-
-**Cons:**
-
-- Complex setup and configuration
-- Requires understanding of macOS sandbox syntax
-- Need to sign and provision profiles
-- Debugging sandbox violations can be tricky
-- Only works on macOS
-
-**Implementation:**
-
-```xml
-<!-- com.agentsconfighelper.test.sb -->
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>allow-file-read</key>
-    <array>
-        <string>$HOME/test/configs/**</string>
-    </array>
-    <key>allow-file-write</key>
-    <array>
-        <string>$HOME/test/configs/**</string>
-    </array>
-    <key>deny-file-read</key>
-    <array>
-        <string>~/.config/**</string>
-        <string>~/Library/**</string>
-    </array>
-</dict>
-</plist>
-```
-
-**Best for:** macOS-specific testing, security validation, production-like environment.
-
----
-
-### 4. Fake Sample Files (Recommended for Initial Testing)
+### 3. Fake Sample Files (Recommended for Initial Testing)
 
 **Approach:** Create synthetic config files with dummy data for parser and UI testing.
 
@@ -217,7 +168,7 @@ RUN flutter pub get
 {
   "maxTokens": 4096,
   "temperature": 0.7,
-  "apiKey": "sk-test-dummy-key-for-testing-only",
+  "endpoint": "https://example.invalid/agent-service",
   "allowedTools": ["grep", "read", "write"],
   "rules": [
     "Always backup before editing",
@@ -243,9 +194,10 @@ RUN flutter pub get
 
 ---
 
-### 5. Git Version Control with Branches
+### 4. Git Version Control with Branches
 
-**Approach:** Use Git branches to manage config file changes, allowing easy rollback.
+**Approach:** Use Git branches to review changes to synthetic fixtures and test code.
+It is not a safety mechanism for personal configurations.
 
 **Pros:**
 
@@ -258,36 +210,27 @@ RUN flutter pub get
 
 **Cons:**
 
-- Requires discipline to commit before tests
-- Doesn't prevent file modification
-- Only works if config files are in git
-- Real config files shouldn't be in git (security risk)
+- Does not prevent file modification
+- Is useful only for repository-owned, token-free fixtures
+- Personal config files and credentials must never be added to a repository
 - Manual process (not automated)
 
 **Implementation:**
 
 ```bash
-# Create test branch for config experiments
-git checkout -b test-config-edit-$(date +%Y%m%d)
+# Create a branch for fixture/test changes.
+git switch -c test-fixture-update
 
-# Copy real config to test location (if not already tracked)
-cp ~/.config/claude/config.json test/configs/
-
-# Commit baseline
-git add test/configs/
-git commit -m "Baseline config before testing"
-
-# Run app and make changes
-# If successful: commit and merge
-# If failed: reset to baseline
-git reset --hard HEAD
+# Add or adjust only synthetic, token-free files under test/fixtures/.
+# Review the diff before committing; do not copy personal config files into the repository.
+git diff -- test/fixtures/
 ```
 
 **Best for:** Tracking changes, experimental features, manual testing workflows.
 
 ---
 
-### 6. Dedicated Test User Account
+### 5. Dedicated Test User Account
 
 **Approach:** Create a separate user account on your system specifically for testing.
 
@@ -311,22 +254,16 @@ git reset --hard HEAD
 **Implementation:**
 
 ```bash
-# macOS
-sudo sysadminctl -addUser testuser -password testpass
-sudo sysadminctl -addUser testuser -admin  # if needed
-
-# Switch to testuser and install Flutter
-su - testuser
-git clone https://github.com/flutter/flutter.git
-# Install test agent configs in testuser's home
-# Run app as testuser
+# Create a standard, non-admin test account through macOS System Settings and set its
+# password interactively. Do not put account credentials in shell history or documents.
+# Sign in as that account, seed its home from token-free fixtures, then run the app.
 ```
 
 **Best for:** Realistic testing without VM overhead, user-specific behavior testing.
 
 ---
 
-### 7. System Snapshot/Cloning (Recommended for Safety)
+### 6. System Snapshot/Cloning (Recommended for Safety)
 
 **Approach:** Use system snapshot tools to capture state before testing and restore if needed.
 
@@ -353,20 +290,16 @@ git clone https://github.com/flutter/flutter.git
 # macOS Time Machine local snapshots
 tmutil localsnapshot
 # Run tests
-# If issues: restore from snapshot
-tmutil restore
-
-# Or use APFS snapshots for specific directories
-sudo apfs snapshot create "$HOME/test" -t "before-agents-config-test"
-# Run tests
-sudo apfs snapshot delete "$HOME/test" -t "before-agents-config-test"
+# Restore through Time Machine's UI by selecting the snapshot and explicitly choosing
+# both the source item and a destination. `tmutil restore` requires those paths, so do
+# not use an unscoped command as a rollback procedure.
 ```
 
 **Best for:** Safety net for risky operations, long-running test sessions.
 
 ---
 
-### 8. Read-Only Mode with Diff Preview
+### 7. Read-Only Mode with Diff Preview
 
 **Approach:** Implement and use a read-only mode that shows changes without applying them.
 
@@ -431,7 +364,7 @@ class ConfigEditor extends ConsumerWidget {
 ### Phase 4: Production Validation (Highest Safety)
 
 - **Primary:** VMs with full system snapshots
-- **Secondary:** macOS sandbox profiles for production builds
+- **Secondary:** dedicated test user accounts for native-platform validation
 - **Safety:** Complete isolation and rollback capability
 
 ---
@@ -480,21 +413,27 @@ The key is layering multiple safety approaches rather than relying on a single m
 **Date:** 2026-08-22
 **Purpose:** Additional creative and practical testing strategies, supplementing the ones above with Flutter-specific abstractions, environment manipulation, and cloud environments.
 
-### 9. Environment Variable `$HOME` Override (Fake Home Directory)
+### 8. Environment Variable `$HOME` Override (Fake Home Directory)
 
-**Approach:** Launch the app from the terminal with a spoofed `$HOME` environment variable, redirecting all default path discovery to a temporary folder containing dummy configs.
+**Approach:** Launch the app from the terminal with a spoofed `$HOME` environment
+variable, redirecting the Dart home-directory resolver to a temporary folder containing
+dummy configs. This is an exploratory discovery test until the testing-foundation
+plan's Phase 0 proves that configuration, backup, restore, and preference writes are
+also confined to the disposable root.
 
 **Pros:**
 
 - Zero setup cost; no VMs or Docker needed.
 - Very fast iteration cycle.
-- Safely isolates file writes as the app operates on the fake directory.
 - Tests the app exactly as it runs natively, including real file I/O operations.
 
 **Cons:**
 
 - Relies on the app strictly using environment variables (like `Platform.environment['HOME']` in Dart) instead of native platform APIs that might bypass the spoof.
 - Doesn't protect against absolute path hardcoding in the app.
+- Does not yet establish a safe-write boundary for application-support or preference
+  storage; do not edit, restore, or treat it as an isolated daily workflow before the
+  Phase 0 containment gate passes.
 
 **Implementation:**
 
@@ -507,11 +446,12 @@ cp test/fixtures/sample-claude-config.json /tmp/fake_home/.config/claude/config.
 HOME=/tmp/fake_home build/macos/Build/Products/Debug/agents_config_helper.app/Contents/MacOS/agents_config_helper
 ```
 
-**Best for:** Daily manual testing and rapid UI iteration without risking personal config files.
+**Best for:** Exploratory discovery testing with token-free fixtures. It becomes suitable
+for routine manual write testing only after the containment gate passes.
 
 ---
 
-### 10. In-Memory File System (Dependency Injection)
+### 9. In-Memory File System (Dependency Injection)
 
 **Approach:** Architect the app to use the `file` package (`package:file`) instead of `dart:io` directly. Use `LocalFileSystem` in production and `MemoryFileSystem` during testing.
 
@@ -553,27 +493,31 @@ testWidgets('Editor saves config', (tester) async {
 
 ---
 
-### 11. "Safe Mode" Write Redirection (Shadow Files)
+### 10. Proposed Test-Root Write Redirection
 
-**Approach:** Add a `--safe-mode` command-line flag. When enabled, the app reads real configuration files but redirects all *writes* to a temporary directory or saves them with a `.shadow` extension next to the original file.
+**Approach:** If Phase 0 shows that a process-level `HOME` override is insufficient, add
+a test-only `--test-root` flag. It must use token-free fixture inputs and redirect every
+write — config saves, backups, restores, and preferences — into one disposable root.
+Never write a `.shadow` file next to a real configuration file.
 
 **Pros:**
 
-- Allows testing the app with complex, real-world configurations.
-- Developers can verify the exact file output without risking the original file.
+- Allows safe end-to-end testing of representative fixture configurations.
+- Developers can verify exact output without writing beside an original file.
 - The UI can display a banner indicating Safe Mode is active.
 
 **Cons:**
 
 - Requires application-level logic changes.
-- If implemented poorly, a bug could accidentally overwrite the real file.
-- Writing `.shadow` files can clutter the config directories if not cleaned up.
+- Requires a complete, tested containment boundary; a partial redirect could still write
+  outside the disposable root.
 
-**Best for:** Testing edge cases on real data, debugging parsing/writing logic on actual user configs.
+**Best for:** The test-only fallback identified by the safe-testing plan, not a shortcut
+for testing personal data.
 
 ---
 
-### 12. Disposable Cloud Desktops (e.g., GitHub Codespaces)
+### 11. Disposable Cloud Desktops (e.g., GitHub Codespaces)
 
 **Approach:** Since the app targets Linux desktop as well, run it in a disposable cloud workspace (like GitHub Codespaces or Gitpod) that supports VNC or web-based desktop rendering.
 
@@ -597,8 +541,10 @@ testWidgets('Editor saves config', (tester) async {
 While Devin's suggestions of VMs and Fake Sample Files are excellent baselines, I recommend a tiered approach leveraging Flutter's strengths:
 
 1. **For Automated Testing:** Implement the **In-Memory File System (Strategy 10)**. It's an industry-standard practice for Dart/Flutter apps that manipulate files, ensuring tests run in milliseconds safely.
-2. **For Local Manual Testing:** Use the **`$HOME` Override (Strategy 9)**. It's the most practical, zero-friction way to run the app natively on your Mac without spinning up a VM, while keeping your real tokens 100% safe.
-3. **For Edge Cases on Real Data:** Implement the **"Safe Mode" Write Redirection (Strategy 11)**. When a user reports a bug with a specific real config file, this allows you to test fixes against their actual file structure locally without fear of corruption.
+2. **For Local Manual Testing:** Use the **`$HOME` Override (Strategy 8)** only for
+   exploratory, fixture-based discovery until Phase 0 proves containment.
+3. **For Edge Cases:** Add a sanitized fixture that preserves the reported structure,
+   then extend the fixture matrix and regression tests. Do not test against real files.
 
 ---
 
@@ -630,15 +576,17 @@ When manually testing the app to edit various configs, settings, permissions, an
 
 ---
 
-### 13. Manual Backup-First Protocol with Timestamped Backups and Diff Verification
+### 12. Manual Backup-First Protocol with Timestamped Backups and Diff Verification
 
-**Approach:** Before launching the app for any live-file test session, run an explicit backup script that creates timestamped `.bak` copies of every config file the app might touch. After editing, use `diff` (or the app's own diff preview) to verify exactly what changed before committing to keep the edit.
+**Approach:** After the Phase 0 containment gate passes, back up staged fixture paths
+before a manual write test. After editing, use `diff` (or the app's own diff preview) to
+verify exactly what changed before accepting the edit.
 
 **Pros:**
 
 - Zero dependency on external infrastructure (VMs, Docker, cloud).
 - Creates an auditable paper trail (`settings.json.bak.20260822-143012`) of every edit attempt.
-- Works with real user configs, including those with real tokens, because nothing leaves the machine.
+- Applies to disposable staging copies, so the procedure never handles personal tokens.
 - Diff verification teaches the user exactly how the parser transforms JSON/JSONC/YAML/TOML — useful for debugging parser bugs.
 - Can be scripted in a single bash/python one-liner.
 
@@ -652,24 +600,39 @@ When manually testing the app to edit various configs, settings, permissions, an
 **Implementation:**
 
 ```bash
-#!/bin/bash
-# backup-first.sh — run before any AgentsConfigHelper test session
-BACKUP_DIR="$HOME/.agentsconfighelper/backups/$(date +%Y%m%d-%H%M%S)"
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run only inside the proven disposable test root.
+BACKUP_DIR="${TEST_ROOT:?set TEST_ROOT to the disposable root}/manual-backups/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$BACKUP_DIR"
+failed=0
+backed_up=0
 for path in "$HOME/.claude" "$HOME/.codex" "$HOME/.config/opencode" "$HOME/.cursor" \
             "$HOME/.kiro" "$HOME/.config/devin" "$HOME/.gemini" \
             "$HOME/.config/kilo" "$HOME/.cline" "$HOME/.lmstudio" \
             "$HOME/.paseo" "$HOME/.openab/agy-acp"; do
   if [ -d "$path" ]; then
-    cp -r "$path" "$BACKUP_DIR/" 2>/dev/null || true
+    if cp -R "$path" "$BACKUP_DIR/"; then
+      backed_up=$((backed_up + 1))
+    else
+      printf 'Backup failed: %s\n' "$path" >&2
+      failed=1
+    fi
   fi
 done
-echo "Backups saved to $BACKUP_DIR"
+if [ "$failed" -ne 0 ] || [ "$backed_up" -eq 0 ]; then
+  printf 'Required backups did not complete; do not edit. Backup root: %s\n' "$BACKUP_DIR" >&2
+  exit 1
+fi
+printf 'Backups saved to %s\n' "$BACKUP_DIR"
 ```
 
 After editing:
 
 ```bash
+# In a later shell, set BACKUP_DIR to the path printed by backup-first.sh.
+BACKUP_DIR='/absolute/path/printed/by/backup-first.sh'
 diff -u "$BACKUP_DIR/.claude/settings.json" "$HOME/.claude/settings.json"
 ```
 
@@ -677,15 +640,19 @@ diff -u "$BACKUP_DIR/.claude/settings.json" "$HOME/.claude/settings.json"
 
 ---
 
-### 14. Staging Config / Copy-to-Temp Strategy
+### 13. Staging Config / Copy-to-Temp Strategy
 
-**Approach:** Instead of pointing the app at real user config directories, create a temporary "staging home" (`/tmp/staging_home`) that mirrors the real directory structure (`~/.claude/`, `~/.codex/`, `.cursor/`, etc.). Copy real config files (with tokens redacted) into the staging directory. Launch the app with a user-managed custom path or with an environment override that points discovery to `/tmp/staging_home`. Test all edits against the copies. When satisfied, manually migrate approved changes back to the real directories using `diff` or the app's restore feature.
+**Approach:** Create a temporary staging home that mirrors the relevant directory
+structure (`~/.claude/`, `~/.codex/`, `.cursor/`, etc.) from repository-owned,
+token-free fixtures. Launch the app with the explicit test-root configuration described
+in the plan. Test edits only against the copies; use an intentional, separately reviewed
+change to update a real configuration later.
 
 **Pros:**
 
-- Tests with real-world file complexity (nested permissions, comments in JSONC, TOML sections) without risking the originals.
+- Tests representative complexity (nested permissions, comments in JSONC, TOML sections)
+  without handling originals.
 - The app's parser and UI are exercised exactly as they would be in production because the file formats are authentic.
-- Tokens can be scrubbed from copies before staging, reducing security exposure while preserving structural complexity.
 - Works well with the app's "user-managed paths" feature (described in `AGENTS.md`).
 
 **Cons:**
@@ -697,25 +664,27 @@ diff -u "$BACKUP_DIR/.claude/settings.json" "$HOME/.claude/settings.json"
 **Implementation:**
 
 ```bash
-mkdir -p /tmp/staging_home/.claude /tmp/staging_home/.codex /tmp/staging_home/.cursor
-cp ~/.claude/settings.json /tmp/staging_home/.claude/settings.json
-# Launch app with custom home override (see Strategy 9 for $HOME override details)
-# Or use the app's user-managed path feature to add /tmp/staging_home/.claude/settings.json
+TEST_ROOT="$(mktemp -d)"
+cp -R test/fixtures/staging_home/. "$TEST_ROOT/"
+# Launch only after Phase 0 has established the supported test-root command.
+# Do not copy a personal configuration file into this directory.
 ```
 
-**Best for:** Integration testing when developers want to verify that a specific real config file parses and edits correctly without touching the original.
+**Best for:** Integration testing of representative supported paths and formats.
 
 ---
 
-### 15. Canary Config Strategy
+### 14. Canary Config Strategy
 
-**Approach:** Designate one low-stakes, easily recoverable real configuration file as a "canary" — for example, a test project's `.claude/settings.json` or a temporary `.cursor/permissions.json` created specifically for this purpose. Always test new edits, parser changes, or UI workflows against the canary file first. Only after the canary edit succeeds and produces a clean diff do you proceed to more critical configs (user-level `~/.claude/settings.json` or production `.opencode/opencode.json`).
+**Approach:** Designate one token-free fixture in the disposable test root as a "canary."
+Always test new edits, parser changes, or UI workflows against that fixture before adding
+broader fixture coverage.
 
 **Pros:**
 
-- Uses real file paths and real OS permissions, so file discovery and write behavior are fully realistic.
+- Exercises the same catalog path and file behavior as the staged fixture workflow.
 - Creates a psychological and procedural buffer: if the canary edit corrupts something, the damage is contained to a disposable file.
-- Minimal setup cost — just create an empty or dummy config file in a test directory.
+- Minimal setup cost — create an obvious synthetic config in the fixture tree.
 - Complements the backup-first protocol perfectly.
 
 **Cons:**
@@ -738,7 +707,7 @@ EOF
 
 ---
 
-### 16. Synthetic Fixture Matrix for Edge Cases
+### 15. Synthetic Fixture Matrix for Edge Cases
 
 **Approach:** Systematically generate a matrix of synthetic config files that cover tricky edge cases for every supported tool format (JSON/JSONC, YAML, TOML, Markdown). For example: JSON with trailing commas and comments (`json_ast` preservation tests), YAML with multi-line strings and anchors, TOML with nested tables, and Markdown rules with YAML frontmatter. Store these in `test/fixtures/edge-cases/` and run automated parser and widget tests against them.
 
@@ -774,16 +743,18 @@ test/fixtures/edge-cases/
 
 ---
 
-### 17. Parser Snapshot Testing (Dart)
+### 16. Parser Snapshot Testing (Dart)
 
-**Approach:** Use Dart's snapshot testing (`expect(parserOutput, matchesGoldenFile('snapshots/...'))`) to capture the parsed output of each config parser. Any change to parser logic creates a diff that must be intentionally reviewed and approved (`dart test --update-goldens`). This ensures parser modifications are deliberate and visible.
+**Approach:** Serialize each parser result into a deterministic, normalized text form
+(for example, sorted JSON containing only stable fields) and compare it with a checked-in
+text fixture. Any change creates a normal text diff that must be intentionally reviewed.
 
 **Pros:**
 
 - Extremely fast feedback: parser tests run in milliseconds.
 - Captures the full structured representation, not just string equality, making it easy to spot unintended structural changes.
 - Works seamlessly with the app's pure-function parser architecture (`lib/` parsers are pure functions — easy to test, per `AGENTS.md`).
-- Golden file diffs can be reviewed in pull requests, providing a clear audit trail.
+- Text-fixture diffs can be reviewed in pull requests, providing a clear audit trail.
 
 **Cons:**
 
@@ -798,22 +769,32 @@ import 'package:flutter_test/flutter_test.dart';
 
 group('Claude settings parser', () {
   test('preserves comments and trailing commas', () {
-    final result = parseClaudeSettings(fixtureFile('claude/settings_with_trailing_commas.jsonc'));
-    expect(result, matchesGoldenFile('snapshots/claude/settings_with_trailing_commas.golden.json'));
+    final result = parseClaudeSettings(
+      fixtureFile('claude/settings_with_trailing_commas.jsonc'),
+    );
+    final actual = normalizeParserResult(result);
+    final expected = File(
+      fixtureFile('snapshots/claude/settings_with_trailing_commas.json'),
+    ).readAsStringSync();
+    expect(actual, expected);
   });
 });
 ```
 
 **Best for:** Continuous integration pipelines that must catch parser regressions before they reach users.
 
+`matchesGoldenFile` and `--update-goldens` are for Flutter image goldens; they are not
+the mechanism for these text snapshots. Update the expected text deliberately in review.
+
 ---
 
-### 18. App-Integrated `--dry-run` / `--safe-mode` CLI Flag
+### 17. App-Integrated `--dry-run` / `--safe-mode` CLI Flag
 
 **Approach:** Extend the Flutter desktop build to accept a `--dry-run` (or `--preview-only`) command-line argument. When enabled:
 
-- The app reads real config files using existing discovery logic.
-- All write operations (save, restore, edit apply) are redirected to an in-memory buffer or temporary `.preview` file.
+- The app reads token-free fixtures using the test-root discovery configuration.
+- All write operations (save, restore, edit apply) are redirected to an in-memory buffer
+  or a path below the disposable test root.
 - The UI displays a persistent banner indicating "SAFE MODE: Changes will not be saved."
 - On exit, the temporary files are discarded unless the user explicitly exports them.
 
@@ -835,8 +816,7 @@ group('Claude settings parser', () {
 // lib/services/config_service.dart (suggested modification)
 Future<void> saveConfig(String path, String content, {bool dryRun = false}) async {
   if (dryRun) {
-    final previewPath = '$path.dryrun.preview';
-    await File(previewPath).writeAsString(content);
+    previewStore.record(path, content); // In-memory only.
     return;
   }
   await File(path).writeAsString(content);
@@ -853,7 +833,7 @@ flutter run -d macos -- --dry-run
 
 ---
 
-### 19. Docker with VNC for Flutter Desktop Testing
+### 18. Docker with VNC for Flutter Desktop Testing
 
 **Approach:** Improve the basic Docker container approach by using a Linux container (`ubuntu:22.04`) with a desktop environment (`xfce4` or `lxde`), a VNC server (`tigervnc`), and a web-based VNC client (`noVNC`). Build the Flutter Linux desktop binary inside the container, mount a test config directory as a volume, and connect via browser to interact with the GUI.
 
@@ -874,7 +854,7 @@ flutter run -d macos -- --dry-run
 **Implementation:**
 
 ```yaml
-# docker-compose.yml (suggested)
+# docker-compose.yml (suggested; fixture input remains read-only)
 services:
   flutter-test:
     image: flutter-linux-test
@@ -882,10 +862,12 @@ services:
     ports:
       - "6080:6080"  # noVNC
     volumes:
-      - ./test/fixtures/staging_home:/test_home:ro
+      - ./test/fixtures/staging_home:/fixtures:ro
     environment:
       - DISPLAY=:1
-      - HOME=/test_home
+    command: >
+      /bin/sh -c 'cp -a /fixtures/. /staging-home/ &&
+      HOME=/staging-home ./scripts/run_container_smoke.sh'
 ```
 
 Access at `http://localhost:6080` to interact with the running app.
@@ -894,31 +876,32 @@ Access at `http://localhost:6080` to interact with the running app.
 
 ---
 
-### 20. CI Fixture Pipeline (GitHub Actions)
+### 19. CI Fixture Pipeline (GitHub Actions)
 
-**Approach:** Configure `.github/workflows/ci.yml` to run `flutter test` with an extended fixture directory. Each commit triggers parser tests, widget tests with fixtures, and a new "fixture audit" step that verifies all synthetic config files in `test/fixtures/` are syntactically valid (e.g., `jsonlint` for JSON/JSONC, `yamllint` for YAML) and match their corresponding parser schemas. Failures block the merge.
+**Approach:** Add fixture parser, discovery, service, and widget tests to the existing
+`flutter test` command in `.github/workflows/ci.yml`. The Dart tests own fixture syntax
+and catalog assertions, avoiding separate validators until they provide coverage the
+tests cannot.
 
 **Pros:**
 
 - Prevents broken fixtures or invalid syntax from creeping into the test suite.
 - Runs automatically on every pull request — no manual intervention.
-- Combines well with parser snapshot testing (Strategy 17) for full regression coverage.
+- Combines well with text snapshot testing (Strategy 17) for full regression coverage.
 - Provides confidence that future parser changes don't break existing fixtures.
 
 **Cons:**
 
 - Only tests fixtures, not real user files; cannot catch environment-specific discovery bugs.
-- Adds CI time; snapshot updates require manual approval.
+- Adds CI time; expected text-fixture updates require manual review.
 - Fixture maintenance is an ongoing cost as new supported tools are added.
 
 **Implementation:**
 
 ```yaml
-# .github/workflows/fixture-audit.yml (suggested addition)
-- name: Fixture Validation
-  run: |
-    python scripts/validate_fixtures.py --fixture-dir test/fixtures/
-    flutter test test/fixture_tests/
+# Existing .github/workflows/ci.yml test job, after fixture tests are added
+- name: Test
+  run: flutter test --coverage
 ```
 
 **Best for:** Long-term maintenance of test quality and preventing parser regressions in a multi-tool project.
@@ -933,19 +916,24 @@ Based on the app's architecture (Flutter desktop, pure-function parsers, unsandb
 
 | Phase | Primary Strategy | Secondary Strategy | Safety Net |
 |---|---|---|---|
-| Daily development / quick iteration | **Canary Config (15)** + **Staging Config (14)** | Read-only preview (`--dry-run` concept) | Manual timestamped backups (13) |
-| Automated regression / parser quality | **Parser Snapshot Testing (17)** + **Synthetic Fixture Matrix (16)** | **CI Fixture Pipeline (20)** | Golden file reviews in PR |
-| Integration / real-file validation | **Staging Config (14)** with redacted real files | **Canary Config (15)** | Backup-first script (13) |
-| Full isolation / high-stakes testing | **Virtual Machines** (existing) or **Docker with VNC (19)** | Dedicate a test user account (existing) | System snapshots (existing) |
-| User-facing safety feature | **App-Integrated `--dry-run` (18)** | Proposed read-only UI mode | Backup restore (existing) |
+| Daily development / quick iteration | **Canary Config (14)** + **Staging Config (13)** | Read-only preview (`--dry-run` concept) | Manual timestamped backups (12) |
+| Automated regression / parser quality | **Parser Snapshot Testing (16)** + **Synthetic Fixture Matrix (15)** | **CI Fixture Pipeline (19)** | Text-fixture reviews in PR |
+| Integration / staged-fixture validation | **Staging Config (13)** | **Canary Config (14)** | Backup-first script (12) |
+| Full isolation / high-stakes testing | **Virtual Machines** (existing) or **Docker with VNC (18)** | Dedicate a test user account (existing) | System snapshots (existing) |
+| User-facing safety feature | **App-Integrated `--dry-run` (17)** | Proposed read-only UI mode | Backup restore (existing) |
 
 **Top Priority Actions:**
 
-1. **Implement the Backup-First Protocol (13)** immediately — it costs nothing and provides the fastest human-level recovery path for any editing mistake.
-2. **Add Synthetic Fixture Matrix (16)** for all 10+ supported tool formats, focusing on JSONC comments, TOML nested tables, YAML multi-line strings, and Markdown YAML frontmatter. This creates a reproducible regression shield.
-3. **Introduce Parser Snapshot Testing (17)** for structured formats (`JSON`, `YAML`, `TOML`). It aligns perfectly with the app's pure-function parser design (`AGENTS.md` notes parsers are pure functions — easy to test).
-4. **Prototype the `--dry-run` / Safe Mode CLI flag (18)** as an opt-in feature. It gives users confidence and provides a realistic end-to-end test mode without persistence risk.
-5. **Layer VM or Docker isolation (19)** only for final cross-platform release validation, not for daily development — the overhead is not justified for routine parser or UI work.
+1. **Complete the containment gate before using manual write tests.** Fixture work is
+   safer and more valuable until that evidence exists.
+2. **Add Synthetic Fixture Matrix (15)** for supported tool formats, focusing on JSONC
+   comments, TOML nested tables, YAML multi-line strings, and Markdown YAML frontmatter.
+3. **Introduce Parser Snapshot Testing (16)** for structured formats (`JSON`, `YAML`,
+   `TOML`) using normalized text fixtures.
+4. **Consider the test-only `--test-root` boundary (10)** only if Phase 0 proves it is
+   required; a user-facing dry-run is separate product work.
+5. **Layer VM or Docker isolation (18)** only for final cross-platform release
+   validation, not for daily development.
 
 **Key Principle:** Never rely on a single method. A synthetic fixture catches parser bugs; a canary config catches discovery bugs; a timestamped backup catches everything else. Combined, they provide practical, creative, and safe coverage for a desktop app that writes to real user files.
 

@@ -10,9 +10,10 @@
 
 ### Recommended delivery order
 
-1. **Testing foundation first:** create a token-free fixture matrix, automated regression
-   coverage, and a documented disposable `HOME` staging-home smoke workflow. This makes
-   subsequent parser and UI work safe to exercise end-to-end.
+1. **Testing foundation first:** create a token-free fixture matrix and automated
+   regression coverage. The disposable `HOME` staging-home workflow remains exploratory
+   until Phase 0 proves configuration, backup, restore, and preference writes are
+   contained within the test root; only then document it as safe for end-to-end writes.
 2. **Structured-content vertical slice:** write a focused plan for one well-documented,
    high-value permission schema. Build schema metadata and read-only cards first; add
    editing only after lossless/minimal-patch fixture coverage is proven.
@@ -31,7 +32,7 @@
       Docker is supplementary for Linux, not the primary desktop/macOS answer. Define
       setup/teardown, backup/restore checks, and what can be automated in CI. (See
       [docs/testing-strategies.md](docs/testing-strategies.md) and the implementation
-      [plan](plans/active/safe-testing-foundation.md).
+      [plan](plans/active/safe-testing-foundation.md)).
 - [ ] **Structured configuration presentation:** Expand parsers and UI models so supported
       configuration formats can present discovered rules, permissions, and settings as
       focused widgets/cards rather than only raw syntax. Start with tool-schema metadata
