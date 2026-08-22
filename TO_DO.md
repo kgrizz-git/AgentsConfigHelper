@@ -30,7 +30,8 @@
       discovery; then compare isolated OS users and VMs for native-platform validation.
       Docker is supplementary for Linux, not the primary desktop/macOS answer. Define
       setup/teardown, backup/restore checks, and what can be automated in CI. (See
-      [docs/testing-strategies.md](docs/testing-strategies.md))
+      [docs/testing-strategies.md](docs/testing-strategies.md) and the implementation
+      [plan](plans/active/safe-testing-foundation.md).
 - [ ] **Structured configuration presentation:** Expand parsers and UI models so supported
       configuration formats can present discovered rules, permissions, and settings as
       focused widgets/cards rather than only raw syntax. Start with tool-schema metadata

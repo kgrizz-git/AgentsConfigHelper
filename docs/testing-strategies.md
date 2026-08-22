@@ -12,8 +12,14 @@ the Windows equivalents), so launching the already-built app with `HOME` set to 
 absolute staging directory exercises normal user-path discovery against disposable,
 token-free fixture copies. Set `HOME` only for the app process; do not redirect Flutter
 tooling itself to that directory. This is more complete than adding individual manual
-paths because it tests the catalog's automatic user-path discovery as well as parsing,
-editing, backups, and restore.
+paths because it tests the catalog's automatic user-path discovery as well as parsing
+and editing.
+
+Before treating this as a daily safe-write workflow, verify where `path_provider` and
+preference storage place their data in a launched desktop app. The testing-foundation
+plan requires every backup, restore, and preference write to remain within the staging
+root (or introduces an explicit test-root override); a `HOME` override alone must not
+be assumed to confine those platform services.
 
 Treat the staging directory as disposable and seed it only with synthetic or carefully
 redacted copies. The existing diff preview and automatic backups are useful defenses,

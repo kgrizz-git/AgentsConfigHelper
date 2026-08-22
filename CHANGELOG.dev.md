@@ -7,6 +7,8 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **`plans/active/safe-testing-foundation.md`:** Implementation plan for synthetic
+  fixture coverage and a write-confined staging-home smoke workflow.
 - **`plans/active/dependency-upgrades.md`:** Separate staged package-upgrade
   plan with local and CI verification gates; Flutter SDK upgrades are kept out
   of package-only work.
