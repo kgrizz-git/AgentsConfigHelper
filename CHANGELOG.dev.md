@@ -13,6 +13,9 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Changed
 
+- **Product and testing research:** Added a staged, token-free testing workflow and
+  an evidence-based direction for schema-aware configuration cards, then recorded the
+  recommended delivery order in `TO_DO.md`.
 - **Flutter 3.47.1 / Dart 3.13.1 toolchain:** Updated CI; upgraded the compatible
   Riverpod/analyzer family; regenerated providers; and aligned analyzer configuration
   with current Flutter tooling.

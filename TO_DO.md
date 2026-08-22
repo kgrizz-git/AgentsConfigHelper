@@ -8,18 +8,36 @@
 
 ## Product follow-ups (prioritized)
 
+### Recommended delivery order
+
+1. **Testing foundation first:** create a token-free fixture matrix, automated regression
+   coverage, and a documented disposable `HOME` staging-home smoke workflow. This makes
+   subsequent parser and UI work safe to exercise end-to-end.
+2. **Structured-content vertical slice:** write a focused plan for one well-documented,
+   high-value permission schema. Build schema metadata and read-only cards first; add
+   editing only after lossless/minimal-patch fixture coverage is proven.
+3. **Plain-language help:** attach reviewed explanations and authoritative documentation
+   links to the schema metadata introduced by the vertical slice.
+4. **Window sizing:** implement as a small independent quality-of-life change whenever a
+   short PR is useful; it should not delay the safety or structured-editing work.
+5. **Broaden tool schemas incrementally:** use real-world, redacted staging fixtures and
+   regression tests to select each next schema rather than treating every format alike.
+
 - [ ] **High priority — safe exploratory testing environment:** Research and document a
       repeatable way to exercise discovery and editing against realistic agent/IDE
-      configurations without risking a developer's real files. Compare disposable
-      macOS/Windows/Linux VMs, isolated OS user accounts/home-directory fixtures, and
-      container-based options (noting that desktop GUI and native filesystem behavior may
-      limit Docker's usefulness). Define a recommended workflow, setup/teardown steps,
-      and what can be automated in CI before implementing it.
+      configurations without risking a developer's real files. Start with token-free
+      fixture files plus a disposable `HOME` staging directory to exercise automatic
+      discovery; then compare isolated OS users and VMs for native-platform validation.
+      Docker is supplementary for Linux, not the primary desktop/macOS answer. Define
+      setup/teardown, backup/restore checks, and what can be automated in CI. (See
+      [docs/testing-strategies.md](docs/testing-strategies.md))
 - [ ] **Structured configuration presentation:** Expand parsers and UI models so supported
       configuration formats can present discovered rules, permissions, and settings as
-      focused widgets/cards rather than only raw syntax. Preserve a faithful raw-editor
-      fallback for unsupported or ambiguous content; inventory each tool/format's schema,
-      then prioritize high-value, safely editable fields and add parser/UI tests.
+      focused widgets/cards rather than only raw syntax. Start with tool-schema metadata
+      and a single high-value read-only card; preserve a faithful raw-editor fallback for
+      unsupported or ambiguous content. Enable editing only after lossless/minimal-patch
+      fixture coverage, then add parser/UI tests per schema. (See gap analysis in
+      [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md))
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the
       owning tool's authoritative documentation. Design a versioned metadata source,
