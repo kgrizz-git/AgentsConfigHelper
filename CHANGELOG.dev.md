@@ -7,6 +7,9 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Test-root containment plan:** Recorded Phase 0 source evidence that a `HOME` override
+  cannot prove backup or preference containment, and split the no-follow, cross-platform
+  implementation decision into `plans/active/test-root-containment.md`.
 - **`plans/active/safe-testing-foundation.md`:** Implementation plan for synthetic
   fixture coverage and a write-confined staging-home smoke workflow.
 - **`plans/active/dependency-upgrades.md`:** Separate staged package-upgrade

@@ -3,7 +3,7 @@
 Last reviewed: 2026-08-22
 Date: 2026-08-22
 Author: maintainers
-Status: ready to implement
+Status: in progress
 Linked issue/PR: n/a
 
 ## Goal
@@ -29,6 +29,22 @@ The first slice combines a fixture matrix with a disposable staging-home workflo
 user-path discovery. It is not by itself proof that macOS `path_provider` or preference
 storage uses the same directory. Phase 0 must establish that behavior before the command
 is documented as a safe-write procedure.
+
+## Phase 0 evidence and decision
+
+The source trace on 2026-08-22 establishes the following:
+
+| Concern | Current path | Phase 0 conclusion |
+| --- | --- | --- |
+| User-scope discovery and `~` expansion | `ConfigService` uses `resolveHomeDirectory()`, which reads `HOME`/Windows equivalents. | A process-level `HOME` override is useful for discovery only. |
+| Config save | `ConfigService.saveConfig` and `saveRawConfig` write the resolved target directly. | An explicit test root must reject manual or project paths outside the root before loading or writing. |
+| Backups and restore | `main.dart` obtains the backup directory with `getApplicationSupportDirectory()`; `BackupService` copies/restores files directly. | `HOME` does not provide a cross-platform proof of backup or restore containment. |
+| Discovery preferences | `DiscoveryPreferencesStore` defaults to `getApplicationSupportDirectory()` and atomically writes a JSON file there. | Preferences must be injected below the test root, not left to the platform default. |
+| Copilot discovery | `DiscoveryController` separately honors absolute `COPILOT_HOME`. | Test mode must ignore or constrain that environment variable. |
+
+**Decision:** Do not publish a routine `HOME=...` write/smoke command. A coherent
+`--test-root` boundary is required before Phase 2. Its detailed implementation plan is
+[`test-root-containment.md`](test-root-containment.md).
 
 ## Out of scope
 
@@ -90,21 +106,16 @@ mistaken for credentials.
 
 ### Phase 0: Establish write-boundary evidence
 
-- [ ] Trace startup's home, application-support, and preference locations on macOS, Linux,
-      and Windows from code and targeted local runs.
+- [x] Trace startup's home, application-support, preference, and environment-controlled
+      locations from source. The evidence is recorded above.
 - [ ] Run the built macOS app with a fresh `HOME` staging directory and record where the
-      edited config, backup, and preference files are actually written.
-- [ ] Decide whether `HOME` alone confines all writes. If it does not, design the single
-      test-root override before creating a routine smoke command.
-- [ ] Define and implement one canonical/no-follow containment boundary. Create a private
-      root owned by the current user, canonicalize the root and each existing target
-      ancestor, and reject a target unless it is below the canonical root and no path
-      component is a symlink. Recheck after creating parents and immediately before a
-      save, backup, or restore; use platform no-follow file primitives for the final
-      mutation where Dart's path checks alone cannot prevent a symlink-swap race.
-- [ ] Add containment tests for a symlinked root, a symlinked target, a symlinked parent,
-      and a symlink introduced between validation and mutation. Each must be rejected
-      without creating, overwriting, backing up, or restoring an outside path.
+      edited config, backup, and preference files are actually written. This needs a local
+      macOS interaction; it cannot be inferred from `path_provider` source alone.
+- [x] Decide whether `HOME` alone confines all writes. It is insufficient as a documented
+      cross-platform safety boundary; use the explicit test-root design instead.
+- [ ] Implement the canonical/no-follow containment boundary and its symlink-escape tests
+      under [`test-root-containment.md`](test-root-containment.md). Do not claim
+      race-resistance from normalized Dart paths alone.
 
 ### Phase 1: Build the fixture matrix
 
@@ -121,8 +132,9 @@ mistaken for credentials.
 
 ### Phase 2: Make staging smoke testing deterministic
 
-- [ ] Add the minimal test-root plumbing identified by Phase 0, if required, and reject
-      saves/restores outside the root while it is active.
+- [ ] Add the test-root plumbing defined in
+      [`test-root-containment.md`](test-root-containment.md), including blocked saves,
+      restores, preferences, and external discovery paths.
 - [ ] Add a persistent, unambiguous test-mode indicator when test-root plumbing exists.
 - [ ] Add a script or documented command that creates a unique staging root, seeds it from
       fixtures, launches the already-built app, and reports the root for inspection.
