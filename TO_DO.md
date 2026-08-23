@@ -15,11 +15,9 @@
    editing only after lossless/minimal-patch fixture coverage is proven.
 2. **Plain-language help:** attach reviewed explanations and authoritative documentation
    links to the schema metadata introduced by the vertical slice.
-3. **Window sizing:** implement as a small independent quality-of-life change whenever a
-   short PR is useful; it should not delay the safety or structured-editing work.
-4. **Broaden tool schemas incrementally:** use real-world, redacted staging fixtures and
+3. **Broaden tool schemas incrementally:** use real-world, redacted staging fixtures and
    regression tests to select each next schema rather than treating every format alike.
-5. **Finish testing regression coverage:** keep the proven macOS staging workflow maintained,
+4. **Finish testing regression coverage:** keep the proven macOS staging workflow maintained,
    add the default-startup harness and unsupported nested-structure raw-editor fixture, and
    defer Linux/Windows test-root work until their platform-native bridges are planned.
 
@@ -53,11 +51,10 @@
       owning tool's authoritative documentation. Design a versioned metadata source,
       ensure links are tool-specific and reviewable, and keep unknown settings visibly
       unclassified rather than inventing explanations.
-- [ ] **Desktop window sizing:** Open the app at a more useful default size (target about
-      75% of available screen width and height) and/or persist the user's last valid
-      window size and position. Research Flutter desktop APIs and platform constraints,
-      including sensible minimums and bounds restoration when displays change; add
-      cross-platform tests or manual verification guidance before implementation.
+- [ ] **Remember desktop window bounds:** Persist the user's last valid size and position
+      after designing storage that preserves the macOS test-root preference-I/O contract.
+      Restore only bounds that are usable on the currently connected displays; retain the
+      adaptive, centered first-launch size as the fallback.
 
 ## Tool-support gaps (discovery expansion)
 
