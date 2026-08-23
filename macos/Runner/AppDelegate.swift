@@ -40,8 +40,11 @@ enum TestRootFileOperationError: LocalizedError {
 /// Performs test-root file operations through descriptor-relative POSIX calls.
 ///
 /// This is deliberately not used by normal app I/O. The opt-in macOS
-/// `--test-root` mode calls it after validating a marked, non-symlink root.
+/// `--test-root` mode pins a marked, non-symlink root before any app I/O.
 final class TestRootFileOperations {
+  private static let stagingMarkerName = ".agents-config-helper-test-root"
+  private static let stagingMarkerContents = "agents-config-helper staging root v1"
+
   // Keep the opened root descriptor: a later pathname swap cannot redirect an
   // operation outside the root originally verified with O_NOFOLLOW.
   private var rootDescriptors = [String: Int32]()
@@ -49,6 +52,35 @@ final class TestRootFileOperations {
   deinit {
     for descriptor in rootDescriptors.values {
       _ = close(descriptor)
+    }
+  }
+
+  /// Opens, validates, and retains the root directory before test-mode I/O.
+  func pinRoot(rootPath: String) throws {
+    if rootDescriptors[rootPath] != nil {
+      return
+    }
+    let rootDescriptor = try openRootDescriptor(rootPath)
+    do {
+      let markerDescriptor = openat(
+        rootDescriptor,
+        Self.stagingMarkerName,
+        O_RDONLY | O_NOFOLLOW | O_CLOEXEC
+      )
+      guard markerDescriptor >= 0 else {
+        throw TestRootFileOperationError.posix(operation: "open staging marker", code: errno)
+      }
+      defer { _ = close(markerDescriptor) }
+      guard try isRegularFileDescriptor(markerDescriptor) else {
+        throw TestRootFileOperationError.invalidPath("Staging marker must be a regular file.")
+      }
+      guard try readData(from: markerDescriptor) == Data(Self.stagingMarkerContents.utf8) else {
+        throw TestRootFileOperationError.invalidPath("Staging marker has unexpected contents.")
+      }
+      rootDescriptors[rootPath] = rootDescriptor
+    } catch {
+      _ = close(rootDescriptor)
+      throw error
     }
   }
 
@@ -120,26 +152,7 @@ final class TestRootFileOperations {
         }
         defer { _ = close(descriptor) }
 
-        var data = Data()
-        var buffer = [UInt8](repeating: 0, count: 64 * 1024)
-        while true {
-          let bytesRead = buffer.withUnsafeMutableBytes { buffer in
-            Darwin.read(descriptor, buffer.baseAddress, buffer.count)
-          }
-          if bytesRead == 0 {
-            return data
-          }
-          if bytesRead < 0 {
-            if errno == EINTR {
-              continue
-            }
-            throw TestRootFileOperationError.posix(
-              operation: "read",
-              code: errno
-            )
-          }
-          data.append(contentsOf: buffer.prefix(Int(bytesRead)))
-        }
+        return try readData(from: descriptor)
       }
     }
   }
@@ -161,17 +174,18 @@ final class TestRootFileOperations {
         defer { _ = closedir(directory) }
 
         var names = [String]()
+        errno = 0
         while let entry = readdir(directory) {
-          let name = withUnsafePointer(to: &entry.pointee.d_name) { pointer in
-            pointer.withMemoryRebound(to: CChar.self, capacity: 0) {
-              String(cString: $0)
-            }
+          let name = directoryEntryName(entry)
+          guard name != "." && name != ".." else {
+            continue
           }
-          if name != "." && name != ".." {
-            if try isRegularFile(name, in: directoryDescriptor) {
-              names.append(name)
-            }
+          if try isRegularFile(name, in: directoryDescriptor) {
+            names.append(name)
           }
+        }
+        if errno != 0 {
+          throw TestRootFileOperationError.posix(operation: "readdir", code: errno)
         }
         return names
       }
@@ -261,19 +275,18 @@ final class TestRootFileOperations {
     if let descriptor = rootDescriptors[rootPath] {
       return try body(descriptor)
     }
+    throw TestRootFileOperationError.invalidPath("Test root has not been initialized.")
+  }
+
+  private func openRootDescriptor(_ rootPath: String) throws -> Int32 {
     guard rootPath.hasPrefix("/") else {
       throw TestRootFileOperationError.invalidPath("Test root must be absolute.")
     }
-
-    let descriptor = open(
-      rootPath,
-      O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC
-    )
+    let descriptor = open(rootPath, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
     guard descriptor >= 0 else {
       throw TestRootFileOperationError.posix(operation: "open test root", code: errno)
     }
-    rootDescriptors[rootPath] = descriptor
-    return try body(descriptor)
+    return descriptor
   }
 
   private func pathComponents(_ relativePath: String) throws -> [String] {
@@ -389,6 +402,35 @@ final class TestRootFileOperations {
     }
   }
 
+  private func readData(from descriptor: Int32) throws -> Data {
+    var data = Data()
+    var buffer = [UInt8](repeating: 0, count: 64 * 1024)
+    while true {
+      let bytesRead = buffer.withUnsafeMutableBytes { buffer in
+        Darwin.read(descriptor, buffer.baseAddress, buffer.count)
+      }
+      if bytesRead == 0 {
+        return data
+      }
+      if bytesRead < 0 {
+        if errno == EINTR {
+          continue
+        }
+        throw TestRootFileOperationError.posix(operation: "read", code: errno)
+      }
+      data.append(contentsOf: buffer.prefix(Int(bytesRead)))
+    }
+  }
+
+  private func directoryEntryName(_ entry: UnsafeMutablePointer<dirent>) -> String {
+    let length = Int(entry.pointee.d_namlen) + 1
+    return withUnsafePointer(to: &entry.pointee.d_name) { pointer in
+      pointer.withMemoryRebound(to: CChar.self, capacity: length) {
+        String(cString: $0)
+      }
+    }
+  }
+
   private func isRegularFile(_ name: String, in directoryDescriptor: Int32) throws -> Bool {
     var status = stat()
     guard fstatat(directoryDescriptor, name, &status, AT_SYMLINK_NOFOLLOW) == 0 else {
@@ -422,6 +464,9 @@ private enum TestRootFileChannel {
         }
 
         switch call.method {
+        case "pinRoot":
+          try operations.pinRoot(rootPath: rootPath)
+          result(nil)
         case "fileExists":
           let relativePath = try requiredRelativePath(arguments)
           result(try operations.fileExists(rootPath: rootPath, relativePath: relativePath))

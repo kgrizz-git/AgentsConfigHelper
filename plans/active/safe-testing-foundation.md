@@ -163,8 +163,8 @@ mistaken for credentials.
 
 - [x] `flutter analyze --fatal-infos` passes.
 - [x] `dart format --output=none --set-exit-if-changed .` passes.
-- [x] `flutter test --coverage` passes and retains the CI coverage floor (81.74%,
-      2026-08-22).
+- [x] `flutter test --coverage` passes. The configured CI floor is 80%; the local
+      measured result was 81.97% on 2026-08-23.
 - [x] Fixture files are token-free and pass all existing secret, path, and documentation
       hooks.
 - [x] Automated tests prove user-scope and project-scope discovery against the synthetic

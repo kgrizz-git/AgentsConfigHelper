@@ -210,6 +210,11 @@ void main() {
 
     await scopedStore.addManualPath(inside);
     expect(
+      () => scopedStore.addManualPath(tempDir.path),
+      throwsA(isA<InvalidPathException>()),
+    );
+    await scopedStore.addProjectRoot(tempDir.path);
+    expect(
       () => scopedStore.addManualPath(outside),
       throwsA(isA<InvalidPathException>()),
     );

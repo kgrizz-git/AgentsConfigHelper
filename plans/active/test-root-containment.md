@@ -72,7 +72,7 @@ race-resistant. [Dart `File` API](https://api.dart.dev/dart-io/File-class.html)
 and [Dart `writeAsString` API](https://api.dart.dev/dart-io/File/writeAsString.html)
 document that behavior.
 
-The implementation direction is a small native FFI bridge, not a broad production
+The implementation direction is a small native method-channel bridge, not a broad production
 filesystem rewrite:
 
 | Platform | Candidate final-operation strategy | Status |
@@ -197,8 +197,8 @@ macOS-only bridge or introduce a Dart path-string fallback.
 
 - [x] `flutter analyze --fatal-infos` passes.
 - [x] `dart format --output=none --set-exit-if-changed .` passes.
-- [x] `flutter test --coverage` passes and retains the CI coverage floor (81.74%,
-      2026-08-22).
+- [x] `flutter test --coverage` passes. The configured CI floor is 80%; the local
+      measured result was 81.97% on 2026-08-23.
 - [x] All test-mode writes and reads are asserted inside the canonical root.
 - [x] macOS symlink and swap tests prove final-operation behavior, not merely path-string
       rejection.

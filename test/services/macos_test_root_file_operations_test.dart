@@ -22,6 +22,7 @@ void main() {
           calls.add(call);
           switch (call.method) {
             case 'fileExists':
+            case 'directoryExists':
               return true;
             case 'readText':
               return 'fixture content';
@@ -48,9 +49,10 @@ void main() {
     );
     final configPath = p.join(root.path, '.claude', 'settings.json');
 
+    await operations.pinRoot();
     await operations.writeText(configPath, '{"rules": []}');
-    expect(calls.single.method, 'writeText');
-    expect(calls.single.arguments, {
+    expect(calls[1].method, 'writeText');
+    expect(calls[1].arguments, {
       'rootPath': root.path,
       'relativePath': '.claude/settings.json',
       'text': '{"rules": []}',
@@ -70,6 +72,9 @@ void main() {
       platformIsMacOS: true,
     );
     final outsidePath = p.join(root.parent.path, 'outside.json');
+
+    await operations.pinRoot();
+    calls.clear();
 
     await expectLater(
       operations.fileExists(outsidePath),

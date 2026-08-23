@@ -16,7 +16,11 @@ class RunnerTests: XCTestCase {
       withIntermediateDirectories: false,
       attributes: [.posixPermissions: 0o700]
     )
+    try Data("agents-config-helper staging root v1".utf8).write(
+      to: root.appendingPathComponent(".agents-config-helper-test-root")
+    )
     operations = TestRootFileOperations()
+    try operations.pinRoot(rootPath: root.path)
   }
 
   override func tearDownWithError() throws {
@@ -101,8 +105,29 @@ class RunnerTests: XCTestCase {
     defer { try? FileManager.default.removeItem(at: linkedRoot) }
 
     XCTAssertThrowsError(
-      try operations.writeFile(
-        rootPath: linkedRoot.path,
+      try TestRootFileOperations().pinRoot(rootPath: linkedRoot.path)
+    )
+  }
+
+  func testRejectsAnUnmarkedRoot() throws {
+    let unmarkedRoot = root.deletingLastPathComponent().appendingPathComponent(
+      "unmarked-root-\(UUID().uuidString)"
+    )
+    try FileManager.default.createDirectory(
+      at: unmarkedRoot,
+      withIntermediateDirectories: false
+    )
+    defer { try? FileManager.default.removeItem(at: unmarkedRoot) }
+
+    XCTAssertThrowsError(
+      try TestRootFileOperations().pinRoot(rootPath: unmarkedRoot.path)
+    )
+  }
+
+  func testRejectsOperationsBeforeRootIsPinned() throws {
+    XCTAssertThrowsError(
+      try TestRootFileOperations().writeFile(
+        rootPath: root.path,
         relativePath: "settings.json",
         data: Data("{}".utf8)
       )
@@ -124,12 +149,7 @@ class RunnerTests: XCTestCase {
     )
   }
 
-  func testKeepsUsingTheOpenedRootAfterAPathSwap() throws {
-    try operations.writeFile(
-      rootPath: root.path,
-      relativePath: "before-swap.json",
-      data: Data("before".utf8)
-    )
+  func testKeepsUsingThePinnedRootAfterAPathSwap() throws {
     let movedRoot = root.deletingLastPathComponent().appendingPathComponent("moved-root")
     let outside = root.deletingLastPathComponent().appendingPathComponent("swap-outside")
     try FileManager.default.createDirectory(

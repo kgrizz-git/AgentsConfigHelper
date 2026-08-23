@@ -212,6 +212,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     required bool collectWarnings,
     List<String>? warnings,
   }) {
+    final allowRootPath = fieldName == 'projectRoots';
     // Dedup by a platform-aware key so differently-cased spellings of the same
     // path fold together on case-insensitive platforms (Windows), while the
     // first-seen spelling is preserved for display.
@@ -237,7 +238,11 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
         for (final outside in deduped.where(
           (path) =>
               p.isAbsolute(path) &&
-              !_isWithinAllowedRoot(allowedRootPath, path),
+              !_isAllowedTestRootPath(
+                allowedRootPath,
+                path,
+                allowRootPath: allowRootPath,
+              ),
         )) {
           warnings!.add("Ignored path outside the test root: '$outside'");
         }
@@ -249,7 +254,11 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
           (path) =>
               p.isAbsolute(path) &&
               (allowedRootPath == null ||
-                  _isWithinAllowedRoot(allowedRootPath, path)),
+                  _isAllowedTestRootPath(
+                    allowedRootPath,
+                    path,
+                    allowRootPath: allowRootPath,
+                  )),
         )
         .toList();
   }
@@ -260,12 +269,16 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   static String _pathDedupKey(String normalizedPath) =>
       Platform.isWindows ? normalizedPath.toLowerCase() : normalizedPath;
 
-  static bool _isWithinAllowedRoot(String rootPath, String path) =>
-      p.equals(rootPath, path) || p.isWithin(rootPath, path);
+  static bool _isAllowedTestRootPath(
+    String rootPath,
+    String path, {
+    required bool allowRootPath,
+  }) =>
+      (allowRootPath && p.equals(rootPath, path)) || p.isWithin(rootPath, path);
 
   /// Validates that [path] is non-empty (after trimming) and absolute.
   /// Throws [InvalidPathException] otherwise.
-  String _validatePath(String path) {
+  String _validatePath(String path, {bool allowRootPath = false}) {
     final trimmed = path.trim();
     if (trimmed.isEmpty) {
       throw const InvalidPathException('Path must not be empty.');
@@ -276,7 +289,11 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     final normalized = p.normalize(trimmed);
     final allowedRootPath = _allowedRootPath;
     if (allowedRootPath != null &&
-        !_isWithinAllowedRoot(allowedRootPath, normalized)) {
+        !_isAllowedTestRootPath(
+          allowedRootPath,
+          normalized,
+          allowRootPath: allowRootPath,
+        )) {
       throw InvalidPathException('Path is outside the test root: $normalized');
     }
     return normalized;
@@ -319,7 +336,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   /// Throws [InvalidPathException] if [path] is empty or not absolute.
   @override
   Future<void> addProjectRoot(String path) {
-    final validated = _validatePath(path);
+    final validated = _validatePath(path, allowRootPath: true);
     return _serialize(() async {
       final result = await load();
       var prefs = result.preferences;

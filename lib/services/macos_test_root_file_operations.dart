@@ -26,6 +26,12 @@ class MacOSTestRootFileOperations implements FileOperations {
   final String rootPath;
   final MethodChannel _channel;
 
+  /// Binds this instance to the native descriptor validated at test-mode
+  /// startup.
+  Future<void> pinRoot() {
+    return _channel.invokeMethod<void>('pinRoot', {'rootPath': rootPath});
+  }
+
   @override
   Future<void> validatePath(String absolutePath) async {
     _relativePath(absolutePath);
@@ -105,6 +111,7 @@ class MacOSTestRootFileOperations implements FileOperations {
 
   @override
   Future<List<String>> listFiles(String absoluteDirectoryPath) async {
+    if (!await directoryExists(absoluteDirectoryPath)) return const [];
     final result = await _channel.invokeListMethod<String>('listFiles', {
       'rootPath': rootPath,
       'relativePath': _relativePath(absoluteDirectoryPath),

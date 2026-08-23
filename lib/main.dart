@@ -30,9 +30,16 @@ Future<void> main(List<String> arguments) async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     final testRoot = await TestRootConfiguration.fromArguments(arguments);
-    final fileOperations = testRoot != null
-        ? MacOSTestRootFileOperations(rootPath: testRoot.rootPath)
-        : const LocalFileOperations();
+    final FileOperations fileOperations;
+    if (testRoot != null) {
+      final testRootOperations = MacOSTestRootFileOperations(
+        rootPath: testRoot.rootPath,
+      );
+      await testRootOperations.pinRoot();
+      fileOperations = testRootOperations;
+    } else {
+      fileOperations = const LocalFileOperations();
+    }
     final configService = ConfigService(
       backupService: BackupService(
         backupDirectory: await _getBackupDir(testRoot),
@@ -98,7 +105,6 @@ class AgentsConfigHelperApp extends ConsumerWidget {
 
 /// Displays startup failures instead of leaving a blank native window.
 class StartupErrorApp extends StatelessWidget {
-  /// Creates an app shell for a startup error.
   const StartupErrorApp({required this.error, super.key});
 
   /// The error that prevented normal app initialization.

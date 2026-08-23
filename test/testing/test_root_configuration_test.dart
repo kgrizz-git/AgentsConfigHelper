@@ -36,6 +36,13 @@ void main() {
   test('rejects missing values, duplicates, and relative paths', () async {
     expect(
       () => TestRootConfiguration.fromArguments(
+        const ['--test-root'],
+        platformIsMacOS: true,
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => TestRootConfiguration.fromArguments(
         const ['--test-root='],
         platformIsMacOS: true,
       ),

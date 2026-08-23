@@ -44,7 +44,6 @@ abstract interface class FileOperations {
 
 /// The ordinary production filesystem implementation.
 class LocalFileOperations implements FileOperations {
-  /// Creates local filesystem operations.
   const LocalFileOperations();
 
   @override

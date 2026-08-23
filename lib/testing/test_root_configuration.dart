@@ -21,11 +21,17 @@ class TestRootConfiguration {
     bool? platformIsMacOS,
   }) async {
     final matches = arguments
-        .where((argument) => argument.startsWith('--test-root='))
+        .where(
+          (argument) =>
+              argument == '--test-root' || argument.startsWith('--test-root='),
+        )
         .toList();
     if (matches.isEmpty) return null;
     if (matches.length != 1) {
       throw ArgumentError('Pass --test-root exactly once.');
+    }
+    if (matches.single == '--test-root') {
+      throw ArgumentError('Use --test-root=<absolute path>.');
     }
     if (!(platformIsMacOS ?? Platform.isMacOS)) {
       throw UnsupportedError(
