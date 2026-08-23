@@ -64,18 +64,34 @@ Future<void> _configureDesktopWindow(
     await boundsStore.load(),
     visibleDisplays,
   );
-  await windowManager.waitUntilReadyToShow(
-    WindowOptions(
-      size: restoredBounds?.size ?? configuration.size,
-      minimumSize: configuration.minimumSize,
-      center: restoredBounds == null,
-      title: 'Agents Config Helper',
+  unawaited(
+    _showConfiguredDesktopWindow(
+      WindowOptions(
+        size: restoredBounds?.size ?? configuration.size,
+        minimumSize: configuration.minimumSize,
+        center: restoredBounds == null,
+        title: 'Agents Config Helper',
+      ),
+      restoredBounds,
+      boundsStore,
     ),
   );
-  if (restoredBounds != null) await windowManager.setBounds(restoredBounds);
-  await windowManager.show();
-  await windowManager.focus();
-  windowManager.addListener(_DesktopWindowBoundsListener(boundsStore));
+}
+
+Future<void> _showConfiguredDesktopWindow(
+  WindowOptions options,
+  Rect? restoredBounds,
+  DesktopWindowBoundsStore boundsStore,
+) async {
+  try {
+    await windowManager.waitUntilReadyToShow(options);
+    if (restoredBounds != null) await windowManager.setBounds(restoredBounds);
+    await windowManager.show();
+    await windowManager.focus();
+    windowManager.addListener(_DesktopWindowBoundsListener(boundsStore));
+  } on Object catch (error, stackTrace) {
+    debugPrint('Desktop window setup failed: $error\n$stackTrace');
+  }
 }
 
 /// Persists bounds after a resize, move, or close without interrupting the UI.
@@ -141,7 +157,11 @@ Future<void> main(List<String> arguments) async {
             ),
       fileOperations: fileOperations,
     );
-    await _configureDesktopWindow(windowBoundsStore);
+    try {
+      await _configureDesktopWindow(windowBoundsStore);
+    } on Object catch (error, stackTrace) {
+      debugPrint('Desktop window initialization failed: $error\n$stackTrace');
+    }
     final configService = ConfigService(
       backupService: BackupService(
         backupDirectory: await _getBackupDir(testRoot),

@@ -18,6 +18,9 @@ Internal / developer-facing changes that do not belong in the public
   `docs/macos-test-root.md` and the interactive/flagged root `dev.sh` entrypoint for the
   documented local workflow. Test-root startup failures render an explicit error screen rather
   than a blank window. Restore buttons now explicitly use white foreground text for contrast.
+- **Desktop usability coverage:** Added widget coverage for visible History & Backups restore
+  actions and unit coverage for adaptive display sizing, saved-bounds validation, and contained
+  test-root preference storage.
 - **Test-root containment plan:** Recorded Phase 0 source evidence that a `HOME` override
   cannot prove backup or preference containment, and split the no-follow, cross-platform
   implementation decision into `plans/active/test-root-containment.md`.
