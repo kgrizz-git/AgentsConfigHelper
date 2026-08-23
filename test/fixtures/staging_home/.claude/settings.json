@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "allow": ["Read(./fixtures/**)"],
+    "ask": ["Bash(git status)"],
+    "deny": ["Read(./private/**)"]
+  },
+  "env": {
+    "FIXTURE_MODE": "true"
+  },
+  "model": "fixture-model"
+}

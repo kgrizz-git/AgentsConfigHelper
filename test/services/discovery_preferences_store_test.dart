@@ -198,4 +198,54 @@ void main() {
       expect(result.preferences.manualFilePaths, [upper, lower]);
     }
   });
+
+  test('test-root store rejects paths outside its allowed root', () async {
+    final scopedStore = DiscoveryPreferencesStore(
+      getDirectory: () async => tempDir,
+      fileName: 'scoped_prefs.json',
+      allowedRootPath: tempDir.path,
+    );
+    final inside = p.join(tempDir.path, 'project', 'settings.json');
+    final outside = p.join(tempDir.parent.path, 'outside-settings.json');
+
+    await scopedStore.addManualPath(inside);
+    expect(
+      () => scopedStore.addManualPath(outside),
+      throwsA(isA<InvalidPathException>()),
+    );
+
+    expect(
+      (await scopedStore.load()).preferences.manualFilePaths,
+      [inside],
+    );
+  });
+
+  test(
+    'test-root store drops persisted paths outside its allowed root',
+    () async {
+      final scopedPreferencesFile = File(
+        p.join(tempDir.path, 'scoped_prefs.json'),
+      );
+      final inside = p.join(tempDir.path, 'project');
+      final outside = p.join(tempDir.parent.path, 'outside-project');
+      await scopedPreferencesFile.writeAsString(
+        jsonEncode({
+          'version': 1,
+          'manualFilePaths': [inside, outside],
+          'projectRoots': [inside, outside],
+        }),
+      );
+      final scopedStore = DiscoveryPreferencesStore(
+        getDirectory: () async => tempDir,
+        fileName: 'scoped_prefs.json',
+        allowedRootPath: tempDir.path,
+      );
+
+      final result = await scopedStore.load();
+
+      expect(result.preferences.manualFilePaths, [inside]);
+      expect(result.preferences.projectRoots, [inside]);
+      expect(result.warnings, contains(contains('outside the test root')));
+    },
+  );
 }

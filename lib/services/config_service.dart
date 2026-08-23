@@ -8,6 +8,7 @@ import 'package:agents_config_helper/parsers/text_config_parser.dart';
 import 'package:agents_config_helper/parsers/toml_config_parser.dart';
 import 'package:agents_config_helper/parsers/yaml_config_parser.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
+import 'package:agents_config_helper/services/file_operations.dart';
 import 'package:agents_config_helper/services/home_directory_resolver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -19,11 +20,14 @@ class ConfigService {
   ConfigService({
     required this.backupService,
     String? Function()? homeDirectoryResolver,
-  }) : _homeDirectoryResolver = homeDirectoryResolver ?? resolveHomeDirectory;
+    FileOperations? fileOperations,
+  }) : _homeDirectoryResolver = homeDirectoryResolver ?? resolveHomeDirectory,
+       _fileOperations = fileOperations ?? const LocalFileOperations();
 
   /// Creates backups of existing configs before overwriting them.
   final BackupService backupService;
   final String? Function() _homeDirectoryResolver;
+  final FileOperations _fileOperations;
 
   // Internal parsers
   final _jsonParser = JsonConfigParser();
@@ -49,18 +53,23 @@ class ConfigService {
     return p.normalize(p.absolute(path));
   }
 
+  /// Checks whether [path] exists within the configured file boundary.
+  Future<bool> fileExists(String path) =>
+      _fileOperations.fileExists(resolvePath(path));
+
+  /// Reads raw text from [path] within the configured file boundary.
+  Future<String> readRawText(String path) =>
+      _fileOperations.readText(resolvePath(path));
+
   /// Loads a configuration explicitly discovered by the app.
   Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
     // Resolve `~` the same way the save methods do, so a discovered path loads
     // the exact file that a later save would overwrite.
     final resolvedPath = resolvePath(config.filePath);
-    final file = File(resolvedPath);
-    // Checking file existence asynchronously avoids blocking the UI thread.
-    // ignore: avoid_slow_async_io
-    if (!await file.exists()) {
+    if (!await _fileOperations.fileExists(resolvedPath)) {
       throw FileSystemException('File not found', resolvedPath);
     }
-    final content = await file.readAsString();
+    final content = await _fileOperations.readText(resolvedPath);
     final parser = _getParserForFormat(config.format);
     return parser.parse(
       content,
@@ -77,23 +86,11 @@ class ConfigService {
   /// so the returned [ToolConfig] has an up-to-date `originalContent`.
   Future<ToolConfig> saveConfig(ToolConfig config) async {
     final expandedPath = resolvePath(config.filePath);
-    final file = File(expandedPath);
     String? originalContent;
 
-    // Checking file existence asynchronously avoids blocking the UI thread.
-    // ignore: avoid_slow_async_io
-    if (await file.exists()) {
-      originalContent = await file.readAsString();
+    if (await _fileOperations.fileExists(expandedPath)) {
+      originalContent = await _fileOperations.readText(expandedPath);
       await backupService.createBackup(expandedPath);
-    } else {
-      // Ensure directory exists if we are creating a brand new config.
-      final parentDir = file.parent;
-      // Checking directory existence asynchronously avoids blocking the UI
-      // thread.
-      // ignore: avoid_slow_async_io
-      if (!await parentDir.exists()) {
-        await parentDir.create(recursive: true);
-      }
     }
 
     final parser = _getParserForFormat(config.format);
@@ -102,7 +99,7 @@ class ConfigService {
       originalContent: originalContent,
     );
 
-    await file.writeAsString(serialized);
+    await _fileOperations.writeText(expandedPath, serialized);
 
     return parser.parse(
       serialized,
@@ -187,23 +184,12 @@ class ConfigService {
     }
 
     final expandedPath = resolvePath(config.filePath);
-    final file = File(expandedPath);
 
-    // Checking file existence asynchronously avoids blocking the UI thread.
-    // ignore: avoid_slow_async_io
-    if (await file.exists()) {
+    if (await _fileOperations.fileExists(expandedPath)) {
       await backupService.createBackup(expandedPath);
-    } else {
-      final parentDir = file.parent;
-      // Checking directory existence asynchronously avoids blocking the UI
-      // thread.
-      // ignore: avoid_slow_async_io
-      if (!await parentDir.exists()) {
-        await parentDir.create(recursive: true);
-      }
     }
 
-    await file.writeAsString(contentToWrite);
+    await _fileOperations.writeText(expandedPath, contentToWrite);
 
     return parsedConfig;
   }

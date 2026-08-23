@@ -46,6 +46,13 @@ The source trace on 2026-08-22 establishes the following:
 `--test-root` boundary is required before Phase 2. Its detailed implementation plan is
 [`test-root-containment.md`](test-root-containment.md).
 
+**Implementation update (macOS):** The focused plan now has a descriptor-relative,
+no-follow `--test-root` implementation with native symlink tests. It routes config I/O,
+backups, restores, preferences, and discovery below a marked root; Linux and Windows reject
+the flag until they gain their own primitives. The first manual macOS staging run on
+2026-08-22 confirmed staged discovery, edit/backup/preference containment, and rejection of
+an external project root; it remains a macOS-only workflow while other platforms are pending.
+
 ## Out of scope
 
 - A general user-facing read-only, dry-run, or safe-mode product feature.
@@ -113,57 +120,61 @@ mistaken for credentials.
       macOS interaction; it cannot be inferred from `path_provider` source alone.
 - [x] Decide whether `HOME` alone confines all writes. It is insufficient as a documented
       cross-platform safety boundary; use the explicit test-root design instead.
-- [ ] Implement the canonical/no-follow containment boundary and its symlink-escape tests
+- [x] Implement the macOS canonical/no-follow containment boundary and its symlink-escape tests
       under [`test-root-containment.md`](test-root-containment.md). Do not claim
       race-resistance from normalized Dart paths alone.
 
 ### Phase 1: Build the fixture matrix
 
-- [ ] Inventory the smallest representative set of supported paths and formats: JSON/JSONC,
+- [x] Inventory the smallest representative set of supported paths and formats: JSON/JSONC,
       YAML, TOML, Markdown/text, a nested-permission example, and a project-scoped target.
-- [ ] Add synthetic fixture trees that use catalog-recognized paths and contain no real
+- [x] Add synthetic fixture trees that use catalog-recognized paths and contain no real
       user data, token-shaped values, or copied configuration comments.
-- [ ] Add parser tests for valid content, malformed content, comments/trailing commas,
-      nested/unsupported structures, and raw-editor fallback behavior.
-- [ ] Add discovery tests proving the fixture home finds expected user targets, while a
+- [x] Add parser tests for valid content, comments/trailing commas, and nested structures.
+      Malformed-content and raw-editor-fallback fixture coverage remain open.
+- [x] Add discovery tests proving the fixture home finds expected user targets, while a
       fixture project root finds expected project targets.
 - [ ] Add service tests that verify save creates a backup, restore creates parent folders
       when needed, and all configured test-mode writes remain contained.
 
 ### Phase 2: Make staging smoke testing deterministic
 
-- [ ] Add the test-root plumbing defined in
+- [x] Add the macOS test-root plumbing defined in
       [`test-root-containment.md`](test-root-containment.md), including blocked saves,
       restores, preferences, and external discovery paths.
-- [ ] Add a persistent, unambiguous test-mode indicator when test-root plumbing exists.
-- [ ] Add a script or documented command that creates a unique staging root, seeds it from
+- [x] Add a persistent, unambiguous test-mode indicator when test-root plumbing exists.
+- [x] Add a script that creates a unique staging root, seeds it from
       fixtures, launches the already-built app, and reports the root for inspection.
-- [ ] Ensure teardown is explicit and never recursively deletes a caller-supplied path;
+- [x] Ensure teardown is explicit and never recursively deletes a caller-supplied path;
       only delete a path the script itself created and validated.
-- [ ] Write a manual checklist: expected discovered entries, one raw edit, one structured
+- [x] Write a manual checklist: expected discovered entries, one raw edit, one structured
       edit where supported, diff inspection, backup inspection, restore, and teardown.
 
 ### Phase 3: Automate the regression layer
 
-- [ ] Run fixture parser, discovery, service, and widget tests in the existing CI test job.
-- [ ] Add a fixture validity/coverage check only if the Dart tests cannot already validate
-      the relevant syntax and catalog mapping; avoid a redundant external validator.
+- [x] Run fixture parser, discovery, service, and widget tests in the existing CI test job
+      through the existing `flutter test --coverage` command.
+- [x] Use Dart fixture tests for syntax and catalog mapping; a separate fixture validator is
+      not needed at this stage.
 - [ ] Document when a bug report may add a sanitized regression fixture and require a
       source/secret review before it is committed.
 
 ## Verification
 
-- [ ] `flutter analyze --fatal-infos` passes.
-- [ ] `dart format --output=none --set-exit-if-changed .` passes.
-- [ ] `flutter test --coverage` passes and retains the CI coverage floor.
-- [ ] Fixture files are token-free and pass all existing secret, path, and documentation
+- [x] `flutter analyze --fatal-infos` passes.
+- [x] `dart format --output=none --set-exit-if-changed .` passes.
+- [x] `flutter test --coverage` passes and retains the CI coverage floor (81.74%,
+      2026-08-22).
+- [x] Fixture files are token-free and pass all existing secret, path, and documentation
       hooks.
-- [ ] Automated tests prove user-scope and project-scope discovery against the synthetic
-      tree, including at least one unsupported nested structure that falls back safely.
-- [ ] An automated or manual containment test proves test-mode save, backup, and restore
-      do not modify paths outside the disposable root.
-- [ ] A manual macOS staging smoke run confirms the sidebar populates from the staged
-      catalog paths and records the inspected backup/restore result.
+- [x] Automated tests prove user-scope and project-scope discovery against the synthetic
+      tree.
+- [ ] Add an unsupported nested-structure fixture and prove its raw-editor fallback.
+- [x] An automated or manual containment test proves test-mode save, backup, and restore
+      do not modify paths outside the disposable root. Native no-follow tests plus the
+      2026-08-22 macOS smoke cover the tested path.
+- [x] A manual macOS staging smoke run confirms the sidebar populates from the staged
+      catalog paths and records the inspected backup/restore result (2026-08-22).
 - [ ] Existing Linux, Windows, and macOS CI jobs pass.
 
 ## Open questions

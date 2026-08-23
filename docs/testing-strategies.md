@@ -6,6 +6,43 @@
 
 ## Codex assessment and recommended workflow
 
+**Status update (macOS, 2026-08-22):** The app now has an in-progress,
+test-only `--test-root` mode backed by descriptor-relative, no-follow native file
+operations. It is tested against root, parent, and target symlink escapes and routes
+config, backup, restore, and preference writes below a marked disposable root. Linux and
+Windows intentionally reject the flag for now. The initial manual macOS smoke completed on
+2026-08-22 with staged discovery, edits, backups, preferences, and external-project-root
+rejection verified. Repeat the checklist below when changing test-root I/O or its launcher.
+A `HOME` override alone remains exploratory, not a containment claim.
+
+### Candidate manual macOS smoke
+
+Run this only on a local macOS machine after building the app. The launcher copies only
+repository-owned fixtures into a fresh private temporary directory, creates the required
+marker, and never deletes the directory automatically.
+
+```bash
+flutter build macos --debug
+scripts/run_macos_staging_smoke.sh
+```
+
+The app must display `TEST ROOT MODE` with the printed root. Confirm the user-scope entries
+for Claude Code, Codex, Opencode, Kiro, and shared `AGENTS.md` appear. Add the printed
+root's `workspace` directory as a project root, then confirm its Claude, Codex, and
+`AGENTS.md` entries appear.
+
+Perform one raw edit and one structured edit, inspect each diff, and confirm the backup,
+restore, and preference files remain below the printed root. Exit the app before cleanup.
+The cleanup script refuses symlinks, an unexpected marker, and paths outside its temporary
+staging prefix:
+
+```bash
+scripts/cleanup_macos_staging_root.sh /path/printed/by/the/launcher
+```
+
+Record the outcome in the active testing plan. Do not substitute personal configuration files
+for these fixtures.
+
 The practical first step is a **synthetic staging home**, not a VM, Docker image, or
 new application safety feature. The current home-directory resolver reads `HOME` (and
 the Windows equivalents), so launching the already-built app with `HOME` set to a fresh
@@ -31,11 +68,10 @@ are later validation layers for native desktop and permission behavior.
 Recommended sequence:
 
 1. Build a fixture matrix and automated parser/widget regression tests.
-2. Complete the testing-foundation plan's Phase 0 containment gate. Only then document
-   and use a disposable `HOME` staging-home workflow for daily manual smoke tests,
-   including discovery, edit, diff, backup, and restore checks.
-3. Add an explicit test-only home override or dry-run/write guard only after its service
-   boundary covers saves **and** restores; it must reject paths outside the test root.
+2. Finish the macOS fixture, root-creation, and manual-smoke gates for the tested
+   `--test-root` boundary. Do not wait for Linux or Windows to begin this macOS work.
+3. Add Linux/Windows test-root primitives before enabling the flag there; Docker remains
+   optional Linux validation, not a substitute for native containment.
 4. Use a dedicated user account or VM snapshots for platform-specific, real-world
    validation. Reserve Docker/VNC for Linux-specific or collaborative scenarios.
 
@@ -493,12 +529,13 @@ testWidgets('Editor saves config', (tester) async {
 
 ---
 
-### 10. Proposed Test-Root Write Redirection
+### 10. Test-Root Write Redirection (macOS implementation in progress)
 
-**Approach:** If Phase 0 shows that a process-level `HOME` override is insufficient, add
-a test-only `--test-root` flag. It must use token-free fixture inputs and redirect every
-write — config saves, backups, restores, and preferences — into one disposable root.
-Never write a `.shadow` file next to a real configuration file.
+**Approach:** macOS now has a test-only `--test-root` flag that redirects config saves,
+backups, restores, and preferences into one marker-validated disposable root. It uses native
+no-follow operations rather than a Dart path-prefix check. The fixture launcher and manual
+smoke checklist above are the only supported starting point; never write a `.shadow` file next
+to a real configuration file.
 
 **Pros:**
 

@@ -10,27 +10,34 @@
 
 ### Recommended delivery order
 
-1. **Testing foundation first:** create a token-free fixture matrix and automated
-   regression coverage. The disposable `HOME` staging-home workflow remains exploratory
-   until Phase 0 proves configuration, backup, restore, and preference writes are
-   contained within the test root; only then document it as safe for end-to-end writes.
-2. **Structured-content vertical slice:** write a focused plan for one well-documented,
+1. **Structured-content vertical slice:** write a focused plan for one well-documented,
    high-value permission schema. Build schema metadata and read-only cards first; add
    editing only after lossless/minimal-patch fixture coverage is proven.
-3. **Plain-language help:** attach reviewed explanations and authoritative documentation
+2. **Plain-language help:** attach reviewed explanations and authoritative documentation
    links to the schema metadata introduced by the vertical slice.
-4. **Window sizing:** implement as a small independent quality-of-life change whenever a
+3. **Window sizing:** implement as a small independent quality-of-life change whenever a
    short PR is useful; it should not delay the safety or structured-editing work.
-5. **Broaden tool schemas incrementally:** use real-world, redacted staging fixtures and
+4. **Broaden tool schemas incrementally:** use real-world, redacted staging fixtures and
    regression tests to select each next schema rather than treating every format alike.
+5. **Finish testing regression coverage:** keep the proven macOS staging workflow maintained,
+   add the default-startup harness and unsupported nested-structure raw-editor fixture, and
+   defer Linux/Windows test-root work until their platform-native bridges are planned.
+
+- [ ] **Project workspace labels:** Make project-scope sidebar entries distinguish their root
+      (for example, `workspace — AGENTS.md`) instead of repeating only the tool/file name.
+      Then consider user-editable project aliases stored in discovery preferences; preserve the
+      canonical path for matching, handle duplicate names clearly, and add migration/widget
+      coverage before exposing rename controls.
 
 - [ ] **High priority — safe exploratory testing environment:** Research and document a
       repeatable way to exercise discovery and editing against realistic agent/IDE
       configurations without risking a developer's real files. Start with token-free
-      fixture files plus a disposable `HOME` staging directory to exercise automatic
-      discovery; then compare isolated OS users and VMs for native-platform validation.
-      Docker is supplementary for Linux, not the primary desktop/macOS answer. Define
-      setup/teardown, backup/restore checks, and what can be automated in CI. (See
+      fixture files plus the macOS-only `--test-root` mode to exercise automatic discovery,
+      editing, backup, and restore without touching a real config. First add a script that
+      creates a marked root and a manual smoke checklist; then compare isolated OS users
+      and VMs for native-platform validation. Docker is supplementary for Linux, not the
+      primary desktop/macOS answer. Define setup/teardown, backup/restore checks, and what
+      can be automated in CI. (See
       [docs/testing-strategies.md](docs/testing-strategies.md) and the implementation
       [plan](plans/active/safe-testing-foundation.md), with test-root implementation
       details in [its focused plan](plans/active/test-root-containment.md)).

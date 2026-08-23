@@ -81,6 +81,20 @@ void main() {
     });
 
     test(
+      'silently skips glob targets when glob enumeration is disabled',
+      () async {
+        discoveryService = const DiscoveryService(enableGlobTargets: false);
+
+        final result = await discoveryService.discoverConfigs(
+          DiscoveryRequest(normalizedHomePath: mockHome.path),
+        );
+
+        expect(result.items, isEmpty);
+        expect(result.warnings, isEmpty);
+      },
+    );
+
+    test(
       'discoverConfigs deduplicates a manual path matching a catalog target '
       'and sets both provenance flags',
       () async {

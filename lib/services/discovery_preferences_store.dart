@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:agents_config_helper/models/discovery_preferences.dart';
+import 'package:agents_config_helper/services/file_operations.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -49,13 +50,18 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   DiscoveryPreferencesStore({
     Future<Directory> Function()? getDirectory,
     this.fileName = 'discovery_preferences.json',
-  }) : getDirectory = getDirectory ?? getApplicationSupportDirectory;
+    FileOperations? fileOperations,
+    this._allowedRootPath,
+  }) : getDirectory = getDirectory ?? getApplicationSupportDirectory,
+       _fileOperations = fileOperations ?? const LocalFileOperations();
 
   /// Resolves the directory that houses the preferences file.
   final Future<Directory> Function() getDirectory;
 
   /// Name of the preferences file within [getDirectory].
   final String fileName;
+  final FileOperations _fileOperations;
+  final String? _allowedRootPath;
 
   // Chains mutations so concurrent load-modify-save sequences don't
   // race each other (lost updates / temp file collisions).
@@ -67,9 +73,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     return result;
   }
 
-  Future<File> _getFile() async {
+  Future<String> _getFilePath() async {
     final directory = await getDirectory();
-    return File(p.join(directory.path, fileName));
+    return p.join(directory.path, fileName);
   }
 
   /// Loads preferences from disk, tolerating a missing or corrupt file.
@@ -80,8 +86,8 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   /// when validation fails.
   @override
   Future<DiscoveryPreferencesResult> load() async {
-    final file = await _getFile();
-    if (!file.existsSync()) {
+    final filePath = await _getFilePath();
+    if (!await _fileOperations.fileExists(filePath)) {
       return const DiscoveryPreferencesResult(
         preferences: DiscoveryPreferences(),
       );
@@ -90,7 +96,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     final warnings = <String>[];
     String content;
     try {
-      content = await file.readAsString();
+      content = await _fileOperations.readText(filePath);
     } on Object catch (e) {
       warnings.add('Failed to read preferences file: $e');
       return DiscoveryPreferencesResult(
@@ -172,11 +178,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   }
 
   Future<void> _save(DiscoveryPreferences preferences) async {
-    final file = await _getFile();
-    final parent = file.parent;
-    if (!parent.existsSync()) {
-      await parent.create(recursive: true);
-    }
+    final filePath = await _getFilePath();
 
     // Normalize and deduplicate before saving
     final dedupedManualPaths = _normalizeAndFilterPaths(
@@ -198,13 +200,7 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     const encoder = JsonEncoder.withIndent('  ');
     final jsonString = encoder.convert(prefsToSave.toJson());
 
-    // Write atomic. Suffix the temp file with the process id and a
-    // microsecond timestamp so concurrent saves don't collide.
-    final tempFile = File(
-      '${file.path}.${pid}_${DateTime.now().microsecondsSinceEpoch}.tmp',
-    );
-    await tempFile.writeAsString(jsonString, flush: true);
-    await tempFile.rename(file.path);
+    await _fileOperations.writeTextAtomically(filePath, jsonString);
   }
 
   /// Trims, drops empties, normalizes, deduplicates, and filters to absolute
@@ -236,8 +232,26 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
       for (final bad in deduped.where((fp) => !p.isAbsolute(fp))) {
         warnings!.add("Ignored non-absolute path: '$bad'");
       }
+      final allowedRootPath = _allowedRootPath;
+      if (allowedRootPath != null) {
+        for (final outside in deduped.where(
+          (path) =>
+              p.isAbsolute(path) &&
+              !_isWithinAllowedRoot(allowedRootPath, path),
+        )) {
+          warnings!.add("Ignored path outside the test root: '$outside'");
+        }
+      }
     }
-    return deduped.where(p.isAbsolute).toList();
+    final allowedRootPath = _allowedRootPath;
+    return deduped
+        .where(
+          (path) =>
+              p.isAbsolute(path) &&
+              (allowedRootPath == null ||
+                  _isWithinAllowedRoot(allowedRootPath, path)),
+        )
+        .toList();
   }
 
   /// Comparison key for path deduplication and removal matching.
@@ -245,6 +259,9 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   /// (Windows); case-sensitive elsewhere.
   static String _pathDedupKey(String normalizedPath) =>
       Platform.isWindows ? normalizedPath.toLowerCase() : normalizedPath;
+
+  static bool _isWithinAllowedRoot(String rootPath, String path) =>
+      p.equals(rootPath, path) || p.isWithin(rootPath, path);
 
   /// Validates that [path] is non-empty (after trimming) and absolute.
   /// Throws [InvalidPathException] otherwise.
@@ -256,7 +273,13 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
     if (!p.isAbsolute(trimmed)) {
       throw InvalidPathException("Path must be absolute: '$trimmed'");
     }
-    return trimmed;
+    final normalized = p.normalize(trimmed);
+    final allowedRootPath = _allowedRootPath;
+    if (allowedRootPath != null &&
+        !_isWithinAllowedRoot(allowedRootPath, normalized)) {
+      throw InvalidPathException('Path is outside the test root: $normalized');
+    }
+    return normalized;
   }
 
   /// Validates [path] and appends it to the manual file paths list.

@@ -20,6 +20,7 @@ class ConfigEditor extends StatefulWidget {
     required this.resolvePath,
     required this.onShowHistory,
     this.onDirtyChanged,
+    this.allowOpenDirectory = true,
     this.rawOnly = false,
     super.key,
   });
@@ -39,6 +40,10 @@ class ConfigEditor extends StatefulWidget {
 
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
+
+  /// Whether the editor may invoke the platform file manager for its parent
+  /// directory.
+  final bool allowOpenDirectory;
 
   /// When true, renders the file as a raw-text-only editor: structured
   /// sections and the history button are hidden. Used for corrupt files that
@@ -384,24 +389,26 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       icon: const Icon(Icons.open_in_new, size: 16),
                       color: AppColors.primaryAccent,
                       tooltip: 'Open Directory',
-                      onPressed: () async {
-                        final dir = Directory(
-                          p.dirname(
-                            widget.resolvePath(widget.config.filePath),
-                          ),
-                        );
-                        final opened = await openDirectory(dir);
-                        if (!opened && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Could not open the config directory.',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
+                      onPressed: widget.allowOpenDirectory
+                          ? () async {
+                              final dir = Directory(
+                                p.dirname(
+                                  widget.resolvePath(widget.config.filePath),
+                                ),
+                              );
+                              final opened = await openDirectory(dir);
+                              if (!opened && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Could not open the config directory.',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          : null,
                     ),
                   ],
                 ),

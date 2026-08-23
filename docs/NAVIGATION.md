@@ -41,6 +41,7 @@ Quick navigation guide for AgentsConfigHelper's documentation. Use this to find 
 - [`DESIGN.md`](../DESIGN.md) — UI and data model design notes
 - [`docs/adr/`](adr/) — Architecture Decision Records
 - [`docs/testing-strategies.md`](testing-strategies.md) — layered safe-testing options
+- [`docs/macos-test-root.md`](macos-test-root.md) — macOS disposable-fixture smoke workflow
 - [`docs/research/`](research/) — raw discovery and product-gap research; verify findings
   against the source before implementation
 

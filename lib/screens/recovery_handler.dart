@@ -91,8 +91,7 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     // doesn't abort the entire dialog.
     var fileExists = false;
     try {
-      // ignore: avoid_slow_async_io — desktop tool, not a hot loop
-      fileExists = await File(resolvedPath).exists();
+      fileExists = await configService.fileExists(resolvedPath);
     } on Object {
       // File existence check failed — degrade to "no raw editor" action.
     }
@@ -191,7 +190,7 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     final resolvedPath = configService.resolvePath(configItem.filePath);
     final String rawContent;
     try {
-      rawContent = await File(resolvedPath).readAsString();
+      rawContent = await configService.readRawText(resolvedPath);
     } on Object catch (e) {
       if (mounted && generation == loadGeneration) {
         setState(() {
@@ -231,7 +230,7 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     final resolvedPath = configService.resolvePath(configItem.filePath);
     var rawContent = '';
     try {
-      rawContent = await File(resolvedPath).readAsString();
+      rawContent = await configService.readRawText(resolvedPath);
     } on Object {
       // A deleted file still allows browsing backups.
     }

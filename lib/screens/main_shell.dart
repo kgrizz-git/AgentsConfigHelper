@@ -252,14 +252,13 @@ class _MainShellState extends ConsumerState<MainShell>
               // beyond the 10-backup cap, which could delete the very backup
               // being restored if it's the oldest. Reading first avoids the
               // race.
-              final backupContent = await File(backupPath).readAsBytes();
+              final backupContent = await configService.backupService
+                  .readBackupBytes(backupPath);
               // Preserve the current on-disk file before overwriting it with
               // the restored snapshot, matching saveConfig/saveRawConfig. The
               // exists-check keeps a deleted target (restore-as-recreate) from
               // failing the backup step.
-              // Checking file existence asynchronously avoids blocking the UI.
-              // ignore: avoid_slow_async_io
-              if (await File(targetPath).exists()) {
+              if (await configService.fileExists(targetPath)) {
                 await configService.backupService.createBackup(targetPath);
               }
               await configService.backupService.writeRestoredFile(
@@ -341,6 +340,7 @@ class _MainShellState extends ConsumerState<MainShell>
   }
 
   Future<void> _openBackupsFolder() async {
+    if (ref.read(testRootPathProvider) != null) return;
     final configService = ref.read(configServiceProvider);
     final opened = await openDirectory(
       configService.backupService.backupDirectory,
@@ -362,12 +362,29 @@ class _MainShellState extends ConsumerState<MainShell>
         min: 200,
         builder: (context, area) {
           final discoveryState = ref.watch(discoveryControllerProvider);
+          final testRoot = ref.watch(testRootPathProvider);
 
           return Material(
             color: AppColors.sidebarDark,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (testRoot case final activeTestRoot?)
+                  Container(
+                    width: double.infinity,
+                    color: AppColors.warning,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'TEST ROOT MODE — $activeTestRoot',
+                      style: AppTextStyles.uiSecondary.copyWith(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(
@@ -400,6 +417,7 @@ class _MainShellState extends ConsumerState<MainShell>
                           ),
                           const PopupMenuDivider(),
                           PopupMenuItem(
+                            enabled: testRoot == null,
                             value: () => unawaited(_openBackupsFolder()),
                             child: const Text('Open Backups Folder'),
                           ),
@@ -570,6 +588,7 @@ class _MainShellState extends ConsumerState<MainShell>
             },
             resolvePath: configService.resolvePath,
             onShowHistory: showHistoryModal,
+            allowOpenDirectory: ref.watch(testRootPathProvider) == null,
             rawOnly: _rawRecoveryMode,
             onDirtyChanged: (hasUnsavedChanges) {
               if (mounted) {

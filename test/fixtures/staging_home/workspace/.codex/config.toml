@@ -1,0 +1,2 @@
+model = "fixture-project-model"
+approval_policy = "on-request"
