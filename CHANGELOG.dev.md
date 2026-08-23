@@ -74,6 +74,8 @@ Internal / developer-facing changes that do not belong in the public
   plans active for their remaining manual/default-startup and platform-specific verification.
   Replaced the vague semantic-versioning task with an explicit 0.2.0 release checklist; no
   version was bumped outside a release cut.
+- **Documentation-link checker:** Exclude ignored `tmp/` scratch artifacts from both default
+  and explicit scans, and isolate Markdown-file eligibility from scan control flow.
 
 ### Added
 
