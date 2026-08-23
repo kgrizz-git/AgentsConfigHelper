@@ -138,6 +138,9 @@ Phase 6 release narrative.
   * Suggesting safe defaults and best practices.
   * Providing guidance on common read-only commands.
   * Offering templates or wizards for allowing/restricting commands within specific folders or workspaces.
+* **Detailed Plan:** [Structured Configuration Roadmap](structured-configuration-roadmap.md).
+  The first implementation is the read-only [Claude Code permissions vertical slice](claude-permissions-vertical-slice.md);
+  it deliberately precedes any structured mutation.
 
 ## Phase 9: Deferred Tools & Markdown/Starlark Sources
 
