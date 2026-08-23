@@ -12,9 +12,10 @@ uses [Semantic Versioning](https://semver.org/).
 ### Added
 - **Adaptive desktop window sizing:** New macOS, Windows, and Linux windows now open
   centered at roughly 75% of the usable display, with a display-aware minimum so they
-  remain usable without extending beyond smaller screens. After moving or resizing, the
-  last usable bounds are restored on the next launch; disconnected-display bounds fall
-  back safely to the adaptive layout.
+  remain usable without extending beyond smaller screens. After moving or resizing a
+  normal window, its last usable bounds are restored on the next launch; minimized,
+  maximized, and full-screen state is not restored. Disconnected-display bounds fall back
+  safely to the adaptive layout.
 - **Ecosystem Expansion (New Tools):** Added first-class support for Kilo, Cline, LM Studio, and GitHub Copilot. Their respective configuration and rules files are now auto-discovered across global and project levels. Nested LM Studio hub paths (`publisher/model`), Cline `.clinerules/` directories, and bounded recursive glob walks (match + visit caps, no symlink following; recursion only when the remaining pattern needs it) are included. Also discovers Kilo `.json` configs, Cline `~/Cline/Rules` only when `~/Documents/Cline/Rules` is absent, Copilot personal/repo `*.instructions.md` trees, and Copilot CLI files under `COPILOT_HOME` when set. Copilot editable settings discover `~/.copilot/settings.json` and `.github/copilot/settings.json` (plus local overrides); `config.json` remains as managed CLI state.
 - **Shared AGENTS.md catalog entry:** Project-root `AGENTS.md` (and `~/.agents/AGENTS.md`) is discovered under **AGENTS.md (shared)** instead of being attributed to whichever single tool appeared first in the catalog. Docs list which tools load it.
 - **Expanded configuration discovery:** Added auto-discovery and raw-text editing support for Antigravity's `GEMINI.md`, Codex's Starlark `.rules` files, and Devin's `.devin/rules/*.md`.

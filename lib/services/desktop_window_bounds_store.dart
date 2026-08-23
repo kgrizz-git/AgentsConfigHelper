@@ -35,7 +35,7 @@ class DesktopWindowBoundsStore {
     }
   }
 
-  /// Saves [bounds] when its dimensions and position are finite and positive.
+  /// Saves [bounds] when its position is finite and dimensions are positive.
   Future<void> save(Rect bounds) async {
     if (!isValid(bounds)) return;
     final content = const JsonEncoder.withIndent('  ').convert({
