@@ -90,14 +90,19 @@ void main() {
       expect(result.unsupportedReason, contains('allow'));
     });
 
-    test('does not apply when permissions are absent', () {
-      final result = adapter.interpret(
-        config: config({'model': 'fixture-model'}),
-        discoveredConfig: claudeConfig(),
-      );
+    test(
+      'presents an empty policy for Claude settings without permissions',
+      () {
+        final result = adapter.interpret(
+          config: config({'model': 'fixture-model'}),
+          discoveredConfig: claudeConfig(),
+        );
 
-      expect(result.status, ClaudeCodePermissionsStatus.notApplicable);
-    });
+        expect(result.status, ClaudeCodePermissionsStatus.available);
+        expect(result.presentation?.hasConfiguredPolicy, isFalse);
+        expect(result.presentation?.allow, isEmpty);
+      },
+    );
 
     test('does not apply to manually added Claude paths', () {
       final result = adapter.interpret(

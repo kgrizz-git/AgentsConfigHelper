@@ -15,6 +15,7 @@ void main() {
         allow: const ['Read(./fixtures/**)'],
         ask: const ['Bash(git status)'],
         deny: const ['Read(./private/**)'],
+        hasConfiguredPolicy: true,
         hasUnclassifiedSettings: true,
       );
 
@@ -51,4 +52,41 @@ void main() {
       expect(openedUri, ClaudeCodePermissionsAdapter.documentationUri);
     },
   );
+
+  testWidgets('shows feedback when documentation cannot be opened', (
+    tester,
+  ) async {
+    final presentation = ClaudeCodePermissionsPresentation(
+      defaultMode: null,
+      allow: const [],
+      ask: const [],
+      deny: const [],
+      hasConfiguredPolicy: false,
+      hasUnclassifiedSettings: false,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ClaudeCodePermissionsCard(
+            presentation: presentation,
+            onOpenDocumentation: (_) async => false,
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.textContaining('No Claude Code permissions policy is configured'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Claude Code permissions documentation'));
+    await tester.pump();
+
+    expect(
+      find.text('Unable to open Claude Code permissions documentation.'),
+      findsOneWidget,
+    );
+  });
 }

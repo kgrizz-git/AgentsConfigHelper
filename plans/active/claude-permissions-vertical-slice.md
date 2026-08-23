@@ -46,7 +46,7 @@ settings, or unknown permission keys.
 | Situation | UI behavior |
 | --- | --- |
 | Valid recognized subtree | Show a **Claude Code permissions** read-only card: optional default mode and separate Allow, Ask, and Deny sections with counts and rule strings. Retain the raw editor below it. |
-| `permissions` absent | Do not show a Claude permissions card; leave the normal editor/raw presentation unchanged. |
+| `permissions` absent | Show a safe empty Claude permissions card that directs the user to raw content for `allow`/`ask`/`deny` changes. Do not expose the legacy flat permissions editor, which would serialize an invalid array shape. |
 | `permissions` is not an object, a recognized field has an invalid type, or an array contains a non-string | Do not render a partial card. Show one concise explanation that the permissions shape is not supported for structured display and direct the user to raw content. |
 | Extra, unknown keys inside `permissions` | Render the fully validated recognized fields and clearly note that additional permission settings remain available only in raw content. Do not display or edit their values. |
 | Non-Claude target or format | Do not select this adapter. Existing generic behavior remains unchanged. |
@@ -90,8 +90,8 @@ without widget pumping and keep widget tests independent of the filesystem.
       notice, help text, and documentation URI.
 - [x] Select the Claude adapter from the discovered descriptor identity. Manual files that
       are not confidently classified as Claude Code must not receive the card.
-- [x] Build a read-only card with distinguishable Allow/Ask/Deny labels, empty-state text,
-      rule counts, and sensible wrapping/scrolling for long rule strings.
+- [x] Build a read-only card with distinguishable Allow/Ask/Deny labels, a safe missing-policy
+      empty state, rule counts, and sensible wrapping/scrolling for long rule strings.
 - [x] Make help keyboard-accessible and expose the official documentation URI without
       forcing the app to open a browser in a widget test.
 - [x] Ensure the current “nested permissions … not editable” text is replaced only for a

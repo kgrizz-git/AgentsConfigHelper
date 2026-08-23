@@ -24,6 +24,7 @@ class ClaudeCodePermissionsPresentation extends Equatable {
     required List<String> allow,
     required List<String> ask,
     required List<String> deny,
+    required this.hasConfiguredPolicy,
     required this.hasUnclassifiedSettings,
   }) : allow = List.unmodifiable(allow),
        ask = List.unmodifiable(ask),
@@ -41,6 +42,9 @@ class ClaudeCodePermissionsPresentation extends Equatable {
   /// Rules that Claude Code denies.
   final List<String> deny;
 
+  /// Whether the settings file contains a `permissions` policy object.
+  final bool hasConfiguredPolicy;
+
   /// Whether unrecognized sibling settings remain available only as raw
   /// content.
   final bool hasUnclassifiedSettings;
@@ -51,6 +55,7 @@ class ClaudeCodePermissionsPresentation extends Equatable {
     allow,
     ask,
     deny,
+    hasConfiguredPolicy,
     hasUnclassifiedSettings,
   ];
 }
@@ -110,8 +115,16 @@ class ClaudeCodePermissionsAdapter {
     }
 
     if (!config.rawSettings.containsKey('permissions')) {
-      return const ClaudeCodePermissionsInterpretation(
-        status: ClaudeCodePermissionsStatus.notApplicable,
+      return ClaudeCodePermissionsInterpretation(
+        status: ClaudeCodePermissionsStatus.available,
+        presentation: ClaudeCodePermissionsPresentation(
+          defaultMode: null,
+          allow: const [],
+          ask: const [],
+          deny: const [],
+          hasConfiguredPolicy: false,
+          hasUnclassifiedSettings: false,
+        ),
       );
     }
 
@@ -162,6 +175,7 @@ class ClaudeCodePermissionsAdapter {
         allow: allow,
         ask: ask,
         deny: deny,
+        hasConfiguredPolicy: true,
         hasUnclassifiedSettings: hasUnclassifiedSettings,
       ),
     );

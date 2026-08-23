@@ -81,7 +81,7 @@ void main() {
       }
     });
 
-    test('fixture without permissions does not opt into the card', () {
+    test('fixture without permissions presents an empty read-only policy', () {
       final result = adapter.interpret(
         config: parseFixture(
           'edge_cases/claude_permissions_without_permissions.json',
@@ -89,7 +89,8 @@ void main() {
         discoveredConfig: discoveredConfig,
       );
 
-      expect(result.status, ClaudeCodePermissionsStatus.notApplicable);
+      expect(result.status, ClaudeCodePermissionsStatus.available);
+      expect(result.presentation?.hasConfiguredPolicy, isFalse);
     });
 
     test(

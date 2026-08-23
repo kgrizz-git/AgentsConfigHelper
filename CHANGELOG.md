@@ -14,7 +14,8 @@ uses [Semantic Versioning](https://semver.org/).
   permission rules (plus the default mode) now appear in a read-only policy card with a link
   to the official permissions documentation. Unknown or malformed permission shapes remain
   available in the raw editor; this release does not change any permission values through the
-  card.
+  card. Settings without a policy show a safe empty state rather than the legacy flat
+  permissions editor.
 - **Adaptive desktop window sizing:** New macOS, Windows, and Linux windows now open
   centered at roughly 75% of the usable display, with a display-aware minimum so they
   remain usable without extending beyond smaller screens. After moving or resizing a

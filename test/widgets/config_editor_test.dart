@@ -7,6 +7,7 @@ import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
+import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -416,6 +417,61 @@ void main() {
           ),
           findsNothing,
         );
+      },
+    );
+
+    testWidgets(
+      'does not offer a flat permissions editor for Claude settings '
+      'without a policy',
+      (tester) async {
+        final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+          (item) => item.id == ToolId.claudeCode,
+        );
+        final discoveredConfig = DiscoveredConfig.fromPath(
+          filePath: '${Directory.systemTemp.path}/.claude/settings.json',
+          descriptor: descriptor,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+          format: ConfigFormat.json,
+          sourceLabel: 'Claude Code',
+          fromCatalog: true,
+        );
+        final config = ToolConfig(
+          toolName: 'Claude Code',
+          filePath: discoveredConfig.filePath,
+          format: ConfigFormat.json,
+          originalContent: '{"model":"fixture-model"}',
+          rawSettings: const {'model': 'fixture-model'},
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ConfigEditor(
+                config: config,
+                discoveredConfig: discoveredConfig,
+                onSave: (config, [rawContent]) async => config,
+                resolvePath: (path) => path,
+                onShowHistory: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Claude Code permissions'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'No Claude Code permissions policy is configured',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Allowed directories or commands for this agent.'),
+          findsNothing,
+        );
+        // The remaining list editor is for rules; no second editor is offered
+        // for Claude permissions.
+        expect(find.byType(StringListEditor), findsOneWidget);
       },
     );
 

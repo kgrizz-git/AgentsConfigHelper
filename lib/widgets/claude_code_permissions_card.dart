@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -21,9 +19,28 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
   /// Opens the primary Claude Code permission documentation.
   final Future<bool> Function(Uri uri)? onOpenDocumentation;
 
-  Future<void> _openDocumentation() async {
+  Future<void> _openDocumentation(BuildContext context) async {
     final launcher = onOpenDocumentation ?? _launchDocumentation;
-    await launcher(ClaudeCodePermissionsAdapter.documentationUri);
+    try {
+      final opened = await launcher(
+        ClaudeCodePermissionsAdapter.documentationUri,
+      );
+      if (!opened && context.mounted) {
+        _showDocumentationLaunchError(context);
+      }
+    } on Object {
+      if (context.mounted) {
+        _showDocumentationLaunchError(context);
+      }
+    }
+  }
+
+  void _showDocumentationLaunchError(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Unable to open Claude Code permissions documentation.'),
+      ),
+    );
   }
 
   static Future<bool> _launchDocumentation(Uri uri) {
@@ -81,6 +98,15 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
             'This card reflects the file and does not change it.',
             style: AppTextStyles.uiSecondary,
           ),
+          if (!presentation.hasConfiguredPolicy) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'No Claude Code permissions policy is configured. Use raw '
+              'content to add permissions.allow, permissions.ask, or '
+              'permissions.deny.',
+              style: AppTextStyles.uiSecondary,
+            ),
+          ],
           if (presentation.defaultMode != null) ...[
             const SizedBox(height: 16),
             Text(
@@ -101,7 +127,9 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
           ],
           const SizedBox(height: 12),
           TextButton.icon(
-            onPressed: () => unawaited(_openDocumentation()),
+            onPressed: () async {
+              await _openDocumentation(context);
+            },
             icon: const Icon(Icons.open_in_new, size: 16),
             label: const Text('Claude Code permissions documentation'),
           ),
