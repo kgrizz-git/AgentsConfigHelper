@@ -1,6 +1,7 @@
 # Master Plan: AgentsConfigHelper
 
-Status: active
+Status: active — remaining product roadmap; completed implementation phases are linked to
+their archived plans below
 Created: 2026-08-11
 Profile: `.context/project-profile.md`
 
@@ -17,7 +18,7 @@ Build a cross-platform desktop application to visualize, edit, and manage config
 * Design the unified `ToolConfig` model.
 * Implement format-specific parsers (`JSON`, `YAML`, `TOML`, `Markdown`).
 * Write comprehensive unit tests against synthetic fixtures.
-* **Detailed Plan:** *[Link to be created]*
+* **Detailed Plan:** implemented; parser work is retained in the source and test history.
 
 ## Phase 2: Services & Discovery
 
@@ -26,7 +27,7 @@ Build a cross-platform desktop application to visualize, edit, and manage config
 * Implement `DiscoveryService` to scan standard OS directories and project folders.
 * Implement `BackupService` to handle `.bak` creation and restore functionality. (Implemented as app-support-dir backups via BackupService, not alongside originals.)
 * Integrate CLI hooks for agents that expose configuration commands. (Deferred: moved to Phase 7 Templates & Syncing; V1 is local-only, no networking.)
-* **Detailed Plan:** *[Link to be created]*
+* **Detailed Plan:** [`plans/archive/phase_2_services.md`](../archive/phase_2_services.md)
 
 ## Phase 2.5: Advanced Parsers (JSONC)
 
@@ -34,7 +35,7 @@ Build a cross-platform desktop application to visualize, edit, and manage config
 
 * Evaluate and integrate a comment-preserving JSONC parser.
 * Implement `JsoncConfigParser` supporting `.jsonc` and Opencode configurations.
-* **Detailed Plan:** `plans/active/phase_2.5_jsonc.md`
+* **Detailed Plan:** [`plans/archive/phase_2.5_jsonc.md`](../archive/phase_2.5_jsonc.md)
 
 ## Phase 3: UI/UX Design System & Prototyping
 
@@ -44,7 +45,7 @@ Build a cross-platform desktop application to visualize, edit, and manage config
 * Mockup the core layout (Sidebar, main content area, empty states).
 * Choose a component library strategy (e.g., custom Material 3, or a native-feeling desktop library like `macos_ui` / `fluent_ui`).
 * Prototype micro-interactions (hover states, diff transitions).
-* **Detailed Plan:** `plans/active/phase_3_design.md`
+* **Detailed Plan:** [`plans/archive/phase_3_design.md`](../archive/phase_3_design.md)
 
 ## Phase 4: Application State & UI Shell
 
@@ -113,7 +114,8 @@ Phase 6 release narrative.
 * Finalize macOS, Windows, and Linux build settings (icons and permissions).
 * Draft user release notes.
 * Fold in manual-path removal bug fix from TO_DO.md (Qodo #10).
-* **Detailed Plan:** `plans/active/phase_6_release.md` (In progress; supersedes the stub below).
+* **Detailed Plan:** [`plans/archive/phase_6_release.md`](../archive/phase_6_release.md)
+  (completed; superseded the stub below).
 
 > **Suggestion (2026-08-13):** Current parse-error handling is a single generic error string in `main_shell.dart`. Phase 6 should define per-format recovery (offer raw-editor open, show line/col of syntax error, never auto-overwrite a corrupted file) and formalize the JSONC fallback-warning path described in `phase_2.5_jsonc.md`.
 >

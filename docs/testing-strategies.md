@@ -967,8 +967,10 @@ Based on the app's architecture (Flutter desktop, pure-function parsers, unsandb
    comments, TOML nested tables, YAML multi-line strings, and Markdown YAML frontmatter.
 3. **Introduce Parser Snapshot Testing (16)** for structured formats (`JSON`, `YAML`,
    `TOML`) using normalized text fixtures.
-4. **Consider the test-only `--test-root` boundary (10)** only if Phase 0 proves it is
-   required; a user-facing dry-run is separate product work.
+4. **Use the implemented macOS test-only `--test-root` boundary (10)** for disposable,
+   token-free staging smoke tests. Linux and Windows must continue rejecting the flag until
+   they have equivalent platform-native containment; a user-facing dry-run is separate
+   product work.
 5. **Layer VM or Docker isolation (18)** only for final cross-platform release
    validation, not for daily development.
 

@@ -169,8 +169,9 @@ restore-copy, and preference atomic-replace operations below a macOS test root.
       the staging and validated-cleanup scripts without duplicating their safety logic.
 - [x] Record the tested macOS paths and commands in `docs/testing-strategies.md`; add
       Linux and Windows guidance only with their respective implementations.
-- [ ] Update the parent plan's Phase 0/2 checkboxes with test evidence; do not call the
-      workflow safe until the no-follow exit gate and platform runs pass.
+- [x] Update the parent plan's Phase 0/2 checkboxes with macOS test evidence; retain the
+      normal-startup and platform-specific verification work below before calling the
+      cross-platform workflow complete.
 
 ## Proposed files
 

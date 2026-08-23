@@ -212,7 +212,7 @@ path remains.
 ## Phase 5 — status
 
 Items 1, 2, and 4 shipped in PR #5. Item 3 (typed editors) and line-level
-diffing remain deferred (see `plans/active/phase_5_editors.md`).
+diffing remain deferred (see `plans/archive/phase_5_editors.md`).
 
 1. **Shipped (PR #5).** Raw-text editor/save contract that preserves original
    content and uses backup-before-write.

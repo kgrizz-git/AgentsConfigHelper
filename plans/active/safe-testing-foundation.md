@@ -115,9 +115,9 @@ mistaken for credentials.
 
 - [x] Trace startup's home, application-support, preference, and environment-controlled
       locations from source. The evidence is recorded above.
-- [ ] Run the built macOS app with a fresh `HOME` staging directory and record where the
-      edited config, backup, and preference files are actually written. This needs a local
-      macOS interaction; it cannot be inferred from `path_provider` source alone.
+- [x] Record that a `HOME`-only staging run is intentionally not a safety procedure. The
+      macOS `--test-root` smoke run on 2026-08-22 instead verified config, backup, and
+      preference containment below the script-created root.
 - [x] Decide whether `HOME` alone confines all writes. It is insufficient as a documented
       cross-platform safety boundary; use the explicit test-root design instead.
 - [x] Implement the macOS canonical/no-follow containment boundary and its symlink-escape tests
@@ -179,10 +179,9 @@ mistaken for credentials.
 
 ## Open questions
 
-- [ ] Does `getApplicationSupportDirectory()` resolve below a process-level `HOME` override
-      on each supported desktop platform? Resolve in Phase 0; do not assume.
-- [ ] How can the preference store receive a test-root directory with the least production
-      behavior change if the override is required?
+- [ ] What platform-native primitives can provide the macOS no-follow guarantee on Linux and
+      Windows? Those platforms currently reject `--test-root`; do not infer their behavior from
+      a process-level `HOME` override.
 - [ ] Which catalog targets provide the smallest useful fixture set without turning the
       fixtures into a second copy of every vendor's documentation?
 - [ ] Should a future user-facing dry-run feature build on this containment boundary, or

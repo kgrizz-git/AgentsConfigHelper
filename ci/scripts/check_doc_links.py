@@ -50,7 +50,15 @@ CODE_FENCE_RE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 TIMEOUT = 10
 USER_AGENT = "template-repo-doc-link-check/1.0"
 
-SKIP_DIRS = {".git", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache", "worktrees"}
+SKIP_DIRS = {
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+    "tmp",
+    "worktrees",
+}
 
 # Hosts that reject automated HEAD requests; a failure there is not evidence of rot.
 SKIP_HOSTS = ("twitter.com", "x.com", "linkedin.com", "reddit.com")
@@ -66,12 +74,20 @@ def _is_within_repo(path: Path, root: Path) -> bool:
         return False
 
 
+def _is_eligible_markdown(path: Path) -> bool:
+    return (
+        path.suffix == ".md"
+        and path.exists()
+        and not (SKIP_DIRS & set(path.parts))
+    )
+
+
 def iter_markdown(paths: list[Path]) -> list[Path]:
     if paths:
         root = Path.cwd()
         valid = []
         for p in paths:
-            if p.suffix != ".md" or not p.exists():
+            if not _is_eligible_markdown(p):
                 continue
             if not _is_within_repo(p, root):
                 print(f"[links] SKIP   {p}: outside repo root, refusing to read", file=sys.stderr)
@@ -80,7 +96,7 @@ def iter_markdown(paths: list[Path]) -> list[Path]:
         return valid
     found = []
     for path in Path(".").rglob("*.md"):
-        if SKIP_DIRS & set(path.parts):
+        if not _is_eligible_markdown(path):
             continue
         found.append(path)
     return sorted(found)

@@ -110,7 +110,7 @@ change (e.g. a `BackupService` subclass that throws). Same for
 
 - [x] `CHANGELOG.dev.md` **Unreleased → Added**: widget tests for `RecoveryHandler`.
   No public `CHANGELOG.md` / `VERSION` bump (tests only).
-- [x] `plans/active/phase_6_release.md`: mark A4 recovery-dialog widget test
+- [x] `plans/archive/phase_6_release.md`: mark A4 recovery-dialog widget test
    done; remove the "I/O doesn't complete" deferral note.
 - Do not edit `TO_DO.md` unless an item explicitly names this gap.
 

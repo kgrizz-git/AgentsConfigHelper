@@ -26,7 +26,7 @@ Internal / developer-facing changes that do not belong in the public
   implementation decision into `plans/active/test-root-containment.md`.
 - **`plans/active/safe-testing-foundation.md`:** Implementation plan for synthetic
   fixture coverage and a write-confined staging-home smoke workflow.
-- **`plans/active/dependency-upgrades.md`:** Separate staged package-upgrade
+- **`plans/archive/dependency-upgrades.md`:** Separate staged package-upgrade
   plan with local and CI verification gates; Flutter SDK upgrades are kept out
   of package-only work.
 
@@ -42,7 +42,7 @@ Internal / developer-facing changes that do not belong in the public
   without touching `pubspec.yaml` constraints, bumping the transitive dev-only
   test package `vm_service` 15.2.0 → 15.3.0 (the sole `Upgradable` package at
   baseline). No runtime or security posture change for the shipped app: it is
-  absent from the non-dev dependency tree. `plans/active/dependency-upgrades.md`
+  absent from the non-dev dependency tree. `plans/archive/dependency-upgrades.md`
   now records the Phase 0 baseline, the direct-package target inventory, and the
   Phase 1 outcome. The subsequent Flutter-enabled major migration is recorded above.
 - **ADR-002 and macOS execution planning:** Accepted an unsandboxed,
@@ -68,12 +68,20 @@ Internal / developer-facing changes that do not belong in the public
   `handleError` on recursive listing (errors count toward the visit cap;
   stop at `maxGlobEntitiesVisited` without exceeding it;
   prefer `FileSystemException.path` in warnings when available).
+- **Planning and release hygiene:** Archived completed implementation plans for Services &
+  Discovery, JSONC, the design-system prototype, the Flutter SDK, dependency upgrades, and
+  Phase 10 tool expansion after the merged CI matrix passed. Kept the macOS and test-root
+  plans active for their remaining manual/default-startup and platform-specific verification.
+  Replaced the vague semantic-versioning task with an explicit 0.2.0 release checklist; no
+  version was bumped outside a release cut.
+- **Documentation-link checker:** Exclude ignored `tmp/` scratch artifacts from both default
+  and explicit scans, and isolate Markdown-file eligibility from scan control flow.
 
 ### Added
 
 - **`docs/PRODUCT_IDEAS.md`:** Long-form product/exploration notes; markdownlint-ignored
   (same class as CHANGELOG — intentional long lines).
-- **Phase 10 plan completion notes** in `plans/active/phase_10_new_tools.md` and
+- **Phase 10 plan completion notes** in `plans/archive/phase_10_new_tools.md` and
   related `TO_DO.md` backlog for GitHub workflows / review-tool configs.
 - **Registry invariant tests.** Added `test/catalog/registry_invariants_test.dart` to verify that `ConfigFormat.markdown` and `ConfigFormat.text` are never routed to the structured parser.
 - **RecoveryHandler widget tests.** Added `test/screens/recovery_handler_test.dart`
