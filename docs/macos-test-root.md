@@ -13,7 +13,7 @@ operator reference for the scripts and manual smoke workflow.
 
 Test-root mode starts only when its argument names an existing, non-symlink directory with
 the exact staging marker created by the launcher. The app canonicalizes that root and routes
-its config I/O, backups, restores, and discovery preferences through a macOS native bridge.
+its config I/O, backups, restores, discovery preferences, and remembered window bounds through a macOS native bridge.
 The bridge retains the opened root descriptor and uses descriptor-relative no-follow operations
 for descendants, so a symlink or later pathname swap cannot redirect an operation outside the
 opened root.
@@ -57,8 +57,8 @@ independently validates the temporary-root prefix and exact marker before removi
 3. Confirm the fixture entries for Claude Code, Codex, Opencode, Kiro, and shared `AGENTS.md`
    appear. Add the printed root's `workspace` directory and confirm its project entries appear.
 4. Perform one raw edit and one structured edit. Inspect their diffs.
-5. Confirm the generated backup, restored output, and discovery-preference file all remain below
-   the printed root.
+5. Confirm the generated backup, restored output, discovery-preference file, and window-bounds
+   preference file all remain below the printed root.
 6. Quit the app, then run `./dev.sh --cleanup <printed-root>`.
 7. Record the result in the active [Safe Testing Foundation plan](../plans/active/safe-testing-foundation.md).
 

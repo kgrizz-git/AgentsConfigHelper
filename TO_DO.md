@@ -51,10 +51,6 @@
       owning tool's authoritative documentation. Design a versioned metadata source,
       ensure links are tool-specific and reviewable, and keep unknown settings visibly
       unclassified rather than inventing explanations.
-- [ ] **Remember desktop window bounds:** Persist the user's last valid size and position
-      after designing storage that preserves the macOS test-root preference-I/O contract.
-      Restore only bounds that are usable on the currently connected displays; retain the
-      adaptive, centered first-launch size as the fallback.
 
 ## Tool-support gaps (discovery expansion)
 

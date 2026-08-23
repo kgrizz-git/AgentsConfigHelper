@@ -46,5 +46,23 @@ void main() {
         DesktopWindowConfiguration.preferredMinimumSize,
       );
     });
+
+    test('restores and clamps bounds that overlap a current display', () {
+      final restored = DesktopWindowConfiguration.restoredBounds(
+        const Rect.fromLTWH(1800, 100, 900, 700),
+        const [Rect.fromLTWH(0, 0, 1920, 1080)],
+      );
+
+      expect(restored, const Rect.fromLTWH(1020, 100, 900, 700));
+    });
+
+    test('does not restore bounds outside all current displays', () {
+      final restored = DesktopWindowConfiguration.restoredBounds(
+        const Rect.fromLTWH(2500, 100, 900, 700),
+        const [Rect.fromLTWH(0, 0, 1920, 1080)],
+      );
+
+      expect(restored, isNull);
+    });
   });
 }

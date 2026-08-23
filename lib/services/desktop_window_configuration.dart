@@ -54,4 +54,37 @@ class DesktopWindowConfiguration {
 
   /// The native minimum window size in logical pixels.
   final Size minimumSize;
+
+  /// Returns saved [bounds] clamped to a currently usable display, or null
+  /// when no connected display can show it.
+  static Rect? restoredBounds(
+    Rect? bounds,
+    Iterable<Rect> visibleDisplays,
+  ) {
+    if (bounds == null ||
+        !bounds.left.isFinite ||
+        !bounds.top.isFinite ||
+        !bounds.width.isFinite ||
+        !bounds.height.isFinite ||
+        bounds.width <= 0 ||
+        bounds.height <= 0) {
+      return null;
+    }
+
+    for (final display in visibleDisplays) {
+      if (!display.width.isFinite ||
+          !display.height.isFinite ||
+          display.width <= 0 ||
+          display.height <= 0 ||
+          !bounds.overlaps(display)) {
+        continue;
+      }
+      final width = math.min(bounds.width, display.width);
+      final height = math.min(bounds.height, display.height);
+      final left = bounds.left.clamp(display.left, display.right - width);
+      final top = bounds.top.clamp(display.top, display.bottom - height);
+      return Rect.fromLTWH(left, top, width, height);
+    }
+    return null;
+  }
 }
