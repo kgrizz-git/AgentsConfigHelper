@@ -7,6 +7,12 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Structured-configuration roadmap:** Added the staged architecture and safety plan for
+  schema-aware cards, reviewed help, per-schema expansion, and regression coverage, plus a
+  ready-to-implement read-only Claude Code `allow`/`ask`/`deny` permissions vertical slice.
+- **Tool-catalog integrity plan:** Added a scoped plan for per-tool source/schema evidence,
+  deterministic catalog checks in PR CI, and a quarterly advisory GitHub review issue.
+
 - **macOS test-root containment (in progress):** Added a test-only,
   exact-marker-validated `--test-root=<absolute-path>` startup mode. It uses a native,
   descriptor-relative no-follow bridge for config I/O, backups, restores, and preferences;

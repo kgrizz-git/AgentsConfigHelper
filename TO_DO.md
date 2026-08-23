@@ -13,16 +13,23 @@
 
 ### Recommended delivery order
 
-1. **Structured-content vertical slice:** write a focused plan for one well-documented,
-   high-value permission schema. Build schema metadata and read-only cards first; add
-   editing only after lossless/minimal-patch fixture coverage is proven.
+1. **Claude Code permissions vertical slice:** implement the read-only `allow` / `ask` /
+   `deny` card described in the [detailed plan](plans/active/claude-permissions-vertical-slice.md).
+   Keep raw content available and defer editing until the specified lossless/minimal-patch
+   evidence exists.
 2. **Plain-language help:** attach reviewed explanations and authoritative documentation
-   links to the schema metadata introduced by the vertical slice.
-3. **Broaden tool schemas incrementally:** use real-world, redacted staging fixtures and
-   regression tests to select each next schema rather than treating every format alike.
+   links to the schema metadata introduced by the Claude slice.
+3. **Broaden tool schemas incrementally:** use sanitized staging fixtures and regression tests
+   to select each next schema rather than treating every format alike.
 4. **Finish testing regression coverage:** keep the proven macOS staging workflow maintained,
    add the default-startup harness and unsupported nested-structure raw-editor fixture, and
    defer Linux/Windows test-root work until their platform-native bridges are planned.
+5. **Tool catalog integrity:** implement the [tool-catalog integrity plan](plans/active/tool-catalog-integrity.md)
+   so supported-tool documentation has explicit source/schema evidence, deterministic PR
+   checks, and a quarterly advisory review issue.
+
+The durable sequence and architecture decisions are in the
+[Structured Configuration Roadmap](plans/active/structured-configuration-roadmap.md).
 
 - [ ] **Project workspace labels:** Make project-scope sidebar entries distinguish their root
       (for example, `workspace — AGENTS.md`) instead of repeating only the tool/file name.
@@ -47,12 +54,15 @@
       and a single high-value read-only card; preserve a faithful raw-editor fallback for
       unsupported or ambiguous content. Enable editing only after lossless/minimal-patch
       fixture coverage, then add parser/UI tests per schema. (See gap analysis in
-      [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md))
+      [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md)
+      and [implementation roadmap](plans/active/structured-configuration-roadmap.md).)
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the
       owning tool's authoritative documentation. Design a versioned metadata source,
       ensure links are tool-specific and reviewable, and keep unknown settings visibly
       unclassified rather than inventing explanations.
+- [ ] **Tool catalog integrity:** Complete the source-evidence matrix and automated review
+      workflow in [plans/active/tool-catalog-integrity.md](plans/active/tool-catalog-integrity.md).
 
 ## Tool-support gaps (discovery expansion)
 
