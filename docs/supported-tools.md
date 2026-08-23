@@ -1,6 +1,6 @@
 # Supported Tools
 
-Last reviewed: 2026-08-20
+Last reviewed: 2026-08-23
 
 Config format reference for each supported AI agent and IDE. Used by AgentsConfigHelper
 to auto-detect, parse, visualize, and edit settings across tools.
@@ -66,6 +66,7 @@ JSON with permissions, hooks, env, model settings.
 - **Rule types:** `allow`, `ask`, `deny` — arrays of tool pattern strings
 - **Evaluation:** deny → ask → allow (first match wins)
 - **Modes:** `default`, `acceptEdits`, `plan`, `auto`, `dontAsk`, `bypassPermissions`
+  (`manual` is accepted as an alias for `default` by current Claude Code versions)
 - **Pattern format:** `ToolName` or `ToolName(glob-pattern)`
 
 ### Claude Code Rules

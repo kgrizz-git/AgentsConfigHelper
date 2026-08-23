@@ -1,0 +1,6 @@
+{
+  // A comment must remain part of the raw source for the fallback parser.
+  "permissions": {
+    "allow": ["Read(./fixtures/**)"],
+  },
+}

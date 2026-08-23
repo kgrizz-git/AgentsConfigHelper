@@ -1,0 +1,6 @@
+{
+  "permissions": {
+    "allow": ["Read(./fixtures/**)"],
+    "disableBypassPermissionsMode": "disable"
+  }
+}

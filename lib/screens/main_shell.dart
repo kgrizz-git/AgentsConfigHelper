@@ -561,6 +561,7 @@ class _MainShellState extends ConsumerState<MainShell>
           final configService = ref.read(configServiceProvider);
           return ConfigEditor(
             config: _activeConfig!,
+            discoveredConfig: _activeDiscoveredConfig,
             // Save feedback (success/error SnackBars) is shown by
             // ConfigEditor itself; this callback only persists the change
             // and updates the active config. Errors propagate to
