@@ -1,10 +1,10 @@
 # Plan: Flutter SDK Upgrade
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-23
 Date: 2026-08-21
 Author: maintainers
-Status: in progress — local verification complete; CI pending
-Linked issue/PR: n/a
+Status: complete
+Verified by: PR #24 CI on 2026-08-23 (Linux, macOS, and Windows build matrix green)
 
 ## Goal
 
@@ -30,7 +30,7 @@ Riverpod family, so this change includes that coupled migration.
 - [x] Upgrade the now-compatible Riverpod/analyzer toolchain family and regenerate
   Riverpod output.
 - [x] Run format, analyze, tests, metrics, and a local macOS release build.
-- [ ] Confirm the Linux and Windows CI release builds pass on the new pin.
+- [x] Confirm the Linux and Windows CI release builds pass on the new pin.
 - [x] Reassess the Riverpod/analyzer upgrade family after the SDK gates pass.
 
 ## Outcome
@@ -49,12 +49,11 @@ Riverpod family, so this change includes that coupled migration.
 - [x] Local Flutter and CI use the same exact stable version.
 - [x] No unexplained dependency, generated-code, or platform-scaffold diff.
 - [x] Local quality gates and macOS release build pass.
-- [ ] CI release-build matrix passes.
+- [x] CI release-build matrix passes.
 - [x] The coupled analyzer/Riverpod migration is documented in the dependency-upgrades
   plan; unrelated future upgrades remain separate.
 
 ## Completion steps
 
-1. Set status to `complete`.
-2. Move this file to `plans/archive/`.
-3. Record the SDK/toolchain change in `CHANGELOG.dev.md`.
+Completed and archived on 2026-08-23. The user-facing compatibility change is in
+`CHANGELOG.md`; the implementation/toolchain record is in `CHANGELOG.dev.md`.

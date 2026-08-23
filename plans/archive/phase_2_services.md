@@ -1,5 +1,10 @@
 # Phase 2: Services & Discovery
 
+**Status:** Complete
+**Completion record:** Discovery, backup-before-write, and the file-only `ConfigService`
+shipped in PR #5 and remain covered by their service and widget tests. Archived on
+2026-08-23; new discovery expansion belongs in `agent-config-discovery.md`.
+
 ## 1. DiscoveryService
 
 Responsible for locating supported agent config files across the host OS.

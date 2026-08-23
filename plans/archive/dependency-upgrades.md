@@ -1,10 +1,10 @@
 # Plan: Dependency Upgrades
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-23
 Date: 2026-08-21
 Author: maintainers
-Status: in progress (local Phase 2 work complete; CI pending)
-Linked issue/PR: n/a
+Status: complete
+Verified by: PR #24 CI on 2026-08-23 (Linux, macOS, and Windows build matrix green)
 
 ## Goal
 
@@ -116,25 +116,24 @@ automatic retry behavior. No dependency overrides were added.
 - [x] `flutter test`
 - [x] `dart format --output=none --set-exit-if-changed .`
 - [x] `flutter pub run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning`
-- [ ] Pull-request CI, including the macOS/Linux/Windows release-build matrix
+- [x] Pull-request CI, including the macOS/Linux/Windows release-build matrix
 - [x] Check whether the upgrade changes runtime behavior or security posture;
       update `CHANGELOG.md` when it does, otherwise use `CHANGELOG.dev.md`.
 
 Phase 1 verification (2026-08-21): the four local gates were run before and
 after `flutter pub upgrade` and all passed both times. The `vm_service` bump is
 dev-only tooling with no runtime/security posture change, so it was recorded in
-`CHANGELOG.dev.md`. PR CI (the release-build matrix) still runs on the pull
-request and is not something the local Phase 1 commit can tick off on its own.
+`CHANGELOG.dev.md`. The later merged PR #24 CI run confirmed the release-build
+matrix for the resulting toolchain on 2026-08-23.
 
 ## Acceptance criteria
 
 - [x] The final commit independently passes the required quality gates.
 - [x] Dependency constraints, lockfile, code generation, and docs agree.
-- [ ] All local gates and CI pass after each stage.
+- [x] All local gates and CI pass after each stage.
 - [x] The required Flutter SDK change is tracked in the separate Flutter SDK upgrade plan.
 
 ## Completion steps
 
-1. Set status to `complete`.
-2. Move this file to `plans/archive/`.
-3. Log the completed dependency work in the appropriate changelog.
+Completed and archived on 2026-08-23. The runtime-facing migration is recorded in
+`CHANGELOG.md`; tooling details are recorded in `CHANGELOG.dev.md`.

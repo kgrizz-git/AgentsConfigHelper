@@ -2,7 +2,10 @@
 
 - [ ] Complete all phases of the master plan
 - [ ] Address issues flagged by sonar cloud
-- [ ] institute semantic versioning
+- [ ] **Release readiness — prepare 0.2.0:** confirm the scope of the accumulated
+      backward-compatible user-facing changes, then bump `VERSION` and `pubspec.yaml`, move
+      `CHANGELOG.md` entries from Unreleased into a dated release section, and choose the next
+      platform build number. Do this when cutting a release, not for every feature PR.
 - [ ] check and possibly clarify harness guidance about the use of TO_DO.md, "CHANGELOG.dev.md", "CHANGELOG.md"
 - [ ] Review [`docs/PRODUCT_IDEAS.md`](docs/PRODUCT_IDEAS.md) — a backlog of ideas to make the app more useful, full-featured, user-friendly, and intuitive. Later choose which to implement and write a plan in `plans/active/`.
 
@@ -27,15 +30,14 @@
       canonical path for matching, handle duplicate names clearly, and add migration/widget
       coverage before exposing rename controls.
 
-- [ ] **High priority — safe exploratory testing environment:** Research and document a
-      repeatable way to exercise discovery and editing against realistic agent/IDE
-      configurations without risking a developer's real files. Start with token-free
-      fixture files plus the macOS-only `--test-root` mode to exercise automatic discovery,
-      editing, backup, and restore without touching a real config. First add a script that
-      creates a marked root and a manual smoke checklist; then compare isolated OS users
-      and VMs for native-platform validation. Docker is supplementary for Linux, not the
-      primary desktop/macOS answer. Define setup/teardown, backup/restore checks, and what
-      can be automated in CI. (See
+- [ ] **High priority — finish safe exploratory testing:** The token-free fixtures and
+      macOS-only `--test-root` staging smoke now exercise automatic discovery, editing,
+      backup, restore, and preferences without touching a real config. Next, add default-mode
+      startup-regression coverage, an unsupported nested-structure raw-editor fixture, and
+      documented sanitized-fixture intake rules. Compare isolated OS users and VMs for
+      native-platform validation later; Docker is supplementary for Linux, not the primary
+      desktop/macOS answer. Do not enable test-root mode on Linux or Windows until each has a
+      platform-native containment design. (See
       [docs/testing-strategies.md](docs/testing-strategies.md) and the implementation
       [plan](plans/active/safe-testing-foundation.md), with test-root implementation
       details in [its focused plan](plans/active/test-root-containment.md)).

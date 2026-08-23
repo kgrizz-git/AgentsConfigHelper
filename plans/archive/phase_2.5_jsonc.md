@@ -1,7 +1,11 @@
 # Phase 2.5: Advanced Parsers (JSONC)
 
-**Status:** Active
+**Status:** Complete
 **Dependency:** Phase 2 (Completed)
+
+**Completion record:** `JsonConfigParser` now detects JSONC, preserves comments and
+trailing commas for supported surgical edits, warns on `.json` JSONC fallback, and has
+parser regression coverage. Archived on 2026-08-23.
 
 **Goal:** Fix the currently broken `.jsonc` mapping by safely parsing and writing JSONC (JSON with Comments/Trailing Commas) configuration files, specifically supporting Opencode (`opencode.json`) and other IDE tools.
 
