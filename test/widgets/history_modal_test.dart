@@ -51,6 +51,19 @@ void main() {
       // Find the restore button
       final restoreButton = find.text('Restore');
       expect(restoreButton, findsOneWidget);
+      final restoreLabel = tester.widget<Text>(restoreButton);
+      expect(restoreLabel.style?.color, Colors.white);
+      expect(restoreLabel.style?.fontWeight, FontWeight.w600);
+      expect(
+        find.descendant(
+          of: find.ancestor(
+            of: restoreButton,
+            matching: find.byType(ElevatedButton),
+          ),
+          matching: find.byIcon(Icons.restore),
+        ),
+        findsOneWidget,
+      );
       final restoreStyle = tester
           .widget<ElevatedButton>(
             find.ancestor(
@@ -75,6 +88,9 @@ void main() {
       // Tap confirm
       final confirmButton = find.text('Confirm & Restore');
       expect(confirmButton, findsOneWidget);
+      final confirmLabel = tester.widget<Text>(confirmButton);
+      expect(confirmLabel.style?.color, Colors.white);
+      expect(confirmLabel.style?.fontWeight, FontWeight.w600);
       final confirmStyle = tester
           .widget<ElevatedButton>(
             find.ancestor(

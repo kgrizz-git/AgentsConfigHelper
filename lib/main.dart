@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:agents_config_helper/screens/main_shell.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
 import 'package:agents_config_helper/services/config_service.dart';
+import 'package:agents_config_helper/services/desktop_window_bounds_store.dart';
+import 'package:agents_config_helper/services/desktop_window_configuration.dart';
 import 'package:agents_config_helper/services/discovery_preferences_store.dart';
 import 'package:agents_config_helper/services/discovery_service.dart';
 import 'package:agents_config_helper/services/file_operations.dart';
@@ -14,6 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:screen_retriever/screen_retriever.dart';
+import 'package:window_manager/window_manager.dart';
 
 Future<Directory> _getBackupDir(TestRootConfiguration? testRoot) async {
   if (testRoot != null) {
@@ -23,6 +28,110 @@ Future<Directory> _getBackupDir(TestRootConfiguration? testRoot) async {
   }
   final appSupportDirectory = await getApplicationSupportDirectory();
   return Directory(p.join(appSupportDirectory.path, 'backups'));
+}
+
+Future<void> _configureDesktopWindow(
+  DesktopWindowBoundsStore boundsStore,
+) async {
+  if (!Platform.isLinux && !Platform.isMacOS && !Platform.isWindows) {
+    return;
+  }
+
+  await windowManager.ensureInitialized();
+  final display = await screenRetriever.getPrimaryDisplay();
+  final configuration = DesktopWindowConfiguration.forVisibleSize(
+    display.visibleSize ?? display.size,
+  );
+  final displays = <Display>[display];
+  try {
+    final allDisplays = await screenRetriever.getAllDisplays();
+    if (allDisplays.isNotEmpty) {
+      displays
+        ..clear()
+        ..addAll(allDisplays);
+    }
+  } on Object {
+    // The primary display is enough for the adaptive fallback.
+  }
+  final visibleDisplays = displays.map(
+    (item) {
+      final position = item.visiblePosition ?? Offset.zero;
+      final size = item.visibleSize ?? item.size;
+      return Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
+    },
+  );
+  final restoredBounds = DesktopWindowConfiguration.restoredBounds(
+    await boundsStore.load(),
+    visibleDisplays,
+  );
+  unawaited(
+    _showConfiguredDesktopWindow(
+      WindowOptions(
+        size: restoredBounds?.size ?? configuration.size,
+        minimumSize: configuration.minimumSize,
+        center: restoredBounds == null,
+        title: 'Agents Config Helper',
+      ),
+      restoredBounds,
+      boundsStore,
+    ),
+  );
+}
+
+Future<void> _showConfiguredDesktopWindow(
+  WindowOptions options,
+  Rect? restoredBounds,
+  DesktopWindowBoundsStore boundsStore,
+) async {
+  try {
+    await windowManager.waitUntilReadyToShow(options);
+    if (restoredBounds != null) await windowManager.setBounds(restoredBounds);
+    await windowManager.show();
+    await windowManager.focus();
+    windowManager.addListener(_DesktopWindowBoundsListener(boundsStore));
+  } on Object catch (error, stackTrace) {
+    debugPrint('Desktop window setup failed: $error\n$stackTrace');
+  }
+}
+
+/// Persists bounds after a resize, move, or close without interrupting the UI.
+class _DesktopWindowBoundsListener with WindowListener {
+  _DesktopWindowBoundsListener(this._boundsStore);
+
+  static const _saveDelay = Duration(milliseconds: 400);
+
+  final DesktopWindowBoundsStore _boundsStore;
+  Timer? _saveTimer;
+
+  @override
+  void onWindowResize() => _scheduleSave();
+
+  @override
+  void onWindowMove() => _scheduleSave();
+
+  @override
+  void onWindowClose() {
+    _saveTimer?.cancel();
+    unawaited(_save());
+  }
+
+  void _scheduleSave() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_saveDelay, () => unawaited(_save()));
+  }
+
+  Future<void> _save() async {
+    try {
+      if (await windowManager.isMaximized() ||
+          await windowManager.isMinimized() ||
+          await windowManager.isFullScreen()) {
+        return;
+      }
+      await _boundsStore.save(await windowManager.getBounds());
+    } on Object {
+      // Bounds persistence is optional and must never interrupt the app.
+    }
+  }
 }
 
 /// Initializes app services and launches the Flutter application.
@@ -39,6 +148,19 @@ Future<void> main(List<String> arguments) async {
       fileOperations = testRootOperations;
     } else {
       fileOperations = const LocalFileOperations();
+    }
+    final windowBoundsStore = DesktopWindowBoundsStore(
+      getDirectory: testRoot == null
+          ? null
+          : () async => Directory(
+              p.join(testRoot.rootPath, 'application-support'),
+            ),
+      fileOperations: fileOperations,
+    );
+    try {
+      await _configureDesktopWindow(windowBoundsStore);
+    } on Object catch (error, stackTrace) {
+      debugPrint('Desktop window initialization failed: $error\n$stackTrace');
     }
     final configService = ConfigService(
       backupService: BackupService(

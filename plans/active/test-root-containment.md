@@ -45,7 +45,7 @@ plan prevents a partial redirect from being documented as safe.
 | Config loading/saving | Allow only targets inside the canonical test root. |
 | Backups | Use `<test-root>/application-support/backups`; allow only backup files there. |
 | Restore | Require both the selected backup and target to be inside the test root. |
-| Discovery preferences | Inject `<test-root>/application-support` into `DiscoveryPreferencesStore`. |
+| Discovery preferences and window bounds | Inject `<test-root>/application-support` into `DiscoveryPreferencesStore` and the desktop window-bounds store. |
 | Manual paths and project roots | Reject entries outside the test root before persisting or scanning. |
 | `COPILOT_HOME` | Ignore it in test mode unless it resolves inside the test root. |
 

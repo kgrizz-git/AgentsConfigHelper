@@ -56,7 +56,13 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
               backgroundColor: AppColors.primaryAccent,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Confirm & Restore'),
+            child: const Text(
+              'Confirm & Restore',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -157,7 +163,7 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
                     style: AppTextStyles.uiSecondary,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: ElevatedButton(
+                  trailing: ElevatedButton.icon(
                     onPressed: _isRestoring
                         ? null
                         : () => _confirmAndRestore(backup),
@@ -165,7 +171,14 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
                       backgroundColor: AppColors.primaryAccent,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Restore'),
+                    icon: const Icon(Icons.restore),
+                    label: const Text(
+                      'Restore',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 );
               },
