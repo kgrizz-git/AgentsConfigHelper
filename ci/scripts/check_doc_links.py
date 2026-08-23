@@ -50,7 +50,15 @@ CODE_FENCE_RE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 TIMEOUT = 10
 USER_AGENT = "template-repo-doc-link-check/1.0"
 
-SKIP_DIRS = {".git", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache", "worktrees"}
+SKIP_DIRS = {
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+    "tmp",
+    "worktrees",
+}
 
 # Hosts that reject automated HEAD requests; a failure there is not evidence of rot.
 SKIP_HOSTS = ("twitter.com", "x.com", "linkedin.com", "reddit.com")
@@ -72,6 +80,8 @@ def iter_markdown(paths: list[Path]) -> list[Path]:
         valid = []
         for p in paths:
             if p.suffix != ".md" or not p.exists():
+                continue
+            if SKIP_DIRS & set(p.parts):
                 continue
             if not _is_within_repo(p, root):
                 print(f"[links] SKIP   {p}: outside repo root, refusing to read", file=sys.stderr)
