@@ -29,6 +29,7 @@ Do not load everything. Start here, then open only what the task needs.
 | Adding/enforcing repo rules | [`policies/README.md`](policies/README.md) |
 | Wiring local checks | [`hooks/README.md`](hooks/README.md) |
 | Working with supported agent configs | `docs/supported-tools.md` |
+| Running the macOS disposable test-root smoke | `docs/macos-test-root.md` |
 
 ## Project essentials
 
@@ -109,3 +110,8 @@ or distribute a prebuilt macOS artifact without revisiting
 [`docs/adr/ADR-002-macos-file-access.md`](docs/adr/ADR-002-macos-file-access.md).
 Local source-build outputs, including `flutter build macos --release`, remain
 supported.
+
+For the opt-in, development-only macOS test-root workflow, see
+[`docs/macos-test-root.md`](docs/macos-test-root.md). It explains the safety contract and the
+root [`dev.sh`](dev.sh) entrypoint; do not substitute personal configuration files for its
+token-free fixtures.

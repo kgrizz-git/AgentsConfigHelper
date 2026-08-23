@@ -36,6 +36,20 @@ IDiscoveryPreferencesStore discoveryPreferencesStore(Ref ref) {
   return DiscoveryPreferencesStore();
 }
 
+/// Exposes the active test root, or null during ordinary application startup.
+final testRootPathProvider = Provider<String?>((ref) => null);
+
+/// Returns [path] only when it is absolute and within [testRootPath], when a
+/// test root is configured.
+String? restrictPathToTestRoot(String? path, String? testRootPath) {
+  final absolutePath = absoluteNormalizedPath(path);
+  if (testRootPath == null || absolutePath == null) return absolutePath;
+  return p.equals(testRootPath, absolutePath) ||
+          p.isWithin(testRootPath, absolutePath)
+      ? absolutePath
+      : null;
+}
+
 /// Provides the function used to resolve the current user's home
 /// directory.
 @Riverpod(keepAlive: true)
@@ -76,7 +90,12 @@ class DiscoveryController extends _$DiscoveryController {
     final homeDir = homeDirRaw != null ? p.normalize(homeDirRaw) : null;
 
     final copilotHomeRaw = nonEmptyEnvironmentVariable('COPILOT_HOME');
-    final copilotHome = absoluteNormalizedPath(copilotHomeRaw);
+    final configuredTestRoot = ref.read(testRootPathProvider);
+    final absoluteCopilotHome = absoluteNormalizedPath(copilotHomeRaw);
+    final copilotHome = restrictPathToTestRoot(
+      copilotHomeRaw,
+      configuredTestRoot,
+    );
 
     final request = DiscoveryRequest(
       normalizedHomePath: homeDir,
@@ -102,10 +121,12 @@ class DiscoveryController extends _$DiscoveryController {
         0,
         DiscoveryWarning(
           path: copilotHomeRaw,
-          message: ignoredNonAbsolutePathMessage(
-            sourceLabel: 'COPILOT_HOME',
-            raw: copilotHomeRaw,
-          ),
+          message: configuredTestRoot != null && absoluteCopilotHome != null
+              ? 'Ignoring COPILOT_HOME because it is outside the test root.'
+              : ignoredNonAbsolutePathMessage(
+                  sourceLabel: 'COPILOT_HOME',
+                  raw: copilotHomeRaw,
+                ),
         ),
       );
     }

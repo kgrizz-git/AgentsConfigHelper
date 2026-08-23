@@ -54,6 +54,7 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryAccent,
+              foregroundColor: Colors.white,
             ),
             child: const Text('Confirm & Restore'),
           ),
@@ -162,6 +163,7 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
                         : () => _confirmAndRestore(backup),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryAccent,
+                      foregroundColor: Colors.white,
                     ),
                     child: const Text('Restore'),
                   ),

@@ -1,0 +1,6 @@
+rules:
+  - Keep fixture edits reviewable.
+permissions:
+  filesystem:
+    - read:fixture
+    - write:fixture

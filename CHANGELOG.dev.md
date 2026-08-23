@@ -7,6 +7,20 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **macOS test-root containment (in progress):** Added a test-only,
+  exact-marker-validated `--test-root=<absolute-path>` startup mode. It uses a native,
+  descriptor-relative no-follow bridge for config I/O, backups, restores, and preferences;
+  rejects symlink escapes; confines discovery paths; and shows a persistent test-mode
+  banner. Native and Dart tests cover normal operations, symlink cases, startup validation,
+  preferences, external `COPILOT_HOME`, and the banner. Added token-free fixtures plus
+  macOS-only staging/validated-cleanup scripts. Linux and Windows reject the mode pending
+  their own implementations; the initial macOS staging smoke passed on 2026-08-22. Added
+  `docs/macos-test-root.md` and the interactive/flagged root `dev.sh` entrypoint for the
+  documented local workflow. Test-root startup failures render an explicit error screen rather
+  than a blank window. Restore buttons now explicitly use white foreground text for contrast.
+- **Test-root containment plan:** Recorded Phase 0 source evidence that a `HOME` override
+  cannot prove backup or preference containment, and split the no-follow, cross-platform
+  implementation decision into `plans/active/test-root-containment.md`.
 - **`plans/active/safe-testing-foundation.md`:** Implementation plan for synthetic
   fixture coverage and a write-confined staging-home smoke workflow.
 - **`plans/active/dependency-upgrades.md`:** Separate staged package-upgrade

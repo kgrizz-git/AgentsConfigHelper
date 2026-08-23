@@ -3,7 +3,7 @@
 Last reviewed: 2026-08-22
 Date: 2026-08-22
 Author: maintainers
-Status: ready to implement
+Status: in progress
 Linked issue/PR: n/a
 
 ## Goal
@@ -29,6 +29,29 @@ The first slice combines a fixture matrix with a disposable staging-home workflo
 user-path discovery. It is not by itself proof that macOS `path_provider` or preference
 storage uses the same directory. Phase 0 must establish that behavior before the command
 is documented as a safe-write procedure.
+
+## Phase 0 evidence and decision
+
+The source trace on 2026-08-22 establishes the following:
+
+| Concern | Current path | Phase 0 conclusion |
+| --- | --- | --- |
+| User-scope discovery and `~` expansion | `ConfigService` uses `resolveHomeDirectory()`, which reads `HOME`/Windows equivalents. | A process-level `HOME` override is useful for discovery only. |
+| Config save | `ConfigService.saveConfig` and `saveRawConfig` write the resolved target directly. | An explicit test root must reject manual or project paths outside the root before loading or writing. |
+| Backups and restore | `main.dart` obtains the backup directory with `getApplicationSupportDirectory()`; `BackupService` copies/restores files directly. | `HOME` does not provide a cross-platform proof of backup or restore containment. |
+| Discovery preferences | `DiscoveryPreferencesStore` defaults to `getApplicationSupportDirectory()` and atomically writes a JSON file there. | Preferences must be injected below the test root, not left to the platform default. |
+| Copilot discovery | `DiscoveryController` separately honors absolute `COPILOT_HOME`. | Test mode must ignore or constrain that environment variable. |
+
+**Decision:** Do not publish a routine `HOME=...` write/smoke command. A coherent
+`--test-root` boundary is required before Phase 2. Its detailed implementation plan is
+[`test-root-containment.md`](test-root-containment.md).
+
+**Implementation update (macOS):** The focused plan now has a descriptor-relative,
+no-follow `--test-root` implementation with native symlink tests. It routes config I/O,
+backups, restores, preferences, and discovery below a marked root; Linux and Windows reject
+the flag until they gain their own primitives. The first manual macOS staging run on
+2026-08-22 confirmed staged discovery, edit/backup/preference containment, and rejection of
+an external project root; it remains a macOS-only workflow while other platforms are pending.
 
 ## Out of scope
 
@@ -90,68 +113,68 @@ mistaken for credentials.
 
 ### Phase 0: Establish write-boundary evidence
 
-- [ ] Trace startup's home, application-support, and preference locations on macOS, Linux,
-      and Windows from code and targeted local runs.
+- [x] Trace startup's home, application-support, preference, and environment-controlled
+      locations from source. The evidence is recorded above.
 - [ ] Run the built macOS app with a fresh `HOME` staging directory and record where the
-      edited config, backup, and preference files are actually written.
-- [ ] Decide whether `HOME` alone confines all writes. If it does not, design the single
-      test-root override before creating a routine smoke command.
-- [ ] Define and implement one canonical/no-follow containment boundary. Create a private
-      root owned by the current user, canonicalize the root and each existing target
-      ancestor, and reject a target unless it is below the canonical root and no path
-      component is a symlink. Recheck after creating parents and immediately before a
-      save, backup, or restore; use platform no-follow file primitives for the final
-      mutation where Dart's path checks alone cannot prevent a symlink-swap race.
-- [ ] Add containment tests for a symlinked root, a symlinked target, a symlinked parent,
-      and a symlink introduced between validation and mutation. Each must be rejected
-      without creating, overwriting, backing up, or restoring an outside path.
+      edited config, backup, and preference files are actually written. This needs a local
+      macOS interaction; it cannot be inferred from `path_provider` source alone.
+- [x] Decide whether `HOME` alone confines all writes. It is insufficient as a documented
+      cross-platform safety boundary; use the explicit test-root design instead.
+- [x] Implement the macOS canonical/no-follow containment boundary and its symlink-escape tests
+      under [`test-root-containment.md`](test-root-containment.md). Do not claim
+      race-resistance from normalized Dart paths alone.
 
 ### Phase 1: Build the fixture matrix
 
-- [ ] Inventory the smallest representative set of supported paths and formats: JSON/JSONC,
+- [x] Inventory the smallest representative set of supported paths and formats: JSON/JSONC,
       YAML, TOML, Markdown/text, a nested-permission example, and a project-scoped target.
-- [ ] Add synthetic fixture trees that use catalog-recognized paths and contain no real
+- [x] Add synthetic fixture trees that use catalog-recognized paths and contain no real
       user data, token-shaped values, or copied configuration comments.
-- [ ] Add parser tests for valid content, malformed content, comments/trailing commas,
-      nested/unsupported structures, and raw-editor fallback behavior.
-- [ ] Add discovery tests proving the fixture home finds expected user targets, while a
+- [x] Add parser tests for valid content, comments/trailing commas, and nested structures.
+      Malformed-content and raw-editor-fallback fixture coverage remain open.
+- [x] Add discovery tests proving the fixture home finds expected user targets, while a
       fixture project root finds expected project targets.
 - [ ] Add service tests that verify save creates a backup, restore creates parent folders
       when needed, and all configured test-mode writes remain contained.
 
 ### Phase 2: Make staging smoke testing deterministic
 
-- [ ] Add the minimal test-root plumbing identified by Phase 0, if required, and reject
-      saves/restores outside the root while it is active.
-- [ ] Add a persistent, unambiguous test-mode indicator when test-root plumbing exists.
-- [ ] Add a script or documented command that creates a unique staging root, seeds it from
+- [x] Add the macOS test-root plumbing defined in
+      [`test-root-containment.md`](test-root-containment.md), including blocked saves,
+      restores, preferences, and external discovery paths.
+- [x] Add a persistent, unambiguous test-mode indicator when test-root plumbing exists.
+- [x] Add a script that creates a unique staging root, seeds it from
       fixtures, launches the already-built app, and reports the root for inspection.
-- [ ] Ensure teardown is explicit and never recursively deletes a caller-supplied path;
+- [x] Ensure teardown is explicit and never recursively deletes a caller-supplied path;
       only delete a path the script itself created and validated.
-- [ ] Write a manual checklist: expected discovered entries, one raw edit, one structured
+- [x] Write a manual checklist: expected discovered entries, one raw edit, one structured
       edit where supported, diff inspection, backup inspection, restore, and teardown.
 
 ### Phase 3: Automate the regression layer
 
-- [ ] Run fixture parser, discovery, service, and widget tests in the existing CI test job.
-- [ ] Add a fixture validity/coverage check only if the Dart tests cannot already validate
-      the relevant syntax and catalog mapping; avoid a redundant external validator.
+- [x] Run fixture parser, discovery, service, and widget tests in the existing CI test job
+      through the existing `flutter test --coverage` command.
+- [x] Use Dart fixture tests for syntax and catalog mapping; a separate fixture validator is
+      not needed at this stage.
 - [ ] Document when a bug report may add a sanitized regression fixture and require a
       source/secret review before it is committed.
 
 ## Verification
 
-- [ ] `flutter analyze --fatal-infos` passes.
-- [ ] `dart format --output=none --set-exit-if-changed .` passes.
-- [ ] `flutter test --coverage` passes and retains the CI coverage floor.
-- [ ] Fixture files are token-free and pass all existing secret, path, and documentation
+- [x] `flutter analyze --fatal-infos` passes.
+- [x] `dart format --output=none --set-exit-if-changed .` passes.
+- [x] `flutter test --coverage` passes. The configured CI floor is 80%; the local
+      measured result was 81.97% on 2026-08-23.
+- [x] Fixture files are token-free and pass all existing secret, path, and documentation
       hooks.
-- [ ] Automated tests prove user-scope and project-scope discovery against the synthetic
-      tree, including at least one unsupported nested structure that falls back safely.
-- [ ] An automated or manual containment test proves test-mode save, backup, and restore
-      do not modify paths outside the disposable root.
-- [ ] A manual macOS staging smoke run confirms the sidebar populates from the staged
-      catalog paths and records the inspected backup/restore result.
+- [x] Automated tests prove user-scope and project-scope discovery against the synthetic
+      tree.
+- [ ] Add an unsupported nested-structure fixture and prove its raw-editor fallback.
+- [x] An automated or manual containment test proves test-mode save, backup, and restore
+      do not modify paths outside the disposable root. Native no-follow tests plus the
+      2026-08-22 macOS smoke cover the tested path.
+- [x] A manual macOS staging smoke run confirms the sidebar populates from the staged
+      catalog paths and records the inspected backup/restore result (2026-08-22).
 - [ ] Existing Linux, Windows, and macOS CI jobs pass.
 
 ## Open questions

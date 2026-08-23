@@ -1,15 +1,20 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:agents_config_helper/services/file_operations.dart';
 import 'package:path/path.dart' as p;
 
 /// A service responsible for backing up and restoring configuration files.
 class BackupService {
   /// Creates backups in [backupDirectory].
-  const BackupService({required this.backupDirectory});
+  const BackupService({
+    required this.backupDirectory,
+    FileOperations? fileOperations,
+  }) : _fileOperations = fileOperations ?? const LocalFileOperations();
 
   /// The application-managed directory that stores backups.
   final Directory backupDirectory;
+  final FileOperations _fileOperations;
 
   /// Maximum number of backups retained per original path. Older snapshots
   /// beyond this limit are pruned after each backup is created.
@@ -24,20 +29,11 @@ class BackupService {
   /// Returns the absolute path to the newly created backup file.
   /// Throws a [FileSystemException] if the original file does not exist.
   Future<String> createBackup(String originalPath) async {
-    final originalFile = File(originalPath);
-    // Checking file existence asynchronously avoids blocking the UI thread.
-    // ignore: avoid_slow_async_io
-    if (!await originalFile.exists()) {
+    if (!await _fileOperations.fileExists(originalPath)) {
       throw FileSystemException(
         'Cannot backup non-existent file',
         originalPath,
       );
-    }
-
-    // Checking backup storage asynchronously avoids blocking the UI thread.
-    // ignore: avoid_slow_async_io
-    if (!await backupDirectory.exists()) {
-      await backupDirectory.create(recursive: true);
     }
 
     final timestamp = DateTime.now().microsecondsSinceEpoch;
@@ -48,15 +44,13 @@ class BackupService {
 
     final backupNameWithContext =
         '${safeOriginalPath}_${timestamp}_$randomId.bak';
-    final backupFile = File(
-      p.join(backupDirectory.path, backupNameWithContext),
-    );
+    final backupPath = p.join(backupDirectory.path, backupNameWithContext);
 
-    await originalFile.copy(backupFile.path);
+    await _fileOperations.copyFile(originalPath, backupPath);
 
     await _pruneOldBackups(originalPath);
 
-    return backupFile.path;
+    return backupPath;
   }
 
   /// Enforces [maxBackupsPerPath] for [originalPath] by deleting the oldest
@@ -68,7 +62,7 @@ class BackupService {
       if (backups.length <= maxBackupsPerPath) return;
       for (final backup in backups.sublist(maxBackupsPerPath)) {
         try {
-          await backup.delete();
+          await _fileOperations.deleteFile(backup.path);
         } on Object {
           // One failed deletion must not abort pruning the rest.
         }
@@ -83,62 +77,49 @@ class BackupService {
   /// Overwrites [targetPath] if it exists.
   /// Throws a [FileSystemException] if the backup file does not exist.
   Future<void> restoreBackup(String backupPath, String targetPath) async {
-    final backupFile = File(backupPath);
-    // Checking file existence asynchronously avoids blocking the UI thread.
-    // ignore: avoid_slow_async_io
-    if (!await backupFile.exists()) {
+    if (!await _fileOperations.fileExists(backupPath)) {
       throw FileSystemException(
         'Cannot restore from non-existent backup',
         backupPath,
       );
     }
 
-    await _ensureParentDirectory(targetPath);
-    await backupFile.copy(targetPath);
+    await _fileOperations.copyFile(backupPath, targetPath);
   }
 
   /// Writes restored [bytes] to [targetPath], creating missing parent
   /// directories first. Used when the caller already read the backup into
   /// memory (so retention pruning cannot delete the selected snapshot).
   Future<void> writeRestoredFile(String targetPath, List<int> bytes) async {
-    await _ensureParentDirectory(targetPath);
-    await File(targetPath).writeAsBytes(bytes);
+    await _fileOperations.writeBytes(targetPath, bytes);
   }
 
-  Future<void> _ensureParentDirectory(String targetPath) async {
-    final targetDir = File(targetPath).parent;
-    // The asynchronous check avoids blocking the UI thread.
-    // ignore: avoid_slow_async_io
-    if (!await targetDir.exists()) {
-      await targetDir.create(recursive: true);
-    }
-  }
+  /// Reads bytes from a backup using the configured file operation boundary.
+  Future<List<int>> readBackupBytes(String backupPath) =>
+      _fileOperations.readBytes(backupPath);
 
   /// Lists all backups for the given [originalPath].
   ///
   /// Returns a list of [File] objects representing the backups, sorted by
   /// creation time (most recent first, assuming timestamp in filename).
   Future<List<File>> listBackups(String originalPath) async {
-    // Checking directory existence asynchronously avoids blocking the UI
-    // thread.
-    // ignore: avoid_slow_async_io
-    if (!await backupDirectory.exists()) {
-      return [];
-    }
+    await _fileOperations.validatePath(originalPath);
 
     final safeOriginalPath = _encodeOriginalPath(originalPath);
 
-    final allEntities = await backupDirectory.list().toList();
-    final backupFiles = allEntities.whereType<File>().where((file) {
-      final name = p.basename(file.path);
-      // Match on the exact encoded-path prefix, not a string prefix: a
-      // startsWith check would also match e.g. "%2Fapp_old_..." backups
-      // when listing backups for "%2Fapp", since "app_old" starts with
-      // "app_". Anchoring on the trailing "_<timestamp>_<random>.bak"
-      // suffix and comparing the remainder for exact equality avoids that.
-      final match = _backupFilenamePattern.firstMatch(name);
-      return match != null && match.group(1) == safeOriginalPath;
-    }).toList();
+    final backupFiles = (await _fileOperations.listFiles(backupDirectory.path))
+        .map(File.new)
+        .where((file) {
+          final name = p.basename(file.path);
+          // Match on the exact encoded-path prefix, not a string prefix: a
+          // startsWith check would also match e.g. "%2Fapp_old_..." backups
+          // when listing backups for "%2Fapp", since "app_old" starts with
+          // "app_". Anchoring on the trailing "_<timestamp>_<random>.bak"
+          // suffix and comparing the remainder for exact equality avoids that.
+          final match = _backupFilenamePattern.firstMatch(name);
+          return match != null && match.group(1) == safeOriginalPath;
+        })
+        .toList();
 
     // Sort by the parsed timestamp (most recent first) rather than by raw path
     // comparison, which is fragile for timestamps of differing digit lengths.

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io';
 
 import 'package:agents_config_helper/models/discovery_preferences.dart';
 import 'package:agents_config_helper/models/discovery_request.dart';
@@ -9,6 +10,7 @@ import 'package:agents_config_helper/services/discovery_service.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 class _FakeDiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   _FakeDiscoveryPreferencesStore({this.loadResults = const []});
@@ -63,6 +65,18 @@ class _FakeDiscoveryService extends DiscoveryService {
 }
 
 void main() {
+  test('restrictPathToTestRoot rejects external and relative paths', () {
+    final root = p.join(Platform.pathSeparator, 'tmp', 'test-root');
+
+    expect(
+      restrictPathToTestRoot(p.join(root, '.copilot'), root),
+      p.join(root, '.copilot'),
+    );
+    expect(restrictPathToTestRoot(root, root), root);
+    expect(restrictPathToTestRoot('/tmp/outside', root), isNull);
+    expect(restrictPathToTestRoot('relative/path', root), isNull);
+  });
+
   test(
     'DiscoveryController prevents stale refresh from overwriting newer result',
     () async {

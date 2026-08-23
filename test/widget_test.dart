@@ -181,6 +181,17 @@ class _DelayedPreferencesStore implements IDiscoveryPreferencesStore {
 }
 
 void main() {
+  testWidgets('shows startup errors instead of a blank app window', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      StartupErrorApp(error: ArgumentError('Unexpected staging marker')),
+    );
+
+    expect(find.textContaining('could not start'), findsOneWidget);
+    expect(find.textContaining('Unexpected staging marker'), findsOneWidget);
+  });
+
   testWidgets('MainShell renders sidebar and content area', (tester) async {
     final configService = ConfigService(
       backupService: BackupService(backupDirectory: Directory.systemTemp),
@@ -202,6 +213,30 @@ void main() {
 
     expect(find.text('Agents Config'), findsOneWidget);
     expect(find.text('Claude Code'), findsOneWidget);
+  });
+
+  testWidgets('shows the persistent test-root mode banner', (tester) async {
+    final configService = ConfigService(
+      backupService: BackupService(backupDirectory: Directory.systemTemp),
+    );
+    const testRoot = '/tmp/agents-config-helper-test-root';
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          configServiceProvider.overrideWithValue(configService),
+          discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+          discoveryPreferencesStoreProvider.overrideWithValue(
+            _FakePreferencesStore(),
+          ),
+          testRootPathProvider.overrideWithValue(testRoot),
+        ],
+        child: const AgentsConfigHelperApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('TEST ROOT MODE — $testRoot'), findsOneWidget);
   });
 
   testWidgets('renders warnings alongside discovered configs', (tester) async {

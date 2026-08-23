@@ -1,0 +1,6 @@
+rules:
+  - >
+    This fixture has a folded multiline rule
+    for parser regression coverage.
+permissions:
+  - read:fixture

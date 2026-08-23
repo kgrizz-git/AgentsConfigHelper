@@ -1,0 +1,7 @@
+{
+  "model": "fixture-model",
+  "permission": {
+    "read": { "*": "allow" },
+    "edit": { "*": "ask" }
+  }
+}

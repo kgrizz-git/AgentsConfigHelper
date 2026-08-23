@@ -51,6 +51,18 @@ void main() {
       // Find the restore button
       final restoreButton = find.text('Restore');
       expect(restoreButton, findsOneWidget);
+      final restoreStyle = tester
+          .widget<ElevatedButton>(
+            find.ancestor(
+              of: restoreButton,
+              matching: find.byType(ElevatedButton),
+            ),
+          )
+          .style;
+      expect(
+        restoreStyle?.foregroundColor?.resolve(const <WidgetState>{}),
+        Colors.white,
+      );
 
       // Tap restore, which should open confirmation
       await tester.tap(restoreButton);
@@ -63,6 +75,18 @@ void main() {
       // Tap confirm
       final confirmButton = find.text('Confirm & Restore');
       expect(confirmButton, findsOneWidget);
+      final confirmStyle = tester
+          .widget<ElevatedButton>(
+            find.ancestor(
+              of: confirmButton,
+              matching: find.byType(ElevatedButton),
+            ),
+          )
+          .style;
+      expect(
+        confirmStyle?.foregroundColor?.resolve(const <WidgetState>{}),
+        Colors.white,
+      );
       await tester.tap(confirmButton);
       // Flush the async onRestore callback and the navigator pop.
       await tester.pumpAndSettle();

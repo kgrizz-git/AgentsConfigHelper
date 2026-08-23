@@ -6,6 +6,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/discovery_request.dart';
 import 'package:agents_config_helper/models/discovery_result.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/services/file_operations.dart';
 import 'package:agents_config_helper/services/home_directory_resolver.dart';
 import 'package:path/path.dart' as p;
 
@@ -20,6 +21,8 @@ class DiscoveryService {
   const DiscoveryService({
     this.maxGlobMatches = 100,
     this.maxGlobEntitiesVisited = 5000,
+    this.fileOperations = const LocalFileOperations(),
+    this.enableGlobTargets = true,
   });
 
   /// Maximum matching entries retained per glob target.
@@ -27,6 +30,12 @@ class DiscoveryService {
 
   /// Maximum filesystem entities visited per glob enumeration.
   final int maxGlobEntitiesVisited;
+
+  /// Filesystem boundary used for exact-match targets.
+  final FileOperations fileOperations;
+
+  /// Whether catalog targets containing glob patterns may be enumerated.
+  final bool enableGlobTargets;
 
   /// Scans the file system for configuration files based on the given
   /// [request].
@@ -87,19 +96,17 @@ class DiscoveryService {
         return false;
       }
 
-      final file = File(config.filePath);
       try {
-        // Checking file existence asynchronously avoids blocking the UI thread.
-        // ignore: avoid_slow_async_io
-        if (await file.exists()) {
+        if (await fileOperations.fileExists(config.filePath)) {
           items.add(config);
           seenPaths.add(pathKey);
           return true;
         } else if (config.fromManual) {
           // File.exists() is false for a directory; report that distinctly so
           // the user isn't told a path that plainly exists "does not exist".
-          // ignore: avoid_slow_async_io
-          final isDirectory = await Directory(config.filePath).exists();
+          final isDirectory = await fileOperations.directoryExists(
+            config.filePath,
+          );
           warnings.add(
             DiscoveryWarning(
               path: config.filePath,
@@ -139,6 +146,11 @@ class DiscoveryService {
         );
         await addIfValid(config);
       } else {
+        if (!enableGlobTargets) {
+          // Test-root mode deliberately avoids this dart:io traversal. This is
+          // an expected limitation, not a user-facing discovery failure.
+          return;
+        }
         await _enumerateGlobTarget(
           expectedPattern: expectedPattern,
           target: target,
@@ -221,6 +233,9 @@ class DiscoveryService {
   }
 
   /// Bounded recursive/non-recursive glob walk for one catalog target.
+  ///
+  /// This uses `dart:io` traversal, so test-root mode must keep glob targets
+  /// disabled until they have a descriptor-relative implementation.
   Future<void> _enumerateGlobTarget({
     required String expectedPattern,
     required ConfigTarget target,
@@ -394,12 +409,9 @@ class DiscoveryService {
     if (override != null) return override;
     final home = request.normalizedHomePath;
     if (home == null) return true;
-    final documentsRules = Directory(
+    return !await fileOperations.directoryExists(
       p.join(home, 'Documents', 'Cline', 'Rules'),
     );
-    // Checking directory existence asynchronously avoids blocking the UI.
-    // ignore: avoid_slow_async_io
-    return !await documentsRules.exists();
   }
 }
 

@@ -81,6 +81,27 @@ void main() {
     });
 
     test(
+      'silently skips glob targets when glob enumeration is disabled',
+      () async {
+        discoveryService = const DiscoveryService(enableGlobTargets: false);
+        final globFile = File(
+          p.join(mockProject.path, '.cursor', 'rules', 'fixture.mdc'),
+        );
+        await globFile.create(recursive: true);
+
+        final result = await discoveryService.discoverConfigs(
+          DiscoveryRequest(
+            normalizedHomePath: mockHome.path,
+            normalizedProjectRoots: [mockProject.path],
+          ),
+        );
+
+        expect(result.items, isEmpty);
+        expect(result.warnings, isEmpty);
+      },
+    );
+
+    test(
       'discoverConfigs deduplicates a manual path matching a catalog target '
       'and sets both provenance flags',
       () async {
