@@ -11,8 +11,9 @@ class MacOSTestRootFileOperations implements FileOperations {
   MacOSTestRootFileOperations({
     required this.rootPath,
     MethodChannel? channel,
+    bool? platformIsMacOS,
   }) : _channel = channel ?? const MethodChannel(_channelName) {
-    if (!Platform.isMacOS) {
+    if (!(platformIsMacOS ?? Platform.isMacOS)) {
       throw UnsupportedError(
         'Test-root file operations are currently macOS-only.',
       );

@@ -37,6 +37,7 @@ void main() {
           fixture('.claude/CLAUDE.md'),
           fixture('.codex/config.toml'),
           fixture('.config/opencode/opencode.json'),
+          fixture('.config/kilo/kilo.jsonc'),
           fixture('.kiro/settings/permissions.yaml'),
           fixture('.agents/AGENTS.md'),
           fixture('workspace/.claude/settings.json'),

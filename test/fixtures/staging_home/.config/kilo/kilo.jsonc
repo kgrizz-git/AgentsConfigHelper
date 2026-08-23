@@ -1,0 +1,7 @@
+{
+  // Token-free fixture for the macOS test-root smoke run.
+  "permissions": {
+    "filesystem": "ask",
+    "network": "deny",
+  },
+}

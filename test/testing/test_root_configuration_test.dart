@@ -25,34 +25,37 @@ void main() {
   });
 
   test('accepts a marked absolute directory on macOS', () async {
-    final configuration = await TestRootConfiguration.fromArguments([
-      '--test-root=${root.path}',
-    ]);
+    final configuration = await TestRootConfiguration.fromArguments(
+      ['--test-root=${root.path}'],
+      platformIsMacOS: true,
+    );
 
-    if (Platform.isMacOS) {
-      expect(configuration?.rootPath, root.resolveSymbolicLinksSync());
-    } else {
-      expect(configuration, isNull);
-    }
-  }, skip: !Platform.isMacOS);
+    expect(configuration?.rootPath, root.resolveSymbolicLinksSync());
+  });
 
   test('rejects missing values, duplicates, and relative paths', () async {
     expect(
-      () => TestRootConfiguration.fromArguments(const ['--test-root=']),
+      () => TestRootConfiguration.fromArguments(
+        const ['--test-root='],
+        platformIsMacOS: true,
+      ),
       throwsA(isA<ArgumentError>()),
     );
     expect(
-      () => TestRootConfiguration.fromArguments([
-        '--test-root=${root.path}',
-        '--test-root=${root.path}',
-      ]),
+      () => TestRootConfiguration.fromArguments(
+        ['--test-root=${root.path}', '--test-root=${root.path}'],
+        platformIsMacOS: true,
+      ),
       throwsA(isA<ArgumentError>()),
     );
     expect(
-      () => TestRootConfiguration.fromArguments(const ['--test-root=relative']),
+      () => TestRootConfiguration.fromArguments(
+        const ['--test-root=relative'],
+        platformIsMacOS: true,
+      ),
       throwsA(isA<ArgumentError>()),
     );
-  }, skip: !Platform.isMacOS);
+  });
 
   test('rejects an unmarked directory', () async {
     final unmarked = await Directory.systemTemp.createTemp(
@@ -61,12 +64,13 @@ void main() {
     addTearDown(() => unmarked.delete(recursive: true));
 
     expect(
-      () => TestRootConfiguration.fromArguments([
-        '--test-root=${unmarked.path}',
-      ]),
+      () => TestRootConfiguration.fromArguments(
+        ['--test-root=${unmarked.path}'],
+        platformIsMacOS: true,
+      ),
       throwsA(isA<ArgumentError>()),
     );
-  }, skip: !Platform.isMacOS);
+  });
 
   test('rejects a root with an unexpected marker value', () async {
     await File(
@@ -74,12 +78,13 @@ void main() {
     ).writeAsString('not a staging root');
 
     expect(
-      () => TestRootConfiguration.fromArguments([
-        '--test-root=${root.path}',
-      ]),
+      () => TestRootConfiguration.fromArguments(
+        ['--test-root=${root.path}'],
+        platformIsMacOS: true,
+      ),
       throwsA(isA<ArgumentError>()),
     );
-  }, skip: !Platform.isMacOS);
+  });
 
   test('rejects a symbolic-link root', () async {
     final linkedRoot = Directory(
@@ -89,10 +94,11 @@ void main() {
     addTearDown(() => Link(linkedRoot.path).delete());
 
     expect(
-      () => TestRootConfiguration.fromArguments([
-        '--test-root=${linkedRoot.path}',
-      ]),
+      () => TestRootConfiguration.fromArguments(
+        ['--test-root=${linkedRoot.path}'],
+        platformIsMacOS: true,
+      ),
       throwsA(isA<ArgumentError>()),
     );
-  }, skip: !Platform.isMacOS);
+  });
 }

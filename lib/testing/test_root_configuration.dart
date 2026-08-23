@@ -17,8 +17,9 @@ class TestRootConfiguration {
 
   /// Parses and validates an optional `--test-root=<absolute-path>` argument.
   static Future<TestRootConfiguration?> fromArguments(
-    List<String> arguments,
-  ) async {
+    List<String> arguments, {
+    bool? platformIsMacOS,
+  }) async {
     final matches = arguments
         .where((argument) => argument.startsWith('--test-root='))
         .toList();
@@ -26,7 +27,7 @@ class TestRootConfiguration {
     if (matches.length != 1) {
       throw ArgumentError('Pass --test-root exactly once.');
     }
-    if (!Platform.isMacOS) {
+    if (!(platformIsMacOS ?? Platform.isMacOS)) {
       throw UnsupportedError(
         'Test-root mode is currently supported only on macOS.',
       );

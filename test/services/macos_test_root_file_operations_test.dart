@@ -42,7 +42,10 @@ void main() {
   });
 
   test('maps in-root paths to relative native bridge arguments', () async {
-    final operations = MacOSTestRootFileOperations(rootPath: root.path);
+    final operations = MacOSTestRootFileOperations(
+      rootPath: root.path,
+      platformIsMacOS: true,
+    );
     final configPath = p.join(root.path, '.claude', 'settings.json');
 
     await operations.writeText(configPath, '{"rules": []}');
@@ -59,10 +62,13 @@ void main() {
       await operations.listFiles(p.join(root.path, 'application-support')),
       [p.join(root.path, 'application-support', 'first.bak')],
     );
-  }, skip: !Platform.isMacOS);
+  });
 
   test('rejects an outside path before invoking the native bridge', () async {
-    final operations = MacOSTestRootFileOperations(rootPath: root.path);
+    final operations = MacOSTestRootFileOperations(
+      rootPath: root.path,
+      platformIsMacOS: true,
+    );
     final outsidePath = p.join(root.parent.path, 'outside.json');
 
     await expectLater(
@@ -70,5 +76,5 @@ void main() {
       throwsA(isA<FileSystemException>()),
     );
     expect(calls, isEmpty);
-  }, skip: !Platform.isMacOS);
+  });
 }
