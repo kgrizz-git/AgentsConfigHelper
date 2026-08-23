@@ -73,6 +73,8 @@ def remove_contents(directory_fd):
                 fail(f'Refusing to remove a replaced directory: {name!r}')
             os.rmdir(name, dir_fd=directory_fd)
         else:
+            if not same_file(entry, stat_at(directory_fd, name)):
+                fail(f'Refusing to remove a replaced file: {name!r}')
             os.unlink(name, dir_fd=directory_fd)
 
 
