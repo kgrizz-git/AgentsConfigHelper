@@ -174,8 +174,14 @@ final class TestRootFileOperations {
         defer { _ = closedir(directory) }
 
         var names = [String]()
-        errno = 0
-        while let entry = readdir(directory) {
+        while true {
+          errno = 0
+          guard let entry = readdir(directory) else {
+            if errno != 0 {
+              throw TestRootFileOperationError.posix(operation: "readdir", code: errno)
+            }
+            break
+          }
           let name = directoryEntryName(entry)
           guard name != "." && name != ".." else {
             continue
@@ -183,9 +189,6 @@ final class TestRootFileOperations {
           if try isRegularFile(name, in: directoryDescriptor) {
             names.append(name)
           }
-        }
-        if errno != 0 {
-          throw TestRootFileOperationError.posix(operation: "readdir", code: errno)
         }
         return names
       }
