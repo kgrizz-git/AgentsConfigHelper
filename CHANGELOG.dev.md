@@ -7,6 +7,9 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Claude Code permissions acceptance:** Recorded the successful 2026-08-24 macOS test-root
+  smoke for the read-only Claude policy card; its implementation plan is now archived.
+
 - **Claude Code permissions coverage:** Added token-free recognized, malformed, unknown-key,
   missing-policy, and comment-bearing fixtures with adapter, card, and editor-integration
   tests for the new read-only Claude Code policy presentation.
