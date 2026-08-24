@@ -57,6 +57,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
+        tester.widget<AlertDialog>(find.byType(AlertDialog)).scrollable,
+        isTrue,
+      );
+      expect(
         find.text('Lists rules that pre-approve matching actions.'),
         findsOneWidget,
       );
@@ -75,6 +79,37 @@ void main() {
       expect(openedUri, ClaudeCodePermissionsAdapter.documentationUri);
     },
   );
+
+  testWidgets('keeps permission headers within a narrow, scaled layout', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: ClaudeCodePermissionsCard(
+                presentation: ClaudeCodePermissionsPresentation(
+                  defaultMode: 'bypassPermissions',
+                  allow: const [],
+                  ask: const [],
+                  deny: const [],
+                  hasConfiguredPolicy: true,
+                  hasUnclassifiedSettings: false,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('shows feedback when documentation cannot be opened', (
     tester,

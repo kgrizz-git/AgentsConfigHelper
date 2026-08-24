@@ -65,6 +65,7 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: Text(help.label),
         content: Text(help.description),
+        scrollable: true,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -100,10 +101,15 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                '${help.label} (${rules.length})',
-                style: AppTextStyles.uiSubheader,
+              Expanded(
+                child: Text(
+                  '${help.label} (${rules.length})',
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  style: AppTextStyles.uiSubheader,
+                ),
               ),
+              const SizedBox(width: 4),
               _buildHelpButton(context, help),
             ],
           ),
@@ -141,7 +147,14 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
             children: [
               Icon(Icons.policy_outlined, color: AppColors.primaryAccent),
               SizedBox(width: 8),
-              Text('Claude Code permissions', style: AppTextStyles.uiSubheader),
+              Expanded(
+                child: Text(
+                  'Claude Code permissions',
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  style: AppTextStyles.uiSubheader,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -162,10 +175,15 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
             const SizedBox(height: 16),
             Row(
               children: [
-                Text(
-                  'Default mode: ${presentation.defaultMode}',
-                  style: AppTextStyles.uiBase,
+                Expanded(
+                  child: Text(
+                    'Default mode: ${presentation.defaultMode}',
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: AppTextStyles.uiBase,
+                  ),
                 ),
+                const SizedBox(width: 4),
                 _buildHelpButton(
                   context,
                   ClaudeCodePermissionsHelp.defaultMode,

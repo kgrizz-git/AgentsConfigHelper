@@ -24,7 +24,6 @@ class ClaudeCodePermissionFieldHelp extends Equatable {
     required this.description,
   });
 
-  /// The field's short display label.
   final String label;
 
   /// A description of the stored setting, not a prediction of rule matching.
