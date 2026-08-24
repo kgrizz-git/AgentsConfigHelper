@@ -89,4 +89,31 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('handles a documentation failure without a scaffold', (
+    tester,
+  ) async {
+    final presentation = ClaudeCodePermissionsPresentation(
+      defaultMode: null,
+      allow: const [],
+      ask: const [],
+      deny: const [],
+      hasConfiguredPolicy: false,
+      hasUnclassifiedSettings: false,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ClaudeCodePermissionsCard(
+          presentation: presentation,
+          onOpenDocumentation: (_) async => false,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Claude Code permissions documentation'));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
 }

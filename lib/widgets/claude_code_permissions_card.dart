@@ -36,7 +36,16 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
   }
 
   void _showDocumentationLaunchError(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    if (Scaffold.maybeOf(context) == null) {
+      debugPrint('Unable to open Claude Code permissions documentation.');
+      return;
+    }
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) {
+      debugPrint('Unable to open Claude Code permissions documentation.');
+      return;
+    }
+    messenger.showSnackBar(
       const SnackBar(
         content: Text('Unable to open Claude Code permissions documentation.'),
       ),
