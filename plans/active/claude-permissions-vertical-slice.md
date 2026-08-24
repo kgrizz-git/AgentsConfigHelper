@@ -37,7 +37,9 @@ discovery target. The adapter recognizes this exact `permissions` subtree:
 
 `allow`, `ask`, and `deny` are optional arrays of strings; when present, every element
 must be a string. `defaultMode` is optional and must be a string when present. The adapter
-does not validate whether an individual rule is accepted by the installed Claude Code
+accepts only Claude Code's documented modes: `default`, `manual`, `acceptEdits`, `plan`,
+`auto`, `dontAsk`, and `bypassPermissions`. It does not validate whether an individual rule is
+accepted by the installed Claude Code
 version, and it does not interpret hooks, environment settings, MCP settings, model
 settings, or unknown permission keys.
 

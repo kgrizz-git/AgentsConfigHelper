@@ -1,0 +1,6 @@
+{
+  "permissions": {
+    "defaultMode": "unrecognized-mode",
+    "allow": ["Read(./fixtures/**)"]
+  }
+}

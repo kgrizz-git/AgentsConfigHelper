@@ -9,9 +9,7 @@ Internal / developer-facing changes that do not belong in the public
 
 - **Claude Code permissions coverage:** Added token-free recognized, malformed, unknown-key,
   missing-policy, and comment-bearing fixtures with adapter, card, and editor-integration
-  tests for the new read-only Claude Code policy presentation. Hardened the card's
-  documentation-launch failure feedback (with a safe no-scaffold fallback) and the
-  missing-policy guard against legacy flat permission serialization.
+  tests for the new read-only Claude Code policy presentation.
 
 - **Structured-configuration roadmap:** Added the staged architecture and safety plan for
   schema-aware cards, reviewed help, per-schema expansion, and regression coverage, plus a

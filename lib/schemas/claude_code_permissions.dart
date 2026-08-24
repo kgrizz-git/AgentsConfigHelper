@@ -103,6 +103,16 @@ class ClaudeCodePermissionsAdapter {
     'deny',
   };
 
+  static const _supportedDefaultModes = {
+    'default',
+    'manual',
+    'acceptEdits',
+    'plan',
+    'auto',
+    'dontAsk',
+    'bypassPermissions',
+  };
+
   /// Returns a read-only presentation only for known Claude settings targets.
   ClaudeCodePermissionsInterpretation interpret({
     required ToolConfig config,
@@ -154,8 +164,11 @@ class ClaudeCodePermissionsAdapter {
     }
 
     final defaultMode = permissions['defaultMode'];
-    if (defaultMode != null && defaultMode is! String) {
-      return _unsupportedField('defaultMode');
+    if (permissions.containsKey('defaultMode')) {
+      if (defaultMode is! String ||
+          !_supportedDefaultModes.contains(defaultMode)) {
+        return _unsupportedField('defaultMode');
+      }
     }
 
     final allow = _stringArray(permissions, 'allow');

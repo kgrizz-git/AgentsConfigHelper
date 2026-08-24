@@ -68,9 +68,11 @@ void main() {
       expect(result.presentation?.hasUnclassifiedSettings, isTrue);
     });
 
-    test('invalid and mixed-type permission fixtures use the raw fallback', () {
+    test('invalid permission fixtures use the raw fallback', () {
       for (final path in [
         'edge_cases/claude_permissions_invalid.json',
+        'edge_cases/claude_permissions_null_default_mode.json',
+        'edge_cases/claude_permissions_unknown_default_mode.json',
         'edge_cases/claude_permissions_mixed_array.json',
       ]) {
         final result = adapter.interpret(

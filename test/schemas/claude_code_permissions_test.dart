@@ -75,6 +75,28 @@ void main() {
       expect(result.presentation?.hasUnclassifiedSettings, isTrue);
     });
 
+    test('accepts only documented default modes', () {
+      for (final defaultMode in const [
+        'default',
+        'manual',
+        'acceptEdits',
+        'plan',
+        'auto',
+        'dontAsk',
+        'bypassPermissions',
+      ]) {
+        final result = adapter.interpret(
+          config: config({
+            'permissions': {'defaultMode': defaultMode},
+          }),
+          discoveredConfig: claudeConfig(),
+        );
+
+        expect(result.status, ClaudeCodePermissionsStatus.available);
+        expect(result.presentation?.defaultMode, defaultMode);
+      }
+    });
+
     test('does not present a partial card for invalid recognized values', () {
       final result = adapter.interpret(
         config: config({
