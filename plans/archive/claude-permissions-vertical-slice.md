@@ -1,11 +1,11 @@
 # Plan: Claude Code Permissions Vertical Slice
 
-Last reviewed: 2026-08-23
+Last reviewed: 2026-08-24
 Date: 2026-08-23
 Author: maintainers
-Status: in progress — read-only presentation and automated coverage shipped; manual macOS smoke pending
+Status: complete — read-only presentation, automated coverage, and manual macOS smoke accepted
 Linked issue/PR: n/a
-Parent plan: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
+Parent plan: [Structured Configuration Roadmap](../active/structured-configuration-roadmap.md)
 Primary references: [Claude Code settings](https://code.claude.com/docs/en/settings) and
 [Claude Code permissions](https://code.claude.com/docs/en/permissions)
 
@@ -112,7 +112,7 @@ without widget pumping and keep widget tests independent of the filesystem.
       than relying only on snapshot structure.
 - [x] Test an unchanged-card interaction performs no save and leaves exact raw content
       intact. Retain existing parser round-trip tests.
-- [ ] Run the macOS test-root smoke with the Claude fixture: confirm the card appears,
+- [x] Run the macOS test-root smoke with the Claude fixture: confirm the card appears,
       raw content remains available, no file changes occur merely from viewing, and the
       staging root can be cleaned explicitly afterward.
 

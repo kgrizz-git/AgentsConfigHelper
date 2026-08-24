@@ -13,18 +13,14 @@
 
 ### Recommended delivery order
 
-1. **Claude Code permissions vertical slice:** implement the read-only `allow` / `ask` /
-   `deny` card described in the [detailed plan](plans/active/claude-permissions-vertical-slice.md).
-   Keep raw content available and defer editing until the specified lossless/minimal-patch
-   evidence exists.
-2. **Plain-language help:** attach reviewed explanations and authoritative documentation
+1. **Plain-language help:** attach reviewed explanations and authoritative documentation
    links to the schema metadata introduced by the Claude slice.
-3. **Broaden tool schemas incrementally:** use sanitized staging fixtures and regression tests
+2. **Broaden tool schemas incrementally:** use sanitized staging fixtures and regression tests
    to select each next schema rather than treating every format alike.
-4. **Finish testing regression coverage:** keep the proven macOS staging workflow maintained,
+3. **Finish testing regression coverage:** keep the proven macOS staging workflow maintained,
    add the default-startup harness and unsupported nested-structure raw-editor fixture, and
    defer Linux/Windows test-root work until their platform-native bridges are planned.
-5. **Tool catalog integrity:** implement the [tool-catalog integrity plan](plans/active/tool-catalog-integrity.md)
+4. **Tool catalog integrity:** implement the [tool-catalog integrity plan](plans/active/tool-catalog-integrity.md)
    so supported-tool documentation has explicit source/schema evidence, deterministic PR
    checks, and a quarterly advisory review issue.
 

@@ -65,7 +65,8 @@ schema recognition; a later patcher owns writes.
 
 ### Phase 1 — Claude Code permission cards (read-only)
 
-Implement the detailed [Claude permissions vertical-slice plan](claude-permissions-vertical-slice.md).
+The completed first slice is documented in the archived
+[Claude permissions vertical-slice plan](../archive/claude-permissions-vertical-slice.md).
 It is deliberately limited to Claude Code's `permissions.defaultMode` and `allow`/`ask`/
 `deny` string arrays in user and project `settings.json` files.
 
