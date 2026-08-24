@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
+import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/utils/open_directory.dart';
+import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:flutter/foundation.dart';
@@ -19,6 +22,7 @@ class ConfigEditor extends StatefulWidget {
     required this.onSave,
     required this.resolvePath,
     required this.onShowHistory,
+    this.discoveredConfig,
     this.onDirtyChanged,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
@@ -27,6 +31,9 @@ class ConfigEditor extends StatefulWidget {
 
   /// The configuration shown by the editor.
   final ToolConfig config;
+
+  /// The known discovery record, used to select a schema-aware presentation.
+  final DiscoveredConfig? discoveredConfig;
 
   /// Persists a confirmed edited configuration.
   final Future<ToolConfig> Function(ToolConfig config, [String? rawContent])
@@ -55,6 +62,8 @@ class ConfigEditor extends StatefulWidget {
 }
 
 class _ConfigEditorState extends State<ConfigEditor> {
+  static final _claudePermissionsAdapter = ClaudeCodePermissionsAdapter();
+
   late ToolConfig _currentConfig;
   late List<String> _rules;
   late List<String> _permissions;
@@ -109,10 +118,11 @@ class _ConfigEditorState extends State<ConfigEditor> {
       _currentConfig.format == ConfigFormat.yaml ||
       _currentConfig.format == ConfigFormat.toml;
 
-  bool get _hasUnsupportedPermissions =>
-      _currentConfig.rawSettings['permissions'] != null &&
-      _currentConfig.rawSettings['permissions'] is! List &&
-      _currentConfig.rawSettings.containsKey('permissions');
+  ClaudeCodePermissionsInterpretation get _claudePermissions =>
+      _claudePermissionsAdapter.interpret(
+        config: _currentConfig,
+        discoveredConfig: widget.discoveredConfig,
+      );
 
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -318,8 +328,54 @@ class _ConfigEditorState extends State<ConfigEditor> {
     return RawDiffView(original: original, updated: updated);
   }
 
+  Widget _buildPermissionsSection(
+    ClaudeCodePermissionsInterpretation claudePermissions,
+    bool hasUnsupportedPermissions,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Permissions'),
+        if (claudePermissions.isAvailable)
+          ClaudeCodePermissionsCard(
+            presentation: claudePermissions.presentation!,
+          )
+        else if (hasUnsupportedPermissions)
+          Text(
+            claudePermissions.unsupportedReason ??
+                'Nested permissions are preserved but not editable here yet.',
+            style: AppTextStyles.uiSecondary,
+          )
+        else ...[
+          const Text(
+            'Allowed directories or commands for this agent.',
+            style: AppTextStyles.uiSecondary,
+          ),
+          const SizedBox(height: 12),
+          StringListEditor(
+            values: _permissions,
+            hintText: 'e.g., ~/Projects',
+            onChanged: (newValues) {
+              setState(() {
+                _permissions = newValues;
+              });
+              _notifyDirtyChanged();
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final claudePermissions = _claudePermissions;
+    final hasUnsupportedPermissions =
+        claudePermissions.isUnsupported ||
+        (!claudePermissions.isAvailable &&
+            _currentConfig.rawSettings['permissions'] != null &&
+            _currentConfig.rawSettings['permissions'] is! List &&
+            _currentConfig.rawSettings.containsKey('permissions'));
     return ColoredBox(
       color: AppColors.backgroundDark,
       child: Stack(
@@ -477,31 +533,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
                               },
                             ),
 
-                            _buildSectionHeader('Permissions'),
-                            if (_hasUnsupportedPermissions)
-                              const Text(
-                                'Nested permissions are preserved but '
-                                'not editable here yet.',
-                                style: AppTextStyles.uiSecondary,
-                              )
-                            else ...[
-                              const Text(
-                                'Allowed directories or commands for this '
-                                'agent.',
-                                style: AppTextStyles.uiSecondary,
-                              ),
-                              const SizedBox(height: 12),
-                              StringListEditor(
-                                values: _permissions,
-                                hintText: 'e.g., ~/Projects',
-                                onChanged: (newValues) {
-                                  setState(() {
-                                    _permissions = newValues;
-                                  });
-                                  _notifyDirtyChanged();
-                                },
-                              ),
-                            ],
+                            _buildPermissionsSection(
+                              claudePermissions,
+                              hasUnsupportedPermissions,
+                            ),
                           ],
 
                           _buildSectionHeader('Advanced'),
