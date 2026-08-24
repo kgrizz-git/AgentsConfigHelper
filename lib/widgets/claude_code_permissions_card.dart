@@ -79,15 +79,12 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
     BuildContext context,
     ClaudeCodePermissionFieldHelp help,
   ) {
-    return Tooltip(
-      message: help.description,
-      child: IconButton(
-        onPressed: () async {
-          await _showFieldHelp(context, help);
-        },
-        icon: const Icon(Icons.help_outline, size: 18),
-        tooltip: 'Explain ${help.label}',
-      ),
+    return IconButton(
+      onPressed: () async {
+        await _showFieldHelp(context, help);
+      },
+      icon: const Icon(Icons.help_outline, size: 18),
+      tooltip: help.description,
     );
   }
 

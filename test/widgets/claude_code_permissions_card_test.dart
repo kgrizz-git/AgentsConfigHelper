@@ -46,7 +46,14 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.byTooltip('Explain Allow'));
+      expect(
+        find.byTooltip(ClaudeCodePermissionsHelp.defaultMode.description),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byTooltip(ClaudeCodePermissionsHelp.allow.description),
+      );
       await tester.pumpAndSettle();
 
       expect(
@@ -56,6 +63,11 @@ void main() {
 
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
+
+      expect(
+        find.text('Lists rules that pre-approve matching actions.'),
+        findsNothing,
+      );
 
       await tester.tap(find.text('Claude Code permissions documentation'));
       await tester.pump();
