@@ -36,6 +36,33 @@ void main() {
   }
 
   group('ClaudeCodePermissionsAdapter', () {
+    test('keeps reviewed field help scoped to stored configuration', () {
+      expect(
+        ClaudeCodePermissionsHelp.policy.description,
+        contains('stored in this file'),
+      );
+      expect(
+        ClaudeCodePermissionsHelp.policy.description,
+        contains('at runtime'),
+      );
+      expect(
+        ClaudeCodePermissionsHelp.defaultMode.description,
+        contains('no allow, ask, or deny rule matches'),
+      );
+      expect(
+        ClaudeCodePermissionsHelp.allow.description,
+        'Lists rules that pre-approve matching actions.',
+      );
+      expect(
+        ClaudeCodePermissionsHelp.ask.description,
+        'Lists rules that require confirmation for matching actions.',
+      );
+      expect(
+        ClaudeCodePermissionsHelp.deny.description,
+        'Lists rules that block matching actions.',
+      );
+    });
+
     test('reads validated nested values from raw settings', () {
       final result = adapter.interpret(
         config: config({

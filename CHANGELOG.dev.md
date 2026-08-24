@@ -7,6 +7,10 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Claude Code permission help coverage:** Added pure-Dart reviewed help metadata and widget
+  coverage for its keyboard-accessible explanatory dialog; recorded the schema-help review
+  convention in the structured-configuration roadmap and supported-tools reference.
+
 - **Claude Code permissions acceptance:** Recorded the successful 2026-08-24 macOS test-root
   smoke for the read-only Claude policy card; its implementation plan is now archived.
 

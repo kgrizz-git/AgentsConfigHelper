@@ -10,6 +10,10 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
+- **Claude Code permission help:** The read-only Claude Code permissions card now provides
+  keyboard-accessible, plain-language explanations for its default mode and Allow, Ask, and
+  Deny rule groups. The help describes stored configuration rather than predicting runtime
+  matching, and the official documentation remains one click away.
 - **Claude Code permission cards:** Recognized Claude Code `allow`, `ask`, and `deny`
   permission rules (plus the default mode) now appear in a read-only policy card with a link
   to the official permissions documentation. Unknown or malformed permission shapes remain

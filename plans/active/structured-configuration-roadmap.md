@@ -1,9 +1,9 @@
 # Plan: Structured Configuration Roadmap
 
-Last reviewed: 2026-08-23
+Last reviewed: 2026-08-24
 Date: 2026-08-23
 Author: maintainers
-Status: active — planning; no schema-aware presentation has shipped
+Status: active — Claude Code read-only presentation and reviewed help shipped; structured editing and further schemas remain planned
 Linked issue/PR: n/a
 Research: [configuration structured-editing gap](../../docs/research/config-structured-editing-gap.md)
 
@@ -63,7 +63,7 @@ schema recognition; a later patcher owns writes.
       in the safe-testing plan.
 - [ ] Preserve an explicit raw-editor fallback in all tests and UX states.
 
-### Phase 1 — Claude Code permission cards (read-only)
+### Phase 1 — Claude Code permission cards (read-only, complete)
 
 The completed first slice is documented in the archived
 [Claude permissions vertical-slice plan](../archive/claude-permissions-vertical-slice.md).
@@ -89,14 +89,16 @@ Exit criteria:
       rather than full-document reserialization.
 - [ ] Reassess the public UX after the read-only slice before enabling mutation.
 
-### Phase 3 — reviewed help and documentation links
+### Phase 3 — reviewed help and documentation links (Claude Code complete)
 
-- [ ] Attach plain-language explanations and official Claude Code links to the Phase 1
+- [x] Attach plain-language explanations and official Claude Code links to the Phase 1
       metadata, including a clear statement that the app displays configuration rather than
       determining the tool's runtime decision.
-- [ ] Provide accessible help affordances (keyboard reachable, tooltip/description not
+- [x] Provide accessible help affordances (keyboard reachable, tooltip/description not
       hover-only) and link-opening tests.
-- [ ] Establish metadata review/versioning conventions before copying help to another tool.
+- [x] Establish metadata review/versioning conventions before copying help to another tool:
+      keep reviewed help in the pure-Dart schema layer, cite the primary documentation in
+      `docs/supported-tools.md`, and preserve a raw-editor-first fallback for unknown shapes.
 
 ### Phase 4 — expand one schema at a time
 

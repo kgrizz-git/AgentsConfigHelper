@@ -56,13 +56,60 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  Widget _buildGroup(String title, List<String> rules) {
+  Future<void> _showFieldHelp(
+    BuildContext context,
+    ClaudeCodePermissionFieldHelp help,
+  ) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(help.label),
+        content: Text(help.description),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpButton(
+    BuildContext context,
+    ClaudeCodePermissionFieldHelp help,
+  ) {
+    return Tooltip(
+      message: help.description,
+      child: IconButton(
+        onPressed: () async {
+          await _showFieldHelp(context, help);
+        },
+        icon: const Icon(Icons.help_outline, size: 18),
+        tooltip: 'Explain ${help.label}',
+      ),
+    );
+  }
+
+  Widget _buildGroup(
+    BuildContext context,
+    ClaudeCodePermissionFieldHelp help,
+    List<String> rules,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$title (${rules.length})', style: AppTextStyles.uiSubheader),
+          Row(
+            children: [
+              Text(
+                '${help.label} (${rules.length})',
+                style: AppTextStyles.uiSubheader,
+              ),
+              _buildHelpButton(context, help),
+            ],
+          ),
           const SizedBox(height: 6),
           if (rules.isEmpty)
             const Text(
@@ -101,10 +148,8 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Claude Code evaluates matching rules in deny, ask, then allow '
-            'order. '
-            'This card reflects the file and does not change it.',
+          Text(
+            ClaudeCodePermissionsHelp.policy.description,
             style: AppTextStyles.uiSecondary,
           ),
           if (!presentation.hasConfiguredPolicy) ...[
@@ -118,14 +163,30 @@ class ClaudeCodePermissionsCard extends StatelessWidget {
           ],
           if (presentation.defaultMode != null) ...[
             const SizedBox(height: 16),
-            Text(
-              'Default mode: ${presentation.defaultMode}',
-              style: AppTextStyles.uiBase,
+            Row(
+              children: [
+                Text(
+                  'Default mode: ${presentation.defaultMode}',
+                  style: AppTextStyles.uiBase,
+                ),
+                _buildHelpButton(
+                  context,
+                  ClaudeCodePermissionsHelp.defaultMode,
+                ),
+              ],
             ),
           ],
-          _buildGroup('Allow', presentation.allow),
-          _buildGroup('Ask', presentation.ask),
-          _buildGroup('Deny', presentation.deny),
+          _buildGroup(
+            context,
+            ClaudeCodePermissionsHelp.allow,
+            presentation.allow,
+          ),
+          _buildGroup(context, ClaudeCodePermissionsHelp.ask, presentation.ask),
+          _buildGroup(
+            context,
+            ClaudeCodePermissionsHelp.deny,
+            presentation.deny,
+          ),
           if (presentation.hasUnclassifiedSettings) ...[
             const SizedBox(height: 16),
             const Text(

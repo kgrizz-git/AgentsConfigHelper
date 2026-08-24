@@ -1,6 +1,6 @@
 # Supported Tools
 
-Last reviewed: 2026-08-23
+Last reviewed: 2026-08-24
 
 Config format reference for each supported AI agent and IDE. Used by AgentsConfigHelper
 to auto-detect, parse, visualize, and edit settings across tools.
@@ -68,6 +68,14 @@ JSON with permissions, hooks, env, model settings.
 - **Modes:** `default`, `acceptEdits`, `plan`, `auto`, `dontAsk`, `bypassPermissions`
   (`manual` is accepted as an alias for `default` by current Claude Code versions)
 - **Pattern format:** `ToolName` or `ToolName(glob-pattern)`
+
+### Claude Code Permission Card Help
+
+The app's read-only permission card provides reviewed, plain-language help for the stored
+`defaultMode`, `allow`, `ask`, and `deny` fields. It describes what each setting represents,
+not whether a particular action will match or be permitted at runtime. Claude Code remains the
+authority for rule evaluation; use the linked [official permissions documentation](https://code.claude.com/docs/en/permissions)
+for current matching and precedence behavior.
 
 ### Claude Code Rules
 
