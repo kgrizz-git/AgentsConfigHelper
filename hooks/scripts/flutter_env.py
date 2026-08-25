@@ -63,6 +63,15 @@ def flutter_command(task: str) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
+    """
+    Run the selected Flutter task with a filtered environment.
+    
+    Parameters:
+    	argv (list[str]): Command-line arguments containing exactly one supported task name.
+    
+    Returns:
+    	int: The Flutter process exit code, 2 for invalid arguments, or 127 when the Flutter executable cannot be found.
+    """
     if len(argv) != 1 or argv[0] not in TASKS:
         print(
             "usage: flutter_env.py <task>\n"
