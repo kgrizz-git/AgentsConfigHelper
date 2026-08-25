@@ -7,6 +7,19 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Tool-catalog integrity Phase 1 (partial evidence slice):** Established the
+  evidence-table pattern in `docs/supported-tools.md` with the plan's contract fields
+  (Tool, Discovery coverage, Primary evidence, Schema evidence, Fixture/reference, Reviewed).
+  Added substantively reviewed rows for **Claude Code** (primary evidence: code.claude.com
+  docs/settings, permissions, claude-md; verified example via existing token-free staging
+  fixture) and **Codex** (primary evidence: developers.openai.com codex/config-basic,
+  codex/permissions; verified example via existing token-free staging fixture). All other
+  registered tools are recorded as **pending** review. `Catalog reviewed through:` is
+  intentionally withheld until the full catalog is reviewed. Updated
+  `docs/research/README.md` to clarify that raw dated research supports the catalog while
+  `supported-tools.md` is the reviewed curated reference. Plan and this changelog updated
+  for the partial slice.
+
 - **Flutter hook worktree portability:** Added `hooks/scripts/flutter_env.py`, a
   stdlib-Python wrapper that execs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE`
   cleared from the child environment. In a linked git worktree, `git commit`

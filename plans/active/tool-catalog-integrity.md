@@ -22,13 +22,19 @@ blocking unrelated feature pull requests.
 
 - `lib/catalog/tool_descriptor_registry.dart` is the runtime source of truth for supported
   tools and discovery targets.
-- `docs/supported-tools.md` covers each registered tool's paths and format summary, but
-  source links and token-free examples are uneven. In particular, Antigravity IDE/App,
-  Kilo, Cline, LM Studio, and some Copilot surfaces need a recorded evidence status rather
-  than an implied schema guarantee.
-- `ci/scripts/check_doc_links.py` already checks internal Markdown links, can probe external
-  links, and recognizes `Catalog reviewed through:` markers. Its catalog scope is currently
-  `inventory/` only, and CI does not invoke it.
+- `docs/supported-tools.md` covers each registered tool's paths and format summary. A
+  partial evidence table has been added (Claude Code and Codex reviewed rows; all other
+  registered tools recorded as pending). Source links and token-free examples are uneven
+  across the remaining tools. In particular, Antigravity IDE/App, Kilo, Cline, LM Studio,
+  and some Copilot surfaces need a recorded evidence status rather than an implied schema
+  guarantee.
+- `ci/scripts/check_doc_links.py` checks internal Markdown links, can probe external links,
+  and recognizes `Catalog reviewed through:` markers. Its catalog scope now explicitly
+  includes `docs/supported-tools.md` (not only `inventory/`), and an offline CI docs job
+  invokes the deterministic internal-link check plus the checker's unittest suite. The
+  strict `--catalog-strict` gate (catalog review marker + registry-coverage check) is
+  implemented and tested but intentionally not yet wired into PR CI; it activates only
+  after a full-catalog evidence change truthfully adds the marker.
 - The existing maintenance-loop prompt describes manual catalog review, but no recurring
   workflow turns a stale tool catalog into a visible repository task.
 
@@ -107,13 +113,19 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 ### Phase 1 — source and fixture evidence
 
-- [ ] Populate source/status rows for all registered tools. Prefer vendor-owned docs and
-      schemas; mark community/unpublished facts distinctly.
-- [ ] Verify and record the high-priority structured-schema set first: Claude Code, Cursor,
-      Opencode, Kiro, Devin, and Codex.
-- [ ] Add or link token-free fixtures only where a representative shape improves parser or
-      future schema-card tests. Include no secret-like strings, tokens, copied user comments,
-      or environment-specific absolute paths.
+- [x] Populate source/status rows for the first high-priority slice (Claude Code, Codex).
+      Established the evidence-table pattern in `docs/supported-tools.md` with the contract
+      fields (Tool, Discovery coverage, Primary evidence, Schema evidence, Fixture/reference,
+      Reviewed). Remaining registered tools are recorded as pending — no schema/fixture claim
+      is implied for them.
+- [ ] Populate source/status rows for the remaining registered tools. Prefer vendor-owned
+      docs and schemas; mark community/unpublished facts distinctly.
+- [x] Verify and record the first high-priority structured-schema pair: Claude Code and Codex
+      (verified examples via token-free staging fixtures).
+- [ ] Verify and record the remaining high-priority structured-schema tools: Cursor,
+      Opencode, Kiro, and Devin.
+- [x] Add or link token-free fixtures for the Claude Code and Codex rows. Existing
+      synthetic staging fixtures used; no new fixtures required for this slice.
 - [ ] For paths-only tools, record the reason and a follow-up research question instead of
       fabricating a partial schema example.
 - [ ] Add a fixture-intake checklist to the safe-testing documentation: source provenance,
@@ -139,6 +151,11 @@ cannot be found, say so and leave the raw editor as the only supported represent
 > It activates only after a Phase 0/1 evidence change truthfully adds the
 > `Catalog reviewed through:` marker to `docs/supported-tools.md`. The current CI job runs
 > the deterministic internal-link check plus the checker's unittest suite.
+>
+> **CI-wiring note:** When `--catalog-strict` is finally wired into PR CI, the truthful
+> `Catalog reviewed through: YYYY-MM-DD` marker must be added in the same full-catalog
+> evidence review change — the gate requires the marker, so wiring and the marker arrive
+> together, not in separate PRs.
 
 ### Phase 3 — quarterly advisory and reminder
 

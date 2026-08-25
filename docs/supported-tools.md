@@ -27,6 +27,34 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets | local LLM runner |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool agents.md convention | instructions only |
 
+## Catalog evidence (partial: Claude Code + Codex only)
+
+> **Status:** This table is a bounded first slice. Only **Claude Code** and **Codex** rows
+> have been substantively reviewed against current vendor sources as of 2026-08-25.
+> All other registered tools remain **pending** review and are shown here for
+> completeness with their discovery coverage only — no schema/fixture claim is implied.
+> `Catalog reviewed through:` is intentionally omitted until the full catalog is reviewed.
+
+| Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |
+| --- | --- | --- | --- | --- | --- |
+| Claude Code | JSON structured config (user/project/local/managed); Markdown instruction docs (`CLAUDE.md`, `.claude/rules/`) | [Settings](https://code.claude.com/docs/en/settings) · [Permissions](https://code.claude.com/docs/en/permissions) · [CLAUDE.md](https://code.claude.com/docs/en/claude-md) (code.claude.com) | verified example | `test/fixtures/staging_home/.claude/settings.json` · `test/fixtures/staging_home/workspace/.claude/settings.json` | 2026-08-25 |
+| Codex | TOML structured config (user/project/system/profiles); Markdown instruction docs (`AGENTS.md`); text rules (`.codex/rules/*.rules`) | [Config basic](https://developers.openai.com/codex/config-basic) · [Permissions](https://developers.openai.com/codex/permissions) (developers.openai.com) | verified structured-config example (fixture exercises TOML config shape; permission-profile semantics are sourced from the primary permissions doc) | `test/fixtures/staging_home/.codex/config.toml` · `test/fixtures/staging_home/workspace/.codex/config.toml` | 2026-08-25 |
+| Opencode | JSONC structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
+| Paseo | JSON structured config (user/project) | pending | pending | pending | — |
+| Cursor Agent | JSON structured config (user/project); text/Markdown instruction docs | pending | pending | pending | — |
+| Cursor IDE | JSON structured config (user/project) | pending | pending | pending | — |
+| Kiro | YAML structured config (user); Markdown instruction docs | pending | pending | pending | — |
+| Devin | JSON structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
+| Antigravity CLI | JSON structured config (user); Markdown instruction docs | pending | pending | pending | — |
+| Antigravity IDE | JSON structured config (user) | pending | pending | pending | — |
+| Antigravity App | JSON structured config (user) | pending | pending | pending | — |
+| Agy-ACP | JSON structured config (user) | pending | pending | pending | — |
+| Kilo | JSONC/JSON structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
+| Cline | JSON structured config (user); Markdown/text instruction docs | pending | pending | pending | — |
+| GitHub Copilot | JSONC/JSON structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
+| LM Studio | JSON/YAML structured config (user) | pending | pending | pending | — |
+| AGENTS.md (shared) | Markdown instruction docs (user/project) | pending | pending | pending | — |
+
 ---
 
 ## Claude Code
