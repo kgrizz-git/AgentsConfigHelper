@@ -7,6 +7,31 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Flutter hook worktree portability:** Added `hooks/scripts/flutter_env.py`, a
+  stdlib-Python wrapper that execs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE`
+  cleared from the child environment. In a linked git worktree, `git commit`
+  exports those vars, which redirect Flutter's SDK git detection at the app
+  checkout and break pub resolution (`Flutter SDK version 0.0.0-unknown`). Wired
+  the `dart-code-linter`, `flutter-analyze`, and `flutter-test` pre-commit hooks
+  through it via `language: python` (portable macOS/Linux/Windows; no `python3`
+  PATH assumption). Added `tests/test_flutter_env.py` covering env filtering,
+  argument/exit-code passthrough, and an end-to-end `flutter --version`
+  regression guard under simulated hook env.
+
+- **Tool-catalog integrity Phase 2 (foundation):** Refactored
+  `ci/scripts/check_doc_links.py` so catalog scope is explicit —
+  `docs/supported-tools.md` is always catalog-checked (not just `inventory/`).
+  Added a `--catalog-strict` gate (deferred activation) that will require a valid
+  `Catalog reviewed through: YYYY-MM-DD` marker plus presence of every registry
+  tool display name once a Phase 0/1 evidence change truthfully adds the marker.
+  Added stdlib-unittest tests (`ci/tests/test_check_doc_links.py`) covering tmp/
+  exclusion, catalog inclusion, valid/stale/malformed dates, internal links,
+  non-fatal external outcomes, and a registry-displayName drift check. Added a
+  lightweight offline `docs` CI job running the deterministic internal-link
+  check (`--internal-only --strict`) plus the unittest suite. External-link
+  liveness remains advisory and is not part of PR CI; date staleness remains
+  advisory (Phase 3 quarterly), not a strict failure.
+
 - **Claude Code permission help coverage:** Added pure-Dart reviewed help metadata and widget
   coverage for its keyboard-accessible explanatory dialog; recorded the schema-help review
   convention in the structured-configuration roadmap and supported-tools reference.

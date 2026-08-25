@@ -1,9 +1,9 @@
 # Plan: Tool Catalog Integrity
 
-Last reviewed: 2026-08-23
+Last reviewed: 2026-08-25
 Date: 2026-08-23
 Author: maintainers
-Status: ready to implement
+Status: in progress (Phase 2 foundation: deterministic internal-link CI + checker tests; strict catalog-marker/coverage activation deferred to Phase 0/1 evidence review)
 Linked issue/PR: n/a
 Related: [Supported Tools](../../docs/supported-tools.md),
 [Structured Configuration Roadmap](structured-configuration-roadmap.md), and
@@ -121,15 +121,24 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 ### Phase 2 — deterministic pull-request checks
 
-- [ ] Refactor `ci/scripts/check_doc_links.py` so catalog paths are explicit and include
+- [x] Refactor `ci/scripts/check_doc_links.py` so catalog paths are explicit and include
       `docs/supported-tools.md`, rather than relying only on the `inventory/` directory.
-- [ ] Keep `--internal-only --strict` as the routine PR command. Extend it, or add a narrow
-      companion validation, to fail if `docs/supported-tools.md` lacks/misformats its required
-      catalog review marker or an expected registry tool row.
-- [ ] Add focused Python tests or shell fixtures for: ignored `tmp/`, supported-tool catalog
+- [x] Keep `--internal-only --strict` as the routine PR command, and implement a narrow
+      companion validation (`--catalog-strict`) that fails if `docs/supported-tools.md`
+      lacks/misformats its required catalog review marker or omits an expected registry
+      tool row.
+- [ ] Wire `--catalog-strict` into PR CI. Deferred until a Phase 0/1 evidence change
+      truthfully adds the `Catalog reviewed through:` marker; see activation note below.
+- [x] Add focused Python tests or shell fixtures for: ignored `tmp/`, supported-tool catalog
       inclusion, valid/stale/malformed dates, internal links, and non-fatal external outcomes.
-- [ ] Add a lightweight CI docs job that runs the deterministic command. It must not require
+- [x] Add a lightweight CI docs job that runs the deterministic command. It must not require
       external network access or new write permissions.
+
+> **Activation note:** The `--catalog-strict` gate (catalog review marker + registry-coverage
+> check) is implemented and covered by tests, but is intentionally NOT yet wired into PR CI.
+> It activates only after a Phase 0/1 evidence change truthfully adds the
+> `Catalog reviewed through:` marker to `docs/supported-tools.md`. The current CI job runs
+> the deterministic internal-link check plus the checker's unittest suite.
 
 ### Phase 3 — quarterly advisory and reminder
 

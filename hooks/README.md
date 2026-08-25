@@ -31,6 +31,7 @@ rather than after.
 | `scripts/check_gitignore_protected.py` | Opt-in gate blocking removal of required `.gitignore` rules (config: `.gitignore-protected`) |
 | `scripts/check_forbidden_paths.py` | Opt-in gate blocking any tracked file under never-commit paths (config: `.forbidden-paths`) |
 | `scripts/check_scan_contract.py` | Opt-in ledger gate: blocks when a required heavy scanner is stale vs the files it covers (config: `.scan-contract.json` + `.scan-ledger.json`) |
+| `scripts/flutter_env.py` | Runs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE` cleared from the child environment, so Flutter resolves its own SDK checkout in linked git worktrees (where `git commit` exports those vars into hook env). Portable via `language: python`. |
 | `scripts/check_cleanup_hygiene.sh` | Optional hygiene check: warns when completed items linger in `to_do.md`, plans aren't archived, `.context/` has old files, or changelog entries are missing |
 | `gitignore-protected.example`, `forbidden-paths.example`, `scan-contract.json.example` | Starter configs for the structural sensitive-data gates ([`policies/sensitive-data-scan-gates.md`](../policies/sensitive-data-scan-gates.md)) |
 | `scripts/prune_backups.sh` | Optional: delete `backups/` dirs older than last N commits |
