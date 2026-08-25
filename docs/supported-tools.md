@@ -27,14 +27,15 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets | local LLM runner |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool agents.md convention | instructions only |
 
-## Catalog evidence (partial: Claude Code, Codex, Cursor Agent, Cursor IDE, Opencode, Kiro, Devin, Kilo, Cline)
+## Catalog evidence (partial: Claude Code, Codex, Cursor Agent, Cursor IDE, Opencode, Kiro, Devin, Kilo, Cline, Antigravity CLI, Antigravity IDE, Antigravity App)
 
 > **Status:** This table is a bounded slice. **Claude Code**, **Codex**, **Cursor Agent**,
-> **Cursor IDE**, **Opencode**, **Kiro**, **Devin**, **Kilo**, and **Cline** rows have been
-> substantively reviewed against current vendor sources as of 2026-08-25. All other registered
-> tools remain **pending** review and are shown here for completeness with their discovery
-> coverage only — no schema/fixture claim is implied. `Catalog reviewed through:` is
-> intentionally omitted until the full catalog is reviewed.
+> **Cursor IDE**, **Opencode**, **Kiro**, **Devin**, **Kilo**, **Cline**, **Antigravity CLI**,
+> **Antigravity IDE**, and **Antigravity App** rows have been substantively reviewed against
+> current vendor sources as of 2026-08-25. All other registered tools remain **pending** review
+> and are shown here for completeness with their discovery coverage only — no schema/fixture
+> claim is implied. `Catalog reviewed through:` is intentionally omitted until the full catalog
+> is reviewed.
 
 | Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |
 | --- | --- | --- | --- | --- | --- |
@@ -46,9 +47,9 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Cursor IDE | JSON structured config (user/project) | [Cursor docs](https://cursor.com/docs) (cursor.com) | paths recorded; schema needs verification (IDE `settings.json` is the inherited VS Code format; Cursor does not publish a dedicated settings-schema reference) | none | 2026-08-25 |
 | Kiro | YAML structured config (user); Markdown instruction docs (project steering) | [Configuration scopes](https://kiro.dev/docs/configuration/) · [Permissions](https://kiro.dev/docs/permissions/) · [Custom agents](https://kiro.dev/docs/custom-agents/) · [Steering](https://kiro.dev/docs/steering/) (kiro.dev) | primary docs only (`permissions.yaml` `rules:` array of `{capability, match, effect, exclude}` is documented with the full capability list and deny-overrides semantics; no fixture exercising the documented schema — the existing `test/fixtures/staging_home/.kiro/settings/permissions.yaml` is a non-conforming placeholder shape, not a verified example) | none | 2026-08-25 |
 | Devin | JSON-with-comments structured config (user/project); Markdown instruction docs (project rules, user AGENTS.md) | [Configuration file](https://docs.devin.ai/cli/reference/configuration/config-file) · [Permissions](https://docs.devin.ai/cli/reference/permissions) · [Rules & AGENTS.md](https://docs.devin.ai/cli/extensibility/rules) (docs.devin.ai) | primary docs only (`config.json` schema documented — `agent`, `permissions` `allow/deny/ask` arrays, `sandbox`, `read_config_from`, `keymap`, `proxy`; permission syntax `Read/Write/Exec/Fetch(pattern)` plus tool-based and `mcp__*` matchers, deny-wins precedence; no fixture exercising the structured config) | none | 2026-08-25 |
-| Antigravity CLI | JSON structured config (user); Markdown instruction docs | pending | pending | pending | — |
-| Antigravity IDE | JSON structured config (user) | pending | pending | pending | — |
-| Antigravity App | JSON structured config (user) | pending | pending | pending | — |
+| Antigravity CLI | JSON structured config (user `settings.json`); Markdown instruction docs (user `GEMINI.md`, project `GEMINI.md`); Markdown rules (project `.agents/rules/*.md`) | [Using AGY CLI](https://antigravity.google/docs/cli/using) · [Permissions](https://antigravity.google/docs/cli/permissions) · [Settings, Rendering & Keybindings](https://antigravity.google/docs/cli/settings) · [CLI Reference](https://antigravity.google/docs/cli/reference) · [Rules/workflows](https://antigravity.google/docs/rules-workflows) (antigravity.google) | primary docs only (`settings.json` schema documented in the CLI reference — top-level keys `colorScheme`, `altScreenMode`, `toolPermission`, `artifactReviewPolicy`, `notifications`, `showTips`, `showFeedbackSurvey`, `editor`, `editorMode`, `vimInsertFirst`, `allowNonWorkspaceAccess`, `enableTerminalSandbox`, `useG1Credits`, `enableTelemetry`, `verbosity`, `runningLightSpeed`; plus `permissions.{allow,deny,ask}` arrays of `action(target)` strings — `read_file`, `write_file`, `read_url`, `execute_url`, `command`, `unsandboxed`, `mcp` — with deny>ask>allow precedence and write-implies-read; `keybindings.json` maps TUI command actions to key arrays. No token-free fixture exercising the structured config exists) | none | 2026-08-25 |
+| Antigravity IDE | JSON structured config (user) — **path not vendor-documented** | [IDE overview](https://antigravity.google/docs/ide/overview) · [IDE settings](https://antigravity.google/docs/ide/settings) · [IDE extensions](https://antigravity.google/docs/ide/extensions/) (antigravity.google) | paths recorded; schema needs verification (Antigravity IDE is a host-editor extension — VS Code, Visual Studio, JetBrains, Zed — and its settings live in the host editor's settings; Antigravity does **not** publish a dedicated `~/.gemini/antigravity-ide/settings.json` path or schema. Follow-up: does the IDE write a dedicated `settings.json` under `~/.gemini/antigravity-ide/`, or do all persisted settings map to the host editor's `settings.json`?) | none | 2026-08-25 |
+| Antigravity App | JSON structured config (user) — **path not vendor-documented** | [Settings](https://antigravity.google/docs/settings/) · [Agent Settings](https://antigravity.google/docs/agent-settings/) · [Permissions](https://antigravity.google/docs/permissions/) (antigravity.google) | paths recorded; schema needs verification (Antigravity 2.0 is a standalone desktop app with in-app hierarchical settings — Global/Project/Conversation scopes opened via Cmd+, — not a documented disk file; Antigravity does **not** publish a `~/.gemini/antigravity-app/settings.json` path or JSON schema. Follow-up: does the App write a dedicated `settings.json` under `~/.gemini/antigravity-app/`, or are all settings persisted in the app's internal state?) | none | 2026-08-25 |
 | Agy-ACP | JSON structured config (user) | pending | pending | pending | — |
 | Kilo | JSONC/JSON structured config (user `kilo.jsonc`/`kilo.json`/`models.json`, project `kilo.jsonc`/`kilo.json`/`.kilo/` variants); Markdown instruction docs (user `AGENTS.md` + `agents/*.md`, project `.kilo/agents/*.md`) | [CLI Config Schema](https://kilo.ai/docs/contributing/architecture/config-schema) · [Settings](https://kilo.ai/docs/getting-started/settings) · [Using MCP](https://kilo.ai/docs/automate/mcp/using-in-kilo-code) · [Custom rules](https://kilo.ai/docs/customize/custom-rules) · [Editor schema](https://app.kilo.ai/config.json) (kilo.ai) | primary docs only (`kilo.jsonc` schema is the canonical Effect Schema `Config.Info` in `Kilo-Org/kilocode`, overlaid with Kilo buckets on top of the opencode.ai schema for the editor `$schema` endpoint; documented top-level keys include `model`, `provider`, `mcp`, `permission` (per-tool `allow`/`ask`/`deny`), `instructions`, `agent`, `sandbox` (`enabled`/`network`/`writable_paths`/`allowed_hosts`), `formatter`, `lsp`, `experimental`; no fixture exercising the documented schema — see note below) | none | 2026-08-25 |
 | Cline | JSON structured config (user `global-settings.json`, `cline_mcp_settings.json`, `providers.json`); Markdown/text instruction docs (user `.cline/rules/*.md`, `Documents/Cline/Rules/*.{md,txt}` + Linux/WSL fallback; project `.clinerules` file, `.clinerules/*.{md,txt}`, `.cline/rules/*.md`) | [Config](https://docs.cline.bot/getting-started/config) · [Rules](https://docs.cline.bot/customization/cline-rules) · [Adding & Configuring Servers](https://docs.cline.bot/mcp/adding-and-configuring-servers) · [CLI Configuration](https://docs.cline.bot/cli/configuration) (docs.cline.bot) | primary docs only (`cline_mcp_settings.json` uses the `mcpServers` map with STDIO `command`/`args`/`env`/`disabled`/`autoApprove` and remote `type: streamableHttp`/`sse` + `url`/`headers` transports; `global-settings.json` is the source-defined `GlobalSettingsSchema` Zod surface — Cline does not publish a single JSON-schema document, and the full key list is not vendor-documented (a concrete confirmed key is `disabledTools`); `providers.json` is secret-bearing API-key config. No fixture exercising the structured config exists) | none | 2026-08-25 |
@@ -529,25 +530,47 @@ rules:
 
 ## Antigravity IDE
 
+> **Evidence note (2026-08-25):** Antigravity IDE is a host-editor extension (VS Code,
+> Visual Studio, JetBrains, Zed). Its settings are stored in the host editor's settings,
+> not a dedicated `~/.gemini/antigravity-ide/settings.json` file — Antigravity does **not**
+> publish that path or a dedicated IDE settings schema. The row remains registered for
+> discovery, but the path is unverified; see the catalog evidence table for the follow-up
+> research question.
+
 ### Antigravity IDE Config paths
 
 | Scope | Path |
 | --- | --- |
-| User settings | `~/.gemini/antigravity-ide/settings.json` |
+| User settings | `~/.gemini/antigravity-ide/settings.json` *(path not vendor-documented; IDE settings live in the host editor's settings)* |
 
 ---
 
 ## Antigravity App
 
+> **Evidence note (2026-08-25):** Antigravity 2.0 is a standalone desktop app with in-app
+> hierarchical settings (Global/Project/Conversation scopes, opened via Cmd+,). It does
+> **not** publish a `~/.gemini/antigravity-app/settings.json` path or a JSON settings
+> schema. The row remains registered for discovery, but the path is unverified; see the
+> catalog evidence table for the follow-up research question.
+
 ### Antigravity App Config paths
 
 | Scope | Path |
 | --- | --- |
-| User settings | `~/.gemini/antigravity-app/settings.json` |
+| User settings | `~/.gemini/antigravity-app/settings.json` *(path not vendor-documented; App settings are in-app, hierarchical)* |
 
 ---
 
 ## Antigravity CLI
+
+> **Evidence note (2026-08-25):** The `~/.gemini/antigravity-cli/settings.json` path and its
+> full schema are vendor-documented in the Antigravity CLI reference (top-level keys
+> `colorScheme`, `altScreenMode`, `toolPermission`, `artifactReviewPolicy`, `notifications`,
+> `showTips`, `showFeedbackSurvey`, `editor`, `editorMode`, `vimInsertFirst`,
+> `allowNonWorkspaceAccess`, `enableTerminalSandbox`, `useG1Credits`, `enableTelemetry`,
+> `verbosity`, `runningLightSpeed`; plus `permissions.{allow,deny,ask}` arrays of
+> `action(target)` strings). No token-free repository fixture exercising the structured
+> config exists.
 
 ### Antigravity CLI Config paths
 
@@ -562,6 +585,13 @@ rules:
 | Workspace MCP | `<workspace>/.agents/mcp_config.json` |
 | Workspace skills | `<workspace>/.agents/skills/` |
 | Project config | `~/.gemini/config/projects/` |
+
+> **Note:** Antigravity documents additional configuration scopes — `keybindings.json`, MCP
+> config (`~/.gemini/config/mcp_config.json`), skills, and `~/.gemini/config/projects/` — that
+> this app does **not** currently auto-discover. Only the `settings.json`, `GEMINI.md`, and
+> `.agents/rules/*.md` targets above are registered in
+> `lib/catalog/tool_descriptor_registry.dart`; the remaining rows are retained as
+> vendor-documented references.
 
 ### Antigravity CLI Config format
 
@@ -808,7 +838,8 @@ Plain Markdown; edited with the raw-text editor.
 
 | Model | Tools | Pattern |
 | --- | --- | --- |
-| Allow/Ask/Deny arrays | Claude, Antigravity | List of `Tool(pattern)` strings |
+| Allow/Ask/Deny arrays | Claude | List of `Tool(pattern)` strings |
+| Allow/Ask/Deny arrays | Antigravity | List of `action(target)` strings |
 | Per-tool allow/ask/deny | Opencode | Object mapping tool → action |
 | Capability-based | Kiro | `capability` + `effect` + `match` |
 | Allowlist + classifier | Cursor | Static allowlist + LLM hints |
@@ -885,7 +916,7 @@ When `--permission-prompts` is enabled:
 
 | Value | Effect |
 | --- | --- |
-| _(default)_ `ask_question` | Only model questions auto-allowed |
+| *(default)* `ask_question` | Only model questions auto-allowed |
 | `reads` | Adds `view_file`, `view_code_item`, `list_dir` |
 | `searches` | Adds `grep_search`, `codebase_search`, `find_by_name` |
 | `none` | Nothing auto-allowed |

@@ -138,26 +138,53 @@ cannot be found, say so and leave the raw editor as the only supported represent
       `Read/Write/Exec/Fetch(pattern)` plus tool-based and `mcp__*` matchers with deny-wins
       precedence; no fixture exercising the structured config.
 - [x] Populate source/status rows for the Kilo + Cline evidence slice against current vendor
-      sources. Kilo: primary evidence from kilo.ai/docs/contributing/architecture/config-schema
-      (canonical Effect Schema source of truth), kilo.ai/docs/getting-started/settings,
-      kilo.ai/docs/automate/mcp/using-in-kilo-code, kilo.ai/docs/customize/custom-rules, and
-      the cloud editor schema at `https://app.kilo.ai/config.json`; schema evidence "primary
-      docs only" — documented top-level keys (`model`, `provider`, `mcp`, `permission`,
-      `instructions`, `agent`, `sandbox`, `formatter`, `lsp`, `experimental`) with the
-      cross-repo runtime/schema contract described; the existing
-      `test/fixtures/staging_home/.config/kilo/kilo.jsonc` is a **non-conforming placeholder**
-      (`permissions.{filesystem,network}` is not a documented key — schema uses `permission`
-      + `sandbox`), so no fixture is claimed. Cline: primary evidence from
-      docs.cline.bot/getting-started/config, docs.cline.bot/customization/cline-rules,
-      docs.cline.bot/mcp/adding-and-configuring-servers, docs.cline.bot/cli/configuration;
-      schema evidence "primary docs only" — `cline_mcp_settings.json` `mcpServers` map (STDIO
-      + streamableHttp/sse transports), `global-settings.json` `GlobalSettingsSchema`, and
-      secret-bearing `providers.json` are documented via Cline's source Zod schemas; no
-      single published JSON-schema document and no fixture exercising the structured config
-      exists. Both rows annotate vendor-documented scopes that are **not** registered
-      discovery targets (Kilo: `tui.jsonc`, `.kilocode/`, org/managed config; Cline: hooks,
-      skills, agents, plugins, cron, workflows, `.clineignore`, CLI `mcp.json`, and the
-      `~/Documents/Cline/{Hooks,Plugins,Workflows}` compat directories).
+       sources. Kilo: primary evidence from kilo.ai/docs/contributing/architecture/config-schema
+       (canonical Effect Schema source of truth), kilo.ai/docs/getting-started/settings,
+       kilo.ai/docs/automate/mcp/using-in-kilo-code, kilo.ai/docs/customize/custom-rules, and
+       the cloud editor schema at `https://app.kilo.ai/config.json`; schema evidence "primary
+       docs only" — documented top-level keys (`model`, `provider`, `mcp`, `permission`,
+       `instructions`, `agent`, `sandbox`, `formatter`, `lsp`, `experimental`) with the
+       cross-repo runtime/schema contract described; the existing
+       `test/fixtures/staging_home/.config/kilo/kilo.jsonc` is a **non-conforming placeholder**
+       (`permissions.{filesystem,network}` is not a documented key — schema uses `permission`
+       + `sandbox`), so no fixture is claimed. Cline: primary evidence from
+       docs.cline.bot/getting-started/config, docs.cline.bot/customization/cline-rules,
+       docs.cline.bot/mcp/adding-and-configuring-servers, docs.cline.bot/cli/configuration;
+       schema evidence "primary docs only" — `cline_mcp_settings.json` `mcpServers` map (STDIO
+       + streamableHttp/sse transports), `global-settings.json` `GlobalSettingsSchema`, and
+       secret-bearing `providers.json` are documented via Cline's source Zod schemas; no
+       single published JSON-schema document and no fixture exercising the structured config
+       exists. Both rows annotate vendor-documented scopes that are **not** registered
+       discovery targets (Kilo: `tui.jsonc`, `.kilocode/`, org/managed config; Cline: hooks,
+       skills, agents, plugins, cron, workflows, `.clineignore`, CLI `mcp.json`, and the
+       `~/Documents/Cline/{Hooks,Plugins,Workflows}` compat directories).
+- [x] Populate source/status rows for the Antigravity CLI + IDE + App evidence slice against
+       current vendor sources. Antigravity CLI: primary evidence from
+       antigravity.google/docs/cli/using, antigravity.google/docs/cli/permissions,
+       antigravity.google/docs/cli/settings, antigravity.google/docs/cli/reference
+       (documents the full `settings.json` schema — top-level keys `colorScheme`,
+       `altScreenMode`, `toolPermission`, `artifactReviewPolicy`, `notifications`, `showTips`,
+       `showFeedbackSurvey`, `editor`, `editorMode`, `vimInsertFirst`, `allowNonWorkspaceAccess`,
+       `enableTerminalSandbox`, `useG1Credits`, `enableTelemetry`, `verbosity`,
+       `runningLightSpeed`; plus `permissions.{allow,deny,ask}` arrays of `action(target)`
+       strings — `read_file`, `write_file`, `read_url`, `execute_url`, `command`, `unsandboxed`,
+       `mcp` — with deny>ask>allow precedence and write-implies-read), and
+       antigravity.google/docs/rules-workflows; the `~/.gemini/antigravity-cli/settings.json`
+       path and `keybindings.json` are vendor-documented. Schema evidence "primary docs only" —
+       no token-free fixture exercising the structured config exists. Antigravity IDE: antigravity
+       IDE is a host-editor extension (VS Code, Visual Studio, JetBrains, Zed); its settings
+       live in the host editor's settings and Antigravity does **not** publish a dedicated
+       `~/.gemini/antigravity-ide/settings.json` path or schema — schema evidence "paths
+       recorded; schema needs verification" with the follow-up question of whether the IDE writes
+       a dedicated `settings.json` under `~/.gemini/antigravity-ide/` or all settings map to the
+       host editor. Antigravity App (Antigravity 2.0): a standalone desktop app with in-app
+       hierarchical settings (Global/Project/Conversation scopes via Cmd+,); Antigravity does
+       **not** publish a `~/.gemini/antigravity-app/settings.json` path or JSON schema — schema
+       evidence "paths recorded; schema needs verification" with the follow-up question of whether
+       the App writes a dedicated `settings.json` under `~/.gemini/antigravity-app/` or all
+       settings live in the app's internal state. Both the IDE and App rows retain their
+       registered discovery targets but flag the undocumented paths. No fixtures exist for any of
+       the three.
 - [x] Add or link token-free fixtures for the Claude Code and Codex rows. Existing
       synthetic staging fixtures used; no new fixtures required for this slice.
 - [x] Add or link a token-free fixture for the Opencode row. Reused the existing synthetic

@@ -88,6 +88,36 @@ Internal / developer-facing changes that do not belong in the public
   registered tools stay pending; `Catalog reviewed through:` still withheld. Plan and this
   changelog updated for the partial slice.
 
+- **Tool-catalog integrity Phase 1 (Antigravity CLI + IDE + App evidence slice):** Substantively
+  reviewed and recorded **Antigravity CLI**, **Antigravity IDE**, and **Antigravity App** rows
+  in the `docs/supported-tools.md` evidence table against current vendor sources
+  (antigravity.google). Antigravity CLI: primary evidence from
+  antigravity.google/docs/cli/using, antigravity.google/docs/cli/permissions,
+  antigravity.google/docs/cli/settings, and antigravity.google/docs/cli/reference, which
+  documents the full `settings.json` schema (top-level keys `colorScheme`, `altScreenMode`,
+  `toolPermission`, `artifactReviewPolicy`, `notifications`, `showTips`, `showFeedbackSurvey`,
+  `editor`, `editorMode`, `vimInsertFirst`, `allowNonWorkspaceAccess`, `enableTerminalSandbox`,
+  `useG1Credits`, `enableTelemetry`, `verbosity`, `runningLightSpeed`; plus
+  `permissions.{allow,deny,ask}` arrays of `action(target)` strings — `read_file`, `write_file`,
+  `read_url`, `execute_url`, `command`, `unsandboxed`, `mcp` — with deny>ask>allow precedence
+  and write-implies-read); the `~/.gemini/antigravity-cli/settings.json` path and
+  `keybindings.json` are vendor-documented. Schema evidence "primary docs only" — no token-free
+  fixture exercising the structured config exists. Antigravity IDE: a host-editor extension (VS
+  Code, Visual Studio, JetBrains, Zed) — its settings live in the host editor's settings and
+  Antigravity does **not** publish a dedicated `~/.gemini/antigravity-ide/settings.json` path or
+  schema; schema evidence "paths recorded; schema needs verification" with a follow-up question
+  (does the IDE write a dedicated `settings.json` under `~/.gemini/antigravity-ide/`, or do all
+  persisted settings map to the host editor's `settings.json`?). Antigravity App (Antigravity
+  2.0): a standalone desktop app with in-app hierarchical settings (Global/Project/Conversation
+  scopes via Cmd+,) — Antigravity does **not** publish a `~/.gemini/antigravity-app/settings.json`
+  path or JSON schema; schema evidence "paths recorded; schema needs verification" with a
+  follow-up question (does the App write a dedicated `settings.json` under
+  `~/.gemini/antigravity-app/`, or are all settings persisted in the app's internal state?).
+  Both the IDE and App rows retain their registered discovery targets but flag the undocumented
+  paths. No fixtures exist for any of the three. Per-tool sections for IDE and App updated with
+  evidence notes. Remaining registered tools stay pending; `Catalog reviewed through:` still
+  withheld. Plan and this changelog updated for the partial slice.
+
 - **Flutter hook worktree portability:** Added `hooks/scripts/flutter_env.py`, a
   stdlib-Python wrapper that execs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE`
   cleared from the child environment. In a linked git worktree, `git commit`
