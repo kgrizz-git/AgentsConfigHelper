@@ -49,8 +49,15 @@ blocking unrelated feature pull requests.
   includes `docs/supported-tools.md` (not only `inventory/`), and an offline CI docs job
   invokes the deterministic internal-link check, the `--catalog-strict` catalog gate, and the
   checker's unittest suite. External network probing remains disabled.
-- The existing maintenance-loop prompt describes manual catalog review, but no recurring
-  workflow turns a stale tool catalog into a visible repository task.
+- A quarterly no-write advisory workflow (`.github/workflows/catalog-advisory.yml`,
+  cron `0 6 1 */3 *` + manual `workflow_dispatch`) turns a stale catalog into a visible
+  reminder without blocking PRs: it runs the offline checker (`--internal-only`, no network)
+  and the checker's unittest suite, writes an actionable reminder to the run summary, and emits
+  a `::warning` annotation on `docs/supported-tools.md` when the `Catalog reviewed through:`
+  date is stale (120-day window). It runs with `permissions: contents: read` only — no issue
+  creation, no external-link probing, no write-back. The live-dispatch confirmation that this
+  workflow exercises its summary/annotation paths is the remaining post-merge acceptance check
+  (see Phase 4).
 
 ## Decisions
 

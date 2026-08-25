@@ -35,9 +35,12 @@ Internal / developer-facing changes that do not belong in the public
   local/offline acceptance checks verified here (all 17 registry tools have an evidence-table
   row + per-tool docs section; `--internal-only --strict` and `--offline` report 0 broken /
   0 advisory across 162 files; 34 checker unittests pass; `Catalog reviewed through:` marker
-  present and fresh), with the single remaining item recorded as a post-merge GitHub Actions
-  manual-dispatch confirmation that cannot be proven from a local checkout. Plan status and
+  present and fresh), with two post-merge manual-dispatch confirmations recorded as the
+  remaining acceptance items (immediate fresh-dispatch now; stale-path re-dispatch after the
+  next overdue window) — neither of which can be proven from a local checkout. Plan status and
   `TO_DO.md` narrowed accordingly. No code or workflow changes.
+
+- **Tool-catalog integrity Phase 0 (catalog boundary reconciliation):** Reconciled the
   evidence-table "Discovery coverage" rows in `docs/supported-tools.md` against the runtime
   registry (`lib/catalog/tool_descriptor_registry.dart`) so documentation describes only
   registered discovery targets. Corrected three rows: Claude Code (removed "local/managed"
