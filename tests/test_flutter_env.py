@@ -8,180 +8,89 @@ Run:
 from __future__ import annotations
 
 import os
-import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-WRAPPER = ROOT / "hooks" / "scripts" / "flutter_env.py"
-
-# A portable probe command: print the child's environment as KEY=VALUE lines,
-# using the Python interpreter running the tests (works on macOS/Linux/Windows,
-# unlike POSIX `env`). Probe scripts write to a temp file because capturing
-# combined env output via subprocess is simpler than platform-specific flags.
-_PROBE_ENV = (
-    "import os;"
-    "import sys;"
-    "f=open(sys.argv[1],'w');"
-    "f.write('\\n'.join(f'{k}={v}' for k,v in sorted(os.environ.items())));"
-    "f.close()"
-)
-
-
-def _probe_file(tmpdir: Path) -> Path:
-    return tmpdir / "env.txt"
-
-
-def run_wrapper(
-    *args: str, env: dict[str, str] | None = None, cwd: Path | None = None
-) -> subprocess.CompletedProcess[str]:
-    base = os.environ.copy()
-    if env is not None:
-        base.update(env)
-    cmd = [sys.executable, str(WRAPPER), *args]
-    return subprocess.run(cmd, cwd=str(cwd or ROOT), capture_output=True, text=True, env=base)
-
-
-def _parse_env_blob(text: str) -> dict[str, str]:
-    out: dict[str, str] = {}
-    for line in text.splitlines():
-        if "=" in line:
-            k, _, v = line.partition("=")
-            out[k] = v
-    return out
+sys.path.insert(0, str(ROOT / "hooks" / "scripts"))
+import flutter_env as fe  # noqa: E402
 
 
 class FlutterEnvTests(unittest.TestCase):
-    def test_no_args_exits_two(self):
-        result = run_wrapper()
-        self.assertEqual(result.returncode, 2)
-        self.assertIn("usage:", result.stderr)
+    def test_missing_task_exits_two(self):
+        with mock.patch("sys.stderr"):
+            self.assertEqual(fe.main([]), 2)
 
-    def test_no_command_after_separator_exits_two(self):
-        result = run_wrapper("--")
-        self.assertEqual(result.returncode, 2)
-        self.assertIn("no Flutter command", result.stderr)
+    def test_unknown_task_exits_two_before_launching_a_process(self):
+        with mock.patch("sys.stderr"), mock.patch("subprocess.run") as run:
+            self.assertEqual(fe.main(["test&untrusted"]), 2)
+        run.assert_not_called()
 
-    def test_clears_git_worktree_vars_from_child_env(self):
-        """The wrapper must run the child without GIT_DIR/GIT_WORK_TREE.
+    def test_filtered_environment_clears_only_worktree_vars(self):
+        with mock.patch.dict(
+            os.environ,
+            {"GIT_DIR": "/fake/worktree", "GIT_WORK_TREE": "/fake/root", "KEEP": "yes"},
+            clear=True,
+        ):
+            child_env = fe.filtered_environment()
+        self.assertNotIn("GIT_DIR", child_env)
+        self.assertNotIn("GIT_WORK_TREE", child_env)
+        self.assertEqual(child_env["KEEP"], "yes")
 
-        Uses a portable Python probe (not POSIX `env`) to dump the child env.
-        """
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as td:
-            tmp = Path(td)
-            probe = _probe_file(tmp)
-            result = run_wrapper(
-                "--",
-                sys.executable,
-                "-c",
-                _PROBE_ENV,
-                str(probe),
-                env={
-                    "GIT_DIR": "/fake/worktree",
-                    "GIT_WORK_TREE": "/fake/root",
-                    "PATH": os.environ.get("PATH", ""),
-                },
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            child_vars = _parse_env_blob(probe.read_text())
-            self.assertNotIn("GIT_DIR", child_vars)
-            self.assertNotIn("GIT_WORK_TREE", child_vars)
-
-    def test_preserves_other_env_vars(self):
-        """Non-git vars must pass through to the child unchanged."""
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as td:
-            tmp = Path(td)
-            probe = _probe_file(tmp)
-            result = run_wrapper(
-                "--",
-                sys.executable,
-                "-c",
-                _PROBE_ENV,
-                str(probe),
-                env={
-                    "GIT_DIR": "/fake",
-                    "MY_CUSTOM_VAR": "keep-me",
-                    "PATH": os.environ.get("PATH", ""),
-                },
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            child_vars = _parse_env_blob(probe.read_text())
-            self.assertEqual(child_vars.get("MY_CUSTOM_VAR"), "keep-me")
-            self.assertNotIn("GIT_DIR", child_vars)
-
-    def test_passes_arguments_through(self):
-        """Arguments after -- must reach the child command verbatim."""
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as td:
-            tmp = Path(td)
-            probe = tmp / "args.txt"
-            result = run_wrapper(
-                "--",
-                sys.executable,
-                "-c",
-                "import sys; open(sys.argv[1],'w').write(' '.join(sys.argv[2:]))",
-                str(probe),
-                "hello",
-                "world",
-                env={"PATH": os.environ.get("PATH", "")},
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn("hello world", probe.read_text())
-
-    def test_propagates_child_exit_code(self):
-        """A failing child command must propagate its non-zero exit code."""
-        result = run_wrapper(
-            "--",
-            sys.executable,
-            "-c",
-            "import sys; sys.exit(7)",
-            env={"PATH": os.environ.get("PATH", "")},
+    def test_tasks_are_exact_ci_equivalents(self):
+        self.assertEqual(
+            fe.TASKS["metrics"],
+            (
+                "pub",
+                "run",
+                "dart_code_linter:metrics",
+                "analyze",
+                "lib",
+                "--set-exit-on-violation-level=warning",
+            ),
         )
-        self.assertEqual(result.returncode, 7)
+        self.assertEqual(fe.TASKS["analyze"], ("analyze", "--fatal-infos"))
+        self.assertEqual(fe.TASKS["test"], ("test",))
 
-    def test_missing_command_exits_127_with_message(self):
-        """An unresolvable command must exit 127 with a clear error."""
-        result = run_wrapper(
-            "--",
-            "this-command-definitely-does-not-exist-xyz",
-            env={"PATH": os.environ.get("PATH", "")},
+    def test_windows_launch_is_shell_free_and_uses_fixed_task(self):
+        completed = mock.Mock(returncode=7)
+        with (
+            mock.patch.object(fe.os, "name", "nt"),
+            mock.patch.object(fe, "filtered_environment", return_value={"KEEP": "yes"}),
+            mock.patch.object(fe.shutil, "which", return_value="flutter.bat"),
+            mock.patch.object(fe.subprocess, "run", return_value=completed) as run,
+        ):
+            self.assertEqual(fe.main(["test"]), 7)
+        run.assert_called_once_with(
+            ["flutter.bat", "test"],
+            env={"KEEP": "yes"},
+            check=False,
         )
-        self.assertEqual(result.returncode, 127, result.stderr)
-        self.assertIn("command not found", result.stderr)
 
-    def test_real_flutter_version_under_hook_env(self):
-        """End-to-end: `flutter --version` must report a real SDK version even
-        when the parent sets the git worktree vars a `git commit` hook exports.
+    def test_windows_missing_flutter_exits_127(self):
+        with (
+            mock.patch.object(fe.os, "name", "nt"),
+            mock.patch.object(fe.subprocess, "run", side_effect=FileNotFoundError),
+            mock.patch("sys.stderr"),
+        ):
+            self.assertEqual(fe.main(["analyze"]), 127)
 
-        This is the regression guard for the linked-worktree hook failure.
-        Skipped if Flutter is not installed on the machine running the tests.
-        """
-        import shutil as _shutil
-
-        if _shutil.which("flutter") is None:
-            self.skipTest("flutter not installed; skipping end-to-end guard")
-
-        result = run_wrapper(
-            "--",
-            "flutter",
-            "--version",
-            env={
-                "GIT_DIR": str(ROOT / ".git"),
-                "GIT_WORK_TREE": str(ROOT),
-                "PATH": os.environ.get("PATH", ""),
-            },
+    def test_unix_exec_uses_fixed_task_and_filtered_environment(self):
+        with (
+            mock.patch.object(fe.os, "name", "posix"),
+            mock.patch.object(fe, "filtered_environment", return_value={"KEEP": "yes"}),
+            mock.patch.object(fe.shutil, "which", return_value="/opt/flutter/bin/flutter"),
+            mock.patch.object(fe.os, "execvpe", side_effect=FileNotFoundError) as execute,
+            mock.patch("sys.stderr"),
+        ):
+            self.assertEqual(fe.main(["analyze"]), 127)
+        execute.assert_called_once_with(
+            "/opt/flutter/bin/flutter",
+            ["/opt/flutter/bin/flutter", "analyze", "--fatal-infos"],
+            {"KEEP": "yes"},
         )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        # A healthy Flutter reports its channel/version; the broken state
-        # reports 0.0.0-unknown.
-        self.assertNotIn("0.0.0-unknown", result.stdout)
-        self.assertIn("Flutter", result.stdout)
 
 
 if __name__ == "__main__":

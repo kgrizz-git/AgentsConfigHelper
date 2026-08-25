@@ -7,10 +7,10 @@ plans/active/tool-catalog-integrity.md Phase 2:
 
 * tmp/ (and other skip dirs) are excluded
 * docs/supported-tools.md is explicitly catalog-checked (path-form normalized)
-* valid / stale / malformed catalog review dates (staleness is ALWAYS advisory)
+* valid / stale / future / malformed catalog review dates (staleness is ALWAYS advisory)
 * internal relative links (broken vs. resolvable)
 * external links are advisory (non-fatal) under default/offline runs
-* --catalog-strict fails on a missing or malformed marker, registry tool, or catalog file,
+* --catalog-strict fails on a missing, malformed, or future marker, registry row, or catalog file,
   but a stale date remains advisory (does not fail)
 * REGISTRY_NAMES stays in sync with the Dart registry's displayName values
 """
@@ -60,6 +60,19 @@ def _run(cwd: Path, *args: str) -> tuple[int, str, str]:
     return proc.returncode, proc.stdout, proc.stderr
 
 
+def _catalog_body(reviewed: str, names: tuple[str, ...] = cd.REGISTRY_NAMES) -> str:
+    rows = "\n".join(
+        f"| {name} | discovery | [source](https://example.com) | schema | fixture | {reviewed} |"
+        for name in names
+    )
+    return (
+        f"## Catalog evidence\n\nCatalog reviewed through: {reviewed}\n\n"
+        "| Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |\n"
+        "| --- | --- | --- | --- | --- | --- |\n"
+        f"{rows}\n"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Unit tests for pure helpers
 # ---------------------------------------------------------------------------
@@ -106,6 +119,12 @@ class CatalogDateTests(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertIn("unparseable", result)
 
+    def test_future_date_returns_advisory_string(self):
+        future = (date.today() + timedelta(days=1)).isoformat()
+        result = cd.check_catalog_date(f"Catalog reviewed through: {future}\n")
+        self.assertIsNotNone(result)
+        self.assertIn("future", result)
+
 
 class CatalogMarkerTests(unittest.TestCase):
     def test_marker_missing(self):
@@ -118,20 +137,56 @@ class CatalogMarkerTests(unittest.TestCase):
         today = date.today().isoformat()
         self.assertIsNone(cd.check_catalog_marker(f"Catalog reviewed through: {today}"))
 
+    def test_marker_future_date_is_invalid(self):
+        future = (date.today() + timedelta(days=1)).isoformat()
+        result = cd.check_catalog_marker(f"Catalog reviewed through: {future}")
+        self.assertIn("future", result)
+
 
 class RegistryCoverageTests(unittest.TestCase):
     def test_detects_missing(self):
         path = Path("docs/supported-tools.md")
-        problems = cd.check_registry_coverage(path, "Only Claude Code is here.\n")
-        self.assertTrue(all("not found" in p for p in problems))
+        problems = cd.check_registry_coverage(path, _catalog_body(date.today().isoformat(), ("Claude Code",)))
+        self.assertTrue(all("no catalog evidence row" in p for p in problems))
         missing_names = {p.split("'")[1] for p in problems}
         self.assertIn("Codex", missing_names)
         self.assertNotIn("Claude Code", missing_names)
 
     def test_passes_when_all_present(self):
-        body = "\n".join(cd.REGISTRY_NAMES) + "\n"
+        body = _catalog_body(date.today().isoformat())
         path = Path("docs/supported-tools.md")
         self.assertEqual(cd.check_registry_coverage(path, body), [])
+
+    def test_detects_duplicate_evidence_row(self):
+        names = (*cd.REGISTRY_NAMES, "Codex")
+        problems = cd.check_registry_coverage(
+            Path("docs/supported-tools.md"),
+            _catalog_body(date.today().isoformat(), names),
+        )
+        self.assertEqual(problems, ["docs/supported-tools.md: registry tool 'Codex' has duplicate catalog evidence rows"])
+
+    def test_rejects_pipe_list_without_a_catalog_evidence_table(self):
+        names = "\n".join(f"| {name} |" for name in cd.REGISTRY_NAMES)
+        problems = cd.check_registry_coverage(
+            Path("docs/supported-tools.md"),
+            f"## Catalog evidence\n\n| Tool | Not a table |\n{names}\n",
+        )
+        self.assertEqual(
+            problems,
+            ["docs/supported-tools.md: missing six-column catalog evidence table header"],
+        )
+
+    def test_rejects_table_without_a_delimiter_row(self):
+        problems = cd.check_registry_coverage(
+            Path("docs/supported-tools.md"),
+            _catalog_body(date.today().isoformat()).replace(
+                "| --- | --- | --- | --- | --- | --- |\n", ""
+            ),
+        )
+        self.assertEqual(
+            problems,
+            ["docs/supported-tools.md: catalog evidence table is missing its delimiter row"],
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -295,15 +350,23 @@ class CliTests(unittest.TestCase):
             _write(
                 tmp,
                 "docs/supported-tools.md",
-                f"Catalog reviewed through: {today}\n\n# Empty catalog\n",
+                _catalog_body(today, ("Claude Code",)),
             )
             code, out, _ = _run(tmp, "--internal-only", "--catalog-strict")
             self.assertEqual(code, 1, out)
-            self.assertIn("not found in catalog body", out)
+            self.assertIn("no catalog evidence row", out)
+
+    def test_catalog_strict_fails_on_future_date(self):
+        future = (date.today() + timedelta(days=1)).isoformat()
+        with _tmp_cwd() as tmp:
+            _write(tmp, "docs/supported-tools.md", _catalog_body(future))
+            code, out, _ = _run(tmp, "--internal-only", "--catalog-strict")
+            self.assertEqual(code, 1, out)
+            self.assertIn("future", out)
 
     def test_catalog_strict_passes_on_well_formed_catalog(self):
         today = date.today().isoformat()
-        body = f"Catalog reviewed through: {today}\n\n" + "\n".join(cd.REGISTRY_NAMES) + "\n"
+        body = _catalog_body(today)
         with _tmp_cwd() as tmp:
             _write(tmp, "docs/supported-tools.md", body)
             code, out, _ = _run(tmp, "--internal-only", "--catalog-strict")
@@ -312,7 +375,8 @@ class CliTests(unittest.TestCase):
     def test_ci_command_passes_against_real_supported_tools(self):
         """The exact CI command (--internal-only --catalog-strict) must pass against the real,
         committed docs/supported-tools.md. Guards the now-wired catalog gate: the file must
-        carry a valid 'Catalog reviewed through:' marker and name every registry tool, or CI fails.
+        carry a valid 'Catalog reviewed through:' marker and exactly one evidence row per registry
+        tool, or CI fails.
         Runs from the repo root so the committed file is read (not a temp copy)."""
         repo_root = Path(__file__).resolve().parents[2]
         real_file = repo_root / "docs" / "supported-tools.md"
@@ -326,16 +390,15 @@ class CliTests(unittest.TestCase):
         """A stale review date is advisory (Phase 3 monthly), never a strict failure.
 
         --catalog-strict must exit 0 when the marker is present and parseable but
-        stale, and the catalog names every registry tool. Only missing/malformed
-        markers and missing tools are strict failures.
+        stale, and the catalog has exactly one row per registry tool. Only invalid
+        markers and missing or duplicate rows are strict failures.
         """
         stale = (date.today() - timedelta(days=cd.CATALOG_WINDOW_DAYS + 1)).isoformat()
-        body = f"Catalog reviewed through: {stale}\n\n" + "\n".join(cd.REGISTRY_NAMES) + "\n"
+        body = _catalog_body(stale)
         with _tmp_cwd() as tmp:
             _write(tmp, "docs/supported-tools.md", body)
             code, out, _ = _run(tmp, "--internal-only", "--catalog-strict")
             self.assertEqual(code, 0, f"stale date should be advisory, not fatal: {out}")
-            # The stale date should still be *reported* as advisory output.
             self.assertIn("STALE", out)
 
     def test_external_links_are_advisory_not_fatal(self):

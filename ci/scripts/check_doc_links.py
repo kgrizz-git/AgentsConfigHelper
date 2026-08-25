@@ -26,22 +26,22 @@ review marker is truthfully added) the checker additionally requires:
 
 * a present and valid (well-formed, parseable) ``Catalog reviewed through: YYYY-MM-DD``
   marker, and
-* that every registry tool display name appears somewhere in the catalog body.
+* that the catalog evidence table has exactly one row for every registry tool display name.
 
 A stale review date (``check_catalog_date``) is always **advisory**, never a strict
 failure — per the plan, date staleness feeds the monthly advisory/review process
-(Phase 3), not the PR gate. Only a missing or malformed marker is strict.
+(Phase 3), not the PR gate. A missing, malformed, or future-dated marker is strict.
 
-Registry coverage is a substring presence check against the committed markdown only;
-it does not parse Dart. The expected names are enumerated in ``REGISTRY_NAMES`` below
-and must be kept in sync with ``lib/catalog/tool_descriptor_registry.dart``.
+Registry coverage parses only the ``Tool`` column of the committed ``## Catalog evidence``
+table; it does not parse Dart. The expected names are enumerated in ``REGISTRY_NAMES``
+below and must be kept in sync with ``lib/catalog/tool_descriptor_registry.dart``.
 
 Usage:
   python3 ci/scripts/check_doc_links.py                    # everything, incl. network
   python3 ci/scripts/check_doc_links.py --offline          # internal links + dates only
   python3 ci/scripts/check_doc_links.py --internal-only    # just check 1
   python3 ci/scripts/check_doc_links.py --strict           # exit 1 on findings
-  python3 ci/scripts/check_doc_links.py --catalog-strict   # exit 1 on broken links, missing/malformed marker, or missing registry tool (PR gate)
+  python3 ci/scripts/check_doc_links.py --catalog-strict   # exit 1 on broken links, missing/malformed marker, or missing/duplicate registry row (PR gate)
   python3 ci/scripts/check_doc_links.py docs/NAVIGATION.md
 
 Exit codes: 0 = ok (or advisory), 1 = findings under --strict, 2 = usage error.
@@ -51,6 +51,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+from collections import Counter
 import re
 import sys
 import urllib.error
@@ -68,8 +69,8 @@ CATALOG_PATHS: tuple[Path, ...] = (Path("docs/supported-tools.md"),)
 CATALOG_DIRS = ("inventory",)
 
 # Expected registry tool display names (from lib/catalog/tool_descriptor_registry.dart).
-# Used by --catalog-strict to confirm the committed catalog names every registered tool.
-# Pure substring presence in the markdown body; does not parse Dart sources.
+# Used by --catalog-strict to confirm the catalog evidence table has exactly one row for
+# every registered tool. Does not parse Dart sources.
 REGISTRY_NAMES = (
     "Claude Code",
     "Codex",
@@ -93,6 +94,15 @@ REGISTRY_NAMES = (
 LINK_RE = re.compile(r"\[[^\]]*\]\(\s*([^)\s]+?)\s*\)")
 CATALOG_RE = re.compile(r"^Catalog reviewed through:\s*(\d{4}-\d{2}-\d{2})\s*$", re.MULTILINE)
 CODE_FENCE_RE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
+CATALOG_EVIDENCE_HEADING = "## Catalog evidence"
+CATALOG_EVIDENCE_COLUMNS = (
+    "Tool",
+    "Discovery coverage",
+    "Primary evidence",
+    "Schema evidence",
+    "Fixture/reference",
+    "Reviewed",
+)
 
 TIMEOUT = 10
 USER_AGENT = "template-repo-doc-link-check/1.0"
@@ -264,6 +274,8 @@ def check_catalog_date(text: str) -> str | None:
         reviewed = date.fromisoformat(match.group(1))
     except ValueError:
         return f"unparseable 'Catalog reviewed through' date: {match.group(1)}"
+    if reviewed > date.today():
+        return f"catalog review date {reviewed} is in the future"
     age = (date.today() - reviewed).days
     if age > CATALOG_WINDOW_DAYS:
         return (
@@ -283,22 +295,75 @@ def check_catalog_marker(text: str) -> str | None:
     if not match:
         return "missing required 'Catalog reviewed through: YYYY-MM-DD' marker"
     try:
-        date.fromisoformat(match.group(1))
+        reviewed = date.fromisoformat(match.group(1))
     except ValueError:
         return f"malformed 'Catalog reviewed through' date: {match.group(1)}"
+    if reviewed > date.today():
+        return f"future 'Catalog reviewed through' date: {reviewed}"
     return None
 
 
-def check_registry_coverage(path: Path, text: str) -> list[str]:
-    """Confirm every registry tool display name is named in the catalog body.
+def catalog_evidence_tool_rows(text: str) -> tuple[list[str] | None, str | None]:
+    """Extract exact Tool-column values from the catalog evidence table."""
+    lines = text.splitlines()
+    try:
+        start = lines.index(CATALOG_EVIDENCE_HEADING)
+    except ValueError:
+        return None, f"missing {CATALOG_EVIDENCE_HEADING!r} section"
 
-    This is a substring presence check against the committed markdown only; it does
-    not parse Dart sources. Returns one problem per missing name.
-    """
-    problems = []
+    header_index = next(
+        (
+            index
+            for index in range(start + 1, len(lines))
+            if _markdown_table_cells(lines[index]) == list(CATALOG_EVIDENCE_COLUMNS)
+        ),
+        None,
+    )
+    if header_index is None:
+        return None, "missing six-column catalog evidence table header"
+    if header_index + 1 >= len(lines) or not _is_markdown_table_delimiter(lines[header_index + 1]):
+        return None, "catalog evidence table is missing its delimiter row"
+
+    rows: list[str] = []
+    for line in lines[header_index + 2 :]:
+        cells = _markdown_table_cells(line)
+        if cells is None:
+            break
+        if len(cells) != len(CATALOG_EVIDENCE_COLUMNS) or any(not cell for cell in cells):
+            return None, "catalog evidence table has an incomplete row"
+        rows.append(cells[0])
+    if not rows:
+        return None, "catalog evidence table has no rows"
+    return rows, None
+
+
+def _markdown_table_cells(line: str) -> list[str] | None:
+    stripped = line.strip()
+    if not (stripped.startswith("|") and stripped.endswith("|")):
+        return None
+    return [cell.strip() for cell in stripped.strip("|").split("|")]
+
+
+def _is_markdown_table_delimiter(line: str) -> bool:
+    cells = _markdown_table_cells(line)
+    return bool(cells) and len(cells) == len(CATALOG_EVIDENCE_COLUMNS) and all(
+        re.fullmatch(r":?-{3,}:?", cell) for cell in cells
+    )
+
+
+def check_registry_coverage(path: Path, text: str) -> list[str]:
+    """Confirm the catalog evidence table contains each registry tool exactly once."""
+    rows, error = catalog_evidence_tool_rows(text)
+    if error:
+        return [f"{path}: {error}"]
+
+    counts = Counter(rows)
+    problems: list[str] = []
     for name in REGISTRY_NAMES:
-        if name not in text:
-            problems.append(f"{path}: registry tool {name!r} not found in catalog body")
+        if counts[name] == 0:
+            problems.append(f"{path}: registry tool {name!r} has no catalog evidence row")
+        elif counts[name] > 1:
+            problems.append(f"{path}: registry tool {name!r} has duplicate catalog evidence rows")
     return problems
 
 
@@ -314,7 +379,7 @@ def main() -> int:
         "--catalog-strict",
         action="store_true",
         help="exit 1 when the supported-tool catalog is missing or has a malformed "
-        "'Catalog reviewed through' marker, or omits an expected registry tool. "
+        "'Catalog reviewed through' marker, or omits/duplicates an expected registry tool row. "
         "A stale date is advisory only (does not fail).",
     )
     args = parser.parse_args()
@@ -384,7 +449,7 @@ def main() -> int:
         )
     if catalog_findings:
         print(
-            "Catalog gaps (missing/malformed marker, or un-named registry tool) "
+            "Catalog gaps (missing/malformed marker, or missing/duplicate registry tool row) "
             "must be resolved before merge."
         )
 

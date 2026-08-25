@@ -86,8 +86,8 @@ checks run on a schedule or on dispatch so they never block merges.
   `Catalog reviewed through:` date is stale (120-day window), or an internal link is broken, it
   writes an actionable reminder to the run summary and emits a `::warning` annotation on
   `docs/supported-tools.md`. The PR
-  gate stays the Phase 2 `--catalog-strict` job in `ci.yml` (only a missing/malformed marker
-  or a missing registry tool fails a PR). See [`prompts/maintenance-loop.md`](../prompts/maintenance-loop.md) §6.
+  gate stays the Phase 2 `--catalog-strict` job in `ci.yml` (only an invalid marker or incomplete
+  evidence-table row set fails a PR). See [`prompts/maintenance-loop.md`](../prompts/maintenance-loop.md) §6.
 
 ## Scripts in this directory
 

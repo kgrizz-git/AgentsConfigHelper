@@ -103,13 +103,13 @@ repos:
       #   stages: [pre-push]
       # - id: flutter-analyze
       #   name: "dart: flutter analyze (pre-push)"
-      #   entry: python hooks/scripts/flutter_env.py -- flutter analyze --fatal-infos
+      #   entry: python hooks/scripts/flutter_env.py analyze
       #   language: python
       #   pass_filenames: false
       #   stages: [pre-push]
       # - id: flutter-test
       #   name: "dart: flutter test (pre-push)"
-      #   entry: python hooks/scripts/flutter_env.py -- flutter test
+      #   entry: python hooks/scripts/flutter_env.py test
       #   language: python
       #   pass_filenames: false
       #   stages: [pre-push]

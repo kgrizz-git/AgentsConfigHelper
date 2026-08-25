@@ -20,7 +20,7 @@ Internal / developer-facing changes that do not belong in the public
   runs with `permissions: contents: read` only, probes no external links, and never writes to
   the repo or the Issues API; the reminder is advisory and surfaces only in the Actions run
   summary. It never blocks PRs or releases (the PR gate stays the Phase 2 `--catalog-strict`
-  job in `ci.yml`, where only a missing/malformed marker or a missing registry tool fails).
+  job in `ci.yml`, where only an invalid review marker or an incomplete evidence-table row set fails).
   Plan checkboxes/status, `prompts/maintenance-loop.md` §6, and `ci/README.md` updated to
   document the schedule, no-write mechanism, manual rerun, and review/refresh steps. No logic
   or test changes (reuses the checker's existing offline/advisory behavior).
@@ -31,7 +31,7 @@ Internal / developer-facing changes that do not belong in the public
   registered tools already had a recorded evidence/status row; none were pending) and wired the
   implemented `--catalog-strict` gate into the offline docs PR CI job (`ci.yml` "Docs integrity",
   now `--internal-only --catalog-strict`). External network probing remains disabled — only a
-  missing/malformed marker and a missing registry tool are strict failures; a stale review date
+  invalid review marker and incomplete evidence-table row set are strict failures; a stale review date
   stays advisory (Phase 3 monthly). Also applied three evidence clarity fixes: rephrased the
   GitHub Copilot precedence chain in words (removed the unescaped `>` that rendered as a nested
   blockquote); qualified the `lmstudio-ai/configs` schema as legacy/pre-0.3 (repository archived by
@@ -198,15 +198,14 @@ Internal / developer-facing changes that do not belong in the public
   reviewed through:` still withheld. Plan and this changelog updated for the partial slice.
 
 - **Flutter hook worktree portability:** Added `hooks/scripts/flutter_env.py`, a
-  stdlib-Python wrapper that execs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE`
+  stdlib-Python wrapper that runs approved Flutter hook tasks with `GIT_DIR`/`GIT_WORK_TREE`
   cleared from the child environment. In a linked git worktree, `git commit`
   exports those vars, which redirect Flutter's SDK git detection at the app
   checkout and break pub resolution (`Flutter SDK version 0.0.0-unknown`). Wired
   the `dart-code-linter`, `flutter-analyze`, and `flutter-test` pre-commit hooks
   through it via `language: python` (portable macOS/Linux/Windows; no `python3`
   PATH assumption). Added `tests/test_flutter_env.py` covering env filtering,
-  argument/exit-code passthrough, and an end-to-end `flutter --version`
-  regression guard under simulated hook env.
+  approved-task/exit-code handling, and a linked-worktree regression guard.
 
 - **Tool-catalog integrity Phase 2 (foundation):** Refactored
   `ci/scripts/check_doc_links.py` so catalog scope is explicit —
@@ -430,7 +429,7 @@ Internal / developer-facing changes that do not belong in the public
   `contents: read` only, no Issues API interaction). Reconciled Phase 4 to the real workflow:
   local/offline acceptance checks verified here (all 17 registry tools have an evidence-table
   row + per-tool docs section; `--internal-only --strict` and `--offline` report 0 broken /
-  0 advisory across 162 files; 35 checker unittests pass; `Catalog reviewed through:` marker
+  0 advisory across 162 files; 41 checker unittests pass; `Catalog reviewed through:` marker
   present and fresh), with two post-merge manual-dispatch confirmations recorded as the
   remaining acceptance items (immediate fresh-dispatch now; stale-path re-dispatch after the
   next overdue window) — neither of which can be proven from a local checkout. Plan status and
@@ -557,6 +556,17 @@ Internal / developer-facing changes that do not belong in the public
   (`templates/adrs/`, `briefs/`, `plans/`, `designs/` → the actual flat files).
 
 ### Fixed
+
+- **Flutter hook and catalog-integrity review findings:** Removed the Windows
+  `shell=True` execution path from `flutter_env.py`. The wrapper now accepts only the
+  three hook tasks that the repository configures (metrics, analysis, and tests), clears
+  the worktree variables, and launches the fixed Flutter argument vectors without a
+  command shell; focused tests cover the Windows branch, rejection before process launch,
+  and Unix behavior. Strengthened `--catalog-strict` to require exactly one row for every
+  registry tool in the `## Catalog evidence` table rather than accepting name substrings
+  anywhere in the document; it now rejects future review dates as well. Added regression
+  tests for missing/duplicate rows and future dates, and removed the redundant stale-date
+  assertion comment.
 
 - **URL host checks parse the host instead of substring-matching (2026-08-16).**
   `ci/scripts/check_doc_links.py` now compares the parsed hostname (via

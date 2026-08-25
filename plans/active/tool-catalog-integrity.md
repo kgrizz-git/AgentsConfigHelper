@@ -278,8 +278,8 @@ cannot be found, say so and leave the raw editor as the only supported represent
       `docs/supported-tools.md`, rather than relying only on the `inventory/` directory.
 - [x] Keep `--internal-only --strict` as the routine PR command, and implement a narrow
       companion validation (`--catalog-strict`) that fails if `docs/supported-tools.md`
-      lacks/misformats its required catalog review marker or omits an expected registry
-      tool row.
+      lacks, misformats, or future-dates its required catalog review marker, or omits or
+      duplicates an expected registry-tool row.
 - [x] Wire `--catalog-strict` into PR CI. The truthful `Catalog reviewed through:` marker
       and the strict catalog gate arrive together in this close-out change; see CI-wiring note below.
 - [x] Add focused Python tests or shell fixtures for: ignored `tmp/`, supported-tool catalog
@@ -289,8 +289,8 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 > **CI-wiring note:** `--catalog-strict` is now wired into the offline docs PR CI job
 > (`ci.yml` "Docs integrity", `--internal-only --catalog-strict`). External network probing
-> remains disabled; only a missing/malformed `Catalog reviewed through:` marker and a missing
-> registry tool are strict failures. A stale review date stays advisory (Phase 3 monthly), never
+> remains disabled; an invalid `Catalog reviewed through:` marker and a missing or duplicate
+> registry-tool row are strict failures. A stale review date stays advisory (Phase 3 monthly), never
 > a PR gate failure.
 
 ### Phase 3 — monthly advisory and reminder
@@ -313,8 +313,8 @@ cannot be found, say so and leave the raw editor as the only supported represent
       config files (none are read).
 - [x] A stale review date is visible in the workflow summary/logs and as a non-fatal annotation,
       but it is never a release or PR gate (the workflow is scheduled/dispatch only; the PR gate
-      stays the Phase 2 `--catalog-strict` offline job, where only a missing/malformed marker or
-      a missing registry tool fails).
+      stays the Phase 2 `--catalog-strict` offline job, where an invalid marker or incomplete
+      evidence-table rows fail).
 - [x] Document the schedule, the no-write reminder mechanism, the manual rerun command, and
       the review/refresh steps in `prompts/maintenance-loop.md`, `ci/README.md`, and the CI
       changelog.
@@ -336,7 +336,7 @@ cannot be found, say so and leave the raw editor as the only supported represent
 - [x] Confirm internal links resolve and the offline catalog gate reports no advisory
       findings. **Verified:** `python3 ci/scripts/check_doc_links.py --internal-only --strict`
       and `--offline` both report `0 broken, 0 advisory` across 162 files; the checker's
-      unittest suite (35 tests) passes. These are deterministic, offline, and re-runnable
+      unittest suite (41 tests) passes. These are deterministic, offline, and re-runnable
       locally — no external network or GitHub runtime needed.
 - [x] Confirm the catalog review marker is present and well-formed. **Verified:**
       `Catalog reviewed through: 2026-08-25` is present in `docs/supported-tools.md` and
