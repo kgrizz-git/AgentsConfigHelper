@@ -6,8 +6,11 @@ Author: maintainers
 Status: in progress (Phase 0 complete: catalog boundary reconciled — registry enumeration
 tests present, evidence-table coverage rows corrected to match registered targets; Phase 1
 evidence complete; Phase 2 close-out: catalog marker + --catalog-strict wired into PR CI;
-Phase 3 quarterly advisory shipped (no-write scheduled workflow); Phase 4 acceptance
-remains)
+Phase 3 quarterly advisory shipped (no-write scheduled/manual workflow: run summary +
+warning annotation, never issue creation); Phase 4 local acceptance verified — remaining
+items are two post-merge GitHub Actions manual-dispatch confirmations (immediate: fresh
+dispatch now; future: stale-path re-dispatch after the next overdue window), which cannot be
+proven from a local checkout)
 Linked issue/PR: n/a
 Related: [Supported Tools](../../docs/supported-tools.md),
 [Structured Configuration Roadmap](structured-configuration-roadmap.md), and
@@ -64,8 +67,16 @@ blocking unrelated feature pull requests.
 - Internal Markdown links and required catalog metadata are deterministic CI gates.
   External HTTP outcomes are advisory because valid vendor sites can reject `HEAD`, require
   sign-in, or rate-limit automation.
-- The quarterly process opens or updates one GitHub issue labeled for documentation review;
-  it does not fail routine PRs or automatically rewrite/remove tool entries.
+- The quarterly process is a **no-write advisory reminder**: the scheduled/manual
+  `.github/workflows/catalog-advisory.yml` workflow runs the offline checker, writes an
+  actionable reminder to the run summary, and emits a `::warning` annotation on
+  `docs/supported-tools.md` when the catalog review date is stale. It runs with
+  `permissions: contents: read` only — it never opens or updates a GitHub issue, never
+  probes external links, and never writes back to the repo or the Issues API. (The
+  original plan proposed `issues: write` plus an idempotent create/update of one
+  `documentation-review` issue; this was superseded by the no-write reminder because
+  opening issues needs a write token and is over-broad for an automated schedule.)
+  A stale date does not fail routine PRs or automatically rewrite/remove tool entries.
 
 ## Scope
 
@@ -301,15 +312,49 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 ### Phase 4 — acceptance and ongoing ownership
 
-- [ ] Confirm every registry tool has one evidence-table row and a per-tool documentation
-      section or an explicit reason it shares one.
-- [ ] Confirm all table links resolve internally and external checks report only advisory
-      findings that have been triaged.
-- [ ] Manually dispatch the quarterly workflow once; verify it creates/updates the intended
-      issue without duplicate spam.
-- [ ] Re-run it after closing the issue to verify the next overdue review can open a new one.
-- [ ] Refresh `Catalog reviewed through:` only after reviewing sources and recording changed,
-      added, rejected, or unchanged tools.
+**Local acceptance (verified 2026-08-25):**
+
+- [x] Confirm every registry tool has one evidence-table row and a per-tool documentation
+      section or an explicit reason it shares one. **Verified:** all 17 `ToolDescriptor`
+      display names in `lib/catalog/tool_descriptor_registry.dart` (Claude Code, Codex,
+      Opencode, Paseo, Cursor IDE, Cursor Agent, Kiro, Devin, Antigravity IDE, Antigravity
+      App, Antigravity CLI, Agy-ACP, Kilo, Cline, LM Studio, GitHub Copilot, AGENTS.md
+      (shared)) have a row in the `docs/supported-tools.md` catalog evidence table and a
+      per-tool documentation section — most as a dedicated top-level (H2) section; Cursor
+      Agent and Cursor IDE share one combined H2 (`## Cursor Agent and Cursor IDE`), which
+      is the documented reason they share rather than each owning a dedicated section.
+      Internal-link + `--catalog-strict` coverage is enforced by the Phase 2 PR CI job.
+- [x] Confirm internal links resolve and the offline catalog gate reports no advisory
+      findings. **Verified:** `python3 ci/scripts/check_doc_links.py --internal-only --strict`
+      and `--offline` both report `0 broken, 0 advisory` across 162 files; the checker's
+      unittest suite (34 tests) passes. These are deterministic, offline, and re-runnable
+      locally — no external network or GitHub runtime needed.
+- [x] Confirm the catalog review marker is present and well-formed. **Verified:**
+      `Catalog reviewed through: 2026-08-25` is present in `docs/supported-tools.md` and
+      parses as a valid date within the checker's 120-day window (the `--offline` run
+      reports no STALE line).
+
+**Post-merge GitHub Actions check (not runnable from a local checkout):**
+
+- [ ] Manually dispatch the quarterly workflow (`.github/workflows/catalog-advisory.yml`)
+      once after this change lands on `default`; verify it writes a run summary and, because
+      the `Catalog reviewed through:` date is fresh, reports `result=fresh` with no
+      `::warning` annotation. **This is the live-remote confirmation that the scheduled job
+      reads the repo, runs the offline checker + unittests, and exercises the summary path.**
+      It deliberately does **not** create or update any issue (the workflow runs with
+      `permissions: contents: read` only and has no Issues API interaction).
+- [ ] Re-dispatch the workflow after the next overdue window to verify the stale-date
+      summary + `::warning` annotation path fires without emitting issue spam. This is a
+      future-maintenance confirmation, not a current blocker.
+
+> **Why Phase 4 is split this way.** The original Phase 4 language described creating and
+> re-closing a `documentation-review` issue. Phase 3 deliberately replaced that with a
+> **no-write** reminder (run summary + `::warning` annotation, `contents: read` only — see
+> the Phase 3 "No-write reminder" checkbox and `.github/workflows/catalog-advisory.yml`).
+> The local/offline checks above are objectively verifiable here; the live-dispatch checks
+> require the merged workflow to run on GitHub and are recorded as the two remaining
+> acceptance items (the immediate fresh-dispatch confirmation now, and the stale-path
+> re-dispatch confirmation after the next overdue window).
 
 ## Validation
 
@@ -321,11 +366,14 @@ python3 ci/scripts/check_doc_links.py --offline
 pre-commit run --files docs/supported-tools.md ci/scripts/check_doc_links.py
 ```
 
-After the workflow exists, manually dispatch it from GitHub and verify that it neither reads
-configuration files nor opens duplicate issues. Run the normal Dart format, analysis, and test
+After the workflow exists on the default branch, manually dispatch it from GitHub and verify
+that it neither reads configuration files nor creates/updates any issue — it should write a
+run summary only (`result=fresh` while the marker is current; `result=stale` + `::warning`
+annotation once the 120-day window passes). Run the normal Dart format, analysis, and test
 gates when Dart tests or source code change.
 
 ## Completion
 
-When Phases 0–4 are complete, update the catalog date, record CI/workflow behavior in
-`CHANGELOG.dev.md`, remove or narrow the associated `TO_DO.md` item, and archive this plan.
+When Phases 0–4 are complete (including both post-merge manual-dispatch confirmations), update
+the catalog date, record CI/workflow behavior in `CHANGELOG.dev.md`, remove or narrow the
+associated `TO_DO.md` item, and archive this plan.

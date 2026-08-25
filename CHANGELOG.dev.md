@@ -27,7 +27,17 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Changed
 
-- **Tool-catalog integrity Phase 0 (catalog boundary reconciliation):** Reconciled the
+- **Tool-catalog integrity Phase 4 reconciliation:** The plan's Phase 4 acceptance section
+  previously described creating/re-closing a `documentation-review` issue, which contradicts
+  the no-write scheduled/manual workflow that Phase 3 actually shipped
+  (`.github/workflows/catalog-advisory.yml` — run summary + `::warning` annotation,
+  `contents: read` only, no Issues API interaction). Reconciled Phase 4 to the real workflow:
+  local/offline acceptance checks verified here (all 17 registry tools have an evidence-table
+  row + per-tool docs section; `--internal-only --strict` and `--offline` report 0 broken /
+  0 advisory across 162 files; 34 checker unittests pass; `Catalog reviewed through:` marker
+  present and fresh), with the single remaining item recorded as a post-merge GitHub Actions
+  manual-dispatch confirmation that cannot be proven from a local checkout. Plan status and
+  `TO_DO.md` narrowed accordingly. No code or workflow changes.
   evidence-table "Discovery coverage" rows in `docs/supported-tools.md` against the runtime
   registry (`lib/catalog/tool_descriptor_registry.dart`) so documentation describes only
   registered discovery targets. Corrected three rows: Claude Code (removed "local/managed"
