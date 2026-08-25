@@ -60,6 +60,34 @@ Internal / developer-facing changes that do not belong in the public
   Remaining registered tools stay pending; `Catalog reviewed through:` still withheld. Plan
   and this changelog updated for the partial slice.
 
+- **Tool-catalog integrity Phase 1 (Kilo + Cline evidence slice):** Substantively reviewed
+  and recorded **Kilo** and **Cline** rows in the `docs/supported-tools.md` evidence table
+  against current vendor sources. Kilo: primary evidence from
+  kilo.ai/docs/contributing/architecture/config-schema (canonical Effect Schema source of
+  truth), kilo.ai/docs/getting-started/settings, kilo.ai/docs/automate/mcp/using-in-kilo-code,
+  kilo.ai/docs/customize/custom-rules, and the cloud editor schema endpoint
+  `https://app.kilo.ai/config.json`; schema evidence "primary docs only" — documented
+  top-level keys (`model`, `provider`, `mcp`, `permission` per-tool allow/ask/deny,
+  `instructions`, `agent`, `sandbox` with `enabled`/`network`/`writable_paths`/`allowed_hosts`,
+  `formatter`, `lsp`, `experimental`) with the cross-repo runtime/schema contract. The
+  pre-existing `test/fixtures/staging_home/.config/kilo/kilo.jsonc` is a **non-conforming
+  placeholder** (`permissions.{filesystem,network}` is not a documented key — the schema uses
+  `permission` + `sandbox`), so no fixture is claimed for Kilo. Cline: primary evidence from
+  docs.cline.bot/getting-started/config, docs.cline.bot/customization/cline-rules,
+  docs.cline.bot/mcp/adding-and-configuring-servers, docs.cline.bot/cli/configuration;
+  schema evidence "primary docs only" — `cline_mcp_settings.json` `mcpServers` map (STDIO +
+  streamableHttp/sse transports) and `global-settings.json` are documented; the
+  `GlobalSettingsSchema` is a source-defined Zod surface and Cline does **not** publish a
+  single JSON-schema document, so the full key list is not vendor-documented (one concrete
+  confirmed key is `disabledTools`; `providers.json` is secret-bearing API-key config). No
+  fixture exercising the structured config exists.
+  Both rows annotate vendor-documented scopes that are **not** registered discovery targets:
+  Kilo's `tui.jsonc`, `.kilocode/`, and org/managed config; Cline's hooks, skills, agents,
+  plugins, cron, workflows, `.clineignore`, CLI-only `mcp.json`, and the
+  `~/Documents/Cline/{Hooks,Plugins,Workflows}` compatibility directories. Remaining
+  registered tools stay pending; `Catalog reviewed through:` still withheld. Plan and this
+  changelog updated for the partial slice.
+
 - **Flutter hook worktree portability:** Added `hooks/scripts/flutter_env.py`, a
   stdlib-Python wrapper that execs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE`
   cleared from the child environment. In a linked git worktree, `git commit`

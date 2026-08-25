@@ -27,14 +27,14 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets | local LLM runner |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool agents.md convention | instructions only |
 
-## Catalog evidence (partial: Claude Code, Codex, Cursor Agent, Cursor IDE, Opencode, Kiro, Devin)
+## Catalog evidence (partial: Claude Code, Codex, Cursor Agent, Cursor IDE, Opencode, Kiro, Devin, Kilo, Cline)
 
 > **Status:** This table is a bounded slice. **Claude Code**, **Codex**, **Cursor Agent**,
-> **Cursor IDE**, **Opencode**, **Kiro**, and **Devin** rows have been substantively reviewed
-> against current vendor sources as of 2026-08-25. All other registered tools remain **pending**
-> review and are shown here for completeness with their discovery coverage only — no
-> schema/fixture claim is implied. `Catalog reviewed through:` is intentionally omitted until
-> the full catalog is reviewed.
+> **Cursor IDE**, **Opencode**, **Kiro**, **Devin**, **Kilo**, and **Cline** rows have been
+> substantively reviewed against current vendor sources as of 2026-08-25. All other registered
+> tools remain **pending** review and are shown here for completeness with their discovery
+> coverage only — no schema/fixture claim is implied. `Catalog reviewed through:` is
+> intentionally omitted until the full catalog is reviewed.
 
 | Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |
 | --- | --- | --- | --- | --- | --- |
@@ -50,8 +50,8 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Antigravity IDE | JSON structured config (user) | pending | pending | pending | — |
 | Antigravity App | JSON structured config (user) | pending | pending | pending | — |
 | Agy-ACP | JSON structured config (user) | pending | pending | pending | — |
-| Kilo | JSONC/JSON structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
-| Cline | JSON structured config (user); Markdown/text instruction docs | pending | pending | pending | — |
+| Kilo | JSONC/JSON structured config (user `kilo.jsonc`/`kilo.json`/`models.json`, project `kilo.jsonc`/`kilo.json`/`.kilo/` variants); Markdown instruction docs (user `AGENTS.md` + `agents/*.md`, project `.kilo/agents/*.md`) | [CLI Config Schema](https://kilo.ai/docs/contributing/architecture/config-schema) · [Settings](https://kilo.ai/docs/getting-started/settings) · [Using MCP](https://kilo.ai/docs/automate/mcp/using-in-kilo-code) · [Custom rules](https://kilo.ai/docs/customize/custom-rules) · [Editor schema](https://app.kilo.ai/config.json) (kilo.ai) | primary docs only (`kilo.jsonc` schema is the canonical Effect Schema `Config.Info` in `Kilo-Org/kilocode`, overlaid with Kilo buckets on top of the opencode.ai schema for the editor `$schema` endpoint; documented top-level keys include `model`, `provider`, `mcp`, `permission` (per-tool `allow`/`ask`/`deny`), `instructions`, `agent`, `sandbox` (`enabled`/`network`/`writable_paths`/`allowed_hosts`), `formatter`, `lsp`, `experimental`; no fixture exercising the documented schema — see note below) | none | 2026-08-25 |
+| Cline | JSON structured config (user `global-settings.json`, `cline_mcp_settings.json`, `providers.json`); Markdown/text instruction docs (user `.cline/rules/*.md`, `Documents/Cline/Rules/*.{md,txt}` + Linux/WSL fallback; project `.clinerules` file, `.clinerules/*.{md,txt}`, `.cline/rules/*.md`) | [Config](https://docs.cline.bot/getting-started/config) · [Rules](https://docs.cline.bot/customization/cline-rules) · [Adding & Configuring Servers](https://docs.cline.bot/mcp/adding-and-configuring-servers) · [CLI Configuration](https://docs.cline.bot/cli/configuration) (docs.cline.bot) | primary docs only (`cline_mcp_settings.json` uses the `mcpServers` map with STDIO `command`/`args`/`env`/`disabled`/`autoApprove` and remote `type: streamableHttp`/`sse` + `url`/`headers` transports; `global-settings.json` is the source-defined `GlobalSettingsSchema` Zod surface — Cline does not publish a single JSON-schema document, and the full key list is not vendor-documented (a concrete confirmed key is `disabledTools`); `providers.json` is secret-bearing API-key config. No fixture exercising the structured config exists) | none | 2026-08-25 |
 | GitHub Copilot | JSONC/JSON structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
 | LM Studio | JSON/YAML structured config (user) | pending | pending | pending | — |
 | AGENTS.md (shared) | Markdown instruction docs (user/project) | pending | pending | pending | — |
@@ -683,27 +683,76 @@ still auto-discovered and opened in the raw-text editor where registered):
 
 ### Kilo Config paths
 
-- **User settings:** `~/.config/kilo/kilo.jsonc` or `~/.config/kilo/kilo.json`
-- **User models cache (optional):** `~/.config/kilo/models.json`
-- **User rules / agents:** `~/.config/kilo/AGENTS.md` and `~/.config/kilo/agents/*.md`
-- **Project settings:** `kilo.jsonc` / `kilo.json`, or `.kilo/kilo.jsonc` / `.kilo/kilo.json`
-- **Project agents:** `.kilo/agents/*.md`
-- **Project rules:** shared root `AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
+| Scope | Path | Discovered? |
+| --- | --- | --- |
+| User settings | `~/.config/kilo/kilo.jsonc` (or `kilo.json`) | registered |
+| User models cache | `~/.config/kilo/models.json` | registered |
+| User rules | `~/.config/kilo/AGENTS.md` | registered |
+| User agents | `~/.config/kilo/agents/*.md` | registered |
+| Project settings | `kilo.jsonc` / `kilo.json` in project root | registered |
+| Project settings (alt) | `.kilo/kilo.jsonc` / `.kilo/kilo.json` | registered |
+| Project agents | `.kilo/agents/*.md` | registered |
+| Project rules | shared root `AGENTS.md` | registered (via AGENTS.md shared) |
+| TUI settings | `~/.config/kilo/tui.jsonc` | documented, not registered |
+| Legacy rules | `.kilocode/rules/` | documented, not registered |
+| Organization/managed config | org/MDM-managed sources | documented, not registered |
+
+> **Note:** Kilo documents additional configuration scopes (TUI `tui.jsonc`, legacy
+> `.kilocode/rules/` directories, organization/MDM-managed config, and the opencode
+> config-migration path) that this app does **not** currently auto-discover. Only the
+> `kilo.jsonc`/`kilo.json`, `models.json`, `AGENTS.md`, and `agents/*.md` targets above
+> are registered in `lib/catalog/tool_descriptor_registry.dart`; the remaining rows are
+> retained as vendor-documented references. The runtime config's source of truth is the
+> canonical Effect Schema `Config.Info` in `Kilo-Org/kilocode`; the editor-facing
+> `$schema` endpoint (`https://app.kilo.ai/config.json`) is a cloud overlay of
+> `opencode.ai/config.json` plus Kilo-specific buckets.
 
 ### Kilo Config format
 
 JSONC. Secrets (e.g. `provider.*.options.apiKey`) must not be committed; prefer env vars.
 All edits are backed up only under the app support directory (never sibling `.bak` files).
 
+> **Fixture note:** The existing `test/fixtures/staging_home/.config/kilo/kilo.jsonc`
+> uses a `permissions.{filesystem,network}` shape that is **not** part of the documented
+> Kilo schema (which uses `permission` for per-tool allow/ask/deny and `sandbox` for
+> filesystem/network boundaries). It is a non-conforming placeholder, not a verified
+> example, so no fixture is claimed for Kilo.
+
 ## Cline
 
 ### Cline Config paths
 
-- **User settings:** `~/.cline/data/settings/global-settings.json`, `cline_mcp_settings.json`, `providers.json` (often secret-bearing)
-- **User rules:** `~/.cline/rules/*.md`, `~/Documents/Cline/Rules/*.{md,txt}`; Linux/WSL
-  `~/Cline/Rules/*.{md,txt}` is discovered only when the Documents location is absent
-- **Project rules:** `.clinerules/` (`.md`/`.txt`), legacy `.clinerules` file, and `.cline/rules/*.md`
-- **Also loads:** shared root `AGENTS.md` / `~/.agents/AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
+| Scope | Path | Discovered? |
+| --- | --- | --- |
+| User global settings | `~/.cline/data/settings/global-settings.json` | registered |
+| User MCP settings | `~/.cline/data/settings/cline_mcp_settings.json` | registered |
+| User providers (secret-bearing) | `~/.cline/data/settings/providers.json` | registered |
+| User rules | `~/.cline/rules/*.md` | registered |
+| User rules (compat) | `~/Documents/Cline/Rules/*.{md,txt}` | registered |
+| User rules (Linux/WSL fallback) | `~/Cline/Rules/*.{md,txt}` (only when Documents location absent) | registered |
+| Project rules | `.clinerules/*.md`, `.clinerules/*.txt` | registered |
+| Project rules (legacy file) | `.clinerules` | registered |
+| Project rules (alt) | `.cline/rules/*.md` | registered |
+| Shared rules | root `AGENTS.md`, `~/.agents/AGENTS.md` | registered (via AGENTS.md shared) |
+| Global rules dir | `~/.cline/rules/` | registered (above) |
+| Global hooks | `~/.cline/hooks/`, `~/Documents/Cline/Hooks/` | documented, not registered |
+| Global skills | `~/.cline/skills/` | documented, not registered |
+| Global agents | `~/.cline/agents/` | documented, not registered |
+| Global plugins | `~/.cline/plugins/`, `~/Documents/Cline/Plugins/` | documented, not registered |
+| Global cron | `~/.cline/cron/` | documented, not registered |
+| Global workflows | `~/.cline/data/workflows/`, `~/Documents/Cline/Workflows/` | documented, not registered |
+| Project hooks/skills/agents/plugins/cron | `.cline/{skills,hooks,agents,plugins,cron}/` | documented, not registered |
+| CLI MCP config (CLI only) | `~/.cline/mcp.json` | documented, not registered |
+| Ignore file | `.clineignore` | documented, not registered |
+
+> **Note:** Cline documents a broad set of global and project scopes (hooks, skills,
+> agents, plugins, cron, workflows, `.clineignore`, CLI-only `mcp.json`, and the
+> `~/Documents/Cline/{Hooks,Plugins,Workflows}` compatibility directories) that this app
+> does **not** currently auto-discover. Only the `global-settings.json`,
+> `cline_mcp_settings.json`, `providers.json`, the rules targets, and the
+> `Documents/Cline/Rules` (+ Linux fallback) compatibility paths are registered in
+> `lib/catalog/tool_descriptor_registry.dart`; the remaining rows are retained as
+> vendor-documented references.
 
 ### Cline Config format
 

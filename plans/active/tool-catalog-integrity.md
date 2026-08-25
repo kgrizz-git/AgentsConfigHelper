@@ -24,9 +24,9 @@ blocking unrelated feature pull requests.
   tools and discovery targets.
 - `docs/supported-tools.md` covers each registered tool's paths and format summary. A
   partial evidence table has been added (Claude Code, Codex, Cursor Agent, Cursor IDE,
-  Opencode, Kiro, and Devin reviewed rows; all other registered tools recorded as pending).
-  Source links and token-free examples are uneven across the remaining tools. In particular,
-  Antigravity IDE/App, Kilo, Cline, LM Studio, and some Copilot surfaces need a recorded
+  Opencode, Kiro, Devin, Kilo, and Cline reviewed rows; all other registered tools recorded
+  as pending). Source links and token-free examples are uneven across the remaining tools.
+  In particular, Antigravity IDE/App, LM Studio, and some Copilot surfaces need a recorded
   evidence status rather than an implied schema guarantee.
 - `ci/scripts/check_doc_links.py` checks internal Markdown links, can probe external links,
   and recognizes `Catalog reviewed through:` markers. Its catalog scope now explicitly
@@ -137,6 +137,27 @@ cannot be found, say so and leave the raw editor as the only supported represent
       `allow/deny/ask`, `sandbox`, `read_config_from`, `keymap`, `proxy`); permission syntax
       `Read/Write/Exec/Fetch(pattern)` plus tool-based and `mcp__*` matchers with deny-wins
       precedence; no fixture exercising the structured config.
+- [x] Populate source/status rows for the Kilo + Cline evidence slice against current vendor
+      sources. Kilo: primary evidence from kilo.ai/docs/contributing/architecture/config-schema
+      (canonical Effect Schema source of truth), kilo.ai/docs/getting-started/settings,
+      kilo.ai/docs/automate/mcp/using-in-kilo-code, kilo.ai/docs/customize/custom-rules, and
+      the cloud editor schema at `https://app.kilo.ai/config.json`; schema evidence "primary
+      docs only" — documented top-level keys (`model`, `provider`, `mcp`, `permission`,
+      `instructions`, `agent`, `sandbox`, `formatter`, `lsp`, `experimental`) with the
+      cross-repo runtime/schema contract described; the existing
+      `test/fixtures/staging_home/.config/kilo/kilo.jsonc` is a **non-conforming placeholder**
+      (`permissions.{filesystem,network}` is not a documented key — schema uses `permission`
+      + `sandbox`), so no fixture is claimed. Cline: primary evidence from
+      docs.cline.bot/getting-started/config, docs.cline.bot/customization/cline-rules,
+      docs.cline.bot/mcp/adding-and-configuring-servers, docs.cline.bot/cli/configuration;
+      schema evidence "primary docs only" — `cline_mcp_settings.json` `mcpServers` map (STDIO
+      + streamableHttp/sse transports), `global-settings.json` `GlobalSettingsSchema`, and
+      secret-bearing `providers.json` are documented via Cline's source Zod schemas; no
+      single published JSON-schema document and no fixture exercising the structured config
+      exists. Both rows annotate vendor-documented scopes that are **not** registered
+      discovery targets (Kilo: `tui.jsonc`, `.kilocode/`, org/managed config; Cline: hooks,
+      skills, agents, plugins, cron, workflows, `.clineignore`, CLI `mcp.json`, and the
+      `~/Documents/Cline/{Hooks,Plugins,Workflows}` compat directories).
 - [x] Add or link token-free fixtures for the Claude Code and Codex rows. Existing
       synthetic staging fixtures used; no new fixtures required for this slice.
 - [x] Add or link a token-free fixture for the Opencode row. Reused the existing synthetic
