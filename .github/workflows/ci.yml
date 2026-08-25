@@ -93,11 +93,13 @@ jobs:
 
       # Deterministic, offline, no network: internal relative-link check plus the
       # doc-link checker's stdlib-unittest suite. The supported-tool catalog
-      # review-marker and registry-coverage gate (--catalog-strict) is deferred
-      # until a later Phase 0/1 evidence change truthfully adds the marker; it
-      # is intentionally NOT run here yet.
-      - name: Internal link check
-        run: python3 ci/scripts/check_doc_links.py --internal-only --strict
+      # review-marker and registry-coverage gate (--catalog-strict) runs here too;
+      # it activates now that the truthful "Catalog reviewed through:" marker is
+      # present in docs/supported-tools.md. External network probing remains
+      # disabled (--internal-only); only missing/malformed markers and missing
+      # registry tools are strict failures (a stale date stays advisory).
+      - name: Internal link + catalog check
+        run: python3 ci/scripts/check_doc_links.py --internal-only --catalog-strict
 
       - name: Doc-link checker unit tests
         run: python3 ci/tests/test_check_doc_links.py

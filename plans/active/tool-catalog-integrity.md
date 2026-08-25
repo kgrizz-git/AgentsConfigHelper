@@ -3,7 +3,7 @@
 Last reviewed: 2026-08-25
 Date: 2026-08-23
 Author: maintainers
-Status: in progress (Phase 2 foundation: deterministic internal-link CI + checker tests; strict catalog-marker/coverage activation deferred to Phase 0/1 evidence review)
+Status: in progress (Phase 2 close-out: catalog marker added + --catalog-strict wired into PR CI; Phase 3 quarterly advisory and Phase 4 acceptance remain)
 Linked issue/PR: n/a
 Related: [Supported Tools](../../docs/supported-tools.md),
 [Structured Configuration Roadmap](structured-configuration-roadmap.md), and
@@ -29,15 +29,14 @@ blocking unrelated feature pull requests.
   links and token-free examples remain uneven across them — several are primary-docs-only or
   paths-recorded-needs-verification, and the LM Studio preset path has an open follow-up —
   but every registered tool now has an explicit evidence status rather than an implied schema
-  guarantee. The `Catalog reviewed through:` marker and the strict `--catalog-strict` CI gate
-  are still deferred to the separate full-catalog-review change.
+  guarantee. The `Catalog reviewed through: 2026-08-25` marker is now present in
+  `docs/supported-tools.md`, and the strict `--catalog-strict` CI gate is wired into the offline
+  docs PR CI job.
 - `ci/scripts/check_doc_links.py` checks internal Markdown links, can probe external links,
   and recognizes `Catalog reviewed through:` markers. Its catalog scope now explicitly
   includes `docs/supported-tools.md` (not only `inventory/`), and an offline CI docs job
-  invokes the deterministic internal-link check plus the checker's unittest suite. The
-  strict `--catalog-strict` gate (catalog review marker + registry-coverage check) is
-  implemented and tested but intentionally not yet wired into PR CI; it activates only
-  after a full-catalog evidence change truthfully adds the marker.
+  invokes the deterministic internal-link check, the `--catalog-strict` catalog gate, and the
+  checker's unittest suite. External network probing remains disabled.
 - The existing maintenance-loop prompt describes manual catalog review, but no recurring
   workflow turns a stale tool catalog into a visible repository task.
 
@@ -109,7 +108,7 @@ cannot be found, say so and leave the raw editor as the only supported represent
 - [ ] Compare the registry, quick-comparison table, per-tool sections, and evidence table.
       Resolve terminology differences (for example, Cursor Agent vs Cursor IDE) without
       changing discovery behavior.
-- [ ] Add `Catalog reviewed through: YYYY-MM-DD` to `docs/supported-tools.md` only after
+- [x] Add `Catalog reviewed through: YYYY-MM-DD` to `docs/supported-tools.md` only after
       completing the initial evidence review.
 - [ ] Update `docs/research/README.md` to explain that raw dated research supports the
       catalog, while `supported-tools.md` is the reviewed curated reference.
@@ -129,13 +128,13 @@ cannot be found, say so and leave the raw editor as the only supported represent
       instructions support); schema evidence "primary docs only" — `settings.json` full key table
       is published but the schema is source-defined (no standalone JSON-schema document); `config.json`
       is auto-managed state; `permissions-config.json` documents the saved-approval schema but is also
-      auto-managed; no token-free fixture exists. LM Studio: primary evidence from the archived
-      `lmstudio-ai/configs` `schema.json` (preset `load_params`/`inference_params` structure) and
-      lmstudio.ai/docs (model.yaml, presets); schema evidence "paths recorded; schema needs
-      verification" — the published preset schema exists but LM Studio documents presets at
-      `~/.lmstudio/config-presets/`, not `~/.lmstudio/hub/presets/*.json` as registered; the app
-      `settings.json` schema is unpublished; follow-up: does the registry's `hub/presets/*.json` path
-      need correction? AGENTS.md (shared): primary evidence from agents.md (Agentic AI Foundation /
+      auto-managed; no token-free fixture exists. LM Studio: primary evidence from the archived/legacy
+      `lmstudio-ai/configs` `schema.json` (last updated pre-0.3, repository archived by LM Studio in 2024;
+      documents the legacy preset `load_params`/`inference_params` structure) and lmstudio.ai/docs
+      (model.yaml, presets); schema evidence "paths recorded; schema needs verification" — the published
+      legacy preset schema exists but LM Studio documents current presets at `~/.lmstudio/config-presets/`,
+      not `~/.lmstudio/hub/presets/*.json` as registered; the app `settings.json` schema is unpublished;
+      follow-up: does the registry's `hub/presets/*.json` path need correction? AGENTS.md (shared): primary evidence from agents.md (Agentic AI Foundation /
       Linux Foundation); schema evidence "not published" — explicitly an open schema-free Markdown
       convention; the existing `test/fixtures/staging_home/.agents/AGENTS.md` and
       `test/fixtures/staging_home/workspace/AGENTS.md` are token-free synthetic fixtures that
@@ -239,23 +238,18 @@ cannot be found, say so and leave the raw editor as the only supported represent
       companion validation (`--catalog-strict`) that fails if `docs/supported-tools.md`
       lacks/misformats its required catalog review marker or omits an expected registry
       tool row.
-- [ ] Wire `--catalog-strict` into PR CI. Deferred until a Phase 0/1 evidence change
-      truthfully adds the `Catalog reviewed through:` marker; see activation note below.
+- [x] Wire `--catalog-strict` into PR CI. The truthful `Catalog reviewed through:` marker
+      and the strict catalog gate arrive together in this close-out change; see CI-wiring note below.
 - [x] Add focused Python tests or shell fixtures for: ignored `tmp/`, supported-tool catalog
       inclusion, valid/stale/malformed dates, internal links, and non-fatal external outcomes.
 - [x] Add a lightweight CI docs job that runs the deterministic command. It must not require
       external network access or new write permissions.
 
-> **Activation note:** The `--catalog-strict` gate (catalog review marker + registry-coverage
-> check) is implemented and covered by tests, but is intentionally NOT yet wired into PR CI.
-> It activates only after a Phase 0/1 evidence change truthfully adds the
-> `Catalog reviewed through:` marker to `docs/supported-tools.md`. The current CI job runs
-> the deterministic internal-link check plus the checker's unittest suite.
->
-> **CI-wiring note:** When `--catalog-strict` is finally wired into PR CI, the truthful
-> `Catalog reviewed through: YYYY-MM-DD` marker must be added in the same full-catalog
-> evidence review change — the gate requires the marker, so wiring and the marker arrive
-> together, not in separate PRs.
+> **CI-wiring note:** `--catalog-strict` is now wired into the offline docs PR CI job
+> (`ci.yml` "Docs integrity", `--internal-only --catalog-strict`). External network probing
+> remains disabled; only a missing/malformed `Catalog reviewed through:` marker and a missing
+> registry tool are strict failures. A stale review date stays advisory (Phase 3 quarterly), never
+> a PR gate failure.
 
 ### Phase 3 — quarterly advisory and reminder
 

@@ -302,6 +302,17 @@ class CliTests(unittest.TestCase):
             code, out, _ = _run(tmp, "--internal-only", "--catalog-strict")
             self.assertEqual(code, 0, out)
 
+    def test_ci_command_passes_against_real_supported_tools(self):
+        """The exact CI command (--internal-only --catalog-strict) must pass against the real,
+        committed docs/supported-tools.md. Guards the now-wired catalog gate: the file must
+        carry a valid 'Catalog reviewed through:' marker and name every registry tool, or CI fails.
+        Runs from the repo root so the committed file is read (not a temp copy)."""
+        repo_root = Path(__file__).resolve().parents[2]
+        real_file = repo_root / "docs" / "supported-tools.md"
+        self.assertTrue(real_file.is_file(), f"missing {real_file}")
+        code, out, _ = _run(repo_root, "--internal-only", "--catalog-strict", "docs/supported-tools.md")
+        self.assertEqual(code, 0, f"CI catalog gate failed against real file: {out}")
+
     # --- B2 regression: staleness must remain advisory even under --catalog-strict ---
 
     def test_catalog_strict_stale_date_is_advisory_not_failure(self):
