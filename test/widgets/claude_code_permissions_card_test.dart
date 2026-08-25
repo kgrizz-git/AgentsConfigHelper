@@ -46,12 +46,70 @@ void main() {
         findsOneWidget,
       );
 
+      expect(
+        find.byTooltip(ClaudeCodePermissionsHelp.defaultMode.description),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byTooltip(ClaudeCodePermissionsHelp.allow.description),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<AlertDialog>(find.byType(AlertDialog)).scrollable,
+        isTrue,
+      );
+      expect(
+        find.text('Lists rules that pre-approve matching actions.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Lists rules that pre-approve matching actions.'),
+        findsNothing,
+      );
+
       await tester.tap(find.text('Claude Code permissions documentation'));
       await tester.pump();
 
       expect(openedUri, ClaudeCodePermissionsAdapter.documentationUri);
     },
   );
+
+  testWidgets('keeps permission headers within a narrow, scaled layout', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: ClaudeCodePermissionsCard(
+                presentation: ClaudeCodePermissionsPresentation(
+                  defaultMode: 'bypassPermissions',
+                  allow: const [],
+                  ask: const [],
+                  deny: const [],
+                  hasConfiguredPolicy: true,
+                  hasUnclassifiedSettings: false,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('shows feedback when documentation cannot be opened', (
     tester,

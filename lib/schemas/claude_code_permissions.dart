@@ -16,6 +16,61 @@ enum ClaudeCodePermissionsStatus {
   unsupported,
 }
 
+/// Reviewed, plain-language help for the fields shown on the Claude card.
+class ClaudeCodePermissionFieldHelp extends Equatable {
+  /// Creates help for one displayed Claude Code permissions field.
+  const ClaudeCodePermissionFieldHelp({
+    required this.label,
+    required this.description,
+  });
+
+  final String label;
+
+  /// A description of the stored setting, not a prediction of rule matching.
+  final String description;
+
+  @override
+  List<Object?> get props => [label, description];
+}
+
+/// Reviewed help metadata for the currently supported Claude permission fields.
+class ClaudeCodePermissionsHelp {
+  /// Explains the card's intentionally read-only scope.
+  static const policy = ClaudeCodePermissionFieldHelp(
+    label: 'Claude Code permissions',
+    description:
+        'This card shows the permission settings stored in this file. '
+        'Claude Code decides how individual actions match those settings '
+        'at runtime.',
+  );
+
+  /// Explains the fallback behavior for actions without a matching rule.
+  static const defaultMode = ClaudeCodePermissionFieldHelp(
+    label: 'Default mode',
+    description:
+        'Sets how Claude Code handles an action when no allow, ask, or deny '
+        'rule matches it.',
+  );
+
+  /// Explains rules that pre-approve matching actions.
+  static const allow = ClaudeCodePermissionFieldHelp(
+    label: 'Allow',
+    description: 'Lists rules that pre-approve matching actions.',
+  );
+
+  /// Explains rules that require confirmation before matching actions proceed.
+  static const ask = ClaudeCodePermissionFieldHelp(
+    label: 'Ask',
+    description: 'Lists rules that require confirmation for matching actions.',
+  );
+
+  /// Explains rules that block matching actions.
+  static const deny = ClaudeCodePermissionFieldHelp(
+    label: 'Deny',
+    description: 'Lists rules that block matching actions.',
+  );
+}
+
 /// A read-only, validated view of Claude Code permission settings.
 class ClaudeCodePermissionsPresentation extends Equatable {
   /// Creates a presentation from the recognized Claude permissions subtree.
