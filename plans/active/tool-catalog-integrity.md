@@ -122,10 +122,17 @@ cannot be found, say so and leave the raw editor as the only supported represent
       docs and schemas; mark community/unpublished facts distinctly.
 - [x] Verify and record the first high-priority structured-schema pair: Claude Code and Codex
       (verified examples via token-free staging fixtures).
-- [ ] Verify and record the remaining high-priority structured-schema tools: Cursor,
-      Opencode, Kiro, and Devin.
+- [x] Populate source/status rows for the Cursor + Opencode evidence slice (Cursor Agent,
+      Cursor IDE, Opencode) against current vendor sources. Cursor Agent and Cursor IDE are
+      primary-docs-only / schema-needs-verification (no fixtures); Opencode is a verified
+      example via the existing token-free staging fixture and the published opencode.ai
+      JSON schema. Remaining high-priority tools (Kiro, Devin) still pending.
+- [ ] Verify and record the remaining high-priority structured-schema tools: Kiro and Devin.
 - [x] Add or link token-free fixtures for the Claude Code and Codex rows. Existing
       synthetic staging fixtures used; no new fixtures required for this slice.
+- [x] Add or link a token-free fixture for the Opencode row. Reused the existing synthetic
+      `test/fixtures/staging_home/.config/opencode/opencode.json` staging fixture; no new
+      fixture required.
 - [ ] For paths-only tools, record the reason and a follow-up research question instead of
       fabricating a partial schema example.
 - [ ] Add a fixture-intake checklist to the safe-testing documentation: source provenance,

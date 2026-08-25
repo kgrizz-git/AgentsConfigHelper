@@ -20,6 +20,21 @@ Internal / developer-facing changes that do not belong in the public
   `supported-tools.md` is the reviewed curated reference. Plan and this changelog updated
   for the partial slice.
 
+- **Tool-catalog integrity Phase 1 (Cursor + Opencode evidence slice):** Substantively
+  reviewed and recorded **Cursor Agent**, **Cursor IDE**, and **Opencode** rows in the
+  `docs/supported-tools.md` evidence table against current vendor sources. Cursor Agent:
+  primary evidence from cursor.com/docs/reference/permissions (published `permissions.json`
+  schema), cursor.com/docs/rules, cursor.com/docs/cli/reference/configuration +
+  permissions; schema evidence "primary docs only" (no fixture). Cursor IDE: paths recorded
+  against cursor.com/docs; schema evidence "paths recorded; schema needs verification"
+  (IDE `settings.json` is the inherited VS Code format — Cursor publishes no dedicated
+  settings-schema reference). Opencode: primary evidence from opencode.ai/docs/config,
+  opencode.ai/docs/permissions, and the published JSON schema at opencode.ai/config.json;
+  verified example via the existing token-free
+  `test/fixtures/staging_home/.config/opencode/opencode.json` fixture. Remaining registered
+  tools stay pending; `Catalog reviewed through:` still withheld. Plan and this changelog
+  updated for the partial slice.
+
 - **Flutter hook worktree portability:** Added `hooks/scripts/flutter_env.py`, a
   stdlib-Python wrapper that execs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE`
   cleared from the child environment. In a linked git worktree, `git commit`

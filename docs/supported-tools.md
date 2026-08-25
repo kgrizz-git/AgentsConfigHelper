@@ -1,6 +1,6 @@
 # Supported Tools
 
-Last reviewed: 2026-08-24
+Last reviewed: 2026-08-25
 
 Config format reference for each supported AI agent and IDE. Used by AgentsConfigHelper
 to auto-detect, parse, visualize, and edit settings across tools.
@@ -27,22 +27,23 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets | local LLM runner |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool agents.md convention | instructions only |
 
-## Catalog evidence (partial: Claude Code + Codex only)
+## Catalog evidence (partial: Claude Code, Codex, Cursor Agent, Cursor IDE, Opencode)
 
-> **Status:** This table is a bounded first slice. Only **Claude Code** and **Codex** rows
-> have been substantively reviewed against current vendor sources as of 2026-08-25.
-> All other registered tools remain **pending** review and are shown here for
-> completeness with their discovery coverage only — no schema/fixture claim is implied.
-> `Catalog reviewed through:` is intentionally omitted until the full catalog is reviewed.
+> **Status:** This table is a bounded slice. **Claude Code**, **Codex**, **Cursor Agent**,
+> **Cursor IDE**, and **Opencode** rows have been substantively reviewed against current
+> vendor sources as of 2026-08-25. All other registered tools remain **pending** review and
+> are shown here for completeness with their discovery coverage only — no schema/fixture
+> claim is implied. `Catalog reviewed through:` is intentionally omitted until the full
+> catalog is reviewed.
 
 | Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | JSON structured config (user/project/local/managed); Markdown instruction docs (`CLAUDE.md`, `.claude/rules/`) | [Settings](https://code.claude.com/docs/en/settings) · [Permissions](https://code.claude.com/docs/en/permissions) · [CLAUDE.md](https://code.claude.com/docs/en/claude-md) (code.claude.com) | verified example | `test/fixtures/staging_home/.claude/settings.json` · `test/fixtures/staging_home/workspace/.claude/settings.json` | 2026-08-25 |
 | Codex | TOML structured config (user/project/system/profiles); Markdown instruction docs (`AGENTS.md`); text rules (`.codex/rules/*.rules`) | [Config basic](https://developers.openai.com/codex/config-basic) · [Permissions](https://developers.openai.com/codex/permissions) (developers.openai.com) | verified structured-config example (fixture exercises TOML config shape; permission-profile semantics are sourced from the primary permissions doc) | `test/fixtures/staging_home/.codex/config.toml` · `test/fixtures/staging_home/workspace/.codex/config.toml` | 2026-08-25 |
-| Opencode | JSONC structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
+| Opencode | JSONC structured config (user/project); Markdown instruction docs | [Config](https://opencode.ai/docs/config/) · [Permissions](https://opencode.ai/docs/permissions/) · [Schema](https://opencode.ai/config.json) (opencode.ai) | verified example (fixture exercises `model` + `permission` object shape; full JSON schema published) | `test/fixtures/staging_home/.config/opencode/opencode.json` | 2026-08-25 |
 | Paseo | JSON structured config (user/project) | pending | pending | pending | — |
-| Cursor Agent | JSON structured config (user/project); text/Markdown instruction docs | pending | pending | pending | — |
-| Cursor IDE | JSON structured config (user/project) | pending | pending | pending | — |
+| Cursor Agent | JSON structured config (user/project); text/Markdown instruction docs | [Permissions](https://cursor.com/docs/reference/permissions) · [Rules](https://cursor.com/docs/rules) (cursor.com) · CLI permission tokens ([config](https://cursor.com/docs/cli/reference/configuration) · [permissions](https://cursor.com/docs/cli/reference/permissions); `cli-config.json` is documented by Cursor but is **not** a registered discovery target of this app) | primary docs only (`permissions.json` schema and CLI permission tokens published; no fixture exercising the structured config) | none | 2026-08-25 |
+| Cursor IDE | JSON structured config (user/project) | [Cursor docs](https://cursor.com/docs) (cursor.com) | paths recorded; schema needs verification (IDE `settings.json` is the inherited VS Code format; Cursor does not publish a dedicated settings-schema reference) | none | 2026-08-25 |
 | Kiro | YAML structured config (user); Markdown instruction docs | pending | pending | pending | — |
 | Devin | JSON structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
 | Antigravity CLI | JSON structured config (user); Markdown instruction docs | pending | pending | pending | — |
@@ -319,6 +320,11 @@ JSON. Schema at `https://paseo.sh/schemas/paseo.config.v1.json`.
 | Project MCP | `.cursor/mcp.json` |
 | Legacy rules | `.cursorrules` (deprecated) |
 | Cross-tool | `AGENTS.md`, `CLAUDE.md` |
+
+> **Note:** `~/.cursor/cli-config.json` (and project `.cursor/cli.json`) is documented by
+> Cursor as the Agent CLI configuration, but it is **not** a registered discovery target in
+> `lib/catalog/tool_descriptor_registry.dart` and is not auto-discovered by this app. It is
+> cited in the evidence table only as the primary source for CLI permission-token semantics.
 
 ### Cursor Config format
 
