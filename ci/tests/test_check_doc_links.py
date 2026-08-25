@@ -323,7 +323,7 @@ class CliTests(unittest.TestCase):
     # --- B2 regression: staleness must remain advisory even under --catalog-strict ---
 
     def test_catalog_strict_stale_date_is_advisory_not_failure(self):
-        """A stale review date is advisory (Phase 3 quarterly), never a strict failure.
+        """A stale review date is advisory (Phase 3 monthly), never a strict failure.
 
         --catalog-strict must exit 0 when the marker is present and parseable but
         stale, and the catalog names every registry tool. Only missing/malformed

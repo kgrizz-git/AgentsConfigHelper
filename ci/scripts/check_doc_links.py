@@ -21,15 +21,15 @@ fill with noise. Check 1 is mechanical and safe to gate on.
 The supported-tool catalog (``docs/supported-tools.md``) is the curated public record
 of what the app discovers. Because it is hand-maintained evidence rather than generated
 output, it is checked explicitly — not merely as another ``inventory/`` file. Under
-``--catalog-strict`` (the routine PR command, activated only after the catalog review
-marker is truthfully added) the checker additionally requires:
+``--catalog-strict`` (part of the routine PR CI command, activated only after the catalog
+review marker is truthfully added) the checker additionally requires:
 
 * a present and valid (well-formed, parseable) ``Catalog reviewed through: YYYY-MM-DD``
   marker, and
 * that every registry tool display name appears somewhere in the catalog body.
 
 A stale review date (``check_catalog_date``) is always **advisory**, never a strict
-failure — per the plan, date staleness feeds the quarterly advisory/review process
+failure — per the plan, date staleness feeds the monthly advisory/review process
 (Phase 3), not the PR gate. Only a missing or malformed marker is strict.
 
 Registry coverage is a substring presence check against the committed markdown only;
@@ -41,7 +41,7 @@ Usage:
   python3 ci/scripts/check_doc_links.py --offline          # internal links + dates only
   python3 ci/scripts/check_doc_links.py --internal-only    # just check 1
   python3 ci/scripts/check_doc_links.py --strict           # exit 1 on findings
-  python3 ci/scripts/check_doc_links.py --catalog-strict   # exit 1 on missing/malformed marker or missing registry tool (PR gate)
+  python3 ci/scripts/check_doc_links.py --catalog-strict   # exit 1 on broken links, missing/malformed marker, or missing registry tool (PR gate)
   python3 ci/scripts/check_doc_links.py docs/NAVIGATION.md
 
 Exit codes: 0 = ok (or advisory), 1 = findings under --strict, 2 = usage error.

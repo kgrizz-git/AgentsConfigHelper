@@ -7,9 +7,9 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
-- **Tool-catalog integrity Phase 3 (bimonthly advisory/reminder):** Added
+- **Tool-catalog integrity Phase 3 (monthly advisory/reminder):** Added
   `.github/workflows/catalog-advisory.yml`, a scheduled GitHub Actions workflow that runs the
-  checker's existing offline/advisory capabilities every two months (cron `0 6 1 */2 *`) plus on
+  checker's existing offline/advisory capabilities monthly (cron `0 6 1 * *`) plus on
   manual `workflow_dispatch`. It runs `python3 ci/scripts/check_doc_links.py --offline`
   (internal links + catalog staleness, **no network**) and the checker's unittest suite, and
   when the `Catalog reviewed through:` date is stale (120-day window) it writes an actionable
@@ -32,7 +32,7 @@ Internal / developer-facing changes that do not belong in the public
   implemented `--catalog-strict` gate into the offline docs PR CI job (`ci.yml` "Docs integrity",
   now `--internal-only --catalog-strict`). External network probing remains disabled — only a
   missing/malformed marker and a missing registry tool are strict failures; a stale review date
-  stays advisory (Phase 3 bimonthly). Also applied three evidence clarity fixes: rephrased the
+  stays advisory (Phase 3 monthly). Also applied three evidence clarity fixes: rephrased the
   GitHub Copilot precedence chain in words (removed the unescaped `>` that rendered as a nested
   blockquote); qualified the `lmstudio-ai/configs` schema as legacy/pre-0.3 (repository archived by
   LM Studio in 2024) in the evidence table, changelog, and plan prose; and added an evidence/follow-up
@@ -220,7 +220,7 @@ Internal / developer-facing changes that do not belong in the public
   lightweight offline `docs` CI job running the deterministic internal-link
   check (`--internal-only --strict`) plus the unittest suite. External-link
   liveness remains advisory and is not part of PR CI; date staleness remains
-  advisory (Phase 3 bimonthly), not a strict failure.
+  advisory (Phase 3 monthly), not a strict failure.
 
 - **Claude Code permission help coverage:** Added pure-Dart reviewed help metadata and widget
   coverage for its keyboard-accessible explanatory dialog; recorded the schema-help review
@@ -237,7 +237,8 @@ Internal / developer-facing changes that do not belong in the public
   schema-aware cards, reviewed help, per-schema expansion, and regression coverage, plus a
   ready-to-implement read-only Claude Code `allow`/`ask`/`deny` permissions vertical slice.
 - **Tool-catalog integrity plan:** Added a scoped plan for per-tool source/schema evidence,
-  deterministic catalog checks in PR CI, and a quarterly advisory GitHub review issue.
+  deterministic catalog checks in PR CI, and a then-proposed quarterly advisory GitHub review
+  issue (later superseded by the no-write monthly advisory workflow).
 
 - **macOS test-root containment (in progress):** Added a test-only,
   exact-marker-validated `--test-root=<absolute-path>` startup mode. It uses a native,
@@ -413,8 +414,9 @@ Internal / developer-facing changes that do not belong in the public
 ### Changed
 
 - **Tool-catalog integrity advisory follow-up:** Changed the no-write catalog advisory to a
-  bimonthly schedule (cron `0 6 1 */2 *`) while retaining manual dispatch, offline-only checks,
-  and its non-fatal stale-date warning. The strict checker now fails loudly when
+  monthly schedule (cron `0 6 1 * *`) while retaining manual dispatch and offline-only checks.
+  Its non-fatal `attention` summary/annotation now covers both stale review dates and broken
+  internal links, so it never calls a broken catalog fresh. The strict checker now fails loudly when
   `docs/supported-tools.md` is absent, with a focused regression test. The scheduled workflow
   uses a temporary advisory-output file and labels its warning step explicitly non-fatal.
   Kept `docs/supported-tools.md` as one curated catalog rather than splitting it, and added a
@@ -428,7 +430,7 @@ Internal / developer-facing changes that do not belong in the public
   `contents: read` only, no Issues API interaction). Reconciled Phase 4 to the real workflow:
   local/offline acceptance checks verified here (all 17 registry tools have an evidence-table
   row + per-tool docs section; `--internal-only --strict` and `--offline` report 0 broken /
-  0 advisory across 162 files; 34 checker unittests pass; `Catalog reviewed through:` marker
+  0 advisory across 162 files; 35 checker unittests pass; `Catalog reviewed through:` marker
   present and fresh), with two post-merge manual-dispatch confirmations recorded as the
   remaining acceptance items (immediate fresh-dispatch now; stale-path re-dispatch after the
   next overdue window) — neither of which can be proven from a local checkout. Plan status and

@@ -1,9 +1,9 @@
-name: Bimonthly tool-catalog advisory
+name: Monthly tool-catalog advisory
 
 on:
-  # Every two months on the 1st of the month at 06:00 UTC.
+  # Monthly on the 1st of the month at 06:00 UTC.
   schedule:
-    - cron: '0 6 1 */2 *'
+    - cron: '0 6 1 * *'
   # Manual rerun from the Actions tab.
   workflow_dispatch:
 
@@ -60,28 +60,43 @@ jobs:
             exit 1
           fi
 
-          # Collect every matching STALE line (a catalog may carry several stale markers).
+          # Surface every offline finding. A scheduled summary must never call the catalog
+          # "fresh" while internal links are broken, although these findings stay advisory.
           mapfile -t stale_lines < <(grep '\[links\] STALE' "$advisory_output" || true)
-          if [ "${#stale_lines[@]}" -gt 0 ]; then
+          mapfile -t broken_lines < <(grep '\[links\] BROKEN' "$advisory_output" || true)
+          if [ "${#stale_lines[@]}" -gt 0 ] || [ "${#broken_lines[@]}" -gt 0 ]; then
             {
               echo "## Tool-catalog freshness advisory"
               echo ""
-              for line in "${stale_lines[@]}"; do
-                echo "$line"
-              done
-              echo ""
-              echo "The supported-tool catalog review date is stale (window: 120 days)."
-              echo "This is **advisory** — it does not block PRs or releases."
-              echo ""
-              echo "### What to do"
-              echo "1. Re-ask whether each registered tool is still the right entry:"
-              echo "   \`python3 ci/scripts/check_doc_links.py --offline\`"
-              echo "2. For any tool whose vendor path/format/permission model changed, update"
-              echo "   its row in \`docs/supported-tools.md\` (and record tools considered & rejected)."
-              echo "3. After the review, refresh the \`Catalog reviewed through: YYYY-MM-DD\` marker."
-              echo "4. See [\`prompts/maintenance-loop.md\`](prompts/maintenance-loop.md) §6."
+              if [ "${#broken_lines[@]}" -gt 0 ]; then
+                echo "### Internal link findings"
+                for line in "${broken_lines[@]}"; do
+                  echo "$line"
+                done
+                echo ""
+                echo "These findings are advisory in this scheduled workflow, but should be fixed"
+                echo "before the next documentation change."
+                echo ""
+              fi
+              if [ "${#stale_lines[@]}" -gt 0 ]; then
+                echo "### Catalog review-date findings"
+                for line in "${stale_lines[@]}"; do
+                  echo "$line"
+                done
+                echo ""
+                echo "The supported-tool catalog review date is stale (window: 120 days)."
+                echo "This is **advisory** — it does not block PRs or releases."
+                echo ""
+                echo "### What to do"
+                echo "1. Re-ask whether each registered tool is still the right entry:"
+                echo "   \`python3 ci/scripts/check_doc_links.py --offline\`"
+                echo "2. For any tool whose vendor path/format/permission model changed, update"
+                echo "   its row in \`docs/supported-tools.md\` (and record tools considered & rejected)."
+                echo "3. After the review, refresh the \`Catalog reviewed through: YYYY-MM-DD\` marker."
+                echo "4. See [\`prompts/maintenance-loop.md\`](prompts/maintenance-loop.md) §6."
+              fi
             } >> "$GITHUB_STEP_SUMMARY"
-            echo "result=stale" >> "$GITHUB_OUTPUT"
+            echo "result=attention" >> "$GITHUB_OUTPUT"
           else
             echo "## Tool-catalog freshness advisory" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -89,10 +104,10 @@ jobs:
             echo "result=fresh" >> "$GITHUB_OUTPUT"
           fi
 
-      # Advisory only: a stale date is a visible reminder, never a hard failure.
-      - name: Emit stale-catalog warning annotation (advisory, non-fatal)
-        if: steps.advisory.outputs.result == 'stale'
+      # Advisory only: date or internal-link findings are visible reminders, never failures.
+      - name: Emit catalog advisory warning annotation (advisory, non-fatal)
+        if: steps.advisory.outputs.result == 'attention'
         run: |
           {
-            echo "::warning file=docs/supported-tools.md::Tool-catalog review date is stale. Re-evaluate the catalog, then refresh the 'Catalog reviewed through:' marker. See prompts/maintenance-loop.md."
+            echo "::warning file=docs/supported-tools.md::Tool-catalog advisory has findings. Review the run summary, repair internal links, and refresh a stale 'Catalog reviewed through:' marker after a full review. See prompts/maintenance-loop.md."
           }

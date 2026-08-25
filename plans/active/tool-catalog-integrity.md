@@ -6,7 +6,7 @@ Author: maintainers
 Status: in progress (Phase 0 complete: catalog boundary reconciled — registry enumeration
 tests present, evidence-table coverage rows corrected to match registered targets; Phase 1
 evidence complete; Phase 2 close-out: catalog marker + --catalog-strict wired into PR CI;
-Phase 3 bimonthly advisory shipped (no-write scheduled/manual workflow: run summary +
+Phase 3 monthly advisory shipped (no-write scheduled/manual workflow: run summary +
 warning annotation, never issue creation); Phase 4 local acceptance verified — remaining
 items are two post-merge GitHub Actions manual-dispatch confirmations (immediate: fresh
 dispatch now; future: stale-path re-dispatch after the next overdue window), which cannot be
@@ -49,12 +49,12 @@ blocking unrelated feature pull requests.
   includes `docs/supported-tools.md` (not only `inventory/`), and an offline CI docs job
   invokes the deterministic internal-link check, the `--catalog-strict` catalog gate, and the
   checker's unittest suite. External network probing remains disabled.
-- A bimonthly no-write advisory workflow (`.github/workflows/catalog-advisory.yml`,
-  cron `0 6 1 */2 *` + manual `workflow_dispatch`) turns a stale catalog into a visible
+- A monthly no-write advisory workflow (`.github/workflows/catalog-advisory.yml`,
+  cron `0 6 1 * *` + manual `workflow_dispatch`) turns a stale catalog into a visible
   reminder without blocking PRs: it runs the offline checker (`--offline`, no network)
   and the checker's unittest suite, writes an actionable reminder to the run summary, and emits
-  a `::warning` annotation on `docs/supported-tools.md` when the `Catalog reviewed through:`
-  date is stale (120-day window). It runs with `permissions: contents: read` only — no issue
+  a `::warning` annotation on `docs/supported-tools.md` when internal links are broken or the
+  `Catalog reviewed through:` date is stale (120-day window). It runs with `permissions: contents: read` only — no issue
   creation, no external-link probing, no write-back. The live-dispatch confirmation that this
   workflow exercises its summary/annotation paths is the remaining post-merge acceptance check
   (see Phase 4).
@@ -74,10 +74,10 @@ blocking unrelated feature pull requests.
 - Internal Markdown links and required catalog metadata are deterministic CI gates.
   External HTTP outcomes are advisory because valid vendor sites can reject `HEAD`, require
   sign-in, or rate-limit automation.
-- The bimonthly process is a **no-write advisory reminder**: the scheduled/manual
+- The monthly process is a **no-write advisory reminder**: the scheduled/manual
   `.github/workflows/catalog-advisory.yml` workflow runs the offline checker, writes an
   actionable reminder to the run summary, and emits a `::warning` annotation on
-  `docs/supported-tools.md` when the catalog review date is stale. It runs with
+  `docs/supported-tools.md` when offline link or review-date findings need attention. It runs with
   `permissions: contents: read` only — it never opens or updates a GitHub issue, never
   probes external links, and never writes back to the repo or the Issues API. (The
   original plan proposed `issues: write` plus an idempotent create/update of one
@@ -99,7 +99,7 @@ blocking unrelated feature pull requests.
   sufficiently verified and useful to upcoming work.
 - Checker support for the supported-tool catalog's internal links, external links, and
   catalog review marker.
-- A PR CI documentation gate and a bimonthly scheduled advisory/reminder workflow.
+- A PR CI documentation gate and a monthly scheduled advisory/reminder workflow.
 - Tests for checker behavior and workflow-facing scripts where practical.
 
 ### Out of scope
@@ -290,12 +290,12 @@ cannot be found, say so and leave the raw editor as the only supported represent
 > **CI-wiring note:** `--catalog-strict` is now wired into the offline docs PR CI job
 > (`ci.yml` "Docs integrity", `--internal-only --catalog-strict`). External network probing
 > remains disabled; only a missing/malformed `Catalog reviewed through:` marker and a missing
-> registry tool are strict failures. A stale review date stays advisory (Phase 3 bimonthly), never
+> registry tool are strict failures. A stale review date stays advisory (Phase 3 monthly), never
 > a PR gate failure.
 
-### Phase 3 — bimonthly advisory and reminder
+### Phase 3 — monthly advisory and reminder
 
-- [x] Add a separate scheduled GitHub Actions workflow (every two months + manual dispatch, not on
+- [x] Add a separate scheduled GitHub Actions workflow (monthly + manual dispatch, not on
       pull requests) that runs the checker's existing **offline/advisory** capabilities.
       Implemented as `.github/workflows/catalog-advisory.yml`; it runs
       `python3 ci/scripts/check_doc_links.py --offline` (internal links + catalog staleness,
@@ -336,7 +336,7 @@ cannot be found, say so and leave the raw editor as the only supported represent
 - [x] Confirm internal links resolve and the offline catalog gate reports no advisory
       findings. **Verified:** `python3 ci/scripts/check_doc_links.py --internal-only --strict`
       and `--offline` both report `0 broken, 0 advisory` across 162 files; the checker's
-      unittest suite (34 tests) passes. These are deterministic, offline, and re-runnable
+      unittest suite (35 tests) passes. These are deterministic, offline, and re-runnable
       locally — no external network or GitHub runtime needed.
 - [x] Confirm the catalog review marker is present and well-formed. **Verified:**
       `Catalog reviewed through: 2026-08-25` is present in `docs/supported-tools.md` and
@@ -345,7 +345,7 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 **Post-merge GitHub Actions check (not runnable from a local checkout):**
 
-- [ ] Manually dispatch the bimonthly workflow (`.github/workflows/catalog-advisory.yml`)
+- [ ] Manually dispatch the monthly workflow (`.github/workflows/catalog-advisory.yml`)
       once after this change lands on `default`; verify it writes a run summary and, because
       the `Catalog reviewed through:` date is fresh, reports `result=fresh` with no
       `::warning` annotation. **This is the live-remote confirmation that the scheduled job
@@ -377,8 +377,8 @@ pre-commit run --files docs/supported-tools.md ci/scripts/check_doc_links.py
 
 After the workflow exists on the default branch, manually dispatch it from GitHub and verify
 that it neither reads configuration files nor creates/updates any issue — it should write a
-run summary only (`result=fresh` while the marker is current; `result=stale` + `::warning`
-annotation once the 120-day window passes). Run the normal Dart format, analysis, and test
+run summary only (`result=fresh` with no offline findings; `result=attention` + `::warning`
+annotation when an internal link is broken or the 120-day window passes). Run the normal Dart format, analysis, and test
 gates when Dart tests or source code change.
 
 ## Completion

@@ -186,10 +186,10 @@ Update `Last reviewed:` on files you verified are accurate. Update
 right menu?"* — including recording tools you considered and rejected as redundant, with the
 reason. See [`policies/doc-freshness.md`](../policies/doc-freshness.md).
 
-### Bimonthly catalog-freshness advisory
+### Monthly catalog-freshness advisory
 
 A scheduled GitHub Actions workflow (`.github/workflows/catalog-advisory.yml`) runs the
-checker's offline advisory check every two months and on manual `workflow_dispatch`:
+checker's offline advisory check monthly and on manual `workflow_dispatch`:
 
 ```bash
 # local equivalent of what the scheduled workflow runs
@@ -198,8 +198,9 @@ python3 ci/scripts/check_doc_links.py --offline
 
 It is **advisory and no-write**: it runs with `permissions: contents: read`, probes no
 external links, and never opens or updates issues. When the `Catalog reviewed through:` date
-is stale (120-day window) it writes an actionable reminder to the run summary and emits a
-`::warning` annotation on `docs/supported-tools.md`, visible in the Actions tab. It never
+is stale (120-day window), or an internal link is broken, it writes an actionable reminder to
+the run summary and emits a `::warning` annotation on `docs/supported-tools.md`, visible in the
+Actions tab. It never
 blocks PRs or releases. To act on it, follow the "What to do" steps in the run summary, then
 refresh the `Catalog reviewed through:` marker.
 
