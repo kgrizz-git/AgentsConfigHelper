@@ -6,7 +6,8 @@ Author: maintainers
 Status: in progress (Phase 0 complete: catalog boundary reconciled — registry enumeration
 tests present, evidence-table coverage rows corrected to match registered targets; Phase 1
 evidence complete; Phase 2 close-out: catalog marker + --catalog-strict wired into PR CI;
-Phase 3 quarterly advisory and Phase 4 acceptance remain)
+Phase 3 quarterly advisory shipped (no-write scheduled workflow); Phase 4 acceptance
+remains)
 Linked issue/PR: n/a
 Related: [Supported Tools](../../docs/supported-tools.md),
 [Structured Configuration Roadmap](structured-configuration-roadmap.md), and
@@ -274,17 +275,29 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 ### Phase 3 — quarterly advisory and reminder
 
-- [ ] Add a separate scheduled GitHub Actions workflow (quarterly, not on pull requests)
-      that runs the external-link/catalog-date advisory check.
-- [ ] Give that workflow the minimum `issues: write` permission and use an idempotent action
-      or `gh issue` script to create/update one open `documentation-review` issue. Include
-      checker output, review deadline, and links to the catalog and maintenance instructions.
-- [ ] Do not use issue content derived from local config files; the workflow reads repository
-      documentation only.
-- [ ] Make failure to create/update the reminder visible in workflow logs, but do not turn
-      transient vendor HTTP failures into a release or PR gate.
-- [ ] Document the schedule, issue label, manual rerun command, and review/close criteria in
-      `prompts/maintenance-loop.md` and `ci/README.md`.
+- [x] Add a separate scheduled GitHub Actions workflow (quarterly + manual dispatch, not on
+      pull requests) that runs the checker's existing **offline/advisory** capabilities.
+      Implemented as `.github/workflows/catalog-advisory.yml`; it runs
+      `python3 ci/scripts/check_doc_links.py --offline` (internal links + catalog staleness,
+      no network) and the checker's unittest suite, then writes an actionable reminder to the
+      run summary and emits a `::warning` annotation on `docs/supported-tools.md` when the
+      catalog review date is stale.
+- [x] **No-write reminder (deliberate alternative to opening an issue).** The plan originally
+      proposed giving the workflow `issues: write` and creating/updating one
+      `documentation-review` issue. Opening issues needs a write token and is over-broad for an
+      automated schedule, so this instead uses a **no-write** reminder: the workflow runs with
+      `permissions: contents: read` only, never probes external links, and never writes to the
+      repo or the Issues API. The reminder surfaces as a workflow-run summary (and a soft
+      `::warning` annotation) a maintainer sees in the Actions tab — no token, no new issue spam.
+- [x] The workflow reads repository documentation only; no issue content is derived from local
+      config files (none are read).
+- [x] A stale review date is visible in the workflow summary/logs and as a non-fatal annotation,
+      but it is never a release or PR gate (the workflow is scheduled/dispatch only; the PR gate
+      stays the Phase 2 `--catalog-strict` offline job, where only a missing/malformed marker or
+      a missing registry tool fails).
+- [x] Document the schedule, the no-write reminder mechanism, the manual rerun command, and
+      the review/refresh steps in `prompts/maintenance-loop.md`, `ci/README.md`, and the CI
+      changelog.
 
 ### Phase 4 — acceptance and ongoing ownership
 

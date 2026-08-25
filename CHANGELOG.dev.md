@@ -5,6 +5,26 @@ Internal / developer-facing changes that do not belong in the public
 
 ## Unreleased
 
+### Added
+
+- **Tool-catalog integrity Phase 3 (quarterly advisory/reminder):** Added
+  `.github/workflows/catalog-advisory.yml`, a scheduled GitHub Actions workflow that runs the
+  checker's existing offline/advisory capabilities quarterly (cron `0 6 1 */3 *`) plus on
+  manual `workflow_dispatch`. It runs `python3 ci/scripts/check_doc_links.py --offline`
+  (internal links + catalog staleness, **no network**) and the checker's unittest suite, and
+  when the `Catalog reviewed through:` date is stale (120-day window) it writes an actionable
+  reminder to the run summary and emits a `::warning` annotation on `docs/supported-tools.md`.
+  **No-write by design:** the plan originally proposed `issues: write` plus an idempotent
+  create/update of one `documentation-review` issue. Opening issues needs a write token and is
+  over-broad for an automated schedule, so this uses a no-write alternative — the workflow
+  runs with `permissions: contents: read` only, probes no external links, and never writes to
+  the repo or the Issues API; the reminder is advisory and surfaces only in the Actions run
+  summary. It never blocks PRs or releases (the PR gate stays the Phase 2 `--catalog-strict`
+  job in `ci.yml`, where only a missing/malformed marker or a missing registry tool fails).
+  Plan checkboxes/status, `prompts/maintenance-loop.md` §6, and `ci/README.md` updated to
+  document the schedule, no-write mechanism, manual rerun, and review/refresh steps. No logic
+  or test changes (reuses the checker's existing offline/advisory behavior).
+
 ### Changed
 
 - **Tool-catalog integrity Phase 0 (catalog boundary reconciliation):** Reconciled the

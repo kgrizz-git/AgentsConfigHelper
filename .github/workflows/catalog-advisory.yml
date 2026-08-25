@@ -1,0 +1,96 @@
+name: Quarterly tool-catalog advisory
+
+on:
+  # Quarterly (roughly every 3 months) on the 1st of the month at 06:00 UTC.
+  schedule:
+    - cron: '0 6 1 */3 *'
+  # Manual rerun from the Actions tab.
+  workflow_dispatch:
+
+# Least privilege: repository documentation is read-only. This workflow never
+# opens or updates issues, probes external links, or writes anything back to the
+# repo — the reminder is advisory and surfaces in the run summary only.
+permissions:
+  contents: read
+
+jobs:
+  catalog-advisory:
+    name: Tool-catalog freshness advisory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      # Offline, deterministic, no network. Reports internal-link breakage plus the
+      # catalog review-date staleness advisory (STALE). External links are NOT probed.
+      # The checker's exit status is captured explicitly so a genuine checker/unittest
+      # failure surfaces as a failed scheduled job — it must never be masked as a
+      # 'fresh' summary. A stale *catalog date* is advisory (never a failure); a broken
+      # checker or failing unittest is a real error.
+      - name: Run offline doc-link + catalog advisory check
+        id: advisory
+        run: |
+          set +e
+          set -o pipefail
+          python3 ci/scripts/check_doc_links.py --offline | tee advisory.out
+          checker_status=$?
+
+          python3 ci/tests/test_check_doc_links.py
+          unittest_status=$?
+
+          if [ "$checker_status" -ne 0 ] || [ "$unittest_status" -ne 0 ]; then
+            {
+              echo "## Tool-catalog advisory: checker failure"
+              echo ""
+              echo "The offline doc-link checker or its unittest suite failed — this is a"
+              echo "real error in the scheduled advisory job, not a stale catalog date."
+              echo "Checker exit: $checker_status | Unittest exit: $unittest_status"
+              echo ""
+              echo "See the step log above for the full output."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "result=error" >> "$GITHUB_OUTPUT"
+            # Fail the scheduled job (not a PR gate — this workflow is schedule/dispatch only).
+            exit 1
+          fi
+
+          # Collect every matching STALE line (a catalog may carry several stale markers).
+          mapfile -t stale_lines < <(grep '\[links\] STALE' advisory.out || true)
+          if [ "${#stale_lines[@]}" -gt 0 ]; then
+            {
+              echo "## Tool-catalog freshness advisory"
+              echo ""
+              for line in "${stale_lines[@]}"; do
+                echo "$line"
+              done
+              echo ""
+              echo "The supported-tool catalog review date is stale (window: 120 days)."
+              echo "This is **advisory** — it does not block PRs or releases."
+              echo ""
+              echo "### What to do"
+              echo "1. Re-ask whether each registered tool is still the right entry:"
+              echo "   \`python3 ci/scripts/check_doc_links.py --offline\`"
+              echo "2. For any tool whose vendor path/format/permission model changed, update"
+              echo "   its row in \`docs/supported-tools.md\` (and record tools considered & rejected)."
+              echo "3. After the review, refresh the \`Catalog reviewed through: YYYY-MM-DD\` marker."
+              echo "4. See [\`prompts/maintenance-loop.md\`](prompts/maintenance-loop.md) §6."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "result=stale" >> "$GITHUB_OUTPUT"
+          else
+            echo "## Tool-catalog freshness advisory" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Catalog review date is within the 120-day window — no action needed." >> "$GITHUB_STEP_SUMMARY"
+            echo "result=fresh" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Advisory only: a stale date is a visible reminder, never a hard failure.
+      - name: Annotate stale catalog (advisory)
+        if: steps.advisory.outputs.result == 'stale'
+        run: |
+          {
+            echo "::warning file=docs/supported-tools.md::Tool-catalog review date is stale. Re-evaluate the catalog, then refresh the 'Catalog reviewed through:' marker. See prompts/maintenance-loop.md."
+          }

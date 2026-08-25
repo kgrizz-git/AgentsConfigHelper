@@ -74,6 +74,20 @@ returns 403, use <https://github.com/settings/billing> (or org Billing) instead.
 product-specific endpoints (`/settings/billing/actions`, `shared-storage`) are retired —
 this script uses the consolidated usage summary API plus per-run timing.
 
+## Scheduled / advisory workflows
+
+Not every useful check belongs on a pull request. Heavy, slow, or purely informational
+checks run on a schedule or on dispatch so they never block merges.
+
+- **Tool-catalog freshness advisory** (`.github/workflows/catalog-advisory.yml`): runs
+  `python3 ci/scripts/check_doc_links.py --offline` plus the checker's unittest suite on a
+  quarterly cron and on `workflow_dispatch`. **Advisory and no-write** — `permissions:
+  contents: read`, no external-link probing, and it never opens/updates issues. When the
+  `Catalog reviewed through:` date is stale (120-day window) it writes an actionable reminder
+  to the run summary and emits a `::warning` annotation on `docs/supported-tools.md`. The PR
+  gate stays the Phase 2 `--catalog-strict` job in `ci.yml` (only a missing/malformed marker
+  or a missing registry tool fails a PR). See [`prompts/maintenance-loop.md`](../prompts/maintenance-loop.md) §6.
+
 ## Scripts in this directory
 
 | File | Description |
