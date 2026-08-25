@@ -5,6 +5,25 @@ Internal / developer-facing changes that do not belong in the public
 
 ## Unreleased
 
+### Changed
+
+- **Tool-catalog integrity Phase 0 (catalog boundary reconciliation):** Reconciled the
+  evidence-table "Discovery coverage" rows in `docs/supported-tools.md` against the runtime
+  registry (`lib/catalog/tool_descriptor_registry.dart`) so documentation describes only
+  registered discovery targets. Corrected three rows: Claude Code (removed "local/managed"
+  — `.claude/settings.local.json` and managed-settings paths are documented vendor scopes but
+  are **not** registered discovery targets), Codex (removed "system/profiles" —
+  `/etc/codex/config.toml` and `~/.codex/<profile>.config.toml` are not registered), and LM
+  Studio (removed "Markdown model docs" — the registry has no Markdown targets for LM Studio;
+  all four targets are JSON/YAML structured config). Confirmed the existing
+  `test/catalog/tool_descriptor_registry_test.dart` (17-descriptor order enumeration +
+  display-name presence in docs) and `test/catalog/registry_invariants_test.dart` (every
+  `ToolId` represented + markdown/text-never-structured + no-duplicate-target invariants)
+  already satisfy the Phase 0 "enumerate every ToolId/display name and target class" goal —
+  no new tests added. The LM Studio `hub/presets/*.json` vs documented `config-presets/`
+  path discrepancy is **retained as an explicit follow-up**, not silently corrected. Plan
+  checkboxes/status and this changelog updated. No Dart discovery behavior changed.
+
 ### Added
 
 - **Tool-catalog integrity Phase 2 close-out (catalog marker + strict-CI activation):** Added the

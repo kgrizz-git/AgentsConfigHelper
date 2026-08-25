@@ -3,7 +3,10 @@
 Last reviewed: 2026-08-25
 Date: 2026-08-23
 Author: maintainers
-Status: in progress (Phase 2 close-out: catalog marker added + --catalog-strict wired into PR CI; Phase 3 quarterly advisory and Phase 4 acceptance remain)
+Status: in progress (Phase 0 complete: catalog boundary reconciled — registry enumeration
+tests present, evidence-table coverage rows corrected to match registered targets; Phase 1
+evidence complete; Phase 2 close-out: catalog marker + --catalog-strict wired into PR CI;
+Phase 3 quarterly advisory and Phase 4 acceptance remain)
 Linked issue/PR: n/a
 Related: [Supported Tools](../../docs/supported-tools.md),
 [Structured Configuration Roadmap](structured-configuration-roadmap.md), and
@@ -21,7 +24,12 @@ blocking unrelated feature pull requests.
 ## Current state
 
 - `lib/catalog/tool_descriptor_registry.dart` is the runtime source of truth for supported
-  tools and discovery targets.
+  tools and discovery targets. Phase 0 reconciliation confirmed: existing registry tests
+  enumerate all 17 descriptors and their `ToolId`s, and the evidence-table "Discovery
+  coverage" rows were corrected so they describe only registered targets (Claude Code's
+  "local/managed" and Codex's "system/profiles" removed; LM Studio's "Markdown model docs"
+  removed). The LM Studio `hub/presets/*.json` vs documented `config-presets/` discrepancy
+  is retained as an explicit follow-up.
 - `docs/supported-tools.md` covers each registered tool's paths and format summary. All 17
   registered tools now have a recorded evidence/status row (Claude Code, Codex, Cursor Agent,
   Cursor IDE, Opencode, Kiro, Devin, Kilo, Cline, Antigravity CLI, Antigravity IDE,
@@ -103,15 +111,28 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 ### Phase 0 — reconcile the catalog boundary
 
-- [ ] Enumerate every `ToolId`/display name and target class from the registry in a focused
-      unit test or deterministic validation input.
-- [ ] Compare the registry, quick-comparison table, per-tool sections, and evidence table.
+- [x] Enumerate every `ToolId`/display name and target class from the registry in a focused
+      unit test or deterministic validation input. Satisfied by existing
+      `test/catalog/tool_descriptor_registry_test.dart` (17-descriptor order enumeration +
+      `docs/supported-tools.md` display-name presence) and
+      `test/catalog/registry_invariants_test.dart` (every `ToolId` represented +
+      markdown/text-never-structured + no-duplicate-target invariants).
+- [x] Compare the registry, quick-comparison table, per-tool sections, and evidence table.
       Resolve terminology differences (for example, Cursor Agent vs Cursor IDE) without
-      changing discovery behavior.
+      changing discovery behavior. Fixed three evidence-table "Discovery coverage" rows that
+      described non-registered targets as registered: Claude Code (removed "local/managed" —
+      `.claude/settings.local.json` and managed-settings paths are not registered discovery
+      targets), Codex (removed "system/profiles" — `/etc/codex/config.toml` and
+      `~/.codex/<profile>.config.toml` are not registered), and LM Studio (removed "Markdown
+      model docs" — the registry has no Markdown targets for LM Studio; all targets are
+      JSON/YAML structured config). The LM Studio `hub/presets/*.json` path discrepancy is
+      retained as an explicit follow-up, not silently corrected.
 - [x] Add `Catalog reviewed through: YYYY-MM-DD` to `docs/supported-tools.md` only after
       completing the initial evidence review.
-- [ ] Update `docs/research/README.md` to explain that raw dated research supports the
-      catalog, while `supported-tools.md` is the reviewed curated reference.
+- [x] Update `docs/research/README.md` to explain that raw dated research supports the
+      catalog, while `supported-tools.md` is the reviewed curated reference. Already
+      satisfied: the file states research is "the input material, not the reviewed reference"
+      and points to `supported-tools.md` as the "reviewed curated reference".
 
 ### Phase 1 — source and fixture evidence
 
