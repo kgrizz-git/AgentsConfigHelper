@@ -7,6 +7,14 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Tool-catalog integrity Phase 1 (fixture-intake checklist):** Added a concise,
+  operational fixture-intake checklist to `docs/testing-strategies.md` covering source
+  provenance, synthetic rewrite/redaction, secret scanning (gitleaks), token-free and
+  environment-independent content, validation/parsing expectations (Dart test coverage),
+  and the raw-editor fallback expectation for unsupported structures. Linked from the
+  checklist to `docs/macos-test-root.md` and `docs/supported-tools.md`. Plan checkbox
+  and this changelog updated.
+
 - **Tool-catalog integrity Phase 1 (partial evidence slice):** Established the
   evidence-table pattern in `docs/supported-tools.md` with the plan's contract fields
   (Tool, Discovery coverage, Primary evidence, Schema evidence, Fixture/reference, Reviewed).

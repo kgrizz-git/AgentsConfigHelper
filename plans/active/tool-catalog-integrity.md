@@ -144,8 +144,10 @@ cannot be found, say so and leave the raw editor as the only supported represent
       fixture required.
 - [ ] For paths-only tools, record the reason and a follow-up research question instead of
       fabricating a partial schema example.
-- [ ] Add a fixture-intake checklist to the safe-testing documentation: source provenance,
-      redaction/synthetic rewrite, secret scan, and raw-editor fallback expectation.
+- [x] Add a fixture-intake checklist to the safe-testing documentation: source provenance,
+      redaction/synthetic rewrite, secret scan, token-free/environment-independent content,
+      validation/parsing expectations, and raw-editor fallback expectation. Added as the
+      "Fixture-intake checklist" section in `docs/testing-strategies.md`.
 
 ### Phase 2 — deterministic pull-request checks
 
