@@ -22,12 +22,15 @@ blocking unrelated feature pull requests.
 
 - `lib/catalog/tool_descriptor_registry.dart` is the runtime source of truth for supported
   tools and discovery targets.
-- `docs/supported-tools.md` covers each registered tool's paths and format summary. A
-  partial evidence table has been added (Claude Code, Codex, Cursor Agent, Cursor IDE,
-  Opencode, Kiro, Devin, Kilo, and Cline reviewed rows; all other registered tools recorded
-  as pending). Source links and token-free examples are uneven across the remaining tools.
-  In particular, Antigravity IDE/App, LM Studio, and some Copilot surfaces need a recorded
-  evidence status rather than an implied schema guarantee.
+- `docs/supported-tools.md` covers each registered tool's paths and format summary. All 17
+  registered tools now have a recorded evidence/status row (Claude Code, Codex, Cursor Agent,
+  Cursor IDE, Opencode, Kiro, Devin, Kilo, Cline, Antigravity CLI, Antigravity IDE,
+  Antigravity App, Paseo, Agy-ACP, GitHub Copilot, LM Studio, and AGENTS.md (shared)). Source
+  links and token-free examples remain uneven across them — several are primary-docs-only or
+  paths-recorded-needs-verification, and the LM Studio preset path has an open follow-up —
+  but every registered tool now has an explicit evidence status rather than an implied schema
+  guarantee. The `Catalog reviewed through:` marker and the strict `--catalog-strict` CI gate
+  are still deferred to the separate full-catalog-review change.
 - `ci/scripts/check_doc_links.py` checks internal Markdown links, can probe external links,
   and recognizes `Catalog reviewed through:` markers. Its catalog scope now explicitly
   includes `docs/supported-tools.md` (not only `inventory/`), and an offline CI docs job
@@ -116,10 +119,27 @@ cannot be found, say so and leave the raw editor as the only supported represent
 - [x] Populate source/status rows for the first high-priority slice (Claude Code, Codex).
       Established the evidence-table pattern in `docs/supported-tools.md` with the contract
       fields (Tool, Discovery coverage, Primary evidence, Schema evidence, Fixture/reference,
-      Reviewed). Remaining registered tools are recorded as pending — no schema/fixture claim
-      is implied for them.
-- [ ] Populate source/status rows for the remaining registered tools. Prefer vendor-owned
+      Reviewed). All remaining registered tools have since been recorded in subsequent slices —
+      no schema/fixture claim is implied beyond what each row states.
+- [x] Populate source/status rows for the remaining registered tools. Prefer vendor-owned
       docs and schemas; mark community/unpublished facts distinctly.
+- [x] Populate source/status rows for the GitHub Copilot + LM Studio + AGENTS.md (shared)
+      evidence slice against current vendor/convention sources. GitHub Copilot: primary evidence
+      from docs.github.com (configuring CLI, CLI configuration directory, changing settings, custom
+      instructions support); schema evidence "primary docs only" — `settings.json` full key table
+      is published but the schema is source-defined (no standalone JSON-schema document); `config.json`
+      is auto-managed state; `permissions-config.json` documents the saved-approval schema but is also
+      auto-managed; no token-free fixture exists. LM Studio: primary evidence from the archived
+      `lmstudio-ai/configs` `schema.json` (preset `load_params`/`inference_params` structure) and
+      lmstudio.ai/docs (model.yaml, presets); schema evidence "paths recorded; schema needs
+      verification" — the published preset schema exists but LM Studio documents presets at
+      `~/.lmstudio/config-presets/`, not `~/.lmstudio/hub/presets/*.json` as registered; the app
+      `settings.json` schema is unpublished; follow-up: does the registry's `hub/presets/*.json` path
+      need correction? AGENTS.md (shared): primary evidence from agents.md (Agentic AI Foundation /
+      Linux Foundation); schema evidence "not published" — explicitly an open schema-free Markdown
+      convention; the existing `test/fixtures/staging_home/.agents/AGENTS.md` and
+      `test/fixtures/staging_home/workspace/AGENTS.md` are token-free synthetic fixtures that
+      exercise discovery, so both are cited as fixture references.
 - [x] Verify and record the first high-priority structured-schema pair: Claude Code and Codex
       (verified examples via token-free staging fixtures).
 - [x] Populate source/status rows for the Cursor + Opencode evidence slice (Cursor Agent,
@@ -204,7 +224,7 @@ cannot be found, say so and leave the raw editor as the only supported represent
 - [x] Add or link a token-free fixture for the Opencode row. Reused the existing synthetic
       `test/fixtures/staging_home/.config/opencode/opencode.json` staging fixture; no new
       fixture required.
-- [ ] For paths-only tools, record the reason and a follow-up research question instead of
+- [x] For paths-only tools, record the reason and a follow-up research question instead of
       fabricating a partial schema example.
 - [x] Add a fixture-intake checklist to the safe-testing documentation: source provenance,
       redaction/synthetic rewrite, secret scan, token-free/environment-independent content,

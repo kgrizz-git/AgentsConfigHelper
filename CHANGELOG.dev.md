@@ -7,6 +7,37 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Tool-catalog integrity Phase 1 (GitHub Copilot + LM Studio + AGENTS.md evidence slice):**
+  Substantively reviewed and recorded **GitHub Copilot**, **LM Studio**, and **AGENTS.md (shared)**
+  rows in the `docs/supported-tools.md` evidence table against current vendor/convention sources.
+  GitHub Copilot: primary evidence from docs.github.com — configuring Copilot CLI, CLI configuration
+  directory, the `/settings` slash command, custom instructions support; schema evidence
+  "primary docs only" — `settings.json` (user-editable JSONC) full key table is published in the CLI
+  configuration directory reference, but the schema is source-defined in `github/copilot-cli` and there
+  is no standalone JSON-schema document; `config.json` is auto-managed application state; repo
+  `.github/copilot/settings.json` + `settings.local.json` are documented with MDM > user > repo > local
+  > env > flags precedence; `permissions-config.json` documents the saved-per-location approval schema
+  (`tool_approvals[].kind`: `commands`/`read`/`write`/`mcp`/`mcp-sampling`/`memory`/`custom-tool`/
+  `extension-management`/`extension-permission-access` + `allowed_directories`) but is auto-managed.
+  No token-free fixture exercising the structured config exists. LM Studio: primary evidence from the
+  archived `lmstudio-ai/configs` `schema.json` (documents the preset JSON structure — `load_params`
+  with `n_ctx`/`n_gpu_layers`/`cache_type_k`/`cache_type_v` enums/etc., `inference_params` with
+  `temp`/`top_k`/`top_p`/`repeat_penalty`/`grammar`/`logit_bias`/etc.) and lmstudio.ai/docs (model.yaml
+  open spec, presets); schema evidence "paths recorded; schema needs verification" — the published
+  preset schema exists, but LM Studio documents presets at `~/.lmstudio/config-presets/`, **not**
+  `~/.lmstudio/hub/presets/*.json` as registered in the registry; the app-level `~/.lmstudio/settings.json`
+  exists but LM Studio does **not** publish its JSON schema. Follow-up: does the registry's
+  `.lmstudio/hub/presets/*.json` path reflect an older/alternate location, or should it be corrected
+  to `~/.lmstudio/config-presets/*.json`? AGENTS.md (shared): primary evidence from
+  [agents.md](https://agents.md/) (stewarded by the Agentic AI Foundation under the Linux Foundation);
+  schema evidence "not published" — AGENTS.md is explicitly an open, schema-free Markdown convention
+  (the standard states "AGENTS.md is just standard Markdown" with no required fields). The existing
+  `test/fixtures/staging_home/.agents/AGENTS.md` and `test/fixtures/staging_home/workspace/AGENTS.md`
+  are token-free synthetic fixtures that exercise discovery of the convention, so both are cited as
+  fixture references. All three rows annotate vendor-documented scopes that are **not** registered
+  discovery targets. `Catalog reviewed through:` still withheld (full-catalog review + marker is a
+  separate reviewable change). Plan and this changelog updated for the partial slice.
+
 - **Tool-catalog integrity Phase 1 (fixture-intake checklist):** Added a concise,
   operational fixture-intake checklist to `docs/testing-strategies.md` covering source
   provenance, synthetic rewrite/redaction, secret scanning (gitleaks), token-free and
