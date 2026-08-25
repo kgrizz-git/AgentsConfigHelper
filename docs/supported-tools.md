@@ -27,14 +27,14 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets | local LLM runner |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool agents.md convention | instructions only |
 
-## Catalog evidence (partial: Claude Code, Codex, Cursor Agent, Cursor IDE, Opencode)
+## Catalog evidence (partial: Claude Code, Codex, Cursor Agent, Cursor IDE, Opencode, Kiro, Devin)
 
 > **Status:** This table is a bounded slice. **Claude Code**, **Codex**, **Cursor Agent**,
-> **Cursor IDE**, and **Opencode** rows have been substantively reviewed against current
-> vendor sources as of 2026-08-25. All other registered tools remain **pending** review and
-> are shown here for completeness with their discovery coverage only — no schema/fixture
-> claim is implied. `Catalog reviewed through:` is intentionally omitted until the full
-> catalog is reviewed.
+> **Cursor IDE**, **Opencode**, **Kiro**, and **Devin** rows have been substantively reviewed
+> against current vendor sources as of 2026-08-25. All other registered tools remain **pending**
+> review and are shown here for completeness with their discovery coverage only — no
+> schema/fixture claim is implied. `Catalog reviewed through:` is intentionally omitted until
+> the full catalog is reviewed.
 
 | Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |
 | --- | --- | --- | --- | --- | --- |
@@ -44,8 +44,8 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Paseo | JSON structured config (user/project) | pending | pending | pending | — |
 | Cursor Agent | JSON structured config (user/project); text/Markdown instruction docs | [Permissions](https://cursor.com/docs/reference/permissions) · [Rules](https://cursor.com/docs/rules) (cursor.com) · CLI permission tokens ([config](https://cursor.com/docs/cli/reference/configuration) · [permissions](https://cursor.com/docs/cli/reference/permissions); `cli-config.json` is documented by Cursor but is **not** a registered discovery target of this app) | primary docs only (`permissions.json` schema and CLI permission tokens published; no fixture exercising the structured config) | none | 2026-08-25 |
 | Cursor IDE | JSON structured config (user/project) | [Cursor docs](https://cursor.com/docs) (cursor.com) | paths recorded; schema needs verification (IDE `settings.json` is the inherited VS Code format; Cursor does not publish a dedicated settings-schema reference) | none | 2026-08-25 |
-| Kiro | YAML structured config (user); Markdown instruction docs | pending | pending | pending | — |
-| Devin | JSON structured config (user/project); Markdown instruction docs | pending | pending | pending | — |
+| Kiro | YAML structured config (user); Markdown instruction docs (project steering) | [Configuration scopes](https://kiro.dev/docs/configuration/) · [Permissions](https://kiro.dev/docs/permissions/) · [Custom agents](https://kiro.dev/docs/custom-agents/) · [Steering](https://kiro.dev/docs/steering/) (kiro.dev) | primary docs only (`permissions.yaml` `rules:` array of `{capability, match, effect, exclude}` is documented with the full capability list and deny-overrides semantics; no fixture exercising the documented schema — the existing `test/fixtures/staging_home/.kiro/settings/permissions.yaml` is a non-conforming placeholder shape, not a verified example) | none | 2026-08-25 |
+| Devin | JSON-with-comments structured config (user/project); Markdown instruction docs (project rules, user AGENTS.md) | [Configuration file](https://docs.devin.ai/cli/reference/configuration/config-file) · [Permissions](https://docs.devin.ai/cli/reference/permissions) · [Rules & AGENTS.md](https://docs.devin.ai/cli/extensibility/rules) (docs.devin.ai) | primary docs only (`config.json` schema documented — `agent`, `permissions` `allow/deny/ask` arrays, `sandbox`, `read_config_from`, `keymap`, `proxy`; permission syntax `Read/Write/Exec/Fetch(pattern)` plus tool-based and `mcp__*` matchers, deny-wins precedence; no fixture exercising the structured config) | none | 2026-08-25 |
 | Antigravity CLI | JSON structured config (user); Markdown instruction docs | pending | pending | pending | — |
 | Antigravity IDE | JSON structured config (user) | pending | pending | pending | — |
 | Antigravity App | JSON structured config (user) | pending | pending | pending | — |
@@ -389,17 +389,23 @@ Multiple JSON files for different concerns.
 
 ### Kiro Config paths
 
-| Scope | Path |
-| --- | --- |
-| User MCP | `~/.kiro/settings/mcp.json` |
-| User permissions | `~/.kiro/settings/permissions.yaml` |
-| User agents | `~/.kiro/agents/` |
-| User steering | `~/.kiro/steering/` |
-| Project MCP | `.kiro/settings/mcp.json` |
-| Workspace permissions | `~/.kiro/workspace-roots/<hash>/permissions.yaml` (outside repo) |
-| Project agents | `.kiro/agents/` |
-| Project steering | `.kiro/steering/` |
-| Project specs | `.kiro/specs/` |
+| Scope | Path | Discovered? |
+| --- | --- | --- |
+| User permissions | `~/.kiro/settings/permissions.yaml` | registered |
+| Project steering | `.kiro/steering/*.md` | registered |
+| User steering | `~/.kiro/steering/` | documented, not registered |
+| User MCP | `~/.kiro/settings/mcp.json` | documented, not registered |
+| User agents | `~/.kiro/agents/` | documented, not registered |
+| Project MCP | `.kiro/settings/mcp.json` | documented, not registered |
+| Workspace permissions | `~/.kiro/workspace-roots/<hash>/permissions.yaml` (outside repo) | documented, not registered |
+| Project agents | `.kiro/agents/` | documented, not registered |
+| Project specs | `.kiro/specs/` | documented, not registered |
+
+> **Note:** Kiro documents additional configuration scopes (user steering, MCP servers,
+> custom agents, workspace-scoped and enterprise permissions, specs) that this app does
+> **not** currently auto-discover. Only the user `permissions.yaml` and project
+> `steering/*.md` targets are registered in `lib/catalog/tool_descriptor_registry.dart`;
+> the rows above are retained as vendor-documented references.
 
 ### Kiro Config format
 
@@ -456,16 +462,23 @@ rules:
 
 ### Devin Config paths
 
-| Scope | Path |
-| --- | --- |
-| User config | `~/.config/devin/config.json` |
-| Project shared | `.devin/config.json` |
-| Project local | `.devin/config.local.json` |
-| User MCP | `~/.config/devin/mcp_config.json` |
-| Project MCP | `.devin/mcp_config.json` |
-| Enterprise | Machine-wide `system.json` (admin-managed) |
-| User rules | `~/.config/devin/AGENTS.md` |
-| Project rules | `AGENTS.md` |
+| Scope | Path | Discovered? |
+| --- | --- | --- |
+| User config | `~/.config/devin/config.json` | registered |
+| Project shared | `.devin/config.json` | registered |
+| User rules | `~/.config/devin/AGENTS.md` | registered |
+| Project rules | `.devin/rules/*.md` | registered |
+| Project local | `.devin/config.local.json` | documented, not registered |
+| User MCP | `~/.config/devin/mcp_config.json` | documented, not registered |
+| Project MCP | `.devin/mcp_config.json` | documented, not registered |
+| Enterprise | Machine-wide `system.json` (admin-managed) | documented, not registered |
+
+> **Note:** Devin documents additional configuration scopes (project-local config, MCP
+> server configs, the enterprise `system.json`, and `AGENTS.local.md` rules) that this app
+> does **not** currently auto-discover. Only the user/project `config.json`, project
+> `.devin/rules/*.md`, and user `AGENTS.md` targets are registered in
+> `lib/catalog/tool_descriptor_registry.dart`; the remaining rows are retained as
+> vendor-documented references.
 
 ### Devin Config format
 

@@ -23,11 +23,11 @@ blocking unrelated feature pull requests.
 - `lib/catalog/tool_descriptor_registry.dart` is the runtime source of truth for supported
   tools and discovery targets.
 - `docs/supported-tools.md` covers each registered tool's paths and format summary. A
-  partial evidence table has been added (Claude Code and Codex reviewed rows; all other
-  registered tools recorded as pending). Source links and token-free examples are uneven
-  across the remaining tools. In particular, Antigravity IDE/App, Kilo, Cline, LM Studio,
-  and some Copilot surfaces need a recorded evidence status rather than an implied schema
-  guarantee.
+  partial evidence table has been added (Claude Code, Codex, Cursor Agent, Cursor IDE,
+  Opencode, Kiro, and Devin reviewed rows; all other registered tools recorded as pending).
+  Source links and token-free examples are uneven across the remaining tools. In particular,
+  Antigravity IDE/App, Kilo, Cline, LM Studio, and some Copilot surfaces need a recorded
+  evidence status rather than an implied schema guarantee.
 - `ci/scripts/check_doc_links.py` checks internal Markdown links, can probe external links,
   and recognizes `Catalog reviewed through:` markers. Its catalog scope now explicitly
   includes `docs/supported-tools.md` (not only `inventory/`), and an offline CI docs job
@@ -126,8 +126,17 @@ cannot be found, say so and leave the raw editor as the only supported represent
       Cursor IDE, Opencode) against current vendor sources. Cursor Agent and Cursor IDE are
       primary-docs-only / schema-needs-verification (no fixtures); Opencode is a verified
       example via the existing token-free staging fixture and the published opencode.ai
-      JSON schema. Remaining high-priority tools (Kiro, Devin) still pending.
-- [ ] Verify and record the remaining high-priority structured-schema tools: Kiro and Devin.
+      JSON schema.
+- [x] Verify and record the remaining high-priority structured-schema tools: Kiro and Devin.
+      Both are **primary docs only** against current kiro.dev and docs.devin.ai sources. Kiro:
+      `permissions.yaml` `rules:` array (`capability`/`match`/`effect`/`exclude`) documented
+      with the full capability list and deny-overrides semantics; the existing
+      `test/fixtures/staging_home/.kiro/settings/permissions.yaml` is a non-conforming
+      placeholder shape and is **not** a verified example (no fixture claimed). Devin:
+      `config.json` (JSON-with-comments) schema documented (`agent`, `permissions`
+      `allow/deny/ask`, `sandbox`, `read_config_from`, `keymap`, `proxy`); permission syntax
+      `Read/Write/Exec/Fetch(pattern)` plus tool-based and `mcp__*` matchers with deny-wins
+      precedence; no fixture exercising the structured config.
 - [x] Add or link token-free fixtures for the Claude Code and Codex rows. Existing
       synthetic staging fixtures used; no new fixtures required for this slice.
 - [x] Add or link a token-free fixture for the Opencode row. Reused the existing synthetic

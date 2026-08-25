@@ -35,6 +35,23 @@ Internal / developer-facing changes that do not belong in the public
   tools stay pending; `Catalog reviewed through:` still withheld. Plan and this changelog
   updated for the partial slice.
 
+- **Tool-catalog integrity Phase 1 (Kiro + Devin evidence slice):** Substantively reviewed
+  and recorded **Kiro** and **Devin** rows in the `docs/supported-tools.md` evidence table
+  against current vendor sources. Kiro: primary evidence from kiro.dev/docs/configuration,
+  kiro.dev/docs/permissions, kiro.dev/docs/custom-agents, kiro.dev/docs/steering; schema
+  evidence "primary docs only" — the `permissions.yaml` `rules:` array
+  (`capability`/`match`/`effect`/`exclude`) is documented with the full capability list and
+  deny-overrides semantics. The pre-existing
+  `test/fixtures/staging_home/.kiro/settings/permissions.yaml` is a **non-conforming
+  placeholder shape** and is not a verified example, so no fixture is claimed for Kiro.
+  Devin: primary evidence from docs.devin.ai/cli/reference/configuration/config-file,
+  docs.devin.ai/cli/reference/permissions, docs.devin.ai/cli/extensibility/rules; schema
+  evidence "primary docs only" — the `config.json` (JSON-with-comments) schema and the
+  `Read/Write/Exec/Fetch(pattern)` plus tool-based and `mcp__*` permission matchers
+  (deny-wins precedence) are documented; no fixture exercising the structured config exists.
+  Remaining registered tools stay pending; `Catalog reviewed through:` still withheld. Plan
+  and this changelog updated for the partial slice.
+
 - **Flutter hook worktree portability:** Added `hooks/scripts/flutter_env.py`, a
   stdlib-Python wrapper that execs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE`
   cleared from the child environment. In a linked git worktree, `git commit`
