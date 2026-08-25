@@ -159,32 +159,46 @@ cannot be found, say so and leave the raw editor as the only supported represent
        skills, agents, plugins, cron, workflows, `.clineignore`, CLI `mcp.json`, and the
        `~/Documents/Cline/{Hooks,Plugins,Workflows}` compat directories).
 - [x] Populate source/status rows for the Antigravity CLI + IDE + App evidence slice against
-       current vendor sources. Antigravity CLI: primary evidence from
-       antigravity.google/docs/cli/using, antigravity.google/docs/cli/permissions,
-       antigravity.google/docs/cli/settings, antigravity.google/docs/cli/reference
-       (documents the full `settings.json` schema — top-level keys `colorScheme`,
-       `altScreenMode`, `toolPermission`, `artifactReviewPolicy`, `notifications`, `showTips`,
-       `showFeedbackSurvey`, `editor`, `editorMode`, `vimInsertFirst`, `allowNonWorkspaceAccess`,
-       `enableTerminalSandbox`, `useG1Credits`, `enableTelemetry`, `verbosity`,
-       `runningLightSpeed`; plus `permissions.{allow,deny,ask}` arrays of `action(target)`
-       strings — `read_file`, `write_file`, `read_url`, `execute_url`, `command`, `unsandboxed`,
-       `mcp` — with deny>ask>allow precedence and write-implies-read), and
-       antigravity.google/docs/rules-workflows; the `~/.gemini/antigravity-cli/settings.json`
-       path and `keybindings.json` are vendor-documented. Schema evidence "primary docs only" —
-       no token-free fixture exercising the structured config exists. Antigravity IDE: antigravity
-       IDE is a host-editor extension (VS Code, Visual Studio, JetBrains, Zed); its settings
-       live in the host editor's settings and Antigravity does **not** publish a dedicated
-       `~/.gemini/antigravity-ide/settings.json` path or schema — schema evidence "paths
-       recorded; schema needs verification" with the follow-up question of whether the IDE writes
-       a dedicated `settings.json` under `~/.gemini/antigravity-ide/` or all settings map to the
-       host editor. Antigravity App (Antigravity 2.0): a standalone desktop app with in-app
-       hierarchical settings (Global/Project/Conversation scopes via Cmd+,); Antigravity does
-       **not** publish a `~/.gemini/antigravity-app/settings.json` path or JSON schema — schema
-       evidence "paths recorded; schema needs verification" with the follow-up question of whether
-       the App writes a dedicated `settings.json` under `~/.gemini/antigravity-app/` or all
-       settings live in the app's internal state. Both the IDE and App rows retain their
-       registered discovery targets but flag the undocumented paths. No fixtures exist for any of
-       the three.
+        current vendor sources. Antigravity CLI: primary evidence from
+        antigravity.google/docs/cli/using, antigravity.google/docs/cli/permissions,
+        antigravity.google/docs/cli/settings, antigravity.google/docs/cli/reference
+        (documents the full `settings.json` schema — top-level keys `colorScheme`,
+        `altScreenMode`, `toolPermission`, `artifactReviewPolicy`, `notifications`, `showTips`,
+        `showFeedbackSurvey`, `editor`, `editorMode`, `vimInsertFirst`, `allowNonWorkspaceAccess`,
+        `enableTerminalSandbox`, `useG1Credits`, `enableTelemetry`, `verbosity`,
+        `runningLightSpeed`; plus `permissions.{allow,deny,ask}` arrays of `action(target)`
+        strings — `read_file`, `write_file`, `read_url`, `execute_url`, `command`, `unsandboxed`,
+        `mcp` — with deny>ask>allow precedence and write-implies-read), and
+        antigravity.google/docs/rules-workflows; the `~/.gemini/antigravity-cli/settings.json`
+        path and `keybindings.json` are vendor-documented. Schema evidence "primary docs only" —
+        no token-free fixture exercising the structured config exists. Antigravity IDE: antigravity
+        IDE is a host-editor extension (VS Code, Visual Studio, JetBrains, Zed); its settings
+        live in the host editor's settings and Antigravity does **not** publish a dedicated
+        `~/.gemini/antigravity-ide/settings.json` path or schema — schema evidence "paths
+        recorded; schema needs verification" with the follow-up question of whether the IDE writes
+        a dedicated `settings.json` under `~/.gemini/antigravity-ide/` or all settings map to the
+        host editor. Antigravity App (Antigravity 2.0): a standalone desktop app with in-app
+        hierarchical settings (Global/Project/Conversation scopes via Cmd+,); Antigravity does
+        **not** publish a `~/.gemini/antigravity-app/settings.json` path or JSON schema — schema
+        evidence "paths recorded; schema needs verification" with the follow-up question of whether
+        the App writes a dedicated `settings.json` under `~/.gemini/antigravity-app/` or all
+        settings live in the app's internal state. Both the IDE and App rows retain their
+        registered discovery targets but flag the undocumented paths. No fixtures exist for any of
+        the three.
+- [x] Populate source/status rows for the Paseo + Agy-ACP evidence slice against current vendor
+        sources. Paseo: primary evidence from the published JSON Schema draft-07 at
+        paseo.sh/schemas/paseo.config.v1.json and paseo.sh/docs; schema evidence "primary docs only"
+        — the full schema is published (top-level keys `version`, `daemon`, `app`, `worktrees`,
+        `providers`, `agents`, `features`, `log`) but no token-free fixture exercising the structured
+        config exists in-repo, so no fixture is claimed. Agy-ACP: primary evidence from the
+        kgrizz-git/agy-acp README (branch `main`); schema evidence "paths recorded; schema needs
+        verification" — the README documents the `~/.openab/agy-acp/sessions.json` path but does not
+        publish its JSON schema, which is defined only in the Rust source (`SessionStore` →
+        `StoredSession` `{conversation_id, last_step_idx, model_id}` in `src/types.rs`). Follow-up:
+        should the README publish the `sessions.json` JSON schema, or is the Rust `StoredSession`
+        struct the authoritative schema? (The documented README example matches the source struct
+        exactly, but no public JSON-schema document exists.) No fixture exercising the structured
+        config exists.
 - [x] Add or link token-free fixtures for the Claude Code and Codex rows. Existing
       synthetic staging fixtures used; no new fixtures required for this slice.
 - [x] Add or link a token-free fixture for the Opencode row. Reused the existing synthetic

@@ -118,6 +118,23 @@ Internal / developer-facing changes that do not belong in the public
   evidence notes. Remaining registered tools stay pending; `Catalog reviewed through:` still
   withheld. Plan and this changelog updated for the partial slice.
 
+- **Tool-catalog integrity Phase 1 (Paseo + Agy-ACP evidence slice):** Substantively reviewed
+  and recorded **Paseo** and **Agy-ACP** rows in the `docs/supported-tools.md` evidence table
+  against current vendor sources. Paseo: primary evidence from the published JSON Schema
+  draft-07 at `paseo.sh/schemas/paseo.config.v1.json` and `paseo.sh/docs`; schema evidence
+  "primary docs only" — the full schema is published (top-level keys `version`, `daemon`, `app`,
+  `worktrees`, `providers`, `agents`, `features`, `log`) but no token-free fixture exercising the
+  structured config exists in-repo, so no fixture is claimed. Agy-ACP: primary evidence from the
+  `kgrizz-git/agy-acp` README (branch `main` — the `mine` branch referenced in docs does not exist
+  on the fork); schema evidence "paths recorded; schema needs verification" — the README documents
+  the `~/.openab/agy-acp/sessions.json` path but does not publish its JSON schema, which is defined
+  only in the Rust source (`SessionStore` → `StoredSession` `{conversation_id, last_step_idx,
+  model_id}` in `src/types.rs`). Follow-up: should the README publish the `sessions.json` JSON
+  schema, or is the Rust `StoredSession` struct the authoritative schema? (The documented README
+  example matches the source struct exactly, but no public JSON-schema document exists.) No fixture
+  exercising the structured config exists. Remaining registered tools stay pending; `Catalog
+  reviewed through:` still withheld. Plan and this changelog updated for the partial slice.
+
 - **Flutter hook worktree portability:** Added `hooks/scripts/flutter_env.py`, a
   stdlib-Python wrapper that execs a Flutter command with `GIT_DIR`/`GIT_WORK_TREE`
   cleared from the child environment. In a linked git worktree, `git commit`
