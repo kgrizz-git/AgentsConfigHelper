@@ -6,7 +6,7 @@ Author: maintainers
 Status: in progress (Phase 0 complete: catalog boundary reconciled — registry enumeration
 tests present, evidence-table coverage rows corrected to match registered targets; Phase 1
 evidence complete; Phase 2 close-out: catalog marker + --catalog-strict wired into PR CI;
-Phase 3 quarterly advisory shipped (no-write scheduled/manual workflow: run summary +
+Phase 3 bimonthly advisory shipped (no-write scheduled/manual workflow: run summary +
 warning annotation, never issue creation); Phase 4 local acceptance verified — remaining
 items are two post-merge GitHub Actions manual-dispatch confirmations (immediate: fresh
 dispatch now; future: stale-path re-dispatch after the next overdue window), which cannot be
@@ -49,9 +49,9 @@ blocking unrelated feature pull requests.
   includes `docs/supported-tools.md` (not only `inventory/`), and an offline CI docs job
   invokes the deterministic internal-link check, the `--catalog-strict` catalog gate, and the
   checker's unittest suite. External network probing remains disabled.
-- A quarterly no-write advisory workflow (`.github/workflows/catalog-advisory.yml`,
-  cron `0 6 1 */3 *` + manual `workflow_dispatch`) turns a stale catalog into a visible
-  reminder without blocking PRs: it runs the offline checker (`--internal-only`, no network)
+- A bimonthly no-write advisory workflow (`.github/workflows/catalog-advisory.yml`,
+  cron `0 6 1 */2 *` + manual `workflow_dispatch`) turns a stale catalog into a visible
+  reminder without blocking PRs: it runs the offline checker (`--offline`, no network)
   and the checker's unittest suite, writes an actionable reminder to the run summary, and emits
   a `::warning` annotation on `docs/supported-tools.md` when the `Catalog reviewed through:`
   date is stale (120-day window). It runs with `permissions: contents: read` only — no issue
@@ -74,7 +74,7 @@ blocking unrelated feature pull requests.
 - Internal Markdown links and required catalog metadata are deterministic CI gates.
   External HTTP outcomes are advisory because valid vendor sites can reject `HEAD`, require
   sign-in, or rate-limit automation.
-- The quarterly process is a **no-write advisory reminder**: the scheduled/manual
+- The bimonthly process is a **no-write advisory reminder**: the scheduled/manual
   `.github/workflows/catalog-advisory.yml` workflow runs the offline checker, writes an
   actionable reminder to the run summary, and emits a `::warning` annotation on
   `docs/supported-tools.md` when the catalog review date is stale. It runs with
@@ -84,6 +84,8 @@ blocking unrelated feature pull requests.
   `documentation-review` issue; this was superseded by the no-write reminder because
   opening issues needs a write token and is over-broad for an automated schedule.)
   A stale date does not fail routine PRs or automatically rewrite/remove tool entries.
+- A partial review updates only the affected evidence-table rows' **Reviewed** dates. Refresh
+  `Catalog reviewed through:` only after every row has been re-evaluated since its prior marker.
 
 ## Scope
 
@@ -97,7 +99,7 @@ blocking unrelated feature pull requests.
   sufficiently verified and useful to upcoming work.
 - Checker support for the supported-tool catalog's internal links, external links, and
   catalog review marker.
-- A PR CI documentation gate and a quarterly scheduled advisory/reminder workflow.
+- A PR CI documentation gate and a bimonthly scheduled advisory/reminder workflow.
 - Tests for checker behavior and workflow-facing scripts where practical.
 
 ### Out of scope
@@ -288,12 +290,12 @@ cannot be found, say so and leave the raw editor as the only supported represent
 > **CI-wiring note:** `--catalog-strict` is now wired into the offline docs PR CI job
 > (`ci.yml` "Docs integrity", `--internal-only --catalog-strict`). External network probing
 > remains disabled; only a missing/malformed `Catalog reviewed through:` marker and a missing
-> registry tool are strict failures. A stale review date stays advisory (Phase 3 quarterly), never
+> registry tool are strict failures. A stale review date stays advisory (Phase 3 bimonthly), never
 > a PR gate failure.
 
-### Phase 3 — quarterly advisory and reminder
+### Phase 3 — bimonthly advisory and reminder
 
-- [x] Add a separate scheduled GitHub Actions workflow (quarterly + manual dispatch, not on
+- [x] Add a separate scheduled GitHub Actions workflow (every two months + manual dispatch, not on
       pull requests) that runs the checker's existing **offline/advisory** capabilities.
       Implemented as `.github/workflows/catalog-advisory.yml`; it runs
       `python3 ci/scripts/check_doc_links.py --offline` (internal links + catalog staleness,
@@ -343,7 +345,7 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 **Post-merge GitHub Actions check (not runnable from a local checkout):**
 
-- [ ] Manually dispatch the quarterly workflow (`.github/workflows/catalog-advisory.yml`)
+- [ ] Manually dispatch the bimonthly workflow (`.github/workflows/catalog-advisory.yml`)
       once after this change lands on `default`; verify it writes a run summary and, because
       the `Catalog reviewed through:` date is fresh, reports `result=fresh` with no
       `::warning` annotation. **This is the live-remote confirmation that the scheduled job

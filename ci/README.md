@@ -1,6 +1,6 @@
 # CI Guidance
 
-Last reviewed: 2026-07-14
+Last reviewed: 2026-08-25
 
 Guidance for selecting, structuring, and gating CI checks. The repository's active
 required checks live in `.github/workflows/ci.yml`.
@@ -81,7 +81,7 @@ checks run on a schedule or on dispatch so they never block merges.
 
 - **Tool-catalog freshness advisory** (`.github/workflows/catalog-advisory.yml`): runs
   `python3 ci/scripts/check_doc_links.py --offline` plus the checker's unittest suite on a
-  quarterly cron and on `workflow_dispatch`. **Advisory and no-write** — `permissions:
+  bimonthly cron and on `workflow_dispatch`. **Advisory and no-write** — `permissions:
   contents: read`, no external-link probing, and it never opens/updates issues. When the
   `Catalog reviewed through:` date is stale (120-day window) it writes an actionable reminder
   to the run summary and emits a `::warning` annotation on `docs/supported-tools.md`. The PR

@@ -186,10 +186,10 @@ Update `Last reviewed:` on files you verified are accurate. Update
 right menu?"* — including recording tools you considered and rejected as redundant, with the
 reason. See [`policies/doc-freshness.md`](../policies/doc-freshness.md).
 
-### Quarterly catalog-freshness advisory
+### Bimonthly catalog-freshness advisory
 
 A scheduled GitHub Actions workflow (`.github/workflows/catalog-advisory.yml`) runs the
-checker's offline advisory check quarterly and on manual `workflow_dispatch`:
+checker's offline advisory check every two months and on manual `workflow_dispatch`:
 
 ```bash
 # local equivalent of what the scheduled workflow runs

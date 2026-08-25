@@ -7,9 +7,9 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
-- **Tool-catalog integrity Phase 3 (quarterly advisory/reminder):** Added
+- **Tool-catalog integrity Phase 3 (bimonthly advisory/reminder):** Added
   `.github/workflows/catalog-advisory.yml`, a scheduled GitHub Actions workflow that runs the
-  checker's existing offline/advisory capabilities quarterly (cron `0 6 1 */3 *`) plus on
+  checker's existing offline/advisory capabilities every two months (cron `0 6 1 */2 *`) plus on
   manual `workflow_dispatch`. It runs `python3 ci/scripts/check_doc_links.py --offline`
   (internal links + catalog staleness, **no network**) and the checker's unittest suite, and
   when the `Catalog reviewed through:` date is stale (120-day window) it writes an actionable
@@ -25,39 +25,6 @@ Internal / developer-facing changes that do not belong in the public
   document the schedule, no-write mechanism, manual rerun, and review/refresh steps. No logic
   or test changes (reuses the checker's existing offline/advisory behavior).
 
-### Changed
-
-- **Tool-catalog integrity Phase 4 reconciliation:** The plan's Phase 4 acceptance section
-  previously described creating/re-closing a `documentation-review` issue, which contradicts
-  the no-write scheduled/manual workflow that Phase 3 actually shipped
-  (`.github/workflows/catalog-advisory.yml` — run summary + `::warning` annotation,
-  `contents: read` only, no Issues API interaction). Reconciled Phase 4 to the real workflow:
-  local/offline acceptance checks verified here (all 17 registry tools have an evidence-table
-  row + per-tool docs section; `--internal-only --strict` and `--offline` report 0 broken /
-  0 advisory across 162 files; 34 checker unittests pass; `Catalog reviewed through:` marker
-  present and fresh), with two post-merge manual-dispatch confirmations recorded as the
-  remaining acceptance items (immediate fresh-dispatch now; stale-path re-dispatch after the
-  next overdue window) — neither of which can be proven from a local checkout. Plan status and
-  `TO_DO.md` narrowed accordingly. No code or workflow changes.
-
-- **Tool-catalog integrity Phase 0 (catalog boundary reconciliation):** Reconciled the
-  evidence-table "Discovery coverage" rows in `docs/supported-tools.md` against the runtime
-  registry (`lib/catalog/tool_descriptor_registry.dart`) so documentation describes only
-  registered discovery targets. Corrected three rows: Claude Code (removed "local/managed"
-  — `.claude/settings.local.json` and managed-settings paths are documented vendor scopes but
-  are **not** registered discovery targets), Codex (removed "system/profiles" —
-  `/etc/codex/config.toml` and `~/.codex/<profile>.config.toml` are not registered), and LM
-  Studio (removed "Markdown model docs" — the registry has no Markdown targets for LM Studio;
-  all four targets are JSON/YAML structured config). Confirmed the existing
-  `test/catalog/tool_descriptor_registry_test.dart` (17-descriptor order enumeration +
-  display-name presence in docs) and `test/catalog/registry_invariants_test.dart` (every
-  `ToolId` represented + markdown/text-never-structured + no-duplicate-target invariants)
-  already satisfy the Phase 0 "enumerate every ToolId/display name and target class" goal —
-  no new tests added. The LM Studio `hub/presets/*.json` vs documented `config-presets/`
-  path discrepancy is **retained as an explicit follow-up**, not silently corrected. Plan
-  checkboxes/status and this changelog updated. No Dart discovery behavior changed.
-
-### Added
 
 - **Tool-catalog integrity Phase 2 close-out (catalog marker + strict-CI activation):** Added the
   truthful `Catalog reviewed through: 2026-08-25` marker to `docs/supported-tools.md` (all 17
@@ -65,7 +32,7 @@ Internal / developer-facing changes that do not belong in the public
   implemented `--catalog-strict` gate into the offline docs PR CI job (`ci.yml` "Docs integrity",
   now `--internal-only --catalog-strict`). External network probing remains disabled — only a
   missing/malformed marker and a missing registry tool are strict failures; a stale review date
-  stays advisory (Phase 3 quarterly). Also applied three evidence clarity fixes: rephrased the
+  stays advisory (Phase 3 bimonthly). Also applied three evidence clarity fixes: rephrased the
   GitHub Copilot precedence chain in words (removed the unescaped `>` that rendered as a nested
   blockquote); qualified the `lmstudio-ai/configs` schema as legacy/pre-0.3 (repository archived by
   LM Studio in 2024) in the evidence table, changelog, and plan prose; and added an evidence/follow-up
@@ -253,7 +220,7 @@ Internal / developer-facing changes that do not belong in the public
   lightweight offline `docs` CI job running the deterministic internal-link
   check (`--internal-only --strict`) plus the unittest suite. External-link
   liveness remains advisory and is not part of PR CI; date staleness remains
-  advisory (Phase 3 quarterly), not a strict failure.
+  advisory (Phase 3 bimonthly), not a strict failure.
 
 - **Claude Code permission help coverage:** Added pure-Dart reviewed help metadata and widget
   coverage for its keyboard-accessible explanatory dialog; recorded the schema-help review
@@ -295,54 +262,6 @@ Internal / developer-facing changes that do not belong in the public
   plan with local and CI verification gates; Flutter SDK upgrades are kept out
   of package-only work.
 
-### Changed
-
-- **Product and testing research:** Added a staged, token-free testing workflow and
-  an evidence-based direction for schema-aware configuration cards, then recorded the
-  recommended delivery order in `TO_DO.md`.
-- **Flutter 3.47.1 / Dart 3.13.1 toolchain:** Updated CI; upgraded the compatible
-  Riverpod/analyzer family; regenerated providers; and aligned analyzer configuration
-  with current Flutter tooling.
-- **Dependencies (compatible lockfile update):** Ran `flutter pub upgrade`
-  without touching `pubspec.yaml` constraints, bumping the transitive dev-only
-  test package `vm_service` 15.2.0 → 15.3.0 (the sole `Upgradable` package at
-  baseline). No runtime or security posture change for the shipped app: it is
-  absent from the non-dev dependency tree. `plans/archive/dependency-upgrades.md`
-  now records the Phase 0 baseline, the direct-package target inventory, and the
-  Phase 1 outcome. The subsequent Flutter-enabled major migration is recorded above.
-- **ADR-002 and macOS execution planning:** Accepted an unsandboxed,
-  source-build-only macOS workflow to unblock local discovery and editing;
-  deferred Developer ID, notarization, FFI home resolution, sandbox/bookmark
-  infrastructure, and binary-distribution work. The focused implementation
-  plan is now `plans/active/macos-local-execution.md`.
-- **macOS local execution:** Removed App Sandbox from Debug/Profile and Release
-  entitlements and Xcode capability metadata while retaining Flutter's Debug
-  JIT/server allowances. Added a macOS CI job that validates both plist files
-  and rejects a reintroduced sandbox key or Xcode capability declaration.
-
-- **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
-  (no longer requires spawning a fresh agent to review each finished phase).
-- **Copilot discovery paths (CodeRabbit):** Discover `~/.copilot/settings.json` and
-  `.github/copilot/settings.json` / `settings.local.json` as editable settings;
-  also surface managed `config.json` when present (no hide/precedence rule).
-  Honor `COPILOT_HOME` for CLI user files (absolute paths only; relative/`~`
-  values are ignored with a shared warning helper). Discover Cline `~/Cline/Rules` only
-  when `~/Documents/Cline/Rules` is absent. Document Copilot loading shared
-  `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
-  make glob visit/match caps injectable on `DiscoveryService`; per-entry
-  `handleError` on recursive listing (errors count toward the visit cap;
-  stop at `maxGlobEntitiesVisited` without exceeding it;
-  prefer `FileSystemException.path` in warnings when available).
-- **Planning and release hygiene:** Archived completed implementation plans for Services &
-  Discovery, JSONC, the design-system prototype, the Flutter SDK, dependency upgrades, and
-  Phase 10 tool expansion after the merged CI matrix passed. Kept the macOS and test-root
-  plans active for their remaining manual/default-startup and platform-specific verification.
-  Replaced the vague semantic-versioning task with an explicit 0.2.0 release checklist; no
-  version was bumped outside a release cut.
-- **Documentation-link checker:** Exclude ignored `tmp/` scratch artifacts from both default
-  and explicit scans, and isolate Markdown-file eligibility from scan control flow.
-
-### Added
 
 - **`docs/PRODUCT_IDEAS.md`:** Long-form product/exploration notes; markdownlint-ignored
   (same class as CHANGELOG — intentional long lines).
@@ -491,38 +410,93 @@ Internal / developer-facing changes that do not belong in the public
   and OpenTelemetry, with the keep-event-data-on-your-infra / no-BAA-on-free-tiers
   caveat cross-linked to the runtime-leak policy and prompt.
 
-### Fixed
-
-- **URL host checks parse the host instead of substring-matching (2026-08-16).**
-  `ci/scripts/check_doc_links.py` now compares the parsed hostname (via
-  `_host_matches`/`_url_host`) for both the skip-list and the GitHub-redirect
-  check, so a domain can't match at an arbitrary position (e.g. `github.com`
-  in a path, or a look-alike host `github.com.evil.example`). Clears the
-  CodeQL `py/incomplete-url-substring-sanitization` alert, the matching
-  Semgrep finding, and SonarCloud's New-Code Security Rating. The URL is
-  parsed once inside a guard so a malformed netloc (`urlsplit` `ValueError`,
-  e.g. bad IPv6 brackets) becomes a per-link result instead of crashing the
-  whole run.
-- **Narrower baseline-parse catch in `saveRawConfig` (2026-08-16).**
-  `ConfigService` now catches `Exception` (not `Object`) around the baseline
-  reparse, so genuine `Error`s (programming bugs) propagate instead of being
-  swallowed as an unparseable baseline. Qodo finding.
-- **Glob discovery cap now bounds work, not just results (2026-08-16).**
-  `DiscoveryService`'s bounded glob enumeration increments its per-glob counter
-  for every matching entry (not only newly-added ones), so the `maxEntries`
-  cap bounds the scan even when many matches are duplicates already discovered
-  via another target. Qodo/CodeRabbit review finding.
-- **Windows path deduplication (2026-08-16).** `DiscoveryPreferencesStore` now dedups and
-  matches manual paths / project roots via a platform-aware key (case-insensitive on Windows,
-  case-sensitive elsewhere), and `DiscoveryService` keys `seenPaths` the same way, so
-  differently-cased spellings of the same file no longer produce duplicate preference entries or
-  sidebar rows on Windows. No-op on Linux/macOS-posix. Qodo review finding.
-- **`saveRawConfig` baseline reparse guard (2026-08-16).** The internal reparse of the pre-edit
-  baseline (`config.originalContent`) used to diff structured edits is now wrapped in try/catch;
-  a stale/unparseable baseline no longer throws a `ConfigParseException` indistinguishable from a
-  genuine invalid-raw-content error — a valid raw edit is written as-is instead. Qodo review finding.
-
 ### Changed
+
+- **Tool-catalog integrity advisory follow-up:** Changed the no-write catalog advisory to a
+  bimonthly schedule (cron `0 6 1 */2 *`) while retaining manual dispatch, offline-only checks,
+  and its non-fatal stale-date warning. The strict checker now fails loudly when
+  `docs/supported-tools.md` is absent, with a focused regression test. The scheduled workflow
+  uses a temporary advisory-output file and labels its warning step explicitly non-fatal.
+  Kept `docs/supported-tools.md` as one curated catalog rather than splitting it, and added a
+  concise table of contents; documented the per-row versus full-catalog review-date convention.
+  Updated CI guidance's `Last reviewed` date.
+
+- **Tool-catalog integrity Phase 4 reconciliation:** The plan's Phase 4 acceptance section
+  previously described creating/re-closing a `documentation-review` issue, which contradicts
+  the no-write scheduled/manual workflow that Phase 3 actually shipped
+  (`.github/workflows/catalog-advisory.yml` — run summary + `::warning` annotation,
+  `contents: read` only, no Issues API interaction). Reconciled Phase 4 to the real workflow:
+  local/offline acceptance checks verified here (all 17 registry tools have an evidence-table
+  row + per-tool docs section; `--internal-only --strict` and `--offline` report 0 broken /
+  0 advisory across 162 files; 34 checker unittests pass; `Catalog reviewed through:` marker
+  present and fresh), with two post-merge manual-dispatch confirmations recorded as the
+  remaining acceptance items (immediate fresh-dispatch now; stale-path re-dispatch after the
+  next overdue window) — neither of which can be proven from a local checkout. Plan status and
+  `TO_DO.md` narrowed accordingly. No code or workflow changes.
+
+- **Tool-catalog integrity Phase 0 (catalog boundary reconciliation):** Reconciled the
+  evidence-table "Discovery coverage" rows in `docs/supported-tools.md` against the runtime
+  registry (`lib/catalog/tool_descriptor_registry.dart`) so documentation describes only
+  registered discovery targets. Corrected three rows: Claude Code (removed "local/managed"
+  — `.claude/settings.local.json` and managed-settings paths are documented vendor scopes but
+  are **not** registered discovery targets), Codex (removed "system/profiles" —
+  `/etc/codex/config.toml` and `~/.codex/<profile>.config.toml` are not registered), and LM
+  Studio (removed "Markdown model docs" — the registry has no Markdown targets for LM Studio;
+  all four targets are JSON/YAML structured config). Confirmed the existing
+  `test/catalog/tool_descriptor_registry_test.dart` (17-descriptor order enumeration +
+  display-name presence in docs) and `test/catalog/registry_invariants_test.dart` (every
+  `ToolId` represented + markdown/text-never-structured + no-duplicate-target invariants)
+  already satisfy the Phase 0 "enumerate every ToolId/display name and target class" goal —
+  no new tests added. The LM Studio `hub/presets/*.json` vs documented `config-presets/`
+  path discrepancy is **retained as an explicit follow-up**, not silently corrected. Plan
+  checkboxes/status and this changelog updated. No Dart discovery behavior changed.
+
+
+- **Product and testing research:** Added a staged, token-free testing workflow and
+  an evidence-based direction for schema-aware configuration cards, then recorded the
+  recommended delivery order in `TO_DO.md`.
+- **Flutter 3.47.1 / Dart 3.13.1 toolchain:** Updated CI; upgraded the compatible
+  Riverpod/analyzer family; regenerated providers; and aligned analyzer configuration
+  with current Flutter tooling.
+- **Dependencies (compatible lockfile update):** Ran `flutter pub upgrade`
+  without touching `pubspec.yaml` constraints, bumping the transitive dev-only
+  test package `vm_service` 15.2.0 → 15.3.0 (the sole `Upgradable` package at
+  baseline). No runtime or security posture change for the shipped app: it is
+  absent from the non-dev dependency tree. `plans/archive/dependency-upgrades.md`
+  now records the Phase 0 baseline, the direct-package target inventory, and the
+  Phase 1 outcome. The subsequent Flutter-enabled major migration is recorded above.
+- **ADR-002 and macOS execution planning:** Accepted an unsandboxed,
+  source-build-only macOS workflow to unblock local discovery and editing;
+  deferred Developer ID, notarization, FFI home resolution, sandbox/bookmark
+  infrastructure, and binary-distribution work. The focused implementation
+  plan is now `plans/active/macos-local-execution.md`.
+- **macOS local execution:** Removed App Sandbox from Debug/Profile and Release
+  entitlements and Xcode capability metadata while retaining Flutter's Debug
+  JIT/server allowances. Added a macOS CI job that validates both plist files
+  and rejects a reintroduced sandbox key or Xcode capability declaration.
+
+- **Removed mandatory phase-completion independent-review rule** from `AGENTS.md`
+  (no longer requires spawning a fresh agent to review each finished phase).
+- **Copilot discovery paths (CodeRabbit):** Discover `~/.copilot/settings.json` and
+  `.github/copilot/settings.json` / `settings.local.json` as editable settings;
+  also surface managed `config.json` when present (no hide/precedence rule).
+  Honor `COPILOT_HOME` for CLI user files (absolute paths only; relative/`~`
+  values are ignored with a shared warning helper). Discover Cline `~/Cline/Rules` only
+  when `~/Documents/Cline/Rules` is absent. Document Copilot loading shared
+  `AGENTS.md`. Canonicalize Windows separators in `RegistryPathMatching.isMatch`;
+  make glob visit/match caps injectable on `DiscoveryService`; per-entry
+  `handleError` on recursive listing (errors count toward the visit cap;
+  stop at `maxGlobEntitiesVisited` without exceeding it;
+  prefer `FileSystemException.path` in warnings when available).
+- **Planning and release hygiene:** Archived completed implementation plans for Services &
+  Discovery, JSONC, the design-system prototype, the Flutter SDK, dependency upgrades, and
+  Phase 10 tool expansion after the merged CI matrix passed. Kept the macOS and test-root
+  plans active for their remaining manual/default-startup and platform-specific verification.
+  Replaced the vague semantic-versioning task with an explicit 0.2.0 release checklist; no
+  version was bumped outside a release cut.
+- **Documentation-link checker:** Exclude ignored `tmp/` scratch artifacts from both default
+  and explicit scans, and isolate Markdown-file eligibility from scan control flow.
+
 
 - **Collision-free backup filename encoding (2026-08-16).** `BackupService` now encodes the
   original path via a shared `_encodeOriginalPath` helper (percent-escape `%` first, then the OS
@@ -582,9 +556,40 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Fixed
 
+- **URL host checks parse the host instead of substring-matching (2026-08-16).**
+  `ci/scripts/check_doc_links.py` now compares the parsed hostname (via
+  `_host_matches`/`_url_host`) for both the skip-list and the GitHub-redirect
+  check, so a domain can't match at an arbitrary position (e.g. `github.com`
+  in a path, or a look-alike host `github.com.evil.example`). Clears the
+  CodeQL `py/incomplete-url-substring-sanitization` alert, the matching
+  Semgrep finding, and SonarCloud's New-Code Security Rating. The URL is
+  parsed once inside a guard so a malformed netloc (`urlsplit` `ValueError`,
+  e.g. bad IPv6 brackets) becomes a per-link result instead of crashing the
+  whole run.
+- **Narrower baseline-parse catch in `saveRawConfig` (2026-08-16).**
+  `ConfigService` now catches `Exception` (not `Object`) around the baseline
+  reparse, so genuine `Error`s (programming bugs) propagate instead of being
+  swallowed as an unparseable baseline. Qodo finding.
+- **Glob discovery cap now bounds work, not just results (2026-08-16).**
+  `DiscoveryService`'s bounded glob enumeration increments its per-glob counter
+  for every matching entry (not only newly-added ones), so the `maxEntries`
+  cap bounds the scan even when many matches are duplicates already discovered
+  via another target. Qodo/CodeRabbit review finding.
+- **Windows path deduplication (2026-08-16).** `DiscoveryPreferencesStore` now dedups and
+  matches manual paths / project roots via a platform-aware key (case-insensitive on Windows,
+  case-sensitive elsewhere), and `DiscoveryService` keys `seenPaths` the same way, so
+  differently-cased spellings of the same file no longer produce duplicate preference entries or
+  sidebar rows on Windows. No-op on Linux/macOS-posix. Qodo review finding.
+- **`saveRawConfig` baseline reparse guard (2026-08-16).** The internal reparse of the pre-edit
+  baseline (`config.originalContent`) used to diff structured edits is now wrapped in try/catch;
+  a stale/unparseable baseline no longer throws a `ConfigParseException` indistinguishable from a
+  genuine invalid-raw-content error — a valid raw edit is written as-is instead. Qodo review finding.
+
+
 - Unresolved-path recovery Skip now re-checks `mounted` and `loadGeneration`
   before clearing editor state. Restore-from-history writes through
   `BackupService.writeRestoredFile` so missing parent directories are created.
+
 
 ## [0.4.4] - 2026-07-09
 

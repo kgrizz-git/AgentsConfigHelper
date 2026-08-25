@@ -20,7 +20,7 @@
    defer Linux/Windows test-root work until their platform-native bridges are planned.
 3. **Tool catalog integrity:** implement the [tool-catalog integrity plan](plans/active/tool-catalog-integrity.md)
       so supported-tool documentation has explicit source/schema evidence, deterministic PR
-      checks, and a quarterly advisory review reminder. **Status:** Phases 0–3 shipped; Phase 4
+      checks, and a bimonthly advisory review reminder. **Status:** Phases 0–3 shipped; Phase 4
        local acceptance verified; remaining items are two post-merge GitHub Actions
        manual-dispatch confirmations — immediate (fresh dispatch now) and future (stale-path
        re-dispatch after the next overdue window) (see the plan's Phase 4).

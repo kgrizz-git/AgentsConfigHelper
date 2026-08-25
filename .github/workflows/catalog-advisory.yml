@@ -1,9 +1,9 @@
-name: Quarterly tool-catalog advisory
+name: Bimonthly tool-catalog advisory
 
 on:
-  # Quarterly (roughly every 3 months) on the 1st of the month at 06:00 UTC.
+  # Every two months on the 1st of the month at 06:00 UTC.
   schedule:
-    - cron: '0 6 1 */3 *'
+    - cron: '0 6 1 */2 *'
   # Manual rerun from the Actions tab.
   workflow_dispatch:
 
@@ -37,7 +37,9 @@ jobs:
         run: |
           set +e
           set -o pipefail
-          python3 ci/scripts/check_doc_links.py --offline | tee advisory.out
+          advisory_output="$(mktemp "${RUNNER_TEMP:-/tmp}/catalog-advisory.XXXXXX")"
+          trap 'rm -f "$advisory_output"' EXIT
+          python3 ci/scripts/check_doc_links.py --offline | tee "$advisory_output"
           checker_status=$?
 
           python3 ci/tests/test_check_doc_links.py
@@ -59,7 +61,7 @@ jobs:
           fi
 
           # Collect every matching STALE line (a catalog may carry several stale markers).
-          mapfile -t stale_lines < <(grep '\[links\] STALE' advisory.out || true)
+          mapfile -t stale_lines < <(grep '\[links\] STALE' "$advisory_output" || true)
           if [ "${#stale_lines[@]}" -gt 0 ]; then
             {
               echo "## Tool-catalog freshness advisory"
@@ -88,7 +90,7 @@ jobs:
           fi
 
       # Advisory only: a stale date is a visible reminder, never a hard failure.
-      - name: Annotate stale catalog (advisory)
+      - name: Emit stale-catalog warning annotation (advisory, non-fatal)
         if: steps.advisory.outputs.result == 'stale'
         run: |
           {

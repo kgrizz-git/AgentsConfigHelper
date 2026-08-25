@@ -327,9 +327,12 @@ def main() -> int:
     broken = 0
     advisory = 0
     catalog_findings = 0
+    primary_catalog_seen = False
     network = not (args.offline or args.internal_only)
 
     for path in paths:
+        if _is_catalog_strict(path):
+            primary_catalog_seen = True
         raw = path.read_text(encoding="utf-8", errors="ignore")
         text = strip_code(raw)
 
@@ -363,6 +366,12 @@ def main() -> int:
                     url, problem = result
                     print(f"[links] DEAD   {path}: {url} — {problem}")
                     advisory += 1
+
+    if args.catalog_strict and not primary_catalog_seen:
+        print(
+            "[links] CATALOG docs/supported-tools.md: required catalog file was not found"
+        )
+        catalog_findings += 1
 
     mode = " (internal only)" if args.internal_only else " (offline)" if args.offline else ""
     print(f"\nChecked {len(paths)} file(s){mode}: {broken} broken, {advisory} advisory.")

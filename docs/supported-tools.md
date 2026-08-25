@@ -5,6 +5,16 @@ Last reviewed: 2026-08-25
 Config format reference for each supported AI agent and IDE. Used by AgentsConfigHelper
 to auto-detect, parse, visualize, and edit settings across tools.
 
+## Contents
+
+- [Quick comparison](#quick-comparison) · [Catalog evidence](#catalog-evidence)
+- [Claude Code](#claude-code) · [Codex](#codex) · [Opencode](#opencode) · [Paseo](#paseo)
+- [Cursor Agent and Cursor IDE](#cursor-agent-and-cursor-ide) · [Kiro](#kiro) · [Devin](#devin)
+- [Antigravity IDE](#antigravity-ide) · [Antigravity App](#antigravity-app) · [Antigravity CLI](#antigravity-cli)
+- [GitHub Copilot](#github-copilot) · [Kilo](#kilo) · [Cline](#cline) · [LM Studio](#lm-studio)
+- [AGENTS.md (shared)](#agentsmd-shared) · [Agy-ACP](#agy-acp)
+- [Format summary](#config-format-summary) · [Permissions taxonomy](#permissions-model-taxonomy) · [Detection and registry](#detection-and-registry)
+
 ## Quick comparison
 
 | Tool | Config format | User config | Project config | Rules file | Permissions model |

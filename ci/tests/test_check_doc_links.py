@@ -10,8 +10,8 @@ plans/active/tool-catalog-integrity.md Phase 2:
 * valid / stale / malformed catalog review dates (staleness is ALWAYS advisory)
 * internal relative links (broken vs. resolvable)
 * external links are advisory (non-fatal) under default/offline runs
-* --catalog-strict fails on a missing or malformed marker, or a missing
-  registry tool, but a stale date remains advisory (does not fail)
+* --catalog-strict fails on a missing or malformed marker, registry tool, or catalog file,
+  but a stale date remains advisory (does not fail)
 * REGISTRY_NAMES stays in sync with the Dart registry's displayName values
 """
 
@@ -274,6 +274,13 @@ class CliTests(unittest.TestCase):
             code, out, _ = _run(tmp, "--internal-only", "--catalog-strict")
             self.assertEqual(code, 1, out)
             self.assertIn("missing required", out)
+
+    def test_catalog_strict_fails_when_primary_catalog_is_missing(self):
+        with _tmp_cwd() as tmp:
+            _write(tmp, "docs/other.md", "# Other documentation\n")
+            code, out, _ = _run(tmp, "--internal-only", "--catalog-strict")
+            self.assertEqual(code, 1, out)
+            self.assertIn("required catalog file was not found", out)
 
     def test_catalog_strict_fails_on_malformed_date(self):
         with _tmp_cwd() as tmp:
