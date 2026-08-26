@@ -30,6 +30,89 @@ Future<Directory> _getBackupDir(TestRootConfiguration? testRoot) async {
   return Directory(p.join(appSupportDirectory.path, 'backups'));
 }
 
+/// Dependencies assembled during startup before any platform window work.
+///
+/// Keeping this composition separate lets tests prove that optional test-root
+/// plumbing does not alter the ordinary application's service selection.
+class StartupServiceGraph {
+  const StartupServiceGraph({
+    required this.testRoot,
+    required this.fileOperations,
+    required this.windowBoundsStore,
+    required this.configService,
+    required this.preferencesStore,
+    required this.discoveryService,
+  });
+
+  final TestRootConfiguration? testRoot;
+  final FileOperations fileOperations;
+  final DesktopWindowBoundsStore windowBoundsStore;
+  final ConfigService configService;
+  final DiscoveryPreferencesStore? preferencesStore;
+  final DiscoveryService? discoveryService;
+}
+
+/// Builds the app's services for either ordinary or marked test-root startup.
+Future<StartupServiceGraph> buildStartupServiceGraph(
+  List<String> arguments, {
+  Future<Directory> Function(TestRootConfiguration? testRoot)?
+  backupDirectoryResolver,
+}) async {
+  final testRoot = await TestRootConfiguration.fromArguments(arguments);
+  final FileOperations fileOperations;
+  if (testRoot != null) {
+    final testRootOperations = MacOSTestRootFileOperations(
+      rootPath: testRoot.rootPath,
+    );
+    await testRootOperations.pinRoot();
+    fileOperations = testRootOperations;
+  } else {
+    fileOperations = const LocalFileOperations();
+  }
+
+  final windowBoundsStore = DesktopWindowBoundsStore(
+    getDirectory: testRoot == null
+        ? null
+        : () async => Directory(
+            p.join(testRoot.rootPath, 'application-support'),
+          ),
+    fileOperations: fileOperations,
+  );
+  final backupDirectory = await (backupDirectoryResolver ?? _getBackupDir)(
+    testRoot,
+  );
+  final preferencesStore = testRoot != null
+      ? DiscoveryPreferencesStore(
+          getDirectory: () async => Directory(
+            p.join(testRoot.rootPath, 'application-support'),
+          ),
+          fileOperations: fileOperations,
+          allowedRootPath: testRoot.rootPath,
+        )
+      : null;
+
+  return StartupServiceGraph(
+    testRoot: testRoot,
+    fileOperations: fileOperations,
+    windowBoundsStore: windowBoundsStore,
+    configService: ConfigService(
+      backupService: BackupService(
+        backupDirectory: backupDirectory,
+        fileOperations: fileOperations,
+      ),
+      homeDirectoryResolver: testRoot != null ? () => testRoot.rootPath : null,
+      fileOperations: fileOperations,
+    ),
+    preferencesStore: preferencesStore,
+    discoveryService: testRoot == null
+        ? null
+        : DiscoveryService(
+            fileOperations: fileOperations,
+            enableGlobTargets: false,
+          ),
+  );
+}
+
 Future<void> _configureDesktopWindow(
   DesktopWindowBoundsStore boundsStore,
 ) async {
@@ -138,68 +221,30 @@ class _DesktopWindowBoundsListener with WindowListener {
 Future<void> main(List<String> arguments) async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    final testRoot = await TestRootConfiguration.fromArguments(arguments);
-    final FileOperations fileOperations;
-    if (testRoot != null) {
-      final testRootOperations = MacOSTestRootFileOperations(
-        rootPath: testRoot.rootPath,
-      );
-      await testRootOperations.pinRoot();
-      fileOperations = testRootOperations;
-    } else {
-      fileOperations = const LocalFileOperations();
-    }
-    final windowBoundsStore = DesktopWindowBoundsStore(
-      getDirectory: testRoot == null
-          ? null
-          : () async => Directory(
-              p.join(testRoot.rootPath, 'application-support'),
-            ),
-      fileOperations: fileOperations,
-    );
+    final services = await buildStartupServiceGraph(arguments);
     try {
-      await _configureDesktopWindow(windowBoundsStore);
+      await _configureDesktopWindow(services.windowBoundsStore);
     } on Object catch (error, stackTrace) {
       debugPrint('Desktop window initialization failed: $error\n$stackTrace');
     }
-    final configService = ConfigService(
-      backupService: BackupService(
-        backupDirectory: await _getBackupDir(testRoot),
-        fileOperations: fileOperations,
-      ),
-      homeDirectoryResolver: testRoot != null ? () => testRoot.rootPath : null,
-      fileOperations: fileOperations,
-    );
-    final preferencesStore = testRoot != null
-        ? DiscoveryPreferencesStore(
-            getDirectory: () async => Directory(
-              p.join(testRoot.rootPath, 'application-support'),
-            ),
-            fileOperations: fileOperations,
-            allowedRootPath: testRoot.rootPath,
-          )
-        : null;
     runApp(
       ProviderScope(
         overrides: [
-          configServiceProvider.overrideWithValue(configService),
-          if (preferencesStore != null)
+          configServiceProvider.overrideWithValue(services.configService),
+          if (services.preferencesStore != null)
             discoveryPreferencesStoreProvider.overrideWithValue(
-              preferencesStore,
+              services.preferencesStore!,
             ),
-          if (testRoot != null)
+          if (services.testRoot != null)
             homeDirectoryResolverProvider.overrideWithValue(
-              () => testRoot.rootPath,
+              () => services.testRoot!.rootPath,
             ),
-          if (testRoot != null)
+          if (services.discoveryService != null)
             discoveryServiceProvider.overrideWithValue(
-              DiscoveryService(
-                fileOperations: fileOperations,
-                enableGlobTargets: false,
-              ),
+              services.discoveryService!,
             ),
-          if (testRoot != null)
-            testRootPathProvider.overrideWithValue(testRoot.rootPath),
+          if (services.testRoot != null)
+            testRootPathProvider.overrideWithValue(services.testRoot!.rootPath),
         ],
         child: const AgentsConfigHelperApp(),
       ),

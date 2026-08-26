@@ -156,8 +156,37 @@ mistaken for credentials.
       through the existing `flutter test --coverage` command.
 - [x] Use Dart fixture tests for syntax and catalog mapping; a separate fixture validator is
       not needed at this stage.
-- [ ] Document when a bug report may add a sanitized regression fixture and require a
-      source/secret review before it is committed.
+- [x] Document when a bug report may add a sanitized regression fixture and require a
+      source/secret review before it is committed. `docs/testing-strategies.md` now records
+      provenance, synthetic replacement, minimization, raw-fallback, and reviewer checks.
+
+### Next bounded slice — normal-mode parity and raw fallback
+
+The next implementation slice is deliberately regression-focused; it does not expand a
+tool schema or add a structured write path.
+
+- [x] Add a startup composition harness that builds the application dependencies with no
+  `--test-root` argument. It must prove that no `TestRootGuard` is installed and that
+  `ConfigService`, `BackupService`, and `DiscoveryPreferencesStore` retain their normal
+  locations/behavior. Prefer observable injected factories or dependency values over
+  brittle assertions about private provider implementation details.
+- [x] Cover one token-free, catalog-recognized configuration containing an unsupported nested
+  permissions shape. Its editor test must assert raw-editor-first rendering: no supported
+  structured card, no flat permissions editor, and no structured-only save path. The raw
+  content must remain available unchanged until a user intentionally edits it.
+- [ ] Keep fixture-boundary coverage distinct from the existing primitive/containment tests.
+  The fixture-level service test should exercise save → backup and restore-as-recreate
+  through the configured test-root services; it complements (rather than duplicates) the
+  no-follow and symlink tests in `test-root-containment.md`.
+- [x] Document sanitized-fixture intake before adding a bug-derived fixture: provenance or
+  reproducible shape, removal of user content and credentials, synthetic replacement of
+  values/comments, and a reviewer check that the fixture exercises a specific regression.
+
+**Exit criteria:** default startup has one focused parity test; the unsupported fixture has
+parser/widget coverage and preserves raw fallback; configured test-root fixture services prove
+backup and restore-as-recreate behavior; fixture-intake guidance is published. Run
+`flutter analyze --fatal-infos`, `dart format --output=none --set-exit-if-changed .`, and
+`flutter test --coverage` after the slice.
 
 ## Verification
 
@@ -169,7 +198,9 @@ mistaken for credentials.
       hooks.
 - [x] Automated tests prove user-scope and project-scope discovery against the synthetic
       tree.
-- [ ] Add an unsupported nested-structure fixture and prove its raw-editor fallback.
+- [x] Add an unsupported nested-structure fixture and prove its raw-editor fallback. The
+      Claude permissions fixture has a nested `allow` map; fixture and widget tests confirm
+      it remains raw-editor-first with no Claude permissions card.
 - [x] An automated or manual containment test proves test-mode save, backup, and restore
       do not modify paths outside the disposable root. Native no-follow tests plus the
       2026-08-22 macOS smoke cover the tested path.
