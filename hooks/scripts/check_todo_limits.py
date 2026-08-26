@@ -26,7 +26,7 @@ import os
 import sys
 from pathlib import Path
 
-SOFT_LINE_CAP = int(os.getenv("POLICY_TODO_SOFT_LINE_CAP", "250"))
+SOFT_LINE_CAP = int(os.getenv("POLICY_TODO_SOFT_LINE_CAP", "250"))  # approved by @kgrizz-git in PR #34
 HARD_LINE_CAP = int(os.getenv("POLICY_TODO_HARD_LINE_CAP", "300"))
 WARN_AS_ERROR = os.getenv("POLICY_WARN_AS_ERROR", "0") == "1"
 

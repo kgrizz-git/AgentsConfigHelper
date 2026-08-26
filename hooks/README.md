@@ -106,7 +106,7 @@ POLICY_BINARY_HARD_BYTES=5242880 # binary hard limit (5 MB)
 POLICY_DOC_SOFT_LINE_CAP=1000  # markdown soft cap
 POLICY_WARN_AS_ERROR=0          # set to 1 to treat soft warnings as errors
 
-# check_todo_limits.py
+# check_todo_limits.py — threshold approved by @kgrizz-git in PR #34 (soft 150→250, hard 300 retained)
 POLICY_TODO_SOFT_LINE_CAP=250
 POLICY_TODO_HARD_LINE_CAP=300
 

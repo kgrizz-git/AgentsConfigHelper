@@ -36,9 +36,12 @@ its full entry, which remains the source of scope and completion detail.
 
 ### Future-enhancement triage
 
-- [ ] Periodically review [future enhancements](plans/active/future_enhancements.md) and
-      [`docs/PRODUCT_IDEAS.md`](docs/PRODUCT_IDEAS.md); promote a bounded, approved slice into
-      a new active plan only when it is ready to implement.
+- [ ] Periodically review [future enhancements](plans/active/future_enhancements.md) (including
+      the [discovery-expansion candidates](plans/active/future_enhancements.md#discovery-expansion-candidates)
+      inventory) and [`docs/PRODUCT_IDEAS.md`](docs/PRODUCT_IDEAS.md); promote a bounded,
+      approved slice into a new active plan only when it is ready to implement, selecting any
+      discovery candidate only after verifying it has a durable, user-editable configuration file
+      and fits the app's product scope.
 
 ## Product follow-ups (prioritized)
 
@@ -119,12 +122,6 @@ The durable sequence and architecture decisions are in the
 
 - [ ] Review the deferred work in the [agent-config discovery plan](plans/active/agent-config-discovery.md)
       and promote only a bounded, current discovery slice when it is ready for implementation.
-
-### Tool-support discovery candidates
-
-- [ ] Select a bounded candidate from the [future-enhancements discovery inventory](plans/active/future_enhancements.md#discovery-expansion-candidates)
-      only after verifying that it has a durable, user-editable configuration file and fits the
-      app’s product scope.
 
 ## Follow-ups from Phase 5.5 (docs accuracy)
 
