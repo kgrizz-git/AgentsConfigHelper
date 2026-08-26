@@ -1,9 +1,19 @@
 # Supported Tools
 
-Last reviewed: 2026-08-24
+Last reviewed: 2026-08-25
 
 Config format reference for each supported AI agent and IDE. Used by AgentsConfigHelper
 to auto-detect, parse, visualize, and edit settings across tools.
+
+## Contents
+
+- [Quick comparison](#quick-comparison) · [Catalog evidence](#catalog-evidence)
+- [Claude Code](#claude-code) · [Codex](#codex) · [Opencode](#opencode) · [Paseo](#paseo)
+- [Cursor Agent and Cursor IDE](#cursor-agent-and-cursor-ide) · [Kiro](#kiro) · [Devin](#devin)
+- [Antigravity IDE](#antigravity-ide) · [Antigravity App](#antigravity-app) · [Antigravity CLI](#antigravity-cli)
+- [GitHub Copilot](#github-copilot) · [Kilo](#kilo) · [Cline](#cline) · [LM Studio](#lm-studio)
+- [AGENTS.md (shared)](#agentsmd-shared) · [Agy-ACP](#agy-acp)
+- [Format summary](#config-format-summary) · [Permissions taxonomy](#permissions-model-taxonomy) · [Detection and registry](#detection-and-registry)
 
 ## Quick comparison
 
@@ -26,6 +36,33 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | GitHub Copilot | JSONC + Markdown | `~/.copilot/settings.json` (+ managed `config.json`) | `.github/copilot/settings.json` (+ local) | `.github/copilot-instructions.md` (+ shared) | instructions only (no permission model) |
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets | local LLM runner |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool agents.md convention | instructions only |
+
+## Catalog evidence
+
+Catalog reviewed through: 2026-08-25
+
+> **Status:** All 17 registered tools have a recorded evidence/status row in the table below,
+> substantively reviewed against current vendor sources as of 2026-08-25.
+
+| Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |
+| --- | --- | --- | --- | --- | --- |
+| Claude Code | JSON structured config (user/project); Markdown instruction docs (user `CLAUDE.md`, project `CLAUDE.md`/`.claude/CLAUDE.md`) | [Settings](https://code.claude.com/docs/en/settings) · [Permissions](https://code.claude.com/docs/en/permissions) · [CLAUDE.md](https://code.claude.com/docs/en/claude-md) (code.claude.com) | verified example | `test/fixtures/staging_home/.claude/settings.json` · `test/fixtures/staging_home/workspace/.claude/settings.json` | 2026-08-25 |
+| Codex | TOML structured config (user/project); Markdown instruction docs (user `AGENTS.md`); text rules (user/project `.codex/rules/*.rules`) | [Config basic](https://developers.openai.com/codex/config-basic) · [Permissions](https://developers.openai.com/codex/permissions) (developers.openai.com) | verified structured-config example (fixture exercises TOML config shape; permission-profile semantics are sourced from the primary permissions doc) | `test/fixtures/staging_home/.codex/config.toml` · `test/fixtures/staging_home/workspace/.codex/config.toml` | 2026-08-25 |
+| Opencode | JSONC structured config (user/project); Markdown instruction docs | [Config](https://opencode.ai/docs/config/) · [Permissions](https://opencode.ai/docs/permissions/) · [Schema](https://opencode.ai/config.json) (opencode.ai) | verified example (fixture exercises `model` + `permission` object shape; full JSON schema published) | `test/fixtures/staging_home/.config/opencode/opencode.json` | 2026-08-25 |
+| Paseo | JSON structured config (user `.paseo/config.json`, project `paseo.json`) | [Config schema](https://paseo.sh/schemas/paseo.config.v1.json) (paseo.sh) · [Docs](https://paseo.sh/docs) | primary docs only (full JSON Schema draft-07 is published — top-level keys `version`, `daemon`, `app`, `worktrees`, `providers`, `agents`, `features`, `log`; no token-free fixture exercising the structured config exists in-repo) | none | 2026-08-25 |
+| Cursor Agent | JSON structured config (user/project); text/Markdown instruction docs | [Permissions](https://cursor.com/docs/reference/permissions) · [Rules](https://cursor.com/docs/rules) (cursor.com) · CLI permission tokens ([config](https://cursor.com/docs/cli/reference/configuration) · [permissions](https://cursor.com/docs/cli/reference/permissions); `cli-config.json` is documented by Cursor but is **not** a registered discovery target of this app) | primary docs only (`permissions.json` schema and CLI permission tokens published; no fixture exercising the structured config) | none | 2026-08-25 |
+| Cursor IDE | JSON structured config (user/project) | [Cursor docs](https://cursor.com/docs) (cursor.com) | paths recorded; schema needs verification (IDE `settings.json` is the inherited VS Code format; Cursor does not publish a dedicated settings-schema reference) | none | 2026-08-25 |
+| Kiro | YAML structured config (user); Markdown instruction docs (project steering) | [Configuration scopes](https://kiro.dev/docs/configuration/) · [Permissions](https://kiro.dev/docs/permissions/) · [Custom agents](https://kiro.dev/docs/custom-agents/) · [Steering](https://kiro.dev/docs/steering/) (kiro.dev) | primary docs only (`permissions.yaml` `rules:` array of `{capability, match, effect, exclude}` is documented with the full capability list and deny-overrides semantics; no fixture exercising the documented schema — the existing `test/fixtures/staging_home/.kiro/settings/permissions.yaml` is a non-conforming placeholder shape, not a verified example) | none | 2026-08-25 |
+| Devin | JSON-with-comments structured config (user/project); Markdown instruction docs (project rules, user AGENTS.md) | [Configuration file](https://docs.devin.ai/cli/reference/configuration/config-file) · [Permissions](https://docs.devin.ai/cli/reference/permissions) · [Rules & AGENTS.md](https://docs.devin.ai/cli/extensibility/rules) (docs.devin.ai) | primary docs only (`config.json` schema documented — `agent`, `permissions` `allow/deny/ask` arrays, `sandbox`, `read_config_from`, `keymap`, `proxy`; permission syntax `Read/Write/Exec/Fetch(pattern)` plus tool-based and `mcp__*` matchers, deny-wins precedence; no fixture exercising the structured config) | none | 2026-08-25 |
+| Antigravity CLI | JSON structured config (user `settings.json`); Markdown instruction docs (user `GEMINI.md`, project `GEMINI.md`); Markdown rules (project `.agents/rules/*.md`) | [Using AGY CLI](https://antigravity.google/docs/cli/using) · [Permissions](https://antigravity.google/docs/cli/permissions) · [Settings, Rendering & Keybindings](https://antigravity.google/docs/cli/settings) · [CLI Reference](https://antigravity.google/docs/cli/reference) · [Rules/workflows](https://antigravity.google/docs/rules-workflows) (antigravity.google) | primary docs only (`settings.json` schema documented in the CLI reference — top-level keys `colorScheme`, `altScreenMode`, `toolPermission`, `artifactReviewPolicy`, `notifications`, `showTips`, `showFeedbackSurvey`, `editor`, `editorMode`, `vimInsertFirst`, `allowNonWorkspaceAccess`, `enableTerminalSandbox`, `useG1Credits`, `enableTelemetry`, `verbosity`, `runningLightSpeed`; plus `permissions.{allow,deny,ask}` arrays of `action(target)` strings — `read_file`, `write_file`, `read_url`, `execute_url`, `command`, `unsandboxed`, `mcp` — with deny>ask>allow precedence and write-implies-read; `keybindings.json` maps TUI command actions to key arrays. No token-free fixture exercising the structured config exists) | none | 2026-08-25 |
+| Antigravity IDE | JSON structured config (user) — **path not vendor-documented** | [IDE overview](https://antigravity.google/docs/ide/overview) · [IDE settings](https://antigravity.google/docs/ide/settings) · [IDE extensions](https://antigravity.google/docs/ide/extensions/) (antigravity.google) | paths recorded; schema needs verification (Antigravity IDE is a host-editor extension — VS Code, Visual Studio, JetBrains, Zed — and its settings live in the host editor's settings; Antigravity does **not** publish a dedicated `~/.gemini/antigravity-ide/settings.json` path or schema. Follow-up: does the IDE write a dedicated `settings.json` under `~/.gemini/antigravity-ide/`, or do all persisted settings map to the host editor's `settings.json`?) | none | 2026-08-25 |
+| Antigravity App | JSON structured config (user) — **path not vendor-documented** | [Settings](https://antigravity.google/docs/settings/) · [Agent Settings](https://antigravity.google/docs/agent-settings/) · [Permissions](https://antigravity.google/docs/permissions/) (antigravity.google) | paths recorded; schema needs verification (Antigravity 2.0 is a standalone desktop app with in-app hierarchical settings — Global/Project/Conversation scopes opened via Cmd+, — not a documented disk file; Antigravity does **not** publish a `~/.gemini/antigravity-app/settings.json` path or JSON schema. Follow-up: does the App write a dedicated `settings.json` under `~/.gemini/antigravity-app/`, or are all settings persisted in the app's internal state?) | none | 2026-08-25 |
+| Agy-ACP | JSON structured config (user `~/.openab/agy-acp/sessions.json`) | [README](https://github.com/kgrizz-git/agy-acp) (kgrizz-git/agy-acp, branch `main`) | paths recorded; schema needs verification (the README documents the `sessions.json` path but does not publish its JSON schema; the structure is defined only in the Rust source — `SessionStore` → `StoredSession` `{conversation_id, last_step_idx, model_id}` in `src/types.rs`. Follow-up: should the README publish the `sessions.json` JSON schema, or is the Rust `StoredSession` struct the authoritative schema? The documented README example matches the source struct exactly, but no public JSON-schema document exists.) | none | 2026-08-25 |
+| Kilo | JSONC/JSON structured config (user `kilo.jsonc`/`kilo.json`/`models.json`, project `kilo.jsonc`/`kilo.json`/`.kilo/` variants); Markdown instruction docs (user `AGENTS.md` + `agents/*.md`, project `.kilo/agents/*.md`) | [CLI Config Schema](https://kilo.ai/docs/contributing/architecture/config-schema) · [Settings](https://kilo.ai/docs/getting-started/settings) · [Using MCP](https://kilo.ai/docs/automate/mcp/using-in-kilo-code) · [Custom rules](https://kilo.ai/docs/customize/custom-rules) · [Editor schema](https://app.kilo.ai/config.json) (kilo.ai) | primary docs only (`kilo.jsonc` schema is the canonical Effect Schema `Config.Info` in `Kilo-Org/kilocode`, overlaid with Kilo buckets on top of the opencode.ai schema for the editor `$schema` endpoint; documented top-level keys include `model`, `provider`, `mcp`, `permission` (per-tool `allow`/`ask`/`deny`), `instructions`, `agent`, `sandbox` (`enabled`/`network`/`writable_paths`/`allowed_hosts`), `formatter`, `lsp`, `experimental`; no fixture exercising the documented schema — see note below) | none | 2026-08-25 |
+| Cline | JSON structured config (user `global-settings.json`, `cline_mcp_settings.json`, `providers.json`); Markdown/text instruction docs (user `.cline/rules/*.md`, `Documents/Cline/Rules/*.{md,txt}` + Linux/WSL fallback; project `.clinerules` file, `.clinerules/*.{md,txt}`, `.cline/rules/*.md`) | [Config](https://docs.cline.bot/getting-started/config) · [Rules](https://docs.cline.bot/customization/cline-rules) · [Adding & Configuring Servers](https://docs.cline.bot/mcp/adding-and-configuring-servers) · [CLI Configuration](https://docs.cline.bot/cli/configuration) (docs.cline.bot) | primary docs only (`cline_mcp_settings.json` uses the `mcpServers` map with STDIO `command`/`args`/`env`/`disabled`/`autoApprove` and remote `type: streamableHttp`/`sse` + `url`/`headers` transports; `global-settings.json` is the source-defined `GlobalSettingsSchema` Zod surface — Cline does not publish a single JSON-schema document, and the full key list is not vendor-documented (a concrete confirmed key is `disabledTools`); `providers.json` is secret-bearing API-key config. No fixture exercising the structured config exists) | none | 2026-08-25 |
+| GitHub Copilot | JSONC/JSON structured config (CLI `settings.json` + `config.json` + `mcp-config.json`, repo `settings.json`/`settings.local.json`); Markdown instruction docs (CLI `copilot-instructions.md` + `instructions/**/*.instructions.md`, repo `copilot-instructions.md` + `instructions/**/*.instructions.md`); Markdown agent docs (JetBrains global instructions) | [Configuring Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/configure-copilot-cli) · [CLI configuration directory](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference) · [Changing settings](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/change-settings) · [Custom instructions support](https://docs.github.com/en/copilot/reference/custom-instructions-support) (docs.github.com) | primary docs only (`settings.json` is the user-editable JSONC settings file and its full key table — e.g. `autoUpdate`, `theme`, `askUser`, `allowedUrls`, `footer.*`, `builtInAgents.*`, `hooks`, `permissions.disableBypassPermissionsMode` — is published in the CLI configuration directory reference; the schema is source-defined in `github/copilot-cli` and there is no standalone JSON-schema document; `config.json` is auto-managed application state — auth, plugins, `trustedFolders` — and is not user-editable; repo `.github/copilot/settings.json` + `settings.local.json` are documented with MDM, then user, repo, local, environment, and flags precedence; `permissions-config.json` documents the saved-per-location tool/directory approval schema — `locations.<key>.tool_approvals[].kind` (`commands`/`read`/`write`/`mcp`/`mcp-sampling`/`memory`/`custom-tool`/`extension-management`/`extension-permission-access`) + `allowed_directories` — but is auto-managed, not user-editable. No token-free fixture exercising the structured config exists) | none | 2026-08-25 |
+| LM Studio | JSON/YAML structured config (user `settings.json`, hub `model.yaml`/`manifest.json`, presets) | [model.yaml](https://lmstudio.ai/docs/app/modelyaml) · [Presets](https://lmstudio.ai/docs/app/presets) · [Config schema](https://github.com/lmstudio-ai/configs/blob/main/schema.json) (lmstudio.ai · github.com/lmstudio-ai/configs) | paths recorded; schema needs verification (the published `lmstudio-ai/configs` `schema.json` documents the **legacy/pre-0.3 preset** JSON structure — the repository was archived by LM Studio in 2024 and is read-only — top-level `name`, `load_params` (`n_ctx`, `n_gpu_layers`, `rope_freq_base`, `cache_type_k`/`cache_type_v` enums, etc.), `inference_params` (`temp`, `top_k`, `top_p`, `repeat_penalty`, `grammar`, `logit_bias`, etc.) — but LM Studio's documentation places current presets at `~/.lmstudio/config-presets/`, **not** `~/.lmstudio/hub/presets/*.json` as registered; the app-level `~/.lmstudio/settings.json` file exists (confirmed) but LM Studio does **not** publish its JSON schema; `model.yaml` is a well-documented open cross-platform spec via `modelyaml.org` with `model`, `base`, `metadataOverrides`, `config`, `customFields` fields. Follow-up: does the registry's `.lmstudio/hub/presets/*.json` path reflect an older or alternate preset location, or should it be corrected to `~/.lmstudio/config-presets/*.json`? The app `settings.json` schema remains unpublished.) | none | 2026-08-25 |
+| AGENTS.md (shared) | Markdown instruction docs (user `~/.agents/AGENTS.md`, project `AGENTS.md`) — cross-tool convention, not owned by any single agent | [agents.md](https://agents.md/) (agentsmd/agents.md, stewarded by the Agentic AI Foundation / Linux Foundation) | not published (AGENTS.md is explicitly an open, schema-free Markdown convention — the standard states "No. AGENTS.md is just standard Markdown. Use any headings you like; the agent simply parses the text you provide." There is no JSON schema, no required fields, and no machine-readable structure beyond prose Markdown. The closest thing to a standard is the agents.md website's guidance on sections to cover: build/test commands, code style, testing instructions, security considerations.) | `test/fixtures/staging_home/.agents/AGENTS.md` · `test/fixtures/staging_home/workspace/AGENTS.md` | 2026-08-25 |
 
 ---
 
@@ -292,6 +329,11 @@ JSON. Schema at `https://paseo.sh/schemas/paseo.config.v1.json`.
 | Legacy rules | `.cursorrules` (deprecated) |
 | Cross-tool | `AGENTS.md`, `CLAUDE.md` |
 
+> **Note:** `~/.cursor/cli-config.json` (and project `.cursor/cli.json`) is documented by
+> Cursor as the Agent CLI configuration, but it is **not** a registered discovery target in
+> `lib/catalog/tool_descriptor_registry.dart` and is not auto-discovered by this app. It is
+> cited in the evidence table only as the primary source for CLI permission-token semantics.
+
 ### Cursor Config format
 
 Multiple JSON files for different concerns.
@@ -355,17 +397,23 @@ Multiple JSON files for different concerns.
 
 ### Kiro Config paths
 
-| Scope | Path |
-| --- | --- |
-| User MCP | `~/.kiro/settings/mcp.json` |
-| User permissions | `~/.kiro/settings/permissions.yaml` |
-| User agents | `~/.kiro/agents/` |
-| User steering | `~/.kiro/steering/` |
-| Project MCP | `.kiro/settings/mcp.json` |
-| Workspace permissions | `~/.kiro/workspace-roots/<hash>/permissions.yaml` (outside repo) |
-| Project agents | `.kiro/agents/` |
-| Project steering | `.kiro/steering/` |
-| Project specs | `.kiro/specs/` |
+| Scope | Path | Discovered? |
+| --- | --- | --- |
+| User permissions | `~/.kiro/settings/permissions.yaml` | registered |
+| Project steering | `.kiro/steering/*.md` | registered |
+| User steering | `~/.kiro/steering/` | documented, not registered |
+| User MCP | `~/.kiro/settings/mcp.json` | documented, not registered |
+| User agents | `~/.kiro/agents/` | documented, not registered |
+| Project MCP | `.kiro/settings/mcp.json` | documented, not registered |
+| Workspace permissions | `~/.kiro/workspace-roots/<hash>/permissions.yaml` (outside repo) | documented, not registered |
+| Project agents | `.kiro/agents/` | documented, not registered |
+| Project specs | `.kiro/specs/` | documented, not registered |
+
+> **Note:** Kiro documents additional configuration scopes (user steering, MCP servers,
+> custom agents, workspace-scoped and enterprise permissions, specs) that this app does
+> **not** currently auto-discover. Only the user `permissions.yaml` and project
+> `steering/*.md` targets are registered in `lib/catalog/tool_descriptor_registry.dart`;
+> the rows above are retained as vendor-documented references.
 
 ### Kiro Config format
 
@@ -422,16 +470,23 @@ rules:
 
 ### Devin Config paths
 
-| Scope | Path |
-| --- | --- |
-| User config | `~/.config/devin/config.json` |
-| Project shared | `.devin/config.json` |
-| Project local | `.devin/config.local.json` |
-| User MCP | `~/.config/devin/mcp_config.json` |
-| Project MCP | `.devin/mcp_config.json` |
-| Enterprise | Machine-wide `system.json` (admin-managed) |
-| User rules | `~/.config/devin/AGENTS.md` |
-| Project rules | `AGENTS.md` |
+| Scope | Path | Discovered? |
+| --- | --- | --- |
+| User config | `~/.config/devin/config.json` | registered |
+| Project shared | `.devin/config.json` | registered |
+| User rules | `~/.config/devin/AGENTS.md` | registered |
+| Project rules | `.devin/rules/*.md` | registered |
+| Project local | `.devin/config.local.json` | documented, not registered |
+| User MCP | `~/.config/devin/mcp_config.json` | documented, not registered |
+| Project MCP | `.devin/mcp_config.json` | documented, not registered |
+| Enterprise | Machine-wide `system.json` (admin-managed) | documented, not registered |
+
+> **Note:** Devin documents additional configuration scopes (project-local config, MCP
+> server configs, the enterprise `system.json`, and `AGENTS.local.md` rules) that this app
+> does **not** currently auto-discover. Only the user/project `config.json`, project
+> `.devin/rules/*.md`, and user `AGENTS.md` targets are registered in
+> `lib/catalog/tool_descriptor_registry.dart`; the remaining rows are retained as
+> vendor-documented references.
 
 ### Devin Config format
 
@@ -482,25 +537,47 @@ rules:
 
 ## Antigravity IDE
 
+> **Evidence note (2026-08-25):** Antigravity IDE is a host-editor extension (VS Code,
+> Visual Studio, JetBrains, Zed). Its settings are stored in the host editor's settings,
+> not a dedicated `~/.gemini/antigravity-ide/settings.json` file — Antigravity does **not**
+> publish that path or a dedicated IDE settings schema. The row remains registered for
+> discovery, but the path is unverified; see the catalog evidence table for the follow-up
+> research question.
+
 ### Antigravity IDE Config paths
 
 | Scope | Path |
 | --- | --- |
-| User settings | `~/.gemini/antigravity-ide/settings.json` |
+| User settings | `~/.gemini/antigravity-ide/settings.json` *(path not vendor-documented; IDE settings live in the host editor's settings)* |
 
 ---
 
 ## Antigravity App
 
+> **Evidence note (2026-08-25):** Antigravity 2.0 is a standalone desktop app with in-app
+> hierarchical settings (Global/Project/Conversation scopes, opened via Cmd+,). It does
+> **not** publish a `~/.gemini/antigravity-app/settings.json` path or a JSON settings
+> schema. The row remains registered for discovery, but the path is unverified; see the
+> catalog evidence table for the follow-up research question.
+
 ### Antigravity App Config paths
 
 | Scope | Path |
 | --- | --- |
-| User settings | `~/.gemini/antigravity-app/settings.json` |
+| User settings | `~/.gemini/antigravity-app/settings.json` *(path not vendor-documented; App settings are in-app, hierarchical)* |
 
 ---
 
 ## Antigravity CLI
+
+> **Evidence note (2026-08-25):** The `~/.gemini/antigravity-cli/settings.json` path and its
+> full schema are vendor-documented in the Antigravity CLI reference (top-level keys
+> `colorScheme`, `altScreenMode`, `toolPermission`, `artifactReviewPolicy`, `notifications`,
+> `showTips`, `showFeedbackSurvey`, `editor`, `editorMode`, `vimInsertFirst`,
+> `allowNonWorkspaceAccess`, `enableTerminalSandbox`, `useG1Credits`, `enableTelemetry`,
+> `verbosity`, `runningLightSpeed`; plus `permissions.{allow,deny,ask}` arrays of
+> `action(target)` strings). No token-free repository fixture exercising the structured
+> config exists.
 
 ### Antigravity CLI Config paths
 
@@ -515,6 +592,13 @@ rules:
 | Workspace MCP | `<workspace>/.agents/mcp_config.json` |
 | Workspace skills | `<workspace>/.agents/skills/` |
 | Project config | `~/.gemini/config/projects/` |
+
+> **Note:** Antigravity documents additional configuration scopes — `keybindings.json`, MCP
+> config (`~/.gemini/config/mcp_config.json`), skills, and `~/.gemini/config/projects/` — that
+> this app does **not** currently auto-discover. Only the `settings.json`, `GEMINI.md`, and
+> `.agents/rules/*.md` targets above are registered in
+> `lib/catalog/tool_descriptor_registry.dart`; the remaining rows are retained as
+> vendor-documented references.
 
 ### Antigravity CLI Config format
 
@@ -636,27 +720,76 @@ still auto-discovered and opened in the raw-text editor where registered):
 
 ### Kilo Config paths
 
-- **User settings:** `~/.config/kilo/kilo.jsonc` or `~/.config/kilo/kilo.json`
-- **User models cache (optional):** `~/.config/kilo/models.json`
-- **User rules / agents:** `~/.config/kilo/AGENTS.md` and `~/.config/kilo/agents/*.md`
-- **Project settings:** `kilo.jsonc` / `kilo.json`, or `.kilo/kilo.jsonc` / `.kilo/kilo.json`
-- **Project agents:** `.kilo/agents/*.md`
-- **Project rules:** shared root `AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
+| Scope | Path | Discovered? |
+| --- | --- | --- |
+| User settings | `~/.config/kilo/kilo.jsonc` (or `kilo.json`) | registered |
+| User models cache | `~/.config/kilo/models.json` | registered |
+| User rules | `~/.config/kilo/AGENTS.md` | registered |
+| User agents | `~/.config/kilo/agents/*.md` | registered |
+| Project settings | `kilo.jsonc` / `kilo.json` in project root | registered |
+| Project settings (alt) | `.kilo/kilo.jsonc` / `.kilo/kilo.json` | registered |
+| Project agents | `.kilo/agents/*.md` | registered |
+| Project rules | shared root `AGENTS.md` | registered (via AGENTS.md shared) |
+| TUI settings | `~/.config/kilo/tui.jsonc` | documented, not registered |
+| Legacy rules | `.kilocode/rules/` | documented, not registered |
+| Organization/managed config | org/MDM-managed sources | documented, not registered |
+
+> **Note:** Kilo documents additional configuration scopes (TUI `tui.jsonc`, legacy
+> `.kilocode/rules/` directories, organization/MDM-managed config, and the opencode
+> config-migration path) that this app does **not** currently auto-discover. Only the
+> `kilo.jsonc`/`kilo.json`, `models.json`, `AGENTS.md`, and `agents/*.md` targets above
+> are registered in `lib/catalog/tool_descriptor_registry.dart`; the remaining rows are
+> retained as vendor-documented references. The runtime config's source of truth is the
+> canonical Effect Schema `Config.Info` in `Kilo-Org/kilocode`; the editor-facing
+> `$schema` endpoint (`https://app.kilo.ai/config.json`) is a cloud overlay of
+> `opencode.ai/config.json` plus Kilo-specific buckets.
 
 ### Kilo Config format
 
 JSONC. Secrets (e.g. `provider.*.options.apiKey`) must not be committed; prefer env vars.
 All edits are backed up only under the app support directory (never sibling `.bak` files).
 
+> **Fixture note:** The existing `test/fixtures/staging_home/.config/kilo/kilo.jsonc`
+> uses a `permissions.{filesystem,network}` shape that is **not** part of the documented
+> Kilo schema (which uses `permission` for per-tool allow/ask/deny and `sandbox` for
+> filesystem/network boundaries). It is a non-conforming placeholder, not a verified
+> example, so no fixture is claimed for Kilo.
+
 ## Cline
 
 ### Cline Config paths
 
-- **User settings:** `~/.cline/data/settings/global-settings.json`, `cline_mcp_settings.json`, `providers.json` (often secret-bearing)
-- **User rules:** `~/.cline/rules/*.md`, `~/Documents/Cline/Rules/*.{md,txt}`; Linux/WSL
-  `~/Cline/Rules/*.{md,txt}` is discovered only when the Documents location is absent
-- **Project rules:** `.clinerules/` (`.md`/`.txt`), legacy `.clinerules` file, and `.cline/rules/*.md`
-- **Also loads:** shared root `AGENTS.md` / `~/.agents/AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared))
+| Scope | Path | Discovered? |
+| --- | --- | --- |
+| User global settings | `~/.cline/data/settings/global-settings.json` | registered |
+| User MCP settings | `~/.cline/data/settings/cline_mcp_settings.json` | registered |
+| User providers (secret-bearing) | `~/.cline/data/settings/providers.json` | registered |
+| User rules | `~/.cline/rules/*.md` | registered |
+| User rules (compat) | `~/Documents/Cline/Rules/*.{md,txt}` | registered |
+| User rules (Linux/WSL fallback) | `~/Cline/Rules/*.{md,txt}` (only when Documents location absent) | registered |
+| Project rules | `.clinerules/*.md`, `.clinerules/*.txt` | registered |
+| Project rules (legacy file) | `.clinerules` | registered |
+| Project rules (alt) | `.cline/rules/*.md` | registered |
+| Shared rules | root `AGENTS.md`, `~/.agents/AGENTS.md` | registered (via AGENTS.md shared) |
+| Global rules dir | `~/.cline/rules/` | registered (above) |
+| Global hooks | `~/.cline/hooks/`, `~/Documents/Cline/Hooks/` | documented, not registered |
+| Global skills | `~/.cline/skills/` | documented, not registered |
+| Global agents | `~/.cline/agents/` | documented, not registered |
+| Global plugins | `~/.cline/plugins/`, `~/Documents/Cline/Plugins/` | documented, not registered |
+| Global cron | `~/.cline/cron/` | documented, not registered |
+| Global workflows | `~/.cline/data/workflows/`, `~/Documents/Cline/Workflows/` | documented, not registered |
+| Project hooks/skills/agents/plugins/cron | `.cline/{skills,hooks,agents,plugins,cron}/` | documented, not registered |
+| CLI MCP config (CLI only) | `~/.cline/mcp.json` | documented, not registered |
+| Ignore file | `.clineignore` | documented, not registered |
+
+> **Note:** Cline documents a broad set of global and project scopes (hooks, skills,
+> agents, plugins, cron, workflows, `.clineignore`, CLI-only `mcp.json`, and the
+> `~/Documents/Cline/{Hooks,Plugins,Workflows}` compatibility directories) that this app
+> does **not** currently auto-discover. Only the `global-settings.json`,
+> `cline_mcp_settings.json`, `providers.json`, the rules targets, and the
+> `Documents/Cline/Rules` (+ Linux fallback) compatibility paths are registered in
+> `lib/catalog/tool_descriptor_registry.dart`; the remaining rows are retained as
+> vendor-documented references.
 
 ### Cline Config format
 
@@ -670,6 +803,13 @@ JSON and Markdown / plain text.
 - **Model metadata:** `~/.lmstudio/hub/models/<publisher>/<model>/model.yaml`, `manifest.json`
 - **Presets:** `~/.lmstudio/hub/presets/*.json`
 - **Not discovered:** weight files under `~/.lmstudio/models/` (too large; not config)
+
+> **Evidence note (2026-08-25):** The preset path `~/.lmstudio/hub/presets/*.json` is registered for
+> discovery, but LM Studio's current documentation places presets at `~/.lmstudio/config-presets/` — the
+> registered path may reflect an older or alternate location. The published `lmstudio-ai/configs`
+> `schema.json` describes the legacy/pre-0.3 preset format (that repository was archived by LM Studio
+> in 2024 and is read-only), not a current schema. No runtime discovery change is made here; see the
+> catalog evidence table for the follow-up research question.
 
 ### LM Studio Config format
 
@@ -712,7 +852,8 @@ Plain Markdown; edited with the raw-text editor.
 
 | Model | Tools | Pattern |
 | --- | --- | --- |
-| Allow/Ask/Deny arrays | Claude, Antigravity | List of `Tool(pattern)` strings |
+| Allow/Ask/Deny arrays | Claude | List of `Tool(pattern)` strings |
+| Allow/Ask/Deny arrays | Antigravity | List of `action(target)` strings |
 | Per-tool allow/ask/deny | Opencode | Object mapping tool → action |
 | Capability-based | Kiro | `capability` + `effect` + `match` |
 | Allowlist + classifier | Cursor | Static allowlist + LLM hints |
@@ -725,9 +866,10 @@ ACP (Agent Client Protocol) stdio adapter for Google's Antigravity CLI (`agy`). 
 `agy` into any ACP-compatible host (Zed, Paseo) by speaking JSON-RPC over stdin/stdout,
 spawning `agy` as a subprocess, and streaming responses back as incremental updates.
 
-**This is a custom fork** (`kgrizz-git/agy-acp`, branch `mine`) of
-[`hicder/agy-acp`](https://github.com/hicder/agy-acp) that adds an ACP
-permission-prompt bridge — the feature that distinguishes it from upstream.
+**This is a custom fork** (`kgrizz-git/agy-acp`, branch `main`) of
+[`hicder/agy-acp`](https://github.com/hicder/agy-acp). Its distinguishing
+feature is an ACP permission-prompt bridge (the `feat/acp-permission-prompts`
+branch); the default `main` branch is the session-adapter base.
 
 ### Agy-ACP Config paths
 
@@ -776,8 +918,8 @@ permission-prompt bridge — the feature that distinguishes it from upstream.
 
 ### Agy-ACP Permissions model
 
-The fork's defining feature is a full permission bridge (1,135 lines in `permission.rs`).
-When `--permission-prompts` is enabled:
+The fork's defining feature is a full permission bridge implemented in
+`permission.rs`. When `--permission-prompts` is enabled:
 
 1. Adapter starts a **Unix socket server** at `/tmp/agy-acp-perm-{PID}.sock`
 2. Writes a `PreToolUse` hook into a private temp dir, passed to `agy` via `--add-dir`
@@ -789,7 +931,7 @@ When `--permission-prompts` is enabled:
 
 | Value | Effect |
 | --- | --- |
-| _(default)_ `ask_question` | Only model questions auto-allowed |
+| *(default)* `ask_question` | Only model questions auto-allowed |
 | `reads` | Adds `view_file`, `view_code_item`, `list_dir` |
 | `searches` | Adds `grep_search`, `codebase_search`, `find_by_name` |
 | `none` | Nothing auto-allowed |

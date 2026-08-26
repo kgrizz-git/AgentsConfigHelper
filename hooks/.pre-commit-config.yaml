@@ -93,6 +93,8 @@ repos:
       # Optional (Flutter/Dart projects): pre-push-only checks mirroring CI's
       # analyze/format/test jobs. Kept out of pre-commit so day-to-day commits
       # stay fast; run once before code leaves the machine instead.
+      # Flutter/Dart hooks use flutter_env.py to clear GIT_DIR/GIT_WORK_TREE from
+      # the child env, so Flutter resolves its own SDK checkout in linked worktrees.
       # - id: dart-format-check
       #   name: "dart: format check (pre-push)"
       #   entry: dart format --output=none --set-exit-if-changed .
@@ -101,14 +103,14 @@ repos:
       #   stages: [pre-push]
       # - id: flutter-analyze
       #   name: "dart: flutter analyze (pre-push)"
-      #   entry: flutter analyze --fatal-infos
-      #   language: system
+      #   entry: python hooks/scripts/flutter_env.py analyze
+      #   language: python
       #   pass_filenames: false
       #   stages: [pre-push]
       # - id: flutter-test
       #   name: "dart: flutter test (pre-push)"
-      #   entry: flutter test
-      #   language: system
+      #   entry: python hooks/scripts/flutter_env.py test
+      #   language: python
       #   pass_filenames: false
       #   stages: [pre-push]
 

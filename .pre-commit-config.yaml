@@ -66,8 +66,11 @@ repos:
         types: [dart]
       - id: dart-code-linter
         name: "dart: code linter metrics"
-        entry: flutter pub run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning
-        language: system
+        # Run Flutter with git worktree-context cleared (see hooks/scripts/flutter_env.py).
+        # In a linked worktree, `git commit` exports GIT_DIR/GIT_WORK_TREE, which redirect
+        # Flutter's SDK git detection at the app checkout and break pub resolution.
+        entry: python hooks/scripts/flutter_env.py metrics
+        language: python
         pass_filenames: false
 
       # ── Pre-push only: slower checks that mirror CI's "Analyze & format"
@@ -81,13 +84,13 @@ repos:
         stages: [pre-push]
       - id: flutter-analyze
         name: "dart: flutter analyze (pre-push)"
-        entry: flutter analyze --fatal-infos
-        language: system
+        entry: python hooks/scripts/flutter_env.py analyze
+        language: python
         pass_filenames: false
         stages: [pre-push]
       - id: flutter-test
         name: "dart: flutter test (pre-push)"
-        entry: flutter test
-        language: system
+        entry: python hooks/scripts/flutter_env.py test
+        language: python
         pass_filenames: false
         stages: [pre-push]

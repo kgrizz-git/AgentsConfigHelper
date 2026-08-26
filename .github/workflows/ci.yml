@@ -83,6 +83,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  docs:
+    name: Docs integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Deterministic, offline, no network: internal relative-link check plus the
+      # doc-link checker's stdlib-unittest suite. The supported-tool catalog
+      # review-marker and registry-coverage gate (--catalog-strict) runs here too;
+      # it activates now that the truthful "Catalog reviewed through:" marker is
+      # present in docs/supported-tools.md. External network probing remains
+      # disabled (--internal-only); only missing/malformed markers and missing
+      # registry tools are strict failures (a stale date stays advisory).
+      - name: Internal link + catalog check
+        run: python3 ci/scripts/check_doc_links.py --internal-only --catalog-strict
+
+      - name: Doc-link checker unit tests
+        run: python3 ci/tests/test_check_doc_links.py
+
   semgrep:
     name: Semgrep SAST
     runs-on: ubuntu-latest

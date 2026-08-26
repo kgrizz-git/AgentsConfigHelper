@@ -1,6 +1,6 @@
 # CI Guidance
 
-Last reviewed: 2026-07-14
+Last reviewed: 2026-08-25
 
 Guidance for selecting, structuring, and gating CI checks. The repository's active
 required checks live in `.github/workflows/ci.yml`.
@@ -73,6 +73,21 @@ read. Account billing summary needs billing/admin access on the user or org; if 
 returns 403, use <https://github.com/settings/billing> (or org Billing) instead. Legacy
 product-specific endpoints (`/settings/billing/actions`, `shared-storage`) are retired —
 this script uses the consolidated usage summary API plus per-run timing.
+
+## Scheduled / advisory workflows
+
+Not every useful check belongs on a pull request. Heavy, slow, or purely informational
+checks run on a schedule or on dispatch so they never block merges.
+
+- **Tool-catalog freshness advisory** (`.github/workflows/catalog-advisory.yml`): runs
+  `python3 ci/scripts/check_doc_links.py --offline` plus the checker's unittest suite on a
+  monthly cron and on `workflow_dispatch`. **Advisory and no-write** — `permissions:
+  contents: read`, no external-link probing, and it never opens/updates issues. When the
+  `Catalog reviewed through:` date is stale (120-day window), or an internal link is broken, it
+  writes an actionable reminder to the run summary and emits a `::warning` annotation on
+  `docs/supported-tools.md`. The PR
+  gate stays the Phase 2 `--catalog-strict` job in `ci.yml` (only an invalid marker or incomplete
+  evidence-table row set fails a PR). See [`prompts/maintenance-loop.md`](../prompts/maintenance-loop.md) §6.
 
 ## Scripts in this directory
 

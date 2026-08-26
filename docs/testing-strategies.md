@@ -433,6 +433,21 @@ Before any testing session with real config files:
 
 ---
 
+## Fixture-intake checklist
+
+Use this checklist when adding or updating any file under `test/fixtures/`. Its purpose is to keep committed fixtures synthetic, token-free, and safe to use in the `--test-root` smoke workflow and CI parser tests. A fixture that fails any item below is not ready to commit.
+
+- [ ] **Source provenance recorded** — note the origin of the structure (vendor docs, schema reference, or hand-synthesized) in the pull request description. Do not copy a personal configuration, a vendor example containing credential-shaped values, or an unredacted third-party file into the tree.
+- [ ] **Synthetic rewrite / redaction** — the content is a hand-written reproduction of the *shape* of a real config, not a verbatim copy. All string values are obviously fake (`"example.invalid"`, `"test-model"`, `"fixture-rule"`). User names, hostnames, paths, and identifiers are generic. Comments and rule text contain no private project names or internal URLs.
+- [ ] **Secret scan clean** — the diff is free of API keys, tokens, connection strings, and credential-shaped values. `gitleaks` runs in pre-commit and CI; verify locally before opening the PR with `pre-commit run --files <fixture-path>`. A fixture that looks structurally real must still fail a secret scan if it contains a plausible-looking key.
+- [ ] **Token-free and environment-independent** — the fixture contains no values that resolve differently per user or machine (no real home paths, no usernames, no hostnames, no absolute paths outside the fixture tree). It must parse identically on any machine running `flutter test` without network access.
+- [ ] **Validation / parsing expectations documented** — the fixture's expected parse result is covered by a Dart test (e.g. `test/fixtures/staging_fixtures_test.dart` or `test/fixtures/claude_permissions_fixtures_test.dart`), or the PR adds one. A fixture that is not exercised by any test is dead weight and may silently rot.
+- [ ] **Raw-editor fallback for unsupported structures** — if the fixture exercises a format the app does not yet parse as structured data (Markdown rules, Starlark, plain text, glob-matched instruction files), it is discovered and edited only through the raw-text editor. Do not claim a "verified example" or "structured-schema" status for such a fixture in `docs/supported-tools.md`; record it as `paths recorded; schema needs verification` or `primary docs only` until a parser exists.
+
+See also: [macOS test-root mode](macos-test-root.md) (disposable-staging workflow), [Supported Tools](supported-tools.md) (catalog evidence contract and schema-evidence states).
+
+---
+
 ## Conclusion
 
 **Recommended Approach:** Start with fake sample files for development, progress to dedicated test user accounts for integration testing, and use virtual machines for cross-platform validation. Always maintain the ability to rollback quickly through snapshots or backups.

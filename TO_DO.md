@@ -19,8 +19,11 @@
    add the default-startup harness and unsupported nested-structure raw-editor fixture, and
    defer Linux/Windows test-root work until their platform-native bridges are planned.
 3. **Tool catalog integrity:** implement the [tool-catalog integrity plan](plans/active/tool-catalog-integrity.md)
-   so supported-tool documentation has explicit source/schema evidence, deterministic PR
-   checks, and a quarterly advisory review issue.
+      so supported-tool documentation has explicit source/schema evidence, deterministic PR
+      checks, and a monthly advisory review reminder. **Status:** Phases 0–3 shipped; Phase 4
+       local acceptance verified; remaining items are two post-merge GitHub Actions
+       manual-dispatch confirmations — immediate (fresh dispatch now) and future (stale-path
+       re-dispatch after the next overdue window) (see the plan's Phase 4).
 
 The durable sequence and architecture decisions are in the
 [Structured Configuration Roadmap](plans/active/structured-configuration-roadmap.md).
@@ -55,8 +58,13 @@ The durable sequence and architecture decisions are in the
       owning tool's authoritative documentation. Design a versioned metadata source,
       ensure links are tool-specific and reviewable, and keep unknown settings visibly
       unclassified rather than inventing explanations.
-- [ ] **Tool catalog integrity:** Complete the source-evidence matrix and automated review
-      workflow in [plans/active/tool-catalog-integrity.md](plans/active/tool-catalog-integrity.md).
+- [ ] **Tool catalog integrity (acceptance follow-through):** Source-evidence matrix and
+      automated review workflow are complete through Phase 3 (no-write scheduled/manual
+      workflow: run summary + warning annotation). Remaining: manually dispatch
+      `.github/workflows/catalog-advisory.yml` once after it lands on `default` to confirm
+      the live summary path (`result=fresh` while the marker is current), and re-dispatch
+      after the next overdue window to confirm the stale-date `::warning` path. See
+      [plans/active/tool-catalog-integrity.md](plans/active/tool-catalog-integrity.md) Phase 4.
 
 ## Tool-support gaps (discovery expansion)
 
