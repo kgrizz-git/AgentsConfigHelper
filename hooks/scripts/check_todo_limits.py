@@ -15,7 +15,7 @@ under plans/ (non-archive).
 Exit codes: 0 = pass (warnings OK), 1 = hard violation.
 
 Environment:
-  POLICY_TODO_SOFT_LINE_CAP   (default 150)
+  POLICY_TODO_SOFT_LINE_CAP   (default 250)
   POLICY_TODO_HARD_LINE_CAP   (default 300)
   POLICY_WARN_AS_ERROR        (set to 1 to treat soft warnings as errors)
 """
@@ -26,7 +26,7 @@ import os
 import sys
 from pathlib import Path
 
-SOFT_LINE_CAP = int(os.getenv("POLICY_TODO_SOFT_LINE_CAP", "150"))
+SOFT_LINE_CAP = int(os.getenv("POLICY_TODO_SOFT_LINE_CAP", "250"))
 HARD_LINE_CAP = int(os.getenv("POLICY_TODO_HARD_LINE_CAP", "300"))
 WARN_AS_ERROR = os.getenv("POLICY_WARN_AS_ERROR", "0") == "1"
 

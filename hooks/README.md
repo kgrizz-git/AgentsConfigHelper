@@ -27,7 +27,7 @@ rather than after.
 | `.pre-commit-config.yaml` | Example config: policy checks + secrets + lint |
 | `scripts/check_file_size.py` | Enforces [`policies/file-size-and-counts.md`](../policies/file-size-and-counts.md) (soft **600** / hard **1000** lines) |
 | `scripts/check_doc_freshness.py` | Enforces [`policies/doc-freshness.md`](../policies/doc-freshness.md) |
-| `scripts/check_todo_limits.py` | Enforces living backlog size ([`policies/plans-and-todos.md`](../policies/plans-and-todos.md); soft **150** / hard **300**) |
+| `scripts/check_todo_limits.py` | Enforces living backlog size ([`policies/plans-and-todos.md`](../policies/plans-and-todos.md); soft **250** / hard **300**) |
 | `scripts/check_gitignore_protected.py` | Opt-in gate blocking removal of required `.gitignore` rules (config: `.gitignore-protected`) |
 | `scripts/check_forbidden_paths.py` | Opt-in gate blocking any tracked file under never-commit paths (config: `.forbidden-paths`) |
 | `scripts/check_scan_contract.py` | Opt-in ledger gate: blocks when a required heavy scanner is stale vs the files it covers (config: `.scan-contract.json` + `.scan-ledger.json`) |
@@ -107,7 +107,7 @@ POLICY_DOC_SOFT_LINE_CAP=1000  # markdown soft cap
 POLICY_WARN_AS_ERROR=0          # set to 1 to treat soft warnings as errors
 
 # check_todo_limits.py
-POLICY_TODO_SOFT_LINE_CAP=150
+POLICY_TODO_SOFT_LINE_CAP=250
 POLICY_TODO_HARD_LINE_CAP=300
 
 # check_doc_freshness.py

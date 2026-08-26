@@ -1,13 +1,44 @@
 # To Do
 
-- [ ] Complete all phases of the master plan
-- [ ] Address issues flagged by sonar cloud
-- [ ] **Release readiness — prepare 0.2.0:** confirm the scope of the accumulated
+## Next Up
+
+Keep this queue to **3–5 items**. When it falls below three, promote one or two actionable
+items from the body; do not add more than needed to restore the queue. Each item below links to
+its full entry, which remains the source of scope and completion detail.
+
+1. [Structured configuration presentation](#structured-configuration-presentation)
+2. [Safe exploratory testing](#safe-exploratory-testing)
+3. [Project workspace labels](#project-workspace-labels)
+4. [Tool catalog integrity acceptance](#tool-catalog-integrity-acceptance-follow-through)
+5. [macOS local execution follow-through](#macos-local-execution-follow-through)
+
+## Backlog maintenance
+
+- Every file in `plans/active/` must have one open, linked entry in this file. Add that entry
+  when activating a plan; keep its scope/status aligned with the plan as work progresses.
+- Completing implementation is the last step before removing its TO_DO entry and archiving its
+  plan. Do not remove the entry or archive the plan while validation, review, or an explicitly
+  recorded follow-through remains.
+
+## Release and maintenance
+
+### Release readiness — prepare 0.2.0
+
+- [ ] Confirm the scope of the accumulated
       backward-compatible user-facing changes, then bump `VERSION` and `pubspec.yaml`, move
       `CHANGELOG.md` entries from Unreleased into a dated release section, and choose the next
       platform build number. Do this when cutting a release, not for every feature PR.
 - [ ] check and possibly clarify harness guidance about the use of TO_DO.md, "CHANGELOG.dev.md", "CHANGELOG.md"
-- [ ] Review [`docs/PRODUCT_IDEAS.md`](docs/PRODUCT_IDEAS.md) — a backlog of ideas to make the app more useful, full-featured, user-friendly, and intuitive. Later choose which to implement and write a plan in `plans/active/`.
+
+### Master plan delivery
+
+- [ ] Complete all remaining phases of the [master plan](plans/active/initial_master_plan.md).
+
+### Future-enhancement triage
+
+- [ ] Periodically review [future enhancements](plans/active/future_enhancements.md) and
+      [`docs/PRODUCT_IDEAS.md`](docs/PRODUCT_IDEAS.md); promote a bounded, approved slice into
+      a new active plan only when it is ready to implement.
 
 ## Product follow-ups (prioritized)
 
@@ -28,13 +59,17 @@
 The durable sequence and architecture decisions are in the
 [Structured Configuration Roadmap](plans/active/structured-configuration-roadmap.md).
 
-- [ ] **Project workspace labels:** Make project-scope sidebar entries distinguish their root
+### Project workspace labels
+
+- [ ] Make project-scope sidebar entries distinguish their root
       (for example, `workspace — AGENTS.md`) instead of repeating only the tool/file name.
       Then consider user-editable project aliases stored in discovery preferences; preserve the
       canonical path for matching, handle duplicate names clearly, and add migration/widget
       coverage before exposing rename controls.
 
-- [ ] **High priority — finish safe exploratory testing:** The token-free fixtures and
+### Safe exploratory testing
+
+- [ ] The token-free fixtures and
       macOS-only `--test-root` staging smoke now exercise automatic discovery, editing,
       backup, restore, and preferences without touching a real config. Next, add default-mode
       startup-regression coverage, an unsupported nested-structure raw-editor fixture, and
@@ -45,7 +80,10 @@ The durable sequence and architecture decisions are in the
       [docs/testing-strategies.md](docs/testing-strategies.md) and the implementation
       [plan](plans/active/safe-testing-foundation.md), with test-root implementation
       details in [its focused plan](plans/active/test-root-containment.md)).
-- [ ] **Structured configuration presentation:** Expand parsers and UI models so supported
+
+### Structured configuration presentation
+
+- [ ] Expand parsers and UI models so supported
       configuration formats can present discovered rules, permissions, and settings as
       focused widgets/cards rather than only raw syntax. Start with tool-schema metadata
       and a single high-value read-only card; preserve a faithful raw-editor fallback for
@@ -53,12 +91,16 @@ The durable sequence and architecture decisions are in the
       fixture coverage, then add parser/UI tests per schema. (See gap analysis in
       [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md)
       and [implementation roadmap](plans/active/structured-configuration-roadmap.md).)
+
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the
       owning tool's authoritative documentation. Design a versioned metadata source,
       ensure links are tool-specific and reviewable, and keep unknown settings visibly
       unclassified rather than inventing explanations.
-- [ ] **Tool catalog integrity (acceptance follow-through):** Source-evidence matrix and
+
+### Tool catalog integrity acceptance follow-through
+
+- [ ] Source-evidence matrix and
       automated review workflow are complete through Phase 3 (no-write scheduled/manual
       workflow: run summary + warning annotation). Remaining: manually dispatch
       `.github/workflows/catalog-advisory.yml` once after it lands on `default` to confirm
@@ -66,43 +108,23 @@ The durable sequence and architecture decisions are in the
       after the next overdue window to confirm the stale-date `::warning` path. See
       [plans/active/tool-catalog-integrity.md](plans/active/tool-catalog-integrity.md) Phase 4.
 
-## Tool-support gaps (discovery expansion)
+### macOS local execution follow-through
 
-Track candidates that are not agent/IDE tools but still have useful project- or user-level
-config files this app could discover and edit (raw-text / YAML / JSON / TOML as appropriate).
-Research exact paths and formats before adding `ToolId`s; prefer files users actually edit
-over generated CI caches.
+- [ ] Complete the remaining validation and follow-through in the
+      [macOS local execution plan](plans/active/macos-local-execution.md). Keep the app
+      source-build-only and unsandboxed for this cycle; do not broaden distribution scope
+      before its ADR-directed review is complete.
 
-### GitHub Actions, workflows, and repo automation
+### Agent-config discovery follow-through
 
-- [ ] **GitHub Actions workflows** — `.github/workflows/*.{yml,yaml}` (CI, release, PR
-      checks). Decide whether to treat each workflow as its own sidebar entry or group under
-      one “GitHub Actions” tool.
-- [ ] **Dependabot** — `.github/dependabot.yml` / `.github/dependabot.yaml`.
-- [ ] **Common `.github/` configs** — e.g. `CODEOWNERS`, `FUNDING.yml`,
-      `ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE*`, `labeler.yml`, `actionlint` config if
-      present. Pick a small high-value subset rather than every file under `.github/`.
-- [ ] **Renovate** (adjacent to Dependabot) — `renovate.json`,
-      `.github/renovate.json`, `renovate.json5` (if we want dependency-bot parity).
+- [ ] Review the deferred work in the [agent-config discovery plan](plans/active/agent-config-discovery.md)
+      and promote only a bounded, current discovery slice when it is ready for implementation.
 
-### Code quality, security, and docs platforms
+### Tool-support discovery candidates
 
-Add first-class discovery only where there is a durable on-disk config (skip pure SaaS UI
-settings with no repo/global file).
-
-- [ ] **SonarQube / SonarCloud** — `sonar-project.properties`; also note scanner keys
-      embedded in `build.gradle` / `pom.xml` / CI env (may stay docs-only).
-- [ ] **CodeRabbit** — `.coderabbit.yaml` (repo root; org/UI layers are not files).
-- [ ] **Qodo / PR-Agent** — `.pr_agent.toml` (and any successor Qodo config filenames).
-- [ ] **DeepSource** — `.deepsource.toml`.
-- [ ] **Semgrep** — `.semgrep.yml` / `.semgrep.yaml`, `.semgrep/` rule packs; CI workflow
-      wrappers are covered under GitHub Actions if those are added.
-- [ ] **CodeQL** — `.github/codeql/codeql-config.yml` (and related query-suite configs);
-      workflow YAML may already be covered by Actions discovery.
-- [ ] **Mintlify** — `docs.json` / `mint.json` (docs site config).
-- [ ] **Other common adjacent configs (evaluate)** — `codecov.yml` / `.codecov.yml`,
-      `.pre-commit-config.yaml` (if not already discoverable), `.mdlrc` /
-      `.markdownlint.yaml`, `actionlint.yaml` — only add if they fit the product story.
+- [ ] Select a bounded candidate from the [future-enhancements discovery inventory](plans/active/future_enhancements.md#discovery-expansion-candidates)
+      only after verifying that it has a durable, user-editable configuration file and fits the
+      app’s product scope.
 
 ## Follow-ups from Phase 5.5 (docs accuracy)
 

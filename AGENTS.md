@@ -83,9 +83,11 @@ flutter build macos --release   # build release binary
 - Use semantic versioning (`CHANGELOG.md` already declares this; `TO_DO.md` tracks
   formalizing it as an enforced policy).
 - Update the relevant plan(s) in `plans/active/` as each phase is implemented — reflect
-  what actually shipped, not just what was proposed.
-- When a phase's plan is fully complete, archive it: move the file from `plans/active/`
-  to `plans/archive/` rather than deleting it.
+  what actually shipped, not just what was proposed. Every active plan must have one open,
+  linked entry in `TO_DO.md`; add it when activating the plan and keep the two records aligned.
+- Archive a plan only as the final implementation step: after its scope, validation, review,
+  and explicitly recorded follow-through are complete, remove its `TO_DO.md` entry and move the
+  file from `plans/active/` to `plans/archive/` rather than deleting it. Do neither early.
 - Log changes in the appropriate changelog: user-facing changes go in
   `CHANGELOG.md`; developer-only changes (hooks internals, tests/CI) go in
   `CHANGELOG.dev.md`. See `policies/changelog-conventions.md`.
