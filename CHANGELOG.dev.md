@@ -7,6 +7,15 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **TO_DO queue and plan lifecycle:** Added a capped 3–5-item "Next Up" queue that links to
+  the detailed backlog entries and explains how to replenish it. Recorded direct TO_DO links for
+  every active plan, and clarified in `AGENTS.md` plus `best_practices.md` that a plan remains
+  active (and its TO_DO entry remains) until implementation, validation, review, and recorded
+  follow-through are complete. Moved the long tool-support discovery candidate inventory into
+  the active Future Enhancements plan, leaving a concise linked selection item in the TO_DO body.
+  Raised the living-backlog soft warning threshold from 150 to 250 lines while retaining the
+  300-line hard limit, so the new queue and plan links remain advisory-managed rather than noisy.
+
 - **Tool-catalog integrity Phase 3 (monthly advisory/reminder):** Added
   `.github/workflows/catalog-advisory.yml`, a scheduled GitHub Actions workflow that runs the
   checker's existing offline/advisory capabilities monthly (cron `0 6 1 * *`) plus on

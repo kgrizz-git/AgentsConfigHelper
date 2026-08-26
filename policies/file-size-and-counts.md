@@ -22,7 +22,7 @@ variables (see [`hooks/README.md`](../hooks/README.md)) or the script defaults.
 | Max files per directory (excl. generated) | 40 | advisory |
 | Disallow committing large binaries | > 5 MB | hard gate (use Git LFS / release assets) |
 | Doc (`.md`) max lines | 1000 | advisory (split into linked docs) |
-| Living `to_do` / `TODO.md` backlog | 150 (soft), 300 (hard) | see [`plans-and-todos.md`](plans-and-todos.md) |
+| Living `to_do` / `TODO.md` backlog | 250 (soft), 300 (hard) | see [`plans-and-todos.md`](plans-and-todos.md) |
 
 ### Exemptions
 

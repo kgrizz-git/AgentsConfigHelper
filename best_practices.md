@@ -17,6 +17,9 @@ this file to match it, not the reverse.
 - A new supported tool/IDE needs both a parser and an entry in
   `docs/supported-tools.md`.
 - Follow Dart/Flutter style; `dart format` is enforced in CI.
+- Every active plan needs one open, linked `TO_DO.md` entry. Keep plan and TO_DO status aligned;
+  remove the entry and archive the plan only after implementation, validation, review, and any
+  recorded follow-through are complete.
 
 ## Not violations (avoid these false positives)
 

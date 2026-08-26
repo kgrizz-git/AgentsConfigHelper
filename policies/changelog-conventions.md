@@ -71,7 +71,7 @@ Example developer entry:
 ## [1.2.0] - 2026-07-09
 
 ### Added
-- Pre-commit hook `check-todo-limits` (soft gate at 150 lines).
+- Pre-commit hook `check-todo-limits` (soft gate at 250 lines).
 - CI: Semgrep OWASP ruleset on PRs.
 
 ### Changed

@@ -52,7 +52,7 @@ helps the harness.
 ## Living `to_do` / `TODO` file
 
 + Keep it short: prioritized bullets or a tiny table, not a novel.
-+ Soft line cap: **150** (warn). Hard cap: **300** (block) — see hook env vars.
++ Soft line cap: **250** (warn). Hard cap: **300** (block) — see hook env vars.
 + Each item should be actionable; link to a `plans/` file or issue when the work is large.
 + Prune done items into a short "Recently done" section (max ~10) or delete them after
   they land in the changelog / git history.
