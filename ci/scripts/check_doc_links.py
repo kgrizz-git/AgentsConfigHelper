@@ -140,6 +140,15 @@ def _is_eligible_markdown(path: Path) -> bool:
 
 
 def iter_markdown(paths: list[Path]) -> list[Path]:
+    """
+    Collect eligible Markdown files from the supplied paths or the repository.
+    
+    Parameters:
+    	paths (list[Path]): Markdown paths to validate explicitly. An empty list triggers recursive discovery from the current directory.
+    
+    Returns:
+    	list[Path]: Eligible Markdown files, sorted when discovered recursively.
+    """
     if paths:
         root = Path.cwd()
         valid = []
@@ -172,7 +181,12 @@ def _is_catalog(path: Path) -> bool:
 
 
 def _is_catalog_strict(path: Path) -> bool:
-    """True when [path] resolves to one of the explicit primary catalog paths."""
+    """
+    Determine whether a path identifies an explicit primary catalog file.
+    
+    Returns:
+        bool: `True` if the path resolves to a primary catalog path, `False` otherwise.
+    """
     candidates = {path}
     try:
         candidates.add(path.resolve())
@@ -188,7 +202,15 @@ def _is_catalog_strict(path: Path) -> bool:
 
 
 def strip_code(text: str) -> str:
-    """Blank out fenced blocks so template placeholders are not read as real links."""
+    """
+    Replace fenced code blocks with blank lines so their contents are ignored during Markdown link analysis.
+    
+    Parameters:
+    	text (str): Markdown content that may contain fenced code blocks.
+    
+    Returns:
+    	str: The content with fenced code blocks replaced by blank lines.
+    """
     return CODE_FENCE_RE.sub(lambda m: "\n" * m.group(0).count("\n"), text)
 
 
@@ -267,6 +289,15 @@ def check_link(url: str) -> tuple[str, str] | None:
 
 
 def check_catalog_date(text: str) -> str | None:
+    """
+    Check whether a catalog review marker contains a valid, current date.
+    
+    Parameters:
+    	text (str): Markdown content that may include a catalog review marker.
+    
+    Returns:
+    	str | None: A finding describing an invalid, future, or stale review date; otherwise, `None`.
+    """
     match = CATALOG_RE.search(text)
     if not match:
         return None  # marker is opt-in; only files claiming a catalog review are checked
@@ -286,10 +317,14 @@ def check_catalog_date(text: str) -> str | None:
 
 
 def check_catalog_marker(text: str) -> str | None:
-    """Validate the catalog review marker's presence and shape (not staleness).
-
-    Returns a human-readable problem string when the marker is missing, absent, or
-    malformed, otherwise None. Staleness is handled separately by check_catalog_date.
+    """
+    Validate the catalog review marker's presence, format, and date.
+    
+    Parameters:
+        text (str): Catalog text to inspect.
+    
+    Returns:
+        str | None: An error message for a missing, malformed, or future review marker; otherwise, None.
     """
     match = CATALOG_RE.search(text)
     if not match:
@@ -304,7 +339,15 @@ def check_catalog_marker(text: str) -> str | None:
 
 
 def catalog_evidence_tool_rows(text: str) -> tuple[list[str] | None, str | None]:
-    """Extract exact Tool-column values from the catalog evidence table."""
+    """
+    Extracts tool names from the catalog evidence table.
+    
+    Parameters:
+        text (str): Markdown content containing the catalog evidence section.
+    
+    Returns:
+        tuple[list[str] | None, str | None]: The Tool-column values and no error, or `None` and an error description when the section or table is invalid.
+    """
     lines = text.splitlines()
     try:
         start = lines.index(CATALOG_EVIDENCE_HEADING)
@@ -338,6 +381,15 @@ def catalog_evidence_tool_rows(text: str) -> tuple[list[str] | None, str | None]
 
 
 def _markdown_table_cells(line: str) -> list[str] | None:
+    """
+    Parse a pipe-delimited Markdown table row into trimmed cell values.
+    
+    Parameters:
+    	line (str): The table row text to parse.
+    
+    Returns:
+    	list[str] | None: The trimmed cell values, or `None` if the input is not enclosed by pipe characters.
+    """
     stripped = line.strip()
     if not (stripped.startswith("|") and stripped.endswith("|")):
         return None
@@ -345,6 +397,7 @@ def _markdown_table_cells(line: str) -> list[str] | None:
 
 
 def _is_markdown_table_delimiter(line: str) -> bool:
+    """Determine whether a line is a valid six-column Markdown table delimiter."""
     cells = _markdown_table_cells(line)
     return bool(cells) and len(cells) == len(CATALOG_EVIDENCE_COLUMNS) and all(
         re.fullmatch(r":?-{3,}:?", cell) for cell in cells
@@ -368,6 +421,15 @@ def check_registry_coverage(path: Path, text: str) -> list[str]:
 
 
 def main() -> int:
+    """
+    Run the Markdown link and tool-catalog checks for the selected files.
+    
+    Parameters:
+        None
+    
+    Returns:
+        int: Exit code 2 when no Markdown files are found, 1 when enabled strict checks fail, or 0 otherwise.
+    """
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )

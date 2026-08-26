@@ -42,6 +42,17 @@ import check_doc_links as cd  # noqa: E402
 
 
 def _write(tmp_path: Path, rel: str, body: str) -> Path:
+    """
+    Write dedented UTF-8 text to a file within a temporary directory.
+    
+    Parameters:
+    	tmp_path (Path): Root directory containing the file.
+    	rel (str): Relative path of the file to write.
+    	body (str): Text to write to the file.
+    
+    Returns:
+    	Path: The path to the written file.
+    """
     target = tmp_path / rel
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(textwrap.dedent(body), encoding="utf-8")
@@ -61,6 +72,16 @@ def _run(cwd: Path, *args: str) -> tuple[int, str, str]:
 
 
 def _catalog_body(reviewed: str, names: tuple[str, ...] = cd.REGISTRY_NAMES) -> str:
+    """
+    Generate catalog evidence content for the specified tools and review date.
+    
+    Parameters:
+    	reviewed (str): Review date or date marker included in the catalog.
+    	names (tuple[str, ...]): Tool names to include as catalog evidence rows.
+    
+    Returns:
+    	str: Formatted catalog evidence section.
+    """
     rows = "\n".join(
         f"| {name} | discovery | [source](https://example.com) | schema | fixture | {reviewed} |"
         for name in names
@@ -96,9 +117,11 @@ class CatalogDateTests(unittest.TestCase):
     """Date handling: staleness is always advisory, never a hard failure."""
 
     def _today(self) -> str:
+        """Return today's date in ISO 8601 format."""
         return date.today().isoformat()
 
     def _stale(self) -> str:
+        """Return an ISO-formatted date that falls just outside the catalog review window."""
         return (date.today() - timedelta(days=cd.CATALOG_WINDOW_DAYS + 1)).isoformat()
 
     def test_none_when_no_marker(self):
