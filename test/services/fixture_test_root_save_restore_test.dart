@@ -59,9 +59,7 @@ void main() {
         await Directory(
           p.join(harness.root.path, '.claude'),
         ).delete(recursive: true);
-        // Synchronous existence checks keep this filesystem assertion concise.
-        // ignore: avoid_slow_async_io
-        expect(await File(harness.configPath).exists(), isFalse);
+        expect(File(harness.configPath).existsSync(), isFalse);
 
         await harness.restoreLikeMainShell(backupPath);
 
@@ -135,9 +133,7 @@ void main() {
           'fixture_outside_root_',
         );
         addTearDown(() async {
-          // Keep this filesystem existence check concise.
-          // ignore: avoid_slow_async_io
-          if (await outsideDir.exists()) {
+          if (outsideDir.existsSync()) {
             await outsideDir.delete(recursive: true);
           }
         });
@@ -263,9 +259,7 @@ class _FixtureHarness {
   }
 
   Future<void> dispose() async {
-    // Synchronous existence checks keep this filesystem assertion concise.
-    // ignore: avoid_slow_async_io
-    if (await root.exists()) {
+    if (root.existsSync()) {
       await root.delete(recursive: true);
     }
   }
