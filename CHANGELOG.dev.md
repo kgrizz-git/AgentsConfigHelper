@@ -7,6 +7,21 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Fixture-level test-root save/restore coverage:** Added
+  `test/services/fixture_test_root_save_restore_test.dart`, which seeds a disposable marked
+  root from `staging_home/.claude/settings.json`, wires ConfigService/BackupService like
+  test-root startup (home resolver + `application-support/backups`), and proves save creates
+  a contained backup. Portable `LocalFileOperations` cases cover recreate and
+  restore-over-existing (MainShell order). A second group uses a root-bounded
+  `FileOperations` stand-in that rejects outside-root save/backup/restore the same way
+  production test-root mode does before the native bridge. Completes the remaining
+  safe-testing fixture-boundary service slice; macOS no-follow bridge tests stay separate.
+
+- **Tool-catalog advisory fresh-dispatch acceptance:** Manually dispatched
+  `.github/workflows/catalog-advisory.yml` on `main` (run 33089003536, 2026-08-27). Offline
+  checker reported `0 broken, 0 advisory`; the warning-annotation step was skipped
+  (`result=fresh`). The future stale-path re-dispatch remains the only Phase 4 follow-through.
+
 - **Safe-testing regression coverage:** Extracted the startup service graph so ordinary startup
   can be tested without launching a desktop window, preserving window initialization before
   fallible backup-directory resolution. Added an unsupported nested Claude permissions fixture

@@ -1,16 +1,13 @@
 # Plan: Tool Catalog Integrity
 
-Last reviewed: 2026-08-25
+Last reviewed: 2026-08-27
 Date: 2026-08-23
 Author: maintainers
-Status: in progress (Phase 0 complete: catalog boundary reconciled — registry enumeration
-tests present, evidence-table coverage rows corrected to match registered targets; Phase 1
-evidence complete; Phase 2 close-out: catalog marker + --catalog-strict wired into PR CI;
-Phase 3 monthly advisory shipped (no-write scheduled/manual workflow: run summary +
-warning annotation, never issue creation); Phase 4 local acceptance verified — remaining
-items are two post-merge GitHub Actions manual-dispatch confirmations (immediate: fresh
-dispatch now; future: stale-path re-dispatch after the next overdue window), which cannot be
-proven from a local checkout)
+Status: in progress (Phases 0–3 complete; Phase 4 local acceptance + fresh live dispatch
+verified 2026-08-27 on run
+<https://github.com/kgrizz-git/AgentsConfigHelper/actions/runs/33089003536> —
+`result=fresh`, warning annotation step skipped, offline checker `0 broken, 0 advisory`.
+Remaining: one future stale-path re-dispatch after the next overdue window)
 Linked issue/PR: n/a
 Related: [Supported Tools](../../docs/supported-tools.md),
 [Structured Configuration Roadmap](structured-configuration-roadmap.md), and
@@ -55,8 +52,9 @@ blocking unrelated feature pull requests.
   and the checker's unittest suite, writes an actionable reminder to the run summary, and emits
   a `::warning` annotation on `docs/supported-tools.md` when internal links are broken or the
   `Catalog reviewed through:` date is stale (120-day window). It runs with `permissions: contents: read` only — no issue
-  creation, no external-link probing, no write-back. The live-dispatch confirmation that this
-  workflow exercises its summary/annotation paths is the remaining post-merge acceptance check
+  creation, no external-link probing, no write-back. The fresh live-dispatch confirmation
+  completed on 2026-08-27 (run 33089003536, `result=fresh`); the remaining post-merge
+  acceptance check is the future stale-path re-dispatch after the next overdue window
   (see Phase 4).
 
 ## Decisions
@@ -345,13 +343,15 @@ cannot be found, say so and leave the raw editor as the only supported represent
 
 **Post-merge GitHub Actions check (not runnable from a local checkout):**
 
-- [ ] Manually dispatch the monthly workflow (`.github/workflows/catalog-advisory.yml`)
+- [x] Manually dispatch the monthly workflow (`.github/workflows/catalog-advisory.yml`)
       once after this change lands on `default`; verify it writes a run summary and, because
       the `Catalog reviewed through:` date is fresh, reports `result=fresh` with no
-      `::warning` annotation. **This is the live-remote confirmation that the scheduled job
-      reads the repo, runs the offline checker + unittests, and exercises the summary path.**
-      It deliberately does **not** create or update any issue (the workflow runs with
-      `permissions: contents: read` only and has no Issues API interaction).
+      `::warning` annotation. **Verified 2026-08-27:** workflow_dispatch run
+      <https://github.com/kgrizz-git/AgentsConfigHelper/actions/runs/33089003536> concluded
+      success; offline step reported `Checked 162 file(s) (offline): 0 broken, 0 advisory.`;
+      the `Emit catalog advisory warning annotation` step was **skipped** (only runs when
+      `result=attention`), confirming the fresh summary path. No Issues API interaction
+      (`permissions: contents: read` only).
 - [ ] Re-dispatch the workflow after the next overdue window to verify the stale-date
       summary + `::warning` annotation path fires without emitting issue spam. This is a
       future-maintenance confirmation, not a current blocker.

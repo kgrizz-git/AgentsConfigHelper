@@ -1,9 +1,11 @@
 # Plan: Safe Testing Foundation
 
-Last reviewed: 2026-08-22
+Last reviewed: 2026-08-27
 Date: 2026-08-22
 Author: maintainers
-Status: in progress
+Status: in progress — fixture save/backup/restore-as-recreate service coverage complete;
+remaining work is platform-native Linux/Windows test-root design and periodic CI matrix
+confidence, not further macOS fixture plumbing
 Linked issue/PR: n/a
 
 ## Goal
@@ -134,8 +136,14 @@ mistaken for credentials.
       Malformed-content and raw-editor-fallback fixture coverage remain open.
 - [x] Add discovery tests proving the fixture home finds expected user targets, while a
       fixture project root finds expected project targets.
-- [ ] Add service tests that verify save creates a backup, restore creates parent folders
+- [x] Add service tests that verify save creates a backup, restore creates parent folders
       when needed, and all configured test-mode writes remain contained.
+      **Verified 2026-08-27:** `test/services/fixture_test_root_save_restore_test.dart`
+      seeds `staging_home/.claude/settings.json` under a marked disposable root, wires
+      ConfigService/BackupService like test-root startup (home resolver +
+      `application-support/backups`), asserts save creates a contained backup, then
+      restores via the MainShell order (`readBackupBytes` → optional live `createBackup` →
+      `writeRestoredFile`) for both missing-parent recreate and restore-over-existing.
 
 ### Phase 2: Make staging smoke testing deterministic
 
@@ -174,10 +182,14 @@ tool schema or add a structured write path.
   permissions shape. Its editor test must assert raw-editor-first rendering: no supported
   structured card, no flat permissions editor, and no structured-only save path. The raw
   content must remain available unchanged until a user intentionally edits it.
-- [ ] Keep fixture-boundary coverage distinct from the existing primitive/containment tests.
+- [x] Keep fixture-boundary coverage distinct from the existing primitive/containment tests.
   The fixture-level service test should exercise save → backup and restore-as-recreate
   through the configured test-root services; it complements (rather than duplicates) the
   no-follow and symlink tests in `test-root-containment.md`.
+  **Done 2026-08-27** via `fixture_test_root_save_restore_test.dart` (portable
+  LocalFileOperations fixture flow plus a root-bounded FileOperations group that rejects
+  outside-root save/backup/restore; native no-follow remains in
+  `macos_test_root_file_operations_test`).
 - [x] Document sanitized-fixture intake before adding a bug-derived fixture: provenance or
   reproducible shape, removal of user content and credentials, synthetic replacement of
   values/comments, and a reviewer check that the fixture exercises a specific regression.

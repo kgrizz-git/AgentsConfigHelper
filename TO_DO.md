@@ -7,10 +7,10 @@ items from the body; do not add more than needed to restore the queue. Each item
 its full entry, which remains the source of scope and completion detail.
 
 1. [Structured configuration presentation](#structured-configuration-presentation)
-2. [Safe exploratory testing](#safe-exploratory-testing)
-3. [Project workspace labels](#project-workspace-labels)
+2. [Project workspace labels](#project-workspace-labels)
+3. [macOS local execution follow-through](#macos-local-execution-follow-through)
 4. [Tool catalog integrity acceptance](#tool-catalog-integrity-acceptance-follow-through)
-5. [macOS local execution follow-through](#macos-local-execution-follow-through)
+5. [Safe exploratory testing](#safe-exploratory-testing)
 
 ## Backlog maintenance
 
@@ -49,15 +49,14 @@ its full entry, which remains the source of scope and completion detail.
 
 1. **Broaden tool schemas incrementally:** use sanitized staging fixtures and regression tests
    to select each next schema rather than treating every format alike.
-2. **Finish testing regression coverage:** keep the proven macOS staging workflow maintained,
-   add the default-startup harness and unsupported nested-structure raw-editor fixture, and
-   defer Linux/Windows test-root work until their platform-native bridges are planned.
-3. **Tool catalog integrity:** implement the [tool-catalog integrity plan](plans/active/tool-catalog-integrity.md)
-      so supported-tool documentation has explicit source/schema evidence, deterministic PR
-      checks, and a monthly advisory review reminder. **Status:** Phases 0–3 shipped; Phase 4
-       local acceptance verified; remaining items are two post-merge GitHub Actions
-       manual-dispatch confirmations — immediate (fresh dispatch now) and future (stale-path
-       re-dispatch after the next overdue window) (see the plan's Phase 4).
+2. **Finish testing regression coverage:** the proven macOS staging workflow is maintained,
+   default-startup harness, unsupported nested-structure raw-editor fixture, and
+   fixture-level save → backup → restore-as-recreate service coverage are in place.
+   Defer Linux/Windows test-root work until their platform-native bridges are planned.
+3. **Tool catalog integrity:** see
+   [Tool catalog integrity acceptance follow-through](#tool-catalog-integrity-acceptance-follow-through)
+   for the single open entry tracking
+   [plans/active/tool-catalog-integrity.md](plans/active/tool-catalog-integrity.md).
 
 The durable sequence and architecture decisions are in the
 [Structured Configuration Roadmap](plans/active/structured-configuration-roadmap.md).
@@ -72,14 +71,15 @@ The durable sequence and architecture decisions are in the
 
 ### Safe exploratory testing
 
-- [ ] The token-free fixtures and macOS-only `--test-root` staging smoke now exercise automatic
+- [ ] Token-free fixtures and the macOS-only `--test-root` staging smoke exercise automatic
       discovery, editing, backup, restore, and preferences without touching a real config.
-      Default-mode startup parity, an unsupported nested-structure raw-editor fallback, and
-      sanitized-fixture intake rules are covered. Next, add the configured test-root
-      fixture-level save → backup → restore-as-recreate service test. Compare isolated OS users
-      and VMs for native-platform validation later; Docker is supplementary for Linux, not the
-      primary desktop/macOS answer. Do not enable test-root mode on Linux or Windows until each
-      has a platform-native containment design. (See
+      Default-mode startup parity, unsupported nested-structure raw-editor fallback,
+      sanitized-fixture intake, and the configured test-root fixture-level
+      save → backup → restore-as-recreate service test are covered
+      (`test/services/fixture_test_root_save_restore_test.dart`). Remaining: compare isolated
+      OS users and VMs for native-platform validation later; Docker is supplementary for
+      Linux, not the primary desktop/macOS answer. Do not enable test-root mode on Linux or
+      Windows until each has a platform-native containment design. (See
       [docs/testing-strategies.md](docs/testing-strategies.md) and the implementation
       [plan](plans/active/safe-testing-foundation.md), with test-root implementation
       details in [its focused plan](plans/active/test-root-containment.md)).
@@ -103,12 +103,11 @@ The durable sequence and architecture decisions are in the
 
 ### Tool catalog integrity acceptance follow-through
 
-- [ ] Source-evidence matrix and
-      automated review workflow are complete through Phase 3 (no-write scheduled/manual
-      workflow: run summary + warning annotation). Remaining: manually dispatch
-      `.github/workflows/catalog-advisory.yml` once after it lands on `default` to confirm
-      the live summary path (`result=fresh` while the marker is current), and re-dispatch
-      after the next overdue window to confirm the stale-date `::warning` path. See
+- [ ] Fresh live-dispatch acceptance is done (2026-08-27 run
+      <https://github.com/kgrizz-git/AgentsConfigHelper/actions/runs/33089003536>,
+      `result=fresh`, warning step skipped). Remaining: re-dispatch
+      `.github/workflows/catalog-advisory.yml` after the next overdue window to confirm the
+      stale-date `::warning` path. See
       [plans/active/tool-catalog-integrity.md](plans/active/tool-catalog-integrity.md) Phase 4.
 
 ### macOS local execution follow-through
