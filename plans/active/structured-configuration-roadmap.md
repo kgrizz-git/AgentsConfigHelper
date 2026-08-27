@@ -97,10 +97,13 @@ tests for the baseline evidence.
 #### Implementation contract
 
 - [ ] Introduce a small, immutable fidelity assessment owned by the serialization
-      layer—not tool-specific cards—that distinguishes: direct raw write, supported
-      preservation path, possible rewrite fallback, and unconditional structured
-      rewrite. It must account for the actual parsed content (for example JSONC
-      syntax in a `.json` file), not only the filename extension.
+      layer—not tool-specific cards. Its user-facing model separates direct raw
+      writes from parser serialization and assigns `none`, `caution`, or `warning`
+      risk. This reconciles the four write capabilities: only direct raw writes are
+      certified as preserving; JSON/JSONC/YAML advertise a possible rewrite fallback
+      rather than a pre-save "supported preservation" promise; TOML is an
+      unconditional structured rewrite. It must account for actual parsed content
+      (for example JSONC syntax in a `.json` file), not only the filename extension.
 - [ ] Render a persistent, screen-reader-accessible notice at the top of
       `ConfigEditor`, before structured controls and raw content, for every file
       with a possible or unconditional lossy structured-save path. State plainly

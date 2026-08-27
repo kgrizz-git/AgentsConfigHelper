@@ -30,7 +30,10 @@ Different AI tools scatter their configuration across `~/.claude/`, `~/.codex/`,
 ### Available now
 
 - **Config Discovery** — Automatically detects common configuration paths on first launch (e.g. `~/.claude/settings.json`, `.cursorrules`). Users can also add custom paths manually.
-- **Structured config editing (JSON/JSONC, YAML, TOML)** — Comment-preserving edits using AST-based string patching. Your trailing commas, comments, and formatting are preserved exactly as they are.
+- **Structured config editing (JSON/JSONC, YAML, TOML)** — JSON/JSONC and YAML use
+  in-place edits where supported, but can fall back to document reserialization;
+  TOML structured saves are normalized and can discard comments and layout. Review
+  Changes before saving any structured config.
 - **Instruction document editing (Markdown/text)** — Raw text editing for `CLAUDE.md`, `AGENTS.md`, `.mdc` rules, and similar instruction files. Content is never reformatted or rewritten.
 - **Edit Safety** — Local-only file operations with a strict backup-before-write policy. Diff preview before every write, plus timestamped backups with one-click restore.
 - **Cross-Platform** — Built in Flutter/Dart, targeting macOS, Windows, and Linux from a single codebase.
@@ -45,9 +48,9 @@ Different AI tools scatter their configuration across `~/.claude/`, `~/.codex/`,
 
 AgentsConfigHelper supports the following tools. See [`docs/supported-tools.md`](docs/supported-tools.md) for the full configuration reference, config paths, and permission models for each tool.
 
-Every location below is discovered and editable. Structured configs get comment-preserving
-edits; rules and instruction documents get raw text editing. A `—` means the tool has no
-location of that kind.
+Every location below is discovered and editable. Structured config saves can reformat a
+file depending on its format and the serialization path; rules and instruction documents
+get raw text editing. A `—` means the tool has no location of that kind.
 
 | Tool | Formats | User config | Project config | Rules / instruction docs |
 | --- | --- | --- | --- | --- |
@@ -116,7 +119,10 @@ flutter build macos --release    # or linux / windows
 
 - **Diff before write:** A diff preview is shown before every save. There is no in-session undo stack; the revert path is timestamped backup restore via the History & Backups view.
 
-- **Comment preservation:** JSONC and YAML parsers use AST-based string patching (`json_ast`, `yaml_edit`) to mutate only target values, preserving user comments, trailing commas, and formatting. TOML serialization is currently lossy (see [ADR-001](docs/adr/ADR-001-toml-comment-preservation.md)).
+- **Comment preservation:** JSON/JSONC and YAML first attempt in-place source edits
+  (`json_ast`, `yaml_edit`) for supported changes, preserving unrelated source text on
+  that path. Their current fallback can rewrite the document. TOML serialization is
+  lossy (see [ADR-001](docs/adr/ADR-001-toml-comment-preservation.md)).
 
 - **Data classification: Internal.** Config files may contain tokens or sensitive local paths. All file parsing and visualization happens strictly locally on the machine. Nothing is ever transmitted to the cloud or committed to the repository (beyond synthetic fixtures for testing).
 

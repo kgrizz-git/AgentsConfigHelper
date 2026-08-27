@@ -23,7 +23,7 @@ writer. It improves disclosure for the generic editor the app already ships.
 | Format or path | Current write behavior | Fidelity classification for this plan |
 | --- | --- | --- |
 | Markdown/text raw editor, with no independently dirty structured values | `saveRawConfig` writes the validated raw text directly. | Direct raw write; no conversion notice. |
-| Raw save with independently dirty structured values | `saveRawConfig` replays the structured values through `parser.serialize` on top of the raw text. | Merge-specific risk; it is not a direct raw write. TOML therefore rewrites even when the raw edit itself looks harmless. |
+| Raw save with independently dirty structured values and a usable baseline | `saveRawConfig` replays the structured values through `parser.serialize` on top of the raw text. | Merge-specific risk; it is not a direct raw write. For TOML, this route reconstructs the document even if the raw edit itself only changed one character. |
 | JSON/JSONC supported flat `rules` or `permissions` change | `JsonConfigParser` patches source offsets and validates the resulting JSONC. | Preserving path. |
 | JSON/JSONC unsupported/failed patch | Parser catches the failure and fully serializes the decoded map. | Possible rewrite fallback. |
 | YAML supported map update | `YamlEditor` updates the parsed source. | Preserving path. |
@@ -31,9 +31,10 @@ writer. It improves disclosure for the generic editor the app already ships.
 | TOML structured change | `TomlConfigParser` always serializes a map with `TomlDocument.fromMap`. | Unconditional structured rewrite. |
 
 The current editor has a TOML warning only in the Review Changes dialog and only
-after a structured value has changed. Its JSONC parse warning says comments are
-preserved, but does not disclose the full-rewrite fallback. YAML has no equivalent
-warning. The existing source and tests establish these facts:
+after a structured value has changed. Its JSONC parse warning unconditionally says
+comments are preserved on save, which is incorrect because a later serializer
+fallback can rewrite the document. YAML has no equivalent warning. The existing
+source and tests establish these facts:
 
 - `lib/parsers/json_config_parser.dart`
 - `lib/parsers/yaml_config_parser.dart`
@@ -48,23 +49,30 @@ warning. The existing source and tests establish these facts:
 - The notice is persistent for the selected file and appears above both structured
   controls and the raw editor. It has no dismiss action that could hide it until
   the user switches files.
-- TOML receives a warning: a structured save can discard comments and reformat
-  whitespace, ordering, and layout.
-- YAML and parsed JSONC receive a caution: the supported in-place path preserves
-  comments and formatting, but the current fallback can rewrite the document. A
-  `.json` file parsed as JSONC must be treated as JSONC regardless of its extension.
-- Strict JSON is not warned specifically about comments because comments are not
-  valid JSON. It still belongs to the same serialization-capability model so a
-  future formatting disclosure cannot drift from parser behavior.
+- TOML receives a warning: its structured serializer reconstructs the document and
+  will discard existing comments; whitespace, ordering, and layout can change.
+- JSON, JSONC, and YAML receive a caution whenever the generic editor offers a
+  structured save. The app can attempt an in-place update, but the current parser
+  can fall back to a whole-document rewrite. Strict JSON has no valid comments, but
+  its formatting can still change; a `.json` file parsed as JSONC must identify the
+  comment risk regardless of its extension.
 - Markdown/text raw-only files receive no conversion notice. If raw content and
   structured state are independently dirty, the notice must reflect the merge path
-  `saveRawConfig` will actually take; it must never classify that save as a direct
-  raw write.
+  `saveRawConfig` will actually take; it must never classify a parser-backed merge
+  as a direct raw write.
 - `ConfigFormat.unknown`, a raw-only corrupt-file editor, and an unsupported parser
   outcome are safe/no-assessment states. They must not crash the editor or receive a
   misleading format-specific disclosure.
 - Existing parse warnings remain distinct from fidelity notices: one says how a file
   was parsed; the other says what a later structured save may do.
+- A JSONC parse warning may state only that comments/trailing commas were detected;
+  it must not predict preservation before a later edit is attempted. The fidelity
+  assessment owns all save-risk language.
+- Markdown/text do not expose structured controls in the editor. If a non-UI caller
+  supplies divergent `rules`/`permissions` to their raw save path, `TextConfigParser`
+  returns raw text and those values are not persisted. This is not a formatting
+  rewrite, but Phase 1 must add a defensive service invariant (prefer rejection)
+  rather than silently treating that invalid combination as a successful merge.
 - The notice is disclosure, not consent for data loss. Before another structured
   write surface is enabled, decide whether JSONC/YAML fallback must fail closed.
 
@@ -72,11 +80,12 @@ warning. The existing source and tests establish these facts:
 
 The notice is a reusable editor component, not a tool-specific card. It must include:
 
-1. A visible warning/caution icon and concise title, for example **Formatting may
-   change on structured save**.
+1. A visible warning/caution icon and concise title. Use **Structured save will
+   reconstruct this TOML file** for TOML and **Formatting may change on structured
+   save** for JSON, JSONC, and YAML.
 2. Plain-language body text naming the relevant format and exact risk. TOML must use
-   unambiguous wording: **comments and formatting can be discarded**.
-3. The statement: **Viewing this file does not modify it.**
+   unambiguous wording: **existing comments will be discarded**.
+3. The statement: **Opening this file does not change it on disk.**
 4. Guidance to edit raw content when exact layout matters and to use Review Changes
    before saving. Do not claim raw editing can preserve a prior formatting style
    after the user has deliberately changed it.
@@ -93,35 +102,62 @@ they cannot contradict each other.
 
 ### 1. Pure-Dart fidelity assessment
 
-Introduce a narrow immutable assessment, preferably near the parser contract, such
-as `ConfigSerializationFidelity` with these states:
+Introduce a narrow immutable assessment, preferably near the parser contract. Keep
+the visual risk separate from the save mechanism so the widget does not translate a
+large enum back into user-facing concepts:
 
-| State | Meaning |
-| --- | --- |
-| `directRawWrite` | The submitted raw text is written without parser serialization and no structured state must be replayed. |
-| `structuredMerge` | Raw text is submitted but independently dirty structured state must be replayed through a serializer; its risk is the serializer's risk, not raw-write fidelity. |
-| `preservesSupportedPatch` | The requested structured update has a known in-place preserving path. |
-| `possibleRewriteFallback` | A supported path exists but the present request can fall back to a full rewrite. |
-| `structuredRewrite` | The current structured serializer always rebuilds the document. |
-| `notApplicable` | No supported serializer applies (for example an unknown/raw-only format); no conversion claim is made. |
+```dart
+enum FidelityRisk { none, caution, warning }
 
-The public editor-facing method may report the *risk ceiling* before a save rather
-than predict whether a particular parser edit will succeed. It must take the format,
-parsed JSONC status, raw-only/unsupported state, raw and structured dirty state, and
-the baseline-to-current structured divergence into account. Do not infer it from the
-extension alone or duplicate parser heuristics in a widget. For JSON/YAML, report the
-riskiest applicable field/subtree behavior; do not label a document categorically
-preserved merely because one flat field has an in-place patch path while another
-recognized subtree is intentionally left untouched.
+enum SaveMechanism { directRaw, parserSerialization }
+
+class FidelityAssessment {
+  const FidelityAssessment({
+    required this.risk,
+    required this.mechanism,
+    required this.formatLabel,
+  });
+
+  final FidelityRisk risk;
+  final SaveMechanism mechanism;
+  final String formatLabel;
+}
+```
+
+The editor-opening assessment is a conservative capability statement, not a promise
+that a particular edit will patch successfully: TOML is `warning`; generic JSON,
+JSONC, and YAML are `caution`; raw-only/Markdown/text receive no conversion notice.
+`rawOnly` is an opening-assessment input and takes precedence over the supplied file
+format: a recovery editor for corrupt JSON, YAML, or TOML has no structured save path
+and therefore returns no assessment. This prevents a recovery editor from showing a
+misleading format-specific warning.
+The pending-save assessment distinguishes `saveConfig` (parser serialization), a
+direct `saveRawConfig` write, and a `saveRawConfig` structured merge. It requires the
+format, editor raw-only state, save kind, usable baseline, and whether the structured
+values diverged from that baseline. Parsed JSONC status selects accurate wording but
+does not reduce the caution. Do not predict in-place JSON/YAML success by inspecting
+AST geometry—the parsers currently decide that only while serializing and may catch
+any failure into a rewrite fallback.
+
+`ConfigFormat.unknown` and unsupported recovery files return no assessment rather
+than an enum state. For a non-UI text/Markdown call with divergent structured values,
+the service must reject before classifying a successful save; it is not a valid
+direct-raw mechanism.
 
 ### 2. Parser and service integration
 
 - Keep parser-specific policy alongside the parser or `ConfigParser` contract.
-- Surface an assessment on `ToolConfig` or through a small pure service that
-  `ConfigEditor` can consume without performing I/O.
-- Make `ConfigService.saveConfig` and the structured-merge branch of
-  `saveRawConfig` use the same policy as the UI. The initial version does not need
-  to change fallback behavior, but must make it observable and testable.
+- Provide a small pure `FidelityAssessor` that `ConfigEditor` can consume without
+  I/O. It owns display severity/text keys; the widget only renders its result.
+- Use the same policy for `ConfigService.saveConfig`, the direct branch of
+  `saveRawConfig`, and the structured-merge branch of `saveRawConfig`. The initial
+  version does not need to change JSON/YAML fallback behavior. It must make every
+  *potential write classification* observable and testable; it must not pretend to
+  know an individual JSON/YAML serialization result before that parser runs. Cover
+  deterministic parser fallback fixtures separately where they exist. Do not add
+  instrumentation solely to make an otherwise unreachable catch-all fallback appear
+  in a service test; the Phase 4 fail-closed decision may require an explicit
+  serialization-outcome seam.
 - Preserve direct raw-write behavior exactly. Do not reserialize merely to produce
   a notice.
 
@@ -140,35 +176,65 @@ recognized subtree is intentionally left untouched.
 ### Phase 1 — define and test the fidelity contract
 
 - [ ] Add pure-Dart states, messages/severity metadata, and a single assessment
-      entry point.
+      entry point: a three-level display risk plus a direct-raw versus
+      parser-serialization mechanism.
 - [ ] Cover TOML, YAML, explicit `.jsonc`, `.json` parsed using JSONC fallback,
-      strict JSON, Markdown/text, unknown/raw-only outcomes, and raw-plus-structured
-      merge conditions.
+      strict JSON (including a `.jsonc` file containing strict JSON), Markdown/text,
+      unknown/raw-only outcomes, and raw-plus-structured merge conditions.
+- [ ] Make raw-only precedence explicit in the pure contract: a recovery editor for
+      corrupt TOML or JSON returns no opening fidelity assessment even though its
+      discovered format is TOML or JSON. Add widget coverage that the recovery editor
+      has no notice or structured controls and that its repaired raw save is direct.
 - [ ] Document which current parser fallbacks trigger the conditional risk. Do not
       describe successful-path preservation as a guarantee.
 - [ ] Replace `JsonConfigParser.jsoncFallbackWarning`'s unconditional promise that
-      comments "are preserved on save" with conditional, accurate wording. Add a
-      parser test for the corrected string alongside the existing JSONC fallback
-      test; the opening fidelity notice supplements that parse warning but does not
-      leave the old promise in place.
+      comments "are preserved on save" with a parse-only statement that JSONC syntax
+      was detected. Add a parser test for the corrected string alongside the
+      existing JSONC fallback test; the opening fidelity notice owns the conditional
+      save-risk language. Assert the new warning identifies detected comments or
+      trailing commas and no longer contains "preserved on save". `JsoncCleaner`
+      currently cannot say which of comments or trailing commas it removed, so retain
+      combined wording rather than claiming the parser identified one exact syntax.
 - [ ] Add service regression tests for an unchanged raw buffer plus independently
       diverged structured values. In particular, prove that this `saveRawConfig`
-      merge routes TOML through the lossy serializer and receives `structuredMerge`
-      / `structuredRewrite` risk rather than `directRawWrite`.
+      merge routes TOML through the lossy serializer and receives warning/
+      parser-serialization rather than `directRaw`.
+- [ ] Add the concrete merge regression: a TOML `saveRawConfig` with a one-character
+      raw edit and independently diverged structured values must route through
+      `TomlDocument.fromMap`, lose a fixture comment, and assess as
+      warning/parser-serialization rather than `directRaw`. Also assert it creates
+      exactly one pre-write backup, so this exceptional merge path retains the normal
+      backup-before-write guarantee.
 - [ ] Add JSON/YAML cases with nested/non-list `permissions` and a simultaneous
-      flat-field edit. The assessment must identify the applicable patch scope and
-      may conservatively return a conditional risk instead of claiming full-file
-      preservation.
+      flat-field edit. The assessment stays conservatively `caution`; tests may
+      document a successful rules-only patch but must not infer pre-save certainty
+      from it. Assert the opening assessment remains `caution` even when the known
+      fixture happens to patch successfully.
+- [ ] Cover `saveConfig` explicitly for every supported structured format, including
+      a newly-created file with no usable original source; JSON/JSONC/YAML remain
+      caution because serialization can rebuild the document.
+- [ ] Assert a `.jsonc` file that is valid strict JSON is still opening-assessed as
+      `caution` (formatting can change), but receives no JSONC parse warning.
+- [ ] Add a service invariant for text/Markdown with divergent structured values.
+      Confirm the normal UI cannot construct it, then reject it (preferred) or make
+      any alternative non-lossy behavior explicit and tested.
 
 ### Phase 2 — render the persistent accessible notice
 
+Phase 1's text/Markdown divergent-structured-values invariant is a prerequisite for
+this phase. Do not render a "no conversion notice" state while the service can still
+silently accept and discard that invalid overlay.
+
 - [ ] Implement the reusable notice with an accessible semantic label and
       high-contrast text.
-- [ ] Render it on initial `ConfigEditor` display for TOML, YAML, and parsed JSONC.
+- [ ] Render it on initial `ConfigEditor` display for TOML, JSON/JSONC, and YAML.
 - [ ] Assert it is above raw content and does not disappear after editing or opening
       Review Changes.
 - [ ] Keep parse warnings separately visible and test both notices together for a
       `.json` file accepted as JSONC.
+- [ ] Assert raw-only recovery editors for corrupt TOML and JSON show neither a
+      fidelity notice nor structured controls. Their repaired raw save remains a
+      direct raw write.
 - [ ] Assert the notice's explicit semantic label and text equivalent of its icon in
       widget tests. Verify a user can learn the risk from text and semantics alone,
       not `AppColors.warning` or `Icons.warning_amber`.
@@ -185,6 +251,9 @@ recognized subtree is intentionally left untouched.
 
 - [ ] Run focused YAML fixtures for comments adjacent to edited keys, anchors,
       aliases, block scalars, nested maps, and unsupported structures.
+- [ ] Include a comment between a key and its block value, plus an alias whose target
+      key is edited. These are likely `yaml_edit` edge cases; an alias rewritten as a
+      literal is a semantic change, not merely a formatting difference.
 - [ ] For each fixture, assert either a supported edit retains the adjacent comment
       or the assessed path is conditional/blocked. Do not rely on a generic
       `YamlEditor` success test to establish behavior for the app's actual shapes.
@@ -199,35 +268,40 @@ recognized subtree is intentionally left untouched.
 
 | File | Expected change |
 | --- | --- |
-| `lib/parsers/config_parser.dart` and/or new pure model | Shared fidelity contract. |
-| `lib/parsers/json_config_parser.dart` | Report JSONC preservation/fallback capability without changing parsing semantics. |
+| `lib/parsers/config_parser.dart` and/or `lib/services/fidelity_assessor.dart` | Shared pure assessment contract. |
+| `lib/parsers/json_config_parser.dart` | Remove the false JSONC preservation promise and expose accurate parse status. |
 | `lib/parsers/yaml_config_parser.dart` | Report in-place/fallback capability. |
 | `lib/parsers/toml_config_parser.dart` | Report unconditional rewrite capability. |
 | `lib/services/config_service.dart` | Align pre-save assessment with structured and raw-merge paths. |
 | `lib/widgets/formatting_fidelity_notice.dart` | Accessible persistent presentation. |
 | `lib/widgets/config_editor.dart` | Render shared opening/review notices; remove TOML-only copy. |
 | Parser, service, and widget tests | Classification, no-write, semantics, and visibility coverage. |
+| `README.md` and `ARCHITECTURE.md` | Replace unconditional comment-preservation claims with the conditional JSON/JSONC/YAML behavior and the always-lossy TOML behavior. |
+| `CHANGELOG.md` | Add the user-facing notice behavior while retaining the existing Unreleased correction for the prior broad comment-preservation claim; preserve the historical 0.1.0 entry rather than rewriting release history. |
 | `docs/adr/ADR-001-toml-comment-preservation.md` | Record any TOML safety decision. |
-| `docs/supported-tools.md` | Make parser/fidelity summary accurately qualified. |
+| `docs/supported-tools.md` | Describe `yaml_edit` as the in-place path and qualify all parser/fidelity claims. |
 
 ## Acceptance criteria
 
 - Opening a TOML structured config immediately shows an accessible persistent warning
-  before the editor; it says viewing is safe and structured saving can discard
-  comments and formatting.
-- Opening YAML or parsed JSONC immediately shows a persistent caution that accurate
-  preserving behavior depends on the safe in-place path; a `.json` filename does
-  not suppress the JSONC caution.
+  before the editor; it says opening does not change the source file and a structured
+  save reconstructs the document, discarding existing comments.
+- Opening JSON, JSONC, or YAML in the generic structured editor immediately shows a
+  persistent caution that the current serializer can rewrite formatting; a `.json`
+  filename does not suppress the JSONC comment-risk wording.
 - Raw Markdown/text files do not receive an irrelevant conversion warning.
 - Review Changes repeats the same risk only when a risky structured save is pending.
 - A `.json` file parsed as JSONC no longer contains an unconditional parse warning
-  promising comment preservation; its parse and fidelity notices agree that a safe
-  in-place update preserves comments but a fallback can rewrite the file.
+  promising comment preservation; the parse notice reports syntax detection only
+  and the fidelity notice owns the potential rewrite warning.
 - When raw content is saved alongside independently dirty structured values, the
   fidelity assessment reports the serializer path. A TOML merge is never represented
   as a direct raw write.
 - Unknown and raw-only unsupported files remain usable and do not cause assessment
   errors or inaccurate format-specific notices.
+- A direct raw save with no structured divergence remains direct, including TOML.
+  A raw-plus-structured TOML merge reports warning/parser-serialization. A text or
+  Markdown structured overlay cannot be silently discarded as a successful save.
 - A file view, notice render, and read-only card interaction create no write or
   backup and leave source bytes untouched.
 - The app does not claim a format preserves comments when its active path may fully
@@ -243,6 +317,10 @@ recognized subtree is intentionally left untouched.
    saves for TOML? The current warning does not itself prevent data loss.
 3. Should a future "save as normalized" action provide an explicit opt-in rewrite
    path, separate from the ordinary save button? It is out of scope here.
+4. How should an externally changed file be handled between opening the editor and
+   saving it? The assessment and any review copy must describe the bytes actually
+   supplied to `ConfigService`, never make a stale promise about a replaced on-disk
+   file. Record the behavior and add a focused save-path regression before archive.
 
 ## Validation
 
@@ -261,8 +339,11 @@ pre-commit run --files \
 
 1. Record implemented behavior and the fallback decision in the parent roadmap and
    `ADR-001`.
-2. Add user-facing notice behavior to `CHANGELOG.md` and test-only/developer details
-   to `CHANGELOG.dev.md`.
+2. Align `README.md`, `ARCHITECTURE.md`, `docs/supported-tools.md`, and `ADR-001` with
+   the shipped conditional-fallback behavior. Add user-facing notice behavior to
+   `CHANGELOG.md` while retaining its correcting Unreleased entry; add
+   test-only/developer details to `CHANGELOG.dev.md`. Do not rewrite the historical
+   0.1.0 release entry.
 3. Remove or narrow the linked `TO_DO.md` entry only when the fidelity disclosure
    and its recorded safety decision are complete. Do not close the separate
    [`TO_DO.md` TOML lossless-round-trip follow-up](../../TO_DO.md#deferred-from-pr-5-review-qodo--sonarcloud)

@@ -57,6 +57,10 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Formatting-fidelity documentation.** Project documentation now distinguishes
+  source-preserving JSON/JSONC and YAML paths from their rewrite fallbacks, and
+  accurately describes TOML structured serialization as lossy. The historical 0.1.0
+  release entry remains unchanged.
 - **Restore safety.** Restoring a backup now preserves the current on-disk file as a new
   backup first (the existing file is backed up before the snapshot is applied), and recreates
   a missing parent directory (for example after the live config folder was deleted), matching

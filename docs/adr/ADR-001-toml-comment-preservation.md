@@ -1,6 +1,6 @@
 # ADR-001: TOML serialization is lossy (comments not preserved)
 
-Last reviewed: 2026-08-14
+Last reviewed: 2026-08-27
 Date: 2026-08-14
 Status: accepted
 Deciders: maintainers
@@ -13,8 +13,9 @@ file from the parsed map via `TomlDocument.fromMap(...).toString()`. This is
 arrays-of-tables syntax) are discarded and the file is reformatted from scratch.
 Qodo review finding #12 flagged this drawback.
 
-The other two structured parsers avoid this and edit **in place**, preserving
-comments on untouched content:
+The other two structured parsers first attempt in-place edits, preserving untouched
+source on that successful path. Neither guarantee applies when its serializer uses
+the current full-document fallback:
 
 - **YAML** (`yaml_config_parser.dart`) uses `yaml_edit`'s `YamlEditor`, which does
   surgical, source-preserving `update()`/`remove()` edits.
@@ -50,7 +51,8 @@ the lossy behavior. Revisit if comment-bearing TOML configs become a real use ca
 
 - Saving a TOML config discards comments, whitespace, key order, and arrays-of-tables
   layout — a real drawback for hand-authored, commented TOML files.
-- TOML is inconsistent with the JSON/YAML paths, which do preserve comments.
+- TOML is inconsistent with the JSON/YAML paths: their supported in-place paths
+  preserve untouched source, but both can fall back to a full-document rewrite.
 - Any UI that saves TOML should surface that comments may be lost rather than silently
   discarding them.
 
@@ -80,6 +82,6 @@ Reopen this ADR and implement **Alternative A** if any of these occur:
 ## References
 
 - `lib/parsers/toml_config_parser.dart` — the lossy `serialize` + `**WARNING:**` doc comment
-- `lib/parsers/json_config_parser.dart` + `lib/vendor/json_ast/` — source-splice pattern (Alternative A/B reference)
-- `lib/parsers/yaml_config_parser.dart` — `yaml_edit` source-preserving pattern
+- `lib/parsers/json_config_parser.dart` + `lib/vendor/json_ast/` — source-splice pattern and rewrite fallback (Alternative A/B reference)
+- `lib/parsers/yaml_config_parser.dart` — `yaml_edit` in-place pattern and fresh-document fallback
 - Qodo review finding #12
