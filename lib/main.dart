@@ -57,6 +57,8 @@ Future<StartupServiceGraph> buildStartupServiceGraph(
   List<String> arguments, {
   Future<Directory> Function(TestRootConfiguration? testRoot)?
   backupDirectoryResolver,
+  Future<void> Function(DesktopWindowBoundsStore windowBoundsStore)?
+  onWindowBoundsStoreReady,
 }) async {
   final testRoot = await TestRootConfiguration.fromArguments(arguments);
   final FileOperations fileOperations;
@@ -78,6 +80,9 @@ Future<StartupServiceGraph> buildStartupServiceGraph(
           ),
     fileOperations: fileOperations,
   );
+  if (onWindowBoundsStoreReady != null) {
+    await onWindowBoundsStoreReady(windowBoundsStore);
+  }
   final backupDirectory = await (backupDirectoryResolver ?? _getBackupDir)(
     testRoot,
   );
@@ -221,12 +226,18 @@ class _DesktopWindowBoundsListener with WindowListener {
 Future<void> main(List<String> arguments) async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    final services = await buildStartupServiceGraph(arguments);
-    try {
-      await _configureDesktopWindow(services.windowBoundsStore);
-    } on Object catch (error, stackTrace) {
-      debugPrint('Desktop window initialization failed: $error\n$stackTrace');
-    }
+    final services = await buildStartupServiceGraph(
+      arguments,
+      onWindowBoundsStoreReady: (windowBoundsStore) async {
+        try {
+          await _configureDesktopWindow(windowBoundsStore);
+        } on Object catch (error, stackTrace) {
+          debugPrint(
+            'Desktop window initialization failed: $error\n$stackTrace',
+          );
+        }
+      },
+    );
     runApp(
       ProviderScope(
         overrides: [

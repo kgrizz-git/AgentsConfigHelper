@@ -545,6 +545,9 @@ void main() {
         final rawContent = File(
           'test/fixtures/edge_cases/claude_permissions_unsupported_nested.json',
         ).readAsStringSync();
+        const updatedRawContent =
+            '{"permissions":{"allow":{"commands":["Read(./updated/**)"]}}}';
+        String? capturedRawContent;
         final config = ToolConfig(
           toolName: 'Claude Code',
           filePath: discoveredConfig.filePath,
@@ -559,7 +562,10 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, [rawContent]) async => config,
+                onSave: (config, [rawContent]) async {
+                  capturedRawContent = rawContent;
+                  return config;
+                },
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -570,6 +576,16 @@ void main() {
         expect(find.text('Claude Code permissions'), findsNothing);
         expect(find.byType(TextField), findsOneWidget);
         expect(find.text(rawContent), findsOneWidget);
+        await tester.enterText(find.byType(TextField), updatedRawContent);
+        await tester.pumpAndSettle();
+        expect(find.text(updatedRawContent), findsOneWidget);
+
+        await tester.tap(find.text('Save Changes'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Confirm & Save'));
+        await tester.pumpAndSettle();
+
+        expect(capturedRawContent, updatedRawContent);
       },
     );
   });

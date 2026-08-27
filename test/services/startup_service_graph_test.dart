@@ -46,4 +46,23 @@ void main() {
       hasLength(1),
     );
   });
+
+  test('initializes the desktop window before backup setup can fail', () async {
+    var sawWindowBoundsStore = false;
+
+    await expectLater(
+      buildStartupServiceGraph(
+        const [],
+        onWindowBoundsStoreReady: (_) async {
+          sawWindowBoundsStore = true;
+        },
+        backupDirectoryResolver: (_) async {
+          throw StateError('application support is unavailable');
+        },
+      ),
+      throwsA(isA<StateError>()),
+    );
+
+    expect(sawWindowBoundsStore, isTrue);
+  });
 }
