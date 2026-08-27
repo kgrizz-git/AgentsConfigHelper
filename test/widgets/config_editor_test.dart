@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
@@ -523,6 +524,68 @@ void main() {
           findsOneWidget,
         );
         expect(find.byType(TextField), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'keeps unsupported nested Claude permissions in the raw editor fallback',
+      (tester) async {
+        final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+          (item) => item.id == ToolId.claudeCode,
+        );
+        final discoveredConfig = DiscoveredConfig.fromPath(
+          filePath: '${Directory.systemTemp.path}/.claude/settings.json',
+          descriptor: descriptor,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+          format: ConfigFormat.json,
+          sourceLabel: 'Claude Code',
+          fromCatalog: true,
+        );
+        final rawContent = File(
+          'test/fixtures/edge_cases/claude_permissions_unsupported_nested.json',
+        ).readAsStringSync();
+        const updatedRawContent =
+            '{"permissions":{"allow":{"commands":["Read(./updated/**)"]}}}';
+        String? capturedRawContent;
+        final config = ToolConfig(
+          toolName: 'Claude Code',
+          filePath: discoveredConfig.filePath,
+          format: ConfigFormat.json,
+          originalContent: rawContent,
+          rawSettings: jsonDecode(rawContent) as Map<String, dynamic>,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ConfigEditor(
+                config: config,
+                discoveredConfig: discoveredConfig,
+                onSave: (config, [rawContent]) async {
+                  capturedRawContent = rawContent;
+                  return config;
+                },
+                resolvePath: (path) => path,
+                onShowHistory: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Claude Code permissions'), findsNothing);
+        expect(find.byType(TextField), findsOneWidget);
+        expect(find.text(rawContent), findsOneWidget);
+        await tester.enterText(find.byType(TextField), updatedRawContent);
+        await tester.pumpAndSettle();
+        expect(find.text(updatedRawContent), findsOneWidget);
+
+        await tester.tap(find.text('Save Changes'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Confirm & Save'));
+        await tester.pumpAndSettle();
+
+        expect(capturedRawContent, updatedRawContent);
       },
     );
   });

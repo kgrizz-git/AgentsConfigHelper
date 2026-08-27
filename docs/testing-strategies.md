@@ -228,6 +228,20 @@ RUN flutter pub get
 
 **Best for:** Early development, parser testing, unit tests, UI component testing.
 
+#### Sanitized regression-fixture intake
+
+Add a fixture only when it captures a specific parser, discovery, service, or widget
+regression. Do not copy a personal configuration file into the repository. Before committing:
+
+1. Record the confirmed source or the minimal reproducible shape in the test or its plan.
+2. Remove user names, paths, tokens, keys, URLs, and copied explanatory comments.
+3. Replace values with clearly synthetic equivalents such as `example.invalid` and generic
+   relative paths; avoid token-shaped placeholder strings.
+4. Keep only the smallest structure required to reproduce the behavior, and include a
+   raw-editor fallback assertion when the shape is unsupported.
+5. Have a reviewer confirm the fixture is synthetic, token-free, and covered by a focused
+   regression test before merge.
+
 ---
 
 ### 4. Git Version Control with Branches

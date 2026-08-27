@@ -7,6 +7,11 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Safe-testing regression coverage:** Extracted the startup service graph so ordinary startup
+  can be tested without launching a desktop window, preserving window initialization before
+  fallible backup-directory resolution. Added an unsupported nested Claude permissions fixture
+  that proves raw fallback remains editable through save, and documented sanitized fixture intake.
+
 - **TO_DO queue and plan lifecycle:** Added a capped 3–5-item "Next Up" queue that links to
   the detailed backlog entries and explains how to replenish it. Recorded direct TO_DO links for
   every active plan, and clarified in `AGENTS.md` plus `best_practices.md` that a plan remains

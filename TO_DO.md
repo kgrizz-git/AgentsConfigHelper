@@ -72,14 +72,14 @@ The durable sequence and architecture decisions are in the
 
 ### Safe exploratory testing
 
-- [ ] The token-free fixtures and
-      macOS-only `--test-root` staging smoke now exercise automatic discovery, editing,
-      backup, restore, and preferences without touching a real config. Next, add default-mode
-      startup-regression coverage, an unsupported nested-structure raw-editor fixture, and
-      documented sanitized-fixture intake rules. Compare isolated OS users and VMs for
-      native-platform validation later; Docker is supplementary for Linux, not the primary
-      desktop/macOS answer. Do not enable test-root mode on Linux or Windows until each has a
-      platform-native containment design. (See
+- [ ] The token-free fixtures and macOS-only `--test-root` staging smoke now exercise automatic
+      discovery, editing, backup, restore, and preferences without touching a real config.
+      Default-mode startup parity, an unsupported nested-structure raw-editor fallback, and
+      sanitized-fixture intake rules are covered. Next, add the configured test-root
+      fixture-level save → backup → restore-as-recreate service test. Compare isolated OS users
+      and VMs for native-platform validation later; Docker is supplementary for Linux, not the
+      primary desktop/macOS answer. Do not enable test-root mode on Linux or Windows until each
+      has a platform-native containment design. (See
       [docs/testing-strategies.md](docs/testing-strategies.md) and the implementation
       [plan](plans/active/safe-testing-foundation.md), with test-root implementation
       details in [its focused plan](plans/active/test-root-containment.md)).

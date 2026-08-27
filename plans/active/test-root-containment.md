@@ -137,7 +137,16 @@ restore-copy, and preference atomic-replace operations below a macOS test root.
 - [x] Create the canonical test-root guard from that configuration during startup.
 - [x] Override the home resolver, `ConfigService`, `BackupService`, and
       `DiscoveryPreferencesStore` in the root `ProviderScope`.
-- [ ] Ensure normal startup creates exactly the same service graph as before.
+- [x] Ensure normal startup creates exactly the same service graph as before. The
+      `startup_service_graph_test.dart` composition harness verifies the no-argument branch
+      selects unguarded local file operations, default provider behavior, and the normal
+      save/backup flow without test-root overrides.
+
+  **Verification note (2026-08-26):** the focused startup-composition harness covers arguments
+  without `--test-root`, asserting the absence of a test-root graph, local file operations,
+  normal backup-directory resolution, and no test-root preference override. It tests observable
+  dependencies rather than Riverpod internals; the existing test-root tests remain the
+  complementary guarded-mode proof.
 - [x] Add a persistent test-mode banner without exposing an option to enable it from the
       normal UI.
 

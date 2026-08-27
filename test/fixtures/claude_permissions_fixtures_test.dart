@@ -74,6 +74,7 @@ void main() {
         'edge_cases/claude_permissions_null_default_mode.json',
         'edge_cases/claude_permissions_unknown_default_mode.json',
         'edge_cases/claude_permissions_mixed_array.json',
+        'edge_cases/claude_permissions_unsupported_nested.json',
       ]) {
         final result = adapter.interpret(
           config: parseFixture(path),
