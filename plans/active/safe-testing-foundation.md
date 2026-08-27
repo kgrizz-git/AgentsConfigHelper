@@ -142,8 +142,8 @@ mistaken for credentials.
       seeds `staging_home/.claude/settings.json` under a marked disposable root, wires
       ConfigService/BackupService like test-root startup (home resolver +
       `application-support/backups`), asserts save creates a contained backup, then
-      deletes the live `.claude` tree and restores via the MainShell
-      read-bytes → writeRestoredFile path so missing parents are recreated.
+      restores via the MainShell order (`readBackupBytes` → optional live `createBackup` →
+      `writeRestoredFile`) for both missing-parent recreate and restore-over-existing.
 
 ### Phase 2: Make staging smoke testing deterministic
 

@@ -11,9 +11,11 @@ Internal / developer-facing changes that do not belong in the public
   `test/services/fixture_test_root_save_restore_test.dart`, which seeds a disposable marked
   root from `staging_home/.claude/settings.json`, wires ConfigService/BackupService like
   test-root startup (home resolver + `application-support/backups`), and proves save creates
-  a contained backup plus restore-as-recreate after the live `.claude` tree is deleted.
-  Completes the remaining safe-testing fixture-boundary service slice; macOS no-follow bridge
-  tests stay separate.
+  a contained backup. Restore coverage mirrors MainShell
+  (`readBackupBytes` → optional live `createBackup` → `writeRestoredFile`) for both
+  restore-as-recreate (missing parents, no live backup) and restore-over-existing (live
+  content preserved as a new backup). Completes the remaining safe-testing fixture-boundary
+  service slice; macOS no-follow bridge tests stay separate.
 
 - **Tool-catalog advisory fresh-dispatch acceptance:** Manually dispatched
   `.github/workflows/catalog-advisory.yml` on `main` (run 33089003536, 2026-08-27). Offline
