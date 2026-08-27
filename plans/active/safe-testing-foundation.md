@@ -186,8 +186,10 @@ tool schema or add a structured write path.
   The fixture-level service test should exercise save → backup and restore-as-recreate
   through the configured test-root services; it complements (rather than duplicates) the
   no-follow and symlink tests in `test-root-containment.md`.
-  **Done 2026-08-27** via `fixture_test_root_save_restore_test.dart` (LocalFileOperations +
-  test-root path layout; native no-follow remains in `macos_test_root_file_operations_test`).
+  **Done 2026-08-27** via `fixture_test_root_save_restore_test.dart` (portable
+  LocalFileOperations fixture flow plus a root-bounded FileOperations group that rejects
+  outside-root save/backup/restore; native no-follow remains in
+  `macos_test_root_file_operations_test`).
 - [x] Document sanitized-fixture intake before adding a bug-derived fixture: provenance or
   reproducible shape, removal of user content and credentials, synthetic replacement of
   values/comments, and a reviewer check that the fixture exercises a specific regression.

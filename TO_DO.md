@@ -53,12 +53,10 @@ its full entry, which remains the source of scope and completion detail.
    default-startup harness, unsupported nested-structure raw-editor fixture, and
    fixture-level save → backup → restore-as-recreate service coverage are in place.
    Defer Linux/Windows test-root work until their platform-native bridges are planned.
-3. **Tool catalog integrity:** implement the [tool-catalog integrity plan](plans/active/tool-catalog-integrity.md)
-      so supported-tool documentation has explicit source/schema evidence, deterministic PR
-      checks, and a monthly advisory review reminder. **Status:** Phases 0–3 shipped; Phase 4
-       local acceptance and the immediate fresh live-dispatch confirmation are done
-       (2026-08-27 run 33089003536, `result=fresh`). Remaining: one future stale-path
-       re-dispatch after the next overdue window (see the plan's Phase 4).
+3. **Tool catalog integrity:** see
+   [Tool catalog integrity acceptance follow-through](#tool-catalog-integrity-acceptance-follow-through)
+   for the single open entry tracking
+   [plans/active/tool-catalog-integrity.md](plans/active/tool-catalog-integrity.md).
 
 The durable sequence and architecture decisions are in the
 [Structured Configuration Roadmap](plans/active/structured-configuration-roadmap.md).
