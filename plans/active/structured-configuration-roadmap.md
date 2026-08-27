@@ -63,7 +63,7 @@ schema recognition; a later patcher owns writes.
       in the safe-testing plan.
 - [ ] Preserve an explicit raw-editor fallback in all tests and UX states.
 
-### Phase 0.5 — formatting-fidelity disclosure (planned before another card)
+### Phase 0.5 — formatting-fidelity disclosure (in progress before another card)
 
 The detailed implementation plan, acceptance criteria, and open safety decisions
 are in [Formatting Fidelity Disclosure](formatting-fidelity-disclosure.md). That
@@ -96,7 +96,7 @@ tests for the baseline evidence.
 
 #### Implementation contract
 
-- [ ] Introduce a small, immutable fidelity assessment owned by the serialization
+- [x] Introduce a small, immutable fidelity assessment owned by the serialization
       layer—not tool-specific cards. Its user-facing model separates direct raw
       writes from parser serialization and assigns `none`, `caution`, or `warning`
       risk. This reconciles the four write capabilities: only direct raw writes are
@@ -104,7 +104,7 @@ tests for the baseline evidence.
       rather than a pre-save "supported preservation" promise; TOML is an
       unconditional structured rewrite. It must account for actual parsed content
       (for example JSONC syntax in a `.json` file), not only the filename extension.
-- [ ] Render a persistent, screen-reader-accessible notice at the top of
+- [x] Render a persistent, screen-reader-accessible notice at the top of
       `ConfigEditor`, before structured controls and raw content, for every file
       with a possible or unconditional lossy structured-save path. State plainly
       that viewing is safe; identify which action can reformat the file; point to
@@ -112,7 +112,7 @@ tests for the baseline evidence.
       dialog alone. TOML wording must say that a structured save can discard
       comments and formatting. JSONC/YAML wording must say preservation applies
       only when the safe in-place path succeeds and must never promise otherwise.
-- [ ] Keep the existing review-dialog notice as a last confirmation, but derive it
+- [x] Keep the existing review-dialog notice as a last confirmation, but derive it
       from the same assessment so its language cannot disagree with the opening
       notice. Do not show a format-loss notice for a raw-only Markdown/text file.
 - [ ] Test the notice on initial display for TOML, parsed JSONC, and YAML; test the

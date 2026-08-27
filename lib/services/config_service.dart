@@ -109,6 +109,13 @@ class ConfigService {
     );
   }
 
+  /// Whether `config.originalContent` is a usable baseline for a structured
+  /// raw-save merge. This is the same parser check used by `saveRawConfig`.
+  bool hasUsableBaseline(ToolConfig config) {
+    final parser = _getParserForFormat(config.format);
+    return _parseUsableBaseline(parser, config) != null;
+  }
+
   /// Safely saves raw [rawContent] to disk and returns the updated
   /// [ToolConfig].
   ///
@@ -144,26 +151,26 @@ class ConfigService {
     // parses — e.g. it went stale relative to disk — do NOT surface that as
     // an "invalid raw content" error. Skip the structured-merge path and
     // honor the already-validated raw text as-is.
-    ToolConfig? baseline;
-    try {
-      baseline = parser.parse(
-        config.originalContent,
-        filePath: config.filePath,
-        toolName: config.toolName,
-        format: config.format,
-      );
-    } on Exception {
-      // Only an expected parse/format failure (e.g. ConfigParseException,
-      // FormatException) means the baseline is unusable; let Errors —
-      // programming bugs — propagate rather than silently skipping the merge.
-      baseline = null;
-    }
+    final baseline = _parseUsableBaseline(parser, config);
 
     String contentToWrite;
     ToolConfig parsedConfig;
     if (baseline != null &&
         (!listEquals(config.rules, baseline.rules) ||
             !listEquals(config.permissions, baseline.permissions))) {
+      // Text/markdown serializers cannot carry structured rules/permissions —
+      // they return the raw text verbatim. A divergence here means the
+      // structured editor was touched, but serializing would silently drop
+      // that overlay. Reject instead of losing the edit.
+      if (config.format == ConfigFormat.text ||
+          config.format == ConfigFormat.markdown) {
+        throw ConfigParseException(
+          'Cannot save structured rules/permissions changes to a '
+          '${config.format.name} config: this format has no structured '
+          'fields. Edit the raw text directly or switch to a structured '
+          'format.',
+        );
+      }
       final mergedConfig = parsedFromRaw.copyWith(
         rules: config.rules,
         permissions: config.permissions,
@@ -208,6 +215,22 @@ class ConfigService {
         return _textParser;
       case ConfigFormat.unknown:
         throw UnsupportedError('Unsupported config format: $format');
+    }
+  }
+
+  ToolConfig? _parseUsableBaseline(ConfigParser parser, ToolConfig config) {
+    try {
+      return parser.parse(
+        config.originalContent,
+        filePath: config.filePath,
+        toolName: config.toolName,
+        format: config.format,
+      );
+    } on Exception {
+      // Only an expected parse/format failure (e.g. ConfigParseException,
+      // FormatException) means the baseline is unusable; let Errors —
+      // programming bugs — propagate rather than silently skipping the merge.
+      return null;
     }
   }
 }

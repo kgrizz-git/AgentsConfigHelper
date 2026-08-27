@@ -3,7 +3,7 @@
 Last reviewed: 2026-08-27
 Date: 2026-08-27
 Author: maintainers
-Status: planned
+Status: in progress — disclosure implemented; fallback-safety decisions remain open
 Linked parent: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
 Linked task: [TO_DO.md — Structured configuration presentation](../../TO_DO.md#structured-configuration-presentation)
 
@@ -175,10 +175,10 @@ direct-raw mechanism.
 
 ### Phase 1 — define and test the fidelity contract
 
-- [ ] Add pure-Dart states, messages/severity metadata, and a single assessment
+- [x] Add pure-Dart states, messages/severity metadata, and a single assessment
       entry point: a three-level display risk plus a direct-raw versus
       parser-serialization mechanism.
-- [ ] Cover TOML, YAML, explicit `.jsonc`, `.json` parsed using JSONC fallback,
+- [x] Cover TOML, YAML, explicit `.jsonc`, `.json` parsed using JSONC fallback,
       strict JSON (including a `.jsonc` file containing strict JSON), Markdown/text,
       unknown/raw-only outcomes, and raw-plus-structured merge conditions.
 - [ ] Make raw-only precedence explicit in the pure contract: a recovery editor for
@@ -187,7 +187,7 @@ direct-raw mechanism.
       has no notice or structured controls and that its repaired raw save is direct.
 - [ ] Document which current parser fallbacks trigger the conditional risk. Do not
       describe successful-path preservation as a guarantee.
-- [ ] Replace `JsonConfigParser.jsoncFallbackWarning`'s unconditional promise that
+- [x] Replace `JsonConfigParser.jsoncFallbackWarning`'s unconditional promise that
       comments "are preserved on save" with a parse-only statement that JSONC syntax
       was detected. Add a parser test for the corrected string alongside the
       existing JSONC fallback test; the opening fidelity notice owns the conditional
@@ -199,7 +199,7 @@ direct-raw mechanism.
       diverged structured values. In particular, prove that this `saveRawConfig`
       merge routes TOML through the lossy serializer and receives warning/
       parser-serialization rather than `directRaw`.
-- [ ] Add the concrete merge regression: a TOML `saveRawConfig` with a one-character
+- [x] Add the concrete merge regression: a TOML `saveRawConfig` with a one-character
       raw edit and independently diverged structured values must route through
       `TomlDocument.fromMap`, lose a fixture comment, and assess as
       warning/parser-serialization rather than `directRaw`. Also assert it creates
@@ -213,9 +213,9 @@ direct-raw mechanism.
 - [ ] Cover `saveConfig` explicitly for every supported structured format, including
       a newly-created file with no usable original source; JSON/JSONC/YAML remain
       caution because serialization can rebuild the document.
-- [ ] Assert a `.jsonc` file that is valid strict JSON is still opening-assessed as
+- [x] Assert a `.jsonc` file that is valid strict JSON is still opening-assessed as
       `caution` (formatting can change), but receives no JSONC parse warning.
-- [ ] Add a service invariant for text/Markdown with divergent structured values.
+- [x] Add a service invariant for text/Markdown with divergent structured values.
       Confirm the normal UI cannot construct it, then reject it (preferred) or make
       any alternative non-lossy behavior explicit and tested.
 
@@ -225,25 +225,25 @@ Phase 1's text/Markdown divergent-structured-values invariant is a prerequisite 
 this phase. Do not render a "no conversion notice" state while the service can still
 silently accept and discard that invalid overlay.
 
-- [ ] Implement the reusable notice with an accessible semantic label and
+- [x] Implement the reusable notice with an accessible semantic label and
       high-contrast text.
-- [ ] Render it on initial `ConfigEditor` display for TOML, JSON/JSONC, and YAML.
+- [x] Render it on initial `ConfigEditor` display for TOML, JSON/JSONC, and YAML.
 - [ ] Assert it is above raw content and does not disappear after editing or opening
       Review Changes.
-- [ ] Keep parse warnings separately visible and test both notices together for a
+- [x] Keep parse warnings separately visible and test both notices together for a
       `.json` file accepted as JSONC.
 - [ ] Assert raw-only recovery editors for corrupt TOML and JSON show neither a
       fidelity notice nor structured controls. Their repaired raw save remains a
       direct raw write.
-- [ ] Assert the notice's explicit semantic label and text equivalent of its icon in
+- [x] Assert the notice's explicit semantic label and text equivalent of its icon in
       widget tests. Verify a user can learn the risk from text and semantics alone,
       not `AppColors.warning` or `Icons.warning_amber`.
 
 ### Phase 3 — align review and save behavior
 
-- [ ] Replace the TOML-only diff-dialog warning with the shared disclosure.
-- [ ] Test that the opening and review notices agree on severity and wording.
-- [ ] Preserve existing backup, diff, parse-validation, and direct raw-save behavior.
+- [x] Replace the TOML-only diff-dialog warning with the shared disclosure.
+- [x] Test that the opening and review notices agree on severity and wording.
+- [x] Preserve existing backup, diff, parse-validation, and direct raw-save behavior.
 - [ ] Add a regression test that merely opening a config or inspecting the notice
       causes no write or backup.
 

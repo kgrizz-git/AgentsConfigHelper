@@ -38,6 +38,7 @@ class ToolConfig extends Equatable {
     Map<String, Object?> rawSettings = const {},
     this.originalContent = '',
     this.parseWarnings = const [],
+    this.parsedAsJsonc = false,
   }) : rawSettings = UnmodifiableMapView(rawSettings);
 
   /// The display name of the configured tool.
@@ -65,6 +66,11 @@ class ToolConfig extends Equatable {
   /// content was treated as JSONC after strict JSON decoding failed.
   final List<String> parseWarnings;
 
+  /// Whether strict JSON parsing failed and this file was accepted through the
+  /// JSONC fallback. This is parser status, not a prediction about a later
+  /// source-preserving serialization attempt.
+  final bool parsedAsJsonc;
+
   /// Returns a copy with the supplied fields replaced.
   ToolConfig copyWith({
     String? toolName,
@@ -75,6 +81,7 @@ class ToolConfig extends Equatable {
     Map<String, Object?>? rawSettings,
     String? originalContent,
     List<String>? parseWarnings,
+    bool? parsedAsJsonc,
   }) {
     return ToolConfig(
       toolName: toolName ?? this.toolName,
@@ -85,6 +92,7 @@ class ToolConfig extends Equatable {
       rawSettings: rawSettings ?? this.rawSettings,
       originalContent: originalContent ?? this.originalContent,
       parseWarnings: parseWarnings ?? this.parseWarnings,
+      parsedAsJsonc: parsedAsJsonc ?? this.parsedAsJsonc,
     );
   }
 
@@ -98,5 +106,6 @@ class ToolConfig extends Equatable {
     rawSettings,
     originalContent,
     parseWarnings,
+    parsedAsJsonc,
   ];
 }

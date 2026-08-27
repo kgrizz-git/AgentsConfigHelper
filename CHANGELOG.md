@@ -10,6 +10,12 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
+- **Formatting-fidelity disclosure.** Structured JSON, JSONC, YAML, and TOML
+  editors now show a persistent accessible notice on opening. It explains that
+  viewing does not modify the source file, identifies possible formatting loss,
+  and points to raw content and Review Changes. TOML states that a structured save
+  reconstructs the file and discards existing comments; JSON/JSONC/YAML warn about
+  their possible whole-document rewrite fallback.
 - **Claude Code permission help:** The read-only Claude Code permissions card now provides
   keyboard-accessible, plain-language explanations for its default mode and Allow, Ask, and
   Deny rule groups. The help describes stored configuration rather than predicting runtime
@@ -57,6 +63,8 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **JSONC fallback wording.** The parse banner now reports detected JSONC syntax
+  without falsely promising that comments or trailing commas will survive a later save.
 - **Formatting-fidelity documentation.** Project documentation now distinguishes
   source-preserving JSON/JSONC and YAML paths from their rewrite fallbacks, and
   accurately describes TOML structured serialization as lossy. The historical 0.1.0

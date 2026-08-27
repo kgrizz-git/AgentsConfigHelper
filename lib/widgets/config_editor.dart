@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/utils/open_directory.dart';
 import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
+import 'package:agents_config_helper/widgets/formatting_fidelity_notice.dart';
 import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:flutter/foundation.dart';
@@ -24,6 +26,7 @@ class ConfigEditor extends StatefulWidget {
     required this.onShowHistory,
     this.discoveredConfig,
     this.onDirtyChanged,
+    this.hasUsableBaseline,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
     super.key,
@@ -45,6 +48,11 @@ class ConfigEditor extends StatefulWidget {
   /// Notifies the owner when editor changes become dirty or clean.
   final ValueChanged<bool>? onDirtyChanged;
 
+  /// Reports whether `config.originalContent` is a parser-usable baseline for
+  /// raw-plus-structured merge saves. Without this callback, the editor does
+  /// not claim the review save will use parser serialization.
+  final bool Function(ToolConfig config)? hasUsableBaseline;
+
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
 
@@ -63,6 +71,7 @@ class ConfigEditor extends StatefulWidget {
 
 class _ConfigEditorState extends State<ConfigEditor> {
   static final _claudePermissionsAdapter = ClaudeCodePermissionsAdapter();
+  static const _fidelityAssessor = FidelityAssessor();
 
   late ToolConfig _currentConfig;
   late List<String> _rules;
@@ -117,6 +126,37 @@ class _ConfigEditorState extends State<ConfigEditor> {
       _currentConfig.format == ConfigFormat.jsonc ||
       _currentConfig.format == ConfigFormat.yaml ||
       _currentConfig.format == ConfigFormat.toml;
+
+  FidelityAssessment? get _openingFidelityAssessment =>
+      _fidelityAssessor.assessOpening(
+        format: _currentConfig.format,
+        filePath: _currentConfig.filePath,
+        rawOnly: widget.rawOnly,
+        parsedAsJsonc: _currentConfig.parsedAsJsonc,
+      );
+
+  FidelityAssessment? get _pendingFidelityAssessment {
+    final rawChanged = _rawContent != _currentConfig.originalContent;
+    final structuredDiverged =
+        !listEquals(_rules, _currentConfig.rules) ||
+        !listEquals(_permissions, _currentConfig.permissions);
+    final saveKind = rawChanged
+        ? (structuredDiverged
+              ? SaveKind.saveRawStructuredMerge
+              : SaveKind.saveRawDirect)
+        : SaveKind.saveConfig;
+
+    return _fidelityAssessor.assessPendingSave(
+      format: _currentConfig.format,
+      filePath: _currentConfig.filePath,
+      rawOnly: widget.rawOnly,
+      saveKind: saveKind,
+      hasUsableBaseline:
+          widget.hasUsableBaseline?.call(_currentConfig) ?? false,
+      structuredDiverged: structuredDiverged,
+      parsedAsJsonc: _currentConfig.parsedAsJsonc,
+    );
+  }
 
   ClaudeCodePermissionsInterpretation get _claudePermissions =>
       _claudePermissionsAdapter.interpret(
@@ -184,6 +224,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
 
   /// Shows the review modal for unsaved changes.
   void _showDiffModal() {
+    final pendingFidelityAssessment = _pendingFidelityAssessment;
     unawaited(
       showDialog<void>(
         context: context,
@@ -196,7 +237,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  if (_supportsStructuredFields) ...[
+                  if (_supportsStructuredFields && !widget.rawOnly) ...[
                     _buildDiffSection('Rules', _currentConfig.rules, _rules),
                     const SizedBox(height: 16),
                     _buildDiffSection(
@@ -204,41 +245,11 @@ class _ConfigEditorState extends State<ConfigEditor> {
                       _currentConfig.permissions,
                       _permissions,
                     ),
-                    if (_currentConfig.format == ConfigFormat.toml &&
-                        (!listEquals(_rules, _currentConfig.rules) ||
-                            !listEquals(
-                              _permissions,
-                              _currentConfig.permissions,
-                            ))) ...[
+                    if (pendingFidelityAssessment != null) ...[
                       const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha: 0.1),
-                          border: Border.all(color: AppColors.warning),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.warning_amber,
-                              color: AppColors.warning,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Saving a TOML config with structured changes '
-                                'will reformat the file and discard existing '
-                                'comments and formatting. This is a known '
-                                'limitation of the TOML library.',
-                                style: AppTextStyles.uiSecondary.copyWith(
-                                  color: AppColors.warning,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      FormattingFidelityNotice(
+                        assessment: pendingFidelityAssessment,
+                        showOpeningStatement: false,
                       ),
                     ],
                   ],
@@ -370,6 +381,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   @override
   Widget build(BuildContext context) {
     final claudePermissions = _claudePermissions;
+    final openingFidelityAssessment = _openingFidelityAssessment;
     final hasUnsupportedPermissions =
         claudePermissions.isUnsupported ||
         (!claudePermissions.isAvailable &&
@@ -471,9 +483,16 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 const SizedBox(height: 16),
                 const Divider(color: AppColors.borderDark),
 
-                if (widget.config.parseWarnings.isNotEmpty) ...[
+                if (openingFidelityAssessment != null) ...[
                   const SizedBox(height: 16),
-                  for (final warning in widget.config.parseWarnings) ...[
+                  FormattingFidelityNotice(
+                    assessment: openingFidelityAssessment,
+                  ),
+                ],
+
+                if (_currentConfig.parseWarnings.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  for (final warning in _currentConfig.parseWarnings) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(

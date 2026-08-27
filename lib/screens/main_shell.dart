@@ -588,6 +588,7 @@ class _MainShellState extends ConsumerState<MainShell>
               return updated;
             },
             resolvePath: configService.resolvePath,
+            hasUsableBaseline: configService.hasUsableBaseline,
             onShowHistory: showHistoryModal,
             allowOpenDirectory: ref.watch(testRootPathProvider) == null,
             rawOnly: _rawRecoveryMode,
