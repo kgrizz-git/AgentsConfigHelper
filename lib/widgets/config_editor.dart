@@ -27,6 +27,7 @@ class ConfigEditor extends StatefulWidget {
     this.discoveredConfig,
     this.onDirtyChanged,
     this.hasUsableBaseline,
+    this.rawContentParsedAsJsonc,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
     super.key,
@@ -52,6 +53,11 @@ class ConfigEditor extends StatefulWidget {
   /// raw-plus-structured merge saves. Without this callback, the editor does
   /// not claim the review save will use parser serialization.
   final bool Function(ToolConfig config)? hasUsableBaseline;
+
+  /// Reports whether the current raw JSON buffer needs JSONC parsing, so a
+  /// pending merge disclosure reflects the content that will be serialized.
+  final bool Function(ToolConfig config, String rawContent)?
+  rawContentParsedAsJsonc;
 
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
@@ -145,6 +151,13 @@ class _ConfigEditorState extends State<ConfigEditor> {
               ? SaveKind.saveRawStructuredMerge
               : SaveKind.saveRawDirect)
         : SaveKind.saveConfig;
+    final parsedAsJsonc = rawChanged
+        ? (widget.rawContentParsedAsJsonc?.call(
+                _currentConfig,
+                _rawContent,
+              ) ??
+              _currentConfig.parsedAsJsonc)
+        : _currentConfig.parsedAsJsonc;
 
     return _fidelityAssessor.assessPendingSave(
       format: _currentConfig.format,
@@ -154,7 +167,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
       hasUsableBaseline:
           widget.hasUsableBaseline?.call(_currentConfig) ?? false,
       structuredDiverged: structuredDiverged,
-      parsedAsJsonc: _currentConfig.parsedAsJsonc,
+      parsedAsJsonc: parsedAsJsonc,
     );
   }
 

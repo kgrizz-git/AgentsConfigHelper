@@ -116,6 +116,32 @@ class ConfigService {
     return _parseUsableBaseline(parser, config) != null;
   }
 
+  /// Whether the current raw JSON buffer requires the JSONC parser fallback.
+  ///
+  /// The editor uses this only for a pending raw-plus-structured merge, so its
+  /// disclosure describes the buffer that will be serialized rather than the
+  /// source that was originally loaded. Invalid raw content cannot be saved;
+  /// retain the loaded status until validation presents that error to the user.
+  bool rawContentParsedAsJsonc(ToolConfig config, String rawContent) {
+    if (config.format != ConfigFormat.json &&
+        config.format != ConfigFormat.jsonc) {
+      return false;
+    }
+
+    try {
+      return _jsonParser
+          .parse(
+            rawContent,
+            filePath: config.filePath,
+            toolName: config.toolName,
+            format: config.format,
+          )
+          .parsedAsJsonc;
+    } on Exception {
+      return config.parsedAsJsonc;
+    }
+  }
+
   /// Safely saves raw [rawContent] to disk and returns the updated
   /// [ToolConfig].
   ///

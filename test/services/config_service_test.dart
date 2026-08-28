@@ -405,6 +405,27 @@ void main() {
       expect(config.rules, ['test']);
     });
 
+    test('rawContentParsedAsJsonc detects JSONC added in the raw editor', () {
+      final config = ToolConfig(
+        toolName: 'Test',
+        filePath: '${tempDir.path}/settings.json',
+        format: ConfigFormat.json,
+        originalContent: '{"rules": []}',
+      );
+
+      expect(
+        configService.rawContentParsedAsJsonc(config, '{"rules": []}'),
+        isFalse,
+      );
+      expect(
+        configService.rawContentParsedAsJsonc(
+          config,
+          '// preserve this comment\n{"rules": []}',
+        ),
+        isTrue,
+      );
+    });
+
     test('saveConfig throws UnsupportedError for unknown format', () async {
       final config = ToolConfig(
         toolName: 'Unknown Tool',

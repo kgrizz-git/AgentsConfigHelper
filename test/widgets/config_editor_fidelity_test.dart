@@ -12,6 +12,7 @@ Widget _editor(
   ToolConfig config, {
   bool rawOnly = false,
   bool Function(ToolConfig)? hasUsableBaseline,
+  bool Function(ToolConfig, String)? rawContentParsedAsJsonc,
 }) {
   return MaterialApp(
     home: Scaffold(
@@ -21,6 +22,7 @@ Widget _editor(
         onSave: (updatedConfig, [rawContent]) async => updatedConfig,
         resolvePath: (path) => path,
         hasUsableBaseline: hasUsableBaseline,
+        rawContentParsedAsJsonc: rawContentParsedAsJsonc,
         onShowHistory: () {},
       ),
     ),
@@ -141,6 +143,49 @@ void main() {
       expect(
         find.text('Structured save will reconstruct this TOML file'),
         findsNothing,
+      );
+    });
+
+    testWidgets('uses the edited raw buffer to label a pending JSONC merge', (
+      tester,
+    ) async {
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: '${Directory.systemTemp.path}/config.json',
+        format: ConfigFormat.json,
+        originalContent: '{"rules": ["rule1"]}',
+        rules: const ['rule1'],
+      );
+
+      await tester.pumpWidget(
+        _editor(
+          config,
+          hasUsableBaseline: (_) => true,
+          rawContentParsedAsJsonc: (_, rawContent) => rawContent.contains('//'),
+        ),
+      );
+
+      await tester.tap(find.text('Add Item').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), 'new rule');
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+      final rawEditor = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.controller?.text == config.originalContent,
+      );
+      await tester.enterText(rawEditor, '// raw comment\n{"rules": ["rule1"]}');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Changes'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('this JSONC file can fall back to rebuilding'),
+        findsOneWidget,
       );
     });
 

@@ -63,6 +63,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Pending JSONC disclosure.** Review Changes now evaluates the edited raw
+  buffer, so newly added JSONC comments or trailing commas are disclosed before
+  a structured merge save.
 - **JSONC fallback wording.** The parse banner now reports detected JSONC syntax
   without falsely promising that comments or trailing commas will survive a later save.
 - **Formatting-fidelity documentation.** Project documentation now distinguishes
