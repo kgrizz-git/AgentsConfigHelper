@@ -13,6 +13,7 @@ Widget _editor(
   bool rawOnly = false,
   bool Function(ToolConfig)? hasUsableBaseline,
   bool Function(ToolConfig, String)? rawContentParsedAsJsonc,
+  Future<bool> Function(ToolConfig)? currentSourceParsedAsJsonc,
 }) {
   return MaterialApp(
     home: Scaffold(
@@ -23,6 +24,7 @@ Widget _editor(
         resolvePath: (path) => path,
         hasUsableBaseline: hasUsableBaseline,
         rawContentParsedAsJsonc: rawContentParsedAsJsonc,
+        currentSourceParsedAsJsonc: currentSourceParsedAsJsonc,
         onShowHistory: () {},
       ),
     ),
@@ -178,6 +180,38 @@ void main() {
             widget.controller?.text == config.originalContent,
       );
       await tester.enterText(rawEditor, '// raw comment\n{"rules": ["rule1"]}');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Changes'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('this JSONC file can fall back to rebuilding'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('uses the current source to label a structured JSONC save', (
+      tester,
+    ) async {
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: '${Directory.systemTemp.path}/config.json',
+        format: ConfigFormat.json,
+        originalContent: '{"rules": ["rule1"]}',
+        rules: const ['rule1'],
+      );
+
+      await tester.pumpWidget(
+        _editor(
+          config,
+          currentSourceParsedAsJsonc: (_) async => true,
+        ),
+      );
+
+      await tester.tap(find.text('Add Item').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), 'new rule');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Review Changes'));

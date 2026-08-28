@@ -142,6 +142,28 @@ class ConfigService {
     }
   }
 
+  /// Whether the current on-disk JSON source requires JSONC parsing.
+  ///
+  /// This is used for the structured-save review disclosure because
+  /// [saveConfig] reads the source file immediately before serializing it.
+  /// A missing or unreadable source cannot contribute JSONC syntax to that
+  /// save path, so it reports false rather than making a stale claim.
+  Future<bool> currentSourceParsedAsJsonc(ToolConfig config) async {
+    if (config.format != ConfigFormat.json &&
+        config.format != ConfigFormat.jsonc) {
+      return false;
+    }
+
+    final expandedPath = resolvePath(config.filePath);
+    try {
+      if (!await _fileOperations.fileExists(expandedPath)) return false;
+      final currentContent = await _fileOperations.readText(expandedPath);
+      return rawContentParsedAsJsonc(config, currentContent);
+    } on Exception {
+      return false;
+    }
+  }
+
   /// Safely saves raw [rawContent] to disk and returns the updated
   /// [ToolConfig].
   ///

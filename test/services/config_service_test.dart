@@ -426,6 +426,19 @@ void main() {
       );
     });
 
+    test(
+      'currentSourceParsedAsJsonc detects JSONC added after a config opened',
+      () async {
+        final jsonFile = File(p.join(tempDir.path, 'settings.json'));
+        await jsonFile.writeAsString('{"rules": []}');
+        final config = await _load(configService, jsonFile.path);
+
+        await jsonFile.writeAsString('// externally added\n{"rules": []}');
+
+        expect(await configService.currentSourceParsedAsJsonc(config), isTrue);
+      },
+    );
+
     test('saveConfig throws UnsupportedError for unknown format', () async {
       final config = ToolConfig(
         toolName: 'Unknown Tool',

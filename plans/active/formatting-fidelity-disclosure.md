@@ -1,6 +1,6 @@
 # Plan: Formatting Fidelity Disclosure
 
-Last reviewed: 2026-08-27
+Last reviewed: 2026-08-28
 Date: 2026-08-27
 Author: maintainers
 Status: in progress — disclosure implemented; fallback-safety decisions remain open
@@ -318,9 +318,10 @@ silently accept and discard that invalid overlay.
 3. Should a future "save as normalized" action provide an explicit opt-in rewrite
    path, separate from the ordinary save button? It is out of scope here.
 4. How should an externally changed file be handled between opening the editor and
-   saving it? The assessment and any review copy must describe the bytes actually
-   supplied to `ConfigService`, never make a stale promise about a replaced on-disk
-   file. Record the behavior and add a focused save-path regression before archive.
+   saving it? Review Changes refreshes the current on-disk JSON/JSONC parse status
+   before a structured save so its disclosure describes the source `saveConfig`
+   will serialize. A replacement after the dialog opens remains a separate
+   conflict-handling decision; add a focused regression before archive.
 
 ## Validation
 

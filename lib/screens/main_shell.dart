@@ -590,6 +590,8 @@ class _MainShellState extends ConsumerState<MainShell>
             resolvePath: configService.resolvePath,
             hasUsableBaseline: configService.hasUsableBaseline,
             rawContentParsedAsJsonc: configService.rawContentParsedAsJsonc,
+            currentSourceParsedAsJsonc:
+                configService.currentSourceParsedAsJsonc,
             onShowHistory: showHistoryModal,
             allowOpenDirectory: ref.watch(testRootPathProvider) == null,
             rawOnly: _rawRecoveryMode,

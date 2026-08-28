@@ -28,6 +28,7 @@ class ConfigEditor extends StatefulWidget {
     this.onDirtyChanged,
     this.hasUsableBaseline,
     this.rawContentParsedAsJsonc,
+    this.currentSourceParsedAsJsonc,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
     super.key,
@@ -58,6 +59,10 @@ class ConfigEditor extends StatefulWidget {
   /// pending merge disclosure reflects the content that will be serialized.
   final bool Function(ToolConfig config, String rawContent)?
   rawContentParsedAsJsonc;
+
+  /// Reports whether the current on-disk JSON source needs JSONC parsing, so
+  /// a structured-save disclosure reflects the source `saveConfig` will use.
+  final Future<bool> Function(ToolConfig config)? currentSourceParsedAsJsonc;
 
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
@@ -141,7 +146,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
         parsedAsJsonc: _currentConfig.parsedAsJsonc,
       );
 
-  FidelityAssessment? get _pendingFidelityAssessment {
+  Future<FidelityAssessment?> _pendingFidelityAssessment() async {
     final rawChanged = _rawContent != _currentConfig.originalContent;
     final structuredDiverged =
         !listEquals(_rules, _currentConfig.rules) ||
@@ -157,7 +162,8 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 _rawContent,
               ) ??
               _currentConfig.parsedAsJsonc)
-        : _currentConfig.parsedAsJsonc;
+        : (await widget.currentSourceParsedAsJsonc?.call(_currentConfig) ??
+              _currentConfig.parsedAsJsonc);
 
     return _fidelityAssessor.assessPendingSave(
       format: _currentConfig.format,
@@ -236,71 +242,71 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   /// Shows the review modal for unsaved changes.
-  void _showDiffModal() {
-    final pendingFidelityAssessment = _pendingFidelityAssessment;
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            backgroundColor: AppColors.backgroundDark,
-            title: const Text('Review Changes', style: AppTextStyles.uiHeader),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  if (_supportsStructuredFields && !widget.rawOnly) ...[
-                    _buildDiffSection('Rules', _currentConfig.rules, _rules),
+  Future<void> _showDiffModal() async {
+    final pendingFidelityAssessment = await _pendingFidelityAssessment();
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.backgroundDark,
+          title: const Text('Review Changes', style: AppTextStyles.uiHeader),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                if (_supportsStructuredFields && !widget.rawOnly) ...[
+                  _buildDiffSection('Rules', _currentConfig.rules, _rules),
+                  const SizedBox(height: 16),
+                  _buildDiffSection(
+                    'Permissions',
+                    _currentConfig.permissions,
+                    _permissions,
+                  ),
+                  if (pendingFidelityAssessment != null) ...[
                     const SizedBox(height: 16),
-                    _buildDiffSection(
-                      'Permissions',
-                      _currentConfig.permissions,
-                      _permissions,
-                    ),
-                    if (pendingFidelityAssessment != null) ...[
-                      const SizedBox(height: 16),
-                      FormattingFidelityNotice(
-                        assessment: pendingFidelityAssessment,
-                        showOpeningStatement: false,
-                      ),
-                    ],
-                  ],
-                  if (_rawContent != _currentConfig.originalContent) ...[
-                    const SizedBox(height: 16),
-                    _buildRawDiffSection(
-                      _currentConfig.originalContent,
-                      _rawContent,
+                    FormattingFidelityNotice(
+                      assessment: pendingFidelityAssessment,
+                      showOpeningStatement: false,
                     ),
                   ],
                 ],
-              ),
+                if (_rawContent != _currentConfig.originalContent) ...[
+                  const SizedBox(height: 16),
+                  _buildRawDiffSection(
+                    _currentConfig.originalContent,
+                    _rawContent,
+                  ),
+                ],
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textPrimaryDark,
-                ),
-                child: const Text('Cancel'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textPrimaryDark,
               ),
-              ElevatedButton(
-                onPressed: _saving
-                    ? null
-                    : () {
-                        Navigator.of(context).pop();
-                        unawaited(_saveChanges());
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryAccent,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Confirm & Save'),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: _saving
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                      unawaited(_saveChanges());
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryAccent,
+                foregroundColor: Colors.white,
               ),
-            ],
-          );
-        },
-      ),
+              child: const Text('Confirm & Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 

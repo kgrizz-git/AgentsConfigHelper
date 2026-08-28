@@ -63,6 +63,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Structured JSONC disclosure.** Review Changes now refreshes JSONC status
+  from the current on-disk source before a structured save, including a file
+  changed externally after it was opened.
 - **Pending JSONC disclosure.** Review Changes now evaluates the edited raw
   buffer, so newly added JSONC comments or trailing commas are disclosed before
   a structured merge save.
