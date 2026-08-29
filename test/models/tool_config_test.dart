@@ -35,6 +35,7 @@ void main() {
           const <String, Object?>{},
           '',
           const <String>[],
+          false,
         ]),
       );
       expect(config1, isNot(equals(config3)));

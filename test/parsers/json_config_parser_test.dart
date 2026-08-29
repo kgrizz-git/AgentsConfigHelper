@@ -309,6 +309,55 @@ void main() {
       );
       expect(config.parseWarnings, isNotEmpty);
       expect(config.parseWarnings.first, contains('JSONC'));
+      expect(config.parsedAsJsonc, isTrue);
+    });
+
+    test('jsoncFallbackWarning fires for comments-only input', () {
+      const jsonc = '{\n  // comment\n  "rules": ["a"]\n}';
+      final config = parser.parse(
+        jsonc,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
+      expect(config.parseWarnings, isNotEmpty);
+      expect(
+        config.parseWarnings.first,
+        equals(JsonConfigParser.jsoncFallbackWarning),
+      );
+    });
+
+    test('jsoncFallbackWarning fires for trailing-commas-only input', () {
+      const jsonc = '{\n  "rules": ["a",],\n}';
+      final config = parser.parse(
+        jsonc,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
+      expect(config.parseWarnings, isNotEmpty);
+      expect(
+        config.parseWarnings.first,
+        equals(JsonConfigParser.jsoncFallbackWarning),
+      );
+    });
+
+    test('jsoncFallbackWarning does not claim preservation on save', () {
+      expect(
+        JsonConfigParser.jsoncFallbackWarning,
+        isNot(contains('preserved')),
+      );
+      expect(
+        JsonConfigParser.jsoncFallbackWarning,
+        isNot(contains('on save')),
+      );
+    });
+
+    test('jsoncFallbackWarning does not assert which syntax was present', () {
+      // JsoncCleaner cannot distinguish comments from trailing commas, so the
+      // warning must not claim a specific one. It only signals that JSONC
+      // syntax of some kind was detected.
+      const warning = JsonConfigParser.jsoncFallbackWarning;
+      expect(warning, contains('comments or trailing commas'));
+      expect(warning, isNot(contains('comments and trailing commas')));
     });
 
     test('no parseWarnings for .jsonc that is valid strict JSON', () {
@@ -319,6 +368,7 @@ void main() {
         toolName: 'Test',
       );
       expect(config.parseWarnings, isEmpty);
+      expect(config.parsedAsJsonc, isFalse);
     });
 
     test('no parseWarnings for empty content', () {

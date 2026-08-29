@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/utils/open_directory.dart';
 import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
+import 'package:agents_config_helper/widgets/formatting_fidelity_notice.dart';
 import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:flutter/foundation.dart';
@@ -24,6 +26,9 @@ class ConfigEditor extends StatefulWidget {
     required this.onShowHistory,
     this.discoveredConfig,
     this.onDirtyChanged,
+    this.hasUsableBaseline,
+    this.rawContentParsedAsJsonc,
+    this.currentSourceParsedAsJsonc,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
     super.key,
@@ -45,6 +50,20 @@ class ConfigEditor extends StatefulWidget {
   /// Notifies the owner when editor changes become dirty or clean.
   final ValueChanged<bool>? onDirtyChanged;
 
+  /// Reports whether `config.originalContent` is a parser-usable baseline for
+  /// raw-plus-structured merge saves. Without this callback, the editor does
+  /// not claim the review save will use parser serialization.
+  final bool Function(ToolConfig config)? hasUsableBaseline;
+
+  /// Reports whether the current raw JSON buffer needs JSONC parsing, so a
+  /// pending merge disclosure reflects the content that will be serialized.
+  final bool Function(ToolConfig config, String rawContent)?
+  rawContentParsedAsJsonc;
+
+  /// Reports whether the current on-disk JSON source needs JSONC parsing, so
+  /// a structured-save disclosure reflects the source `saveConfig` will use.
+  final Future<bool> Function(ToolConfig config)? currentSourceParsedAsJsonc;
+
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
 
@@ -63,6 +82,7 @@ class ConfigEditor extends StatefulWidget {
 
 class _ConfigEditorState extends State<ConfigEditor> {
   static final _claudePermissionsAdapter = ClaudeCodePermissionsAdapter();
+  static const _fidelityAssessor = FidelityAssessor();
 
   late ToolConfig _currentConfig;
   late List<String> _rules;
@@ -70,6 +90,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late TextEditingController _rawContentController;
   late String _rawContent;
   bool _saving = false;
+  int _editRevision = 0;
 
   @override
   void initState() {
@@ -93,6 +114,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   void _initLocalState(ToolConfig config) {
+    _editRevision++;
     _currentConfig = config;
     _rules = List.from(_currentConfig.rules);
     _permissions = List.from(_currentConfig.permissions);
@@ -117,6 +139,45 @@ class _ConfigEditorState extends State<ConfigEditor> {
       _currentConfig.format == ConfigFormat.jsonc ||
       _currentConfig.format == ConfigFormat.yaml ||
       _currentConfig.format == ConfigFormat.toml;
+
+  FidelityAssessment? get _openingFidelityAssessment =>
+      _fidelityAssessor.assessOpening(
+        format: _currentConfig.format,
+        filePath: _currentConfig.filePath,
+        rawOnly: widget.rawOnly,
+        parsedAsJsonc: _currentConfig.parsedAsJsonc,
+      );
+
+  Future<FidelityAssessment?> _pendingFidelityAssessment() async {
+    final rawChanged = _rawContent != _currentConfig.originalContent;
+    final structuredDiverged =
+        !listEquals(_rules, _currentConfig.rules) ||
+        !listEquals(_permissions, _currentConfig.permissions);
+    final saveKind = rawChanged
+        ? (structuredDiverged
+              ? SaveKind.saveRawStructuredMerge
+              : SaveKind.saveRawDirect)
+        : SaveKind.saveConfig;
+    final parsedAsJsonc = rawChanged
+        ? (widget.rawContentParsedAsJsonc?.call(
+                _currentConfig,
+                _rawContent,
+              ) ??
+              _currentConfig.parsedAsJsonc)
+        : (await widget.currentSourceParsedAsJsonc?.call(_currentConfig) ??
+              _currentConfig.parsedAsJsonc);
+
+    return _fidelityAssessor.assessPendingSave(
+      format: _currentConfig.format,
+      filePath: _currentConfig.filePath,
+      rawOnly: widget.rawOnly,
+      saveKind: saveKind,
+      hasUsableBaseline:
+          widget.hasUsableBaseline?.call(_currentConfig) ?? false,
+      structuredDiverged: structuredDiverged,
+      parsedAsJsonc: parsedAsJsonc,
+    );
+  }
 
   ClaudeCodePermissionsInterpretation get _claudePermissions =>
       _claudePermissionsAdapter.interpret(
@@ -183,100 +244,72 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   /// Shows the review modal for unsaved changes.
-  void _showDiffModal() {
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            backgroundColor: AppColors.backgroundDark,
-            title: const Text('Review Changes', style: AppTextStyles.uiHeader),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  if (_supportsStructuredFields) ...[
-                    _buildDiffSection('Rules', _currentConfig.rules, _rules),
+  Future<void> _showDiffModal() async {
+    final editRevision = _editRevision;
+    final pendingFidelityAssessment = await _pendingFidelityAssessment();
+    if (!mounted || editRevision != _editRevision) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.backgroundDark,
+          title: const Text('Review Changes', style: AppTextStyles.uiHeader),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                if (_supportsStructuredFields && !widget.rawOnly) ...[
+                  _buildDiffSection('Rules', _currentConfig.rules, _rules),
+                  const SizedBox(height: 16),
+                  _buildDiffSection(
+                    'Permissions',
+                    _currentConfig.permissions,
+                    _permissions,
+                  ),
+                  if (pendingFidelityAssessment != null) ...[
                     const SizedBox(height: 16),
-                    _buildDiffSection(
-                      'Permissions',
-                      _currentConfig.permissions,
-                      _permissions,
-                    ),
-                    if (_currentConfig.format == ConfigFormat.toml &&
-                        (!listEquals(_rules, _currentConfig.rules) ||
-                            !listEquals(
-                              _permissions,
-                              _currentConfig.permissions,
-                            ))) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha: 0.1),
-                          border: Border.all(color: AppColors.warning),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.warning_amber,
-                              color: AppColors.warning,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Saving a TOML config with structured changes '
-                                'will reformat the file and discard existing '
-                                'comments and formatting. This is a known '
-                                'limitation of the TOML library.',
-                                style: AppTextStyles.uiSecondary.copyWith(
-                                  color: AppColors.warning,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                  if (_rawContent != _currentConfig.originalContent) ...[
-                    const SizedBox(height: 16),
-                    _buildRawDiffSection(
-                      _currentConfig.originalContent,
-                      _rawContent,
+                    FormattingFidelityNotice(
+                      assessment: pendingFidelityAssessment,
+                      showOpeningStatement: false,
                     ),
                   ],
                 ],
-              ),
+                if (_rawContent != _currentConfig.originalContent) ...[
+                  const SizedBox(height: 16),
+                  _buildRawDiffSection(
+                    _currentConfig.originalContent,
+                    _rawContent,
+                  ),
+                ],
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textPrimaryDark,
-                ),
-                child: const Text('Cancel'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textPrimaryDark,
               ),
-              ElevatedButton(
-                onPressed: _saving
-                    ? null
-                    : () {
-                        Navigator.of(context).pop();
-                        unawaited(_saveChanges());
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryAccent,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Confirm & Save'),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: _saving
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                      unawaited(_saveChanges());
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryAccent,
+                foregroundColor: Colors.white,
               ),
-            ],
-          );
-        },
-      ),
+              child: const Text('Confirm & Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -358,6 +391,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
             onChanged: (newValues) {
               setState(() {
                 _permissions = newValues;
+                _editRevision++;
               });
               _notifyDirtyChanged();
             },
@@ -370,6 +404,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   @override
   Widget build(BuildContext context) {
     final claudePermissions = _claudePermissions;
+    final openingFidelityAssessment = _openingFidelityAssessment;
     final hasUnsupportedPermissions =
         claudePermissions.isUnsupported ||
         (!claudePermissions.isAvailable &&
@@ -471,9 +506,16 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 const SizedBox(height: 16),
                 const Divider(color: AppColors.borderDark),
 
-                if (widget.config.parseWarnings.isNotEmpty) ...[
+                if (openingFidelityAssessment != null) ...[
                   const SizedBox(height: 16),
-                  for (final warning in widget.config.parseWarnings) ...[
+                  FormattingFidelityNotice(
+                    assessment: openingFidelityAssessment,
+                  ),
+                ],
+
+                if (_currentConfig.parseWarnings.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  for (final warning in _currentConfig.parseWarnings) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -528,6 +570,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                               onChanged: (newValues) {
                                 setState(() {
                                   _rules = newValues;
+                                  _editRevision++;
                                 });
                                 _notifyDirtyChanged();
                               },
@@ -563,6 +606,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                               onChanged: (val) {
                                 setState(() {
                                   _rawContent = val;
+                                  _editRevision++;
                                 });
                                 _notifyDirtyChanged();
                               },

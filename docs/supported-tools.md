@@ -698,9 +698,9 @@ agent frontmatter.
 
 | Format | Tools | Parser approach |
 | --- | --- | --- |
-| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP, Kilo, Cline, Copilot CLI (`settings.json`), LM Studio | `dart:convert` + `json_ast` (preserves comments & trailing commas) |
-| TOML | Codex | `toml` Dart package |
-| YAML | Kiro (permissions), Paseo (hub/workflows), LM Studio (`model.yaml`) | `yaml` Dart package |
+| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP, Kilo, Cline, Copilot CLI (`settings.json`), LM Studio | `dart:convert` + `json_ast`; source-offset patch when supported, full-document rewrite fallback |
+| TOML | Codex | `toml` Dart package; structured serialization normalizes the document and can discard comments/layout |
+| YAML | Kiro (permissions), Paseo (hub/workflows), LM Studio (`model.yaml`) | `yaml` + `yaml_edit`; in-place update when supported, fresh-document fallback |
 | Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — raw-text editor | raw-text editor |
 
 ## Deferred / not yet supported

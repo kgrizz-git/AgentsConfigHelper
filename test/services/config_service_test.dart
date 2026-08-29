@@ -4,6 +4,7 @@ import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -251,6 +252,33 @@ void main() {
       },
     );
 
+    test(
+      'saveRawConfig uses a direct raw write when an unparseable baseline '
+      'would otherwise require a TOML merge',
+      () async {
+        final tomlFile = File(p.join(tempDir.path, 'raw_config_stale.toml'));
+        await tomlFile.create(recursive: true);
+        const diskContent = '# disk comment\nrules = ["disk"]\n';
+        await tomlFile.writeAsString(diskContent);
+
+        final config = ToolConfig(
+          toolName: 'Test',
+          filePath: tomlFile.path,
+          format: ConfigFormat.toml,
+          originalContent: 'rules = [',
+          rules: const ['structured-change'],
+        );
+        const rawEdit = '# raw comment\nrules = ["raw"]\n';
+
+        expect(configService.hasUsableBaseline(config), isFalse);
+        final updated = await configService.saveRawConfig(config, rawEdit);
+
+        expect(updated.rules, equals(['raw']));
+        expect(await tomlFile.readAsString(), equals(rawEdit));
+        expect(backupService.backupDirectory.listSync(), hasLength(1));
+      },
+    );
+
     test('saveRawConfig creates backup and writes on valid content', () async {
       final jsonFile = File(p.join(tempDir.path, 'raw_config_2.json'));
       await jsonFile.create(recursive: true);
@@ -330,6 +358,40 @@ void main() {
       },
     );
 
+    test(
+      'saveRawConfig TOML merge reconstructs a one-character raw edit and '
+      'creates one backup',
+      () async {
+        final tomlFile = File(p.join(tempDir.path, 'raw_config.toml'));
+        await tomlFile.create(recursive: true);
+        const originalContent =
+            '# fixture comment\nrules = ["old"]\npermissions = ["read"]\n';
+        await tomlFile.writeAsString(originalContent);
+
+        final config = await _load(configService, tomlFile.path);
+        final structurallyEditedConfig = config.copyWith(rules: ['new-rule']);
+        const rawEdit =
+            '# fixture comment!\nrules = ["old"]\npermissions = ["read"]\n';
+
+        final updatedConfig = await configService.saveRawConfig(
+          structurallyEditedConfig,
+          rawEdit,
+        );
+
+        final content = await tomlFile.readAsString();
+        expect(updatedConfig.rules, equals(['new-rule']));
+        expect(content, contains('new-rule'));
+        expect(content, isNot(contains('# fixture comment')));
+
+        final backups = backupService.backupDirectory.listSync();
+        expect(backups.length, equals(1));
+        expect(
+          await File(backups.single.path).readAsString(),
+          equals(originalContent),
+        );
+      },
+    );
+
     test('loadConfig identifies JSONC and parses', () async {
       final jsoncPath = '${tempDir.path}/test_config.jsonc';
       final jsoncFile = File(jsoncPath);
@@ -342,6 +404,40 @@ void main() {
       ); // Parses as JSONC format under the hood
       expect(config.rules, ['test']);
     });
+
+    test('rawContentParsedAsJsonc detects JSONC added in the raw editor', () {
+      final config = ToolConfig(
+        toolName: 'Test',
+        filePath: '${tempDir.path}/settings.json',
+        format: ConfigFormat.json,
+        originalContent: '{"rules": []}',
+      );
+
+      expect(
+        configService.rawContentParsedAsJsonc(config, '{"rules": []}'),
+        isFalse,
+      );
+      expect(
+        configService.rawContentParsedAsJsonc(
+          config,
+          '// preserve this comment\n{"rules": []}',
+        ),
+        isTrue,
+      );
+    });
+
+    test(
+      'currentSourceParsedAsJsonc detects JSONC added after a config opened',
+      () async {
+        final jsonFile = File(p.join(tempDir.path, 'settings.json'));
+        await jsonFile.writeAsString('{"rules": []}');
+        final config = await _load(configService, jsonFile.path);
+
+        await jsonFile.writeAsString('// externally added\n{"rules": []}');
+
+        expect(await configService.currentSourceParsedAsJsonc(config), isTrue);
+      },
+    );
 
     test('saveConfig throws UnsupportedError for unknown format', () async {
       final config = ToolConfig(
@@ -398,6 +494,95 @@ void main() {
         ),
       );
     });
+
+    test(
+      'saveRawConfig rejects divergent structured overlay on a text config',
+      () async {
+        final textFile = File(p.join(tempDir.path, 'instructions.txt'));
+        await textFile.create(recursive: true);
+        const originalContent = 'Original instructions.';
+        await textFile.writeAsString(originalContent);
+
+        final config = ToolConfig(
+          toolName: 'Test',
+          filePath: textFile.path,
+          format: ConfigFormat.text,
+          originalContent: originalContent,
+        );
+
+        // Structured rules diverge from the (empty) baseline — the overlay
+        // cannot be carried by a text serializer.
+        final withOverlay = config.copyWith(rules: ['added-via-ui']);
+
+        await expectLater(
+          () => configService.saveRawConfig(withOverlay, 'New raw text.'),
+          throwsA(isA<ConfigParseException>()),
+        );
+
+        // File must be untouched: no write, no backup.
+        expect(await textFile.readAsString(), equals(originalContent));
+        if (backupService.backupDirectory.existsSync()) {
+          expect(backupService.backupDirectory.listSync(), isEmpty);
+        }
+      },
+    );
+
+    test(
+      'saveRawConfig rejects divergent structured overlay on a markdown config',
+      () async {
+        final mdFile = File(p.join(tempDir.path, 'AGENTS.md'));
+        await mdFile.create(recursive: true);
+        const originalContent = '# Instructions\n\nBe helpful.';
+        await mdFile.writeAsString(originalContent);
+
+        final config = ToolConfig(
+          toolName: 'Test',
+          filePath: mdFile.path,
+          format: ConfigFormat.markdown,
+          originalContent: originalContent,
+        );
+
+        final withOverlay = config.copyWith(permissions: ['read-everything']);
+
+        await expectLater(
+          () => configService.saveRawConfig(withOverlay, '# New markdown'),
+          throwsA(isA<ConfigParseException>()),
+        );
+
+        expect(await mdFile.readAsString(), equals(originalContent));
+        if (backupService.backupDirectory.existsSync()) {
+          expect(backupService.backupDirectory.listSync(), isEmpty);
+        }
+      },
+    );
+
+    test(
+      'saveRawConfig still succeeds for a direct raw text save with no '
+      'structured divergence',
+      () async {
+        final textFile = File(p.join(tempDir.path, 'plain.txt'));
+        await textFile.create(recursive: true);
+        const originalContent = 'Hello';
+        await textFile.writeAsString(originalContent);
+
+        final config = ToolConfig(
+          toolName: 'Test',
+          filePath: textFile.path,
+          format: ConfigFormat.text,
+          originalContent: originalContent,
+        );
+
+        const rawEdit = 'Hello, world!';
+        final updated = await configService.saveRawConfig(config, rawEdit);
+
+        expect(await textFile.readAsString(), equals(rawEdit));
+        expect(updated.originalContent, equals(rawEdit));
+
+        // Backup was created for the pre-existing file.
+        final backups = backupService.backupDirectory.listSync();
+        expect(backups.length, equals(1));
+      },
+    );
   });
 }
 

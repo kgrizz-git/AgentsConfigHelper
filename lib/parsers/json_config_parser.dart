@@ -17,8 +17,8 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
   /// Shown when strict JSON decoding fails and the content is retried as
   /// JSONC (comments/trailing commas) instead.
   static const String jsoncFallbackWarning =
-      'Parsed as JSONC — comments and trailing commas were detected and '
-      'are preserved on save.';
+      'Parsed as JSONC — JSONC syntax (comments or trailing commas) was '
+      'detected.';
 
   /// Parses raw JSON or JSONC content into a [ToolConfig].
   ///
@@ -79,6 +79,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
         parseWarnings: jsoncFallbackUsed
             ? const [jsoncFallbackWarning]
             : const [],
+        parsedAsJsonc: jsoncFallbackUsed,
       );
     }
 
@@ -102,6 +103,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       parseWarnings: jsoncFallbackUsed
           ? const [jsoncFallbackWarning]
           : const [],
+      parsedAsJsonc: jsoncFallbackUsed,
     );
   }
 

@@ -10,6 +10,12 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
+- **Formatting-fidelity disclosure.** Structured JSON, JSONC, YAML, and TOML
+  editors now show a persistent accessible notice on opening. It explains that
+  viewing does not modify the source file, identifies possible formatting loss,
+  and points to raw content and Review Changes. TOML states that a structured save
+  reconstructs the file and discards existing comments; JSON/JSONC/YAML warn about
+  their possible whole-document rewrite fallback.
 - **Claude Code permission help:** The read-only Claude Code permissions card now provides
   keyboard-accessible, plain-language explanations for its default mode and Allow, Ask, and
   Deny rule groups. The help describes stored configuration rather than predicting runtime
@@ -57,6 +63,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Structured JSONC disclosure.** Review Changes now refreshes JSONC status
+  from the current on-disk source before a structured save, including a file
+  changed externally after it was opened.
+- **Pending JSONC disclosure.** Review Changes now evaluates the edited raw
+  buffer, so newly added JSONC comments or trailing commas are disclosed before
+  a structured merge save.
+- **JSONC fallback wording.** The parse banner now reports detected JSONC syntax
+  without falsely promising that comments or trailing commas will survive a later save.
+- **Formatting-fidelity documentation.** Project documentation now distinguishes
+  source-preserving JSON/JSONC and YAML paths from their rewrite fallbacks, and
+  accurately describes TOML structured serialization as lossy. The historical 0.1.0
+  release entry remains unchanged.
 - **Restore safety.** Restoring a backup now preserves the current on-disk file as a new
   backup first (the existing file is backed up before the snapshot is applied), and recreates
   a missing parent directory (for example after the live config folder was deleted), matching
