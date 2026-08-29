@@ -90,6 +90,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late TextEditingController _rawContentController;
   late String _rawContent;
   bool _saving = false;
+  int _editRevision = 0;
 
   @override
   void initState() {
@@ -113,6 +114,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   void _initLocalState(ToolConfig config) {
+    _editRevision++;
     _currentConfig = config;
     _rules = List.from(_currentConfig.rules);
     _permissions = List.from(_currentConfig.permissions);
@@ -243,8 +245,9 @@ class _ConfigEditorState extends State<ConfigEditor> {
 
   /// Shows the review modal for unsaved changes.
   Future<void> _showDiffModal() async {
+    final editRevision = _editRevision;
     final pendingFidelityAssessment = await _pendingFidelityAssessment();
-    if (!mounted) return;
+    if (!mounted || editRevision != _editRevision) return;
 
     await showDialog<void>(
       context: context,
@@ -388,6 +391,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
             onChanged: (newValues) {
               setState(() {
                 _permissions = newValues;
+                _editRevision++;
               });
               _notifyDirtyChanged();
             },
@@ -566,6 +570,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                               onChanged: (newValues) {
                                 setState(() {
                                   _rules = newValues;
+                                  _editRevision++;
                                 });
                                 _notifyDirtyChanged();
                               },
@@ -601,6 +606,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                               onChanged: (val) {
                                 setState(() {
                                   _rawContent = val;
+                                  _editRevision++;
                                 });
                                 _notifyDirtyChanged();
                               },

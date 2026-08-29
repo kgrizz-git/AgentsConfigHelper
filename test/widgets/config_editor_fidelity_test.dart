@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:agents_config_helper/models/tool_config.dart';
@@ -222,6 +223,44 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets(
+      'does not open a stale review dialog after edits during lookup',
+      (
+        tester,
+      ) async {
+        final sourceStatus = Completer<bool>();
+        final config = ToolConfig(
+          toolName: 'Test Tool',
+          filePath: '${Directory.systemTemp.path}/config.json',
+          format: ConfigFormat.json,
+          originalContent: '{"rules": ["rule1"]}',
+          rules: const ['rule1'],
+        );
+
+        await tester.pumpWidget(
+          _editor(
+            config,
+            currentSourceParsedAsJsonc: (_) => sourceStatus.future,
+          ),
+        );
+
+        await tester.tap(find.text('Add Item').first);
+        await tester.pumpAndSettle();
+        final ruleEditor = find.byType(TextField).at(1);
+        await tester.enterText(ruleEditor, 'first change');
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Review Changes'));
+        await tester.pump();
+        await tester.enterText(ruleEditor, 'changed during lookup');
+        await tester.pump();
+        sourceStatus.complete(true);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AlertDialog), findsNothing);
+      },
+    );
 
     testWidgets('renders an accessible persistent warning when TOML opens', (
       tester,
