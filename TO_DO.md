@@ -126,6 +126,17 @@ The durable sequence and architecture decisions are in the
 - [ ] Review the deferred work in the [agent-config discovery plan](plans/active/agent-config-discovery.md)
       and promote only a bounded, current discovery slice when it is ready for implementation.
 
+### API/CLI interface (deferred)
+
+- [ ] Expose local read/write via a headless interface for humans and agents. See
+      the deferred [API/CLI interface plan](plans/active/api-cli-interface.md).
+      Phase 1 is a local `bin/` CLI (`--json`, `--dry-run`, deterministic exit codes)
+      that reuses `ConfigService`/`DiscoveryService`/`BackupService` and retains
+      backup-before-write, diff preview, and fidelity disclosure. Phase 2 is a thin
+      MCP stdio shim delegating to the same handlers. Local HTTP is deferred until
+      after the structured-configuration fidelity decisions; no cloud sync. Keep off
+      `Next Up` until Phase 0.5 fidelity and test-root slices land.
+
 ## Follow-ups from Phase 5.5 (docs accuracy)
 
 - [ ] Add a README screenshot or GIF to `assets/screenshots/` (blocked on user — an agent cannot capture a running Flutter desktop GUI). README currently shows a placeholder badge.
