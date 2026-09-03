@@ -216,6 +216,7 @@ temp/
 .serena/
 .aider*
 .tokensave/
+.kilo/
 # Miscellaneous
 *.class
 *.log
