@@ -15,13 +15,14 @@ Widget _editor(
   bool Function(ToolConfig)? hasUsableBaseline,
   bool Function(ToolConfig, String)? rawContentParsedAsJsonc,
   Future<bool> Function(ToolConfig)? currentSourceParsedAsJsonc,
+  Future<ToolConfig> Function(ToolConfig, [String?])? onSave,
 }) {
   return MaterialApp(
     home: Scaffold(
       body: ConfigEditor(
         config: config,
         rawOnly: rawOnly,
-        onSave: (updatedConfig, [rawContent]) async => updatedConfig,
+        onSave: onSave ?? (updatedConfig, [rawContent]) async => updatedConfig,
         resolvePath: (path) => path,
         hasUsableBaseline: hasUsableBaseline,
         rawContentParsedAsJsonc: rawContentParsedAsJsonc,
@@ -346,5 +347,125 @@ void main() {
       expect(find.byType(FormattingFidelityNotice), findsNothing);
       expect(find.byType(StringListEditor), findsNothing);
     });
+
+    testWidgets(
+      'fidelity notice renders above raw TextField and persists after typing',
+      (tester) async {
+        final config = ToolConfig(
+          toolName: 'Test Tool',
+          filePath: '${Directory.systemTemp.path}/config.toml',
+          format: ConfigFormat.toml,
+          originalContent: 'rules = ["rule1"]\n',
+          rules: const ['rule1'],
+          permissions: const ['perm1'],
+        );
+
+        await tester.pumpWidget(_editor(config));
+        await tester.pumpAndSettle();
+
+        await tester.drag(find.byType(ListView), const Offset(0, -600));
+        await tester.pumpAndSettle();
+
+        final fidelityNotice = find.byType(FormattingFidelityNotice);
+        final rawEditor = find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.controller?.text == config.originalContent,
+        );
+
+        expect(fidelityNotice, findsOneWidget);
+        expect(rawEditor, findsOneWidget);
+
+        final noticeTopLeft = tester.getTopLeft(fidelityNotice);
+        final rawEditorTopLeft = tester.getTopLeft(rawEditor);
+        expect(noticeTopLeft.dy, lessThan(rawEditorTopLeft.dy));
+
+        await tester.enterText(rawEditor, 'rules = ["rule1", "rule2"]\n');
+        await tester.pumpAndSettle();
+
+        expect(fidelityNotice, findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'fidelity notice persists after opening and dismissing Review Changes',
+      (tester) async {
+        final config = ToolConfig(
+          toolName: 'Test Tool',
+          filePath: '${Directory.systemTemp.path}/config.toml',
+          format: ConfigFormat.toml,
+          originalContent: 'rules = ["rule1"]\n',
+          rules: const ['rule1'],
+          permissions: const ['perm1'],
+        );
+
+        await tester.pumpWidget(_editor(config));
+        await tester.pumpAndSettle();
+
+        await tester.drag(find.byType(ListView), const Offset(0, -600));
+        await tester.pumpAndSettle();
+
+        final rawEditor = find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.controller?.text == config.originalContent,
+        );
+        await tester.enterText(rawEditor, 'rules = ["rule1", "rule2"]\n');
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Review Changes'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(FormattingFidelityNotice), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'opening Review Changes and canceling never calls onSave',
+      (tester) async {
+        var saveCalled = false;
+        final config = ToolConfig(
+          toolName: 'Test Tool',
+          filePath: '${Directory.systemTemp.path}/config.toml',
+          format: ConfigFormat.toml,
+          originalContent: 'rules = ["rule1"]\n',
+          rules: const ['rule1'],
+          permissions: const ['perm1'],
+        );
+
+        await tester.pumpWidget(
+          _editor(
+            config,
+            onSave: (c, [r]) {
+              saveCalled = true;
+              return Future.value(c);
+            },
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.drag(find.byType(ListView), const Offset(0, -600));
+        await tester.pumpAndSettle();
+
+        final rawEditor = find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.controller?.text == config.originalContent,
+        );
+        await tester.enterText(rawEditor, 'rules = ["rule1", "rule2"]\n');
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Review Changes'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(saveCalled, isFalse);
+      },
+    );
   });
 }

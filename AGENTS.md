@@ -102,6 +102,12 @@ flutter build macos --release   # build release binary
   interactive state materially helps.
 - Record decisions, changed files, verification, and next steps in a handoff before
   changing agents or IDEs.
+- Run parallel implementation subagents in isolated git worktrees (one worktree per
+  writer), never two writers in the same checkout — observed failure: one agent's
+  shell/git commands silently wiped another agent's uncommitted tests. Keep file
+  ownership disjoint as a second layer and merge via branches/PRs. Secure (commit
+  or diff-backup) the working tree before spawning a review/research subagent that
+  shares the checkout.
 - Keep credentials, generated indexes, and local agent state out of version control.
 
 ## macOS distribution note

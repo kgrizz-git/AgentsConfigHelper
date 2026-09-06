@@ -583,6 +583,66 @@ void main() {
         expect(backups.length, equals(1));
       },
     );
+
+    test(
+      'saveRawConfig routes unchanged raw buffer with diverged structured '
+      'values through TOML serializer and creates exactly one backup',
+      () async {
+        final tomlFile = File(
+          p.join(tempDir.path, 'raw_config_unchanged.toml'),
+        );
+        await tomlFile.create(recursive: true);
+        const originalContent =
+            '# fixture comment\nrules = ["old"]\npermissions = ["read"]\n';
+        await tomlFile.writeAsString(originalContent);
+
+        final config = await _load(configService, tomlFile.path);
+        // Structured values diverged independently; raw buffer is unchanged.
+        final structurallyEditedConfig = config.copyWith(rules: ['new-rule']);
+
+        final updatedConfig = await configService.saveRawConfig(
+          structurallyEditedConfig,
+          originalContent,
+        );
+
+        final content = await tomlFile.readAsString();
+        expect(updatedConfig.rules, equals(['new-rule']));
+        // TOML serializer reconstructed the document, discarding the comment.
+        expect(content, isNot(contains('# fixture comment')));
+
+        final backups = backupService.backupDirectory.listSync();
+        expect(backups.length, equals(1));
+        expect(
+          await File(backups.single.path).readAsString(),
+          equals(originalContent),
+        );
+      },
+    );
+
+    test(
+      'merely loading or reading a config creates no backup or write',
+      () async {
+        final jsonFile = File(p.join(tempDir.path, 'read_only.json'));
+        await jsonFile.create(recursive: true);
+        const originalContent = '{"rules": ["r1"]}';
+        await jsonFile.writeAsString(originalContent);
+
+        final loaded = await _load(configService, jsonFile.path);
+        expect(loaded.rules, equals(['r1']));
+
+        // Re-read the raw text as the service would for a pending save.
+        final rawText = await configService.readRawText(jsonFile.path);
+        expect(rawText, equals(originalContent));
+
+        // No backup was created by a read or load, and the file is untouched.
+        expect(await jsonFile.readAsString(), equals(originalContent));
+        expect(
+          !backupService.backupDirectory.existsSync() ||
+              backupService.backupDirectory.listSync().isEmpty,
+          isTrue,
+        );
+      },
+    );
   });
 }
 

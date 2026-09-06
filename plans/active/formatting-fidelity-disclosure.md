@@ -181,11 +181,11 @@ direct-raw mechanism.
 - [x] Cover TOML, YAML, explicit `.jsonc`, `.json` parsed using JSONC fallback,
       strict JSON (including a `.jsonc` file containing strict JSON), Markdown/text,
       unknown/raw-only outcomes, and raw-plus-structured merge conditions.
-- [ ] Make raw-only precedence explicit in the pure contract: a recovery editor for
+- [x] Make raw-only precedence explicit in the pure contract: a recovery editor for
       corrupt TOML or JSON returns no opening fidelity assessment even though its
       discovered format is TOML or JSON. Add widget coverage that the recovery editor
       has no notice or structured controls and that its repaired raw save is direct.
-- [ ] Document which current parser fallbacks trigger the conditional risk. Do not
+- [x] Document which current parser fallbacks trigger the conditional risk. Do not
       describe successful-path preservation as a guarantee.
 - [x] Replace `JsonConfigParser.jsoncFallbackWarning`'s unconditional promise that
       comments "are preserved on save" with a parse-only statement that JSONC syntax
@@ -195,7 +195,7 @@ direct-raw mechanism.
       trailing commas and no longer contains "preserved on save". `JsoncCleaner`
       currently cannot say which of comments or trailing commas it removed, so retain
       combined wording rather than claiming the parser identified one exact syntax.
-- [ ] Add service regression tests for an unchanged raw buffer plus independently
+- [x] Add service regression tests for an unchanged raw buffer plus independently
       diverged structured values. In particular, prove that this `saveRawConfig`
       merge routes TOML through the lossy serializer and receives warning/
       parser-serialization rather than `directRaw`.
@@ -205,12 +205,12 @@ direct-raw mechanism.
       warning/parser-serialization rather than `directRaw`. Also assert it creates
       exactly one pre-write backup, so this exceptional merge path retains the normal
       backup-before-write guarantee.
-- [ ] Add JSON/YAML cases with nested/non-list `permissions` and a simultaneous
+- [x] Add JSON/YAML cases with nested/non-list `permissions` and a simultaneous
       flat-field edit. The assessment stays conservatively `caution`; tests may
       document a successful rules-only patch but must not infer pre-save certainty
       from it. Assert the opening assessment remains `caution` even when the known
       fixture happens to patch successfully.
-- [ ] Cover `saveConfig` explicitly for every supported structured format, including
+- [x] Cover `saveConfig` explicitly for every supported structured format, including
       a newly-created file with no usable original source; JSON/JSONC/YAML remain
       caution because serialization can rebuild the document.
 - [x] Assert a `.jsonc` file that is valid strict JSON is still opening-assessed as
@@ -228,11 +228,11 @@ silently accept and discard that invalid overlay.
 - [x] Implement the reusable notice with an accessible semantic label and
       high-contrast text.
 - [x] Render it on initial `ConfigEditor` display for TOML, JSON/JSONC, and YAML.
-- [ ] Assert it is above raw content and does not disappear after editing or opening
+- [x] Assert it is above raw content and does not disappear after editing or opening
       Review Changes.
 - [x] Keep parse warnings separately visible and test both notices together for a
       `.json` file accepted as JSONC.
-- [ ] Assert raw-only recovery editors for corrupt TOML and JSON show neither a
+- [x] Assert raw-only recovery editors for corrupt TOML and JSON show neither a
       fidelity notice nor structured controls. Their repaired raw save remains a
       direct raw write.
 - [x] Assert the notice's explicit semantic label and text equivalent of its icon in
@@ -244,7 +244,7 @@ silently accept and discard that invalid overlay.
 - [x] Replace the TOML-only diff-dialog warning with the shared disclosure.
 - [x] Test that the opening and review notices agree on severity and wording.
 - [x] Preserve existing backup, diff, parse-validation, and direct raw-save behavior.
-- [ ] Add a regression test that merely opening a config or inspecting the notice
+- [x] Add a regression test that merely opening a config or inspecting the notice
       causes no write or backup.
 
 ### Phase 4 — decide fallback safety before broader structured writes
