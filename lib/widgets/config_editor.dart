@@ -35,6 +35,7 @@ class ConfigEditor extends StatefulWidget {
     this.rawOnly = false,
     this.tomlStructuredSaveEnabled = false,
     this.onEnableTomlStructuredSave,
+    this.onDisableTomlStructuredSave,
     super.key,
   });
 
@@ -92,6 +93,9 @@ class ConfigEditor extends StatefulWidget {
   /// Called when the user accepts the TOML opt-in warning and enables
   /// structured saves for TOML files.
   final Future<void> Function()? onEnableTomlStructuredSave;
+
+  /// Called when the user opts back out of structured saves for TOML files.
+  final Future<void> Function()? onDisableTomlStructuredSave;
 
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
@@ -164,6 +168,35 @@ class _ConfigEditorState extends State<ConfigEditor> {
   bool get _isTomlOptedOut =>
       _currentConfig.format == ConfigFormat.toml &&
       !widget.tomlStructuredSaveEnabled;
+
+  bool get _isTomlOptedIn =>
+      _currentConfig.format == ConfigFormat.toml &&
+      widget.tomlStructuredSaveEnabled &&
+      !widget.rawOnly;
+
+  List<Widget> _buildTomlOptWidgets() {
+    if (_isTomlOptedOut) {
+      return [
+        const SizedBox(height: 16),
+        TomlOptInBanner(
+          onEnable: _toSetState(widget.onEnableTomlStructuredSave),
+        ),
+      ];
+    }
+    if (_isTomlOptedIn) {
+      return [
+        TomlOptOutRow(
+          onDisable: _toSetState(widget.onDisableTomlStructuredSave),
+        ),
+      ];
+    }
+    return const [];
+  }
+
+  VoidCallback _toSetState(Future<void> Function()? action) => () async {
+        await action?.call();
+        if (mounted) setState(() {});
+      };
 
   FidelityAssessment? get _openingFidelityAssessment =>
       _fidelityAssessor.assessOpening(
@@ -518,17 +551,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                   ],
                 ],
 
-                if (_isTomlOptedOut) ...[
-                  const SizedBox(height: 16),
-                  TomlOptInBanner(
-                    onEnable: () async {
-                      await widget.onEnableTomlStructuredSave?.call();
-                      if (mounted) {
-                        setState(() {});
-                      }
-                    },
-                  ),
-                ],
+                ..._buildTomlOptWidgets(),
 
                 // Form Body
                 Expanded(

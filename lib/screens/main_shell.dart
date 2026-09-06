@@ -609,6 +609,7 @@ class _MainShellState extends ConsumerState<MainShell>
             tomlStructuredSaveEnabled:
                 _tomlOptInController.tomlStructuredSaveEnabled,
             onEnableTomlStructuredSave: _tomlOptInController.enable,
+            onDisableTomlStructuredSave: _tomlOptInController.disable,
             onDirtyChanged: (hasUnsavedChanges) {
               if (mounted) {
                 setState(() {

@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 
 /// Banner shown when a TOML file is opened but structured saves are disabled.
 class TomlOptInBanner extends StatelessWidget {
+  /// Creates the banner.
   const TomlOptInBanner({
     required this.onEnable,
     super.key,
   });
 
+  /// Called when the user accepts the warning and enables structured saves.
   final VoidCallback onEnable;
 
   @override
@@ -62,6 +64,47 @@ class TomlOptInBanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Compact opt-out row shown while structured TOML editing is enabled.
+///
+/// It restates the ongoing risk in one line and offers the off-ramp, so the
+/// opt-in can always be reversed from the same surface that granted it.
+class TomlOptOutRow extends StatelessWidget {
+  /// Creates the row.
+  const TomlOptOutRow({
+    required this.onDisable,
+    super.key,
+  });
+
+  /// Called when the user opts back out of structured TOML saves.
+  final VoidCallback onDisable;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Structured TOML editing is on.',
+            style: AppTextStyles.uiSecondary.copyWith(
+              color: AppColors.warning,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        TextButton(
+          onPressed: onDisable,
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.warning,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+          ),
+          child: const Text('Disable'),
+        ),
+      ],
     );
   }
 }

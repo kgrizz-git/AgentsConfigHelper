@@ -18,7 +18,8 @@ uses [Semantic Versioning](https://semver.org/).
 - **Opt-in structured TOML editing.** TOML structured controls are read-only by
   default. Enabling them requires acknowledging that structured saves rebuild the
   file and discard comments, and the TOML fidelity warning stays visible whenever
-  the opt-in is on. The choice persists across launches.
+  the opt-in is on. The banner also offers disabling again at any time.
+  The choice persists across launches.
 - **Formatting-fidelity disclosure.** Structured JSON, JSONC, YAML, and TOML
   editors now show a persistent accessible notice on opening. It explains that
   viewing does not modify the source file, identifies possible formatting loss,

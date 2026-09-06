@@ -51,4 +51,15 @@ class TomlOptInController {
       });
     }
   }
+
+  /// Clears the persisted opt-in and reflects it locally.
+  Future<void> disable() async {
+    final prefsStore = ref.read(discoveryPreferencesStoreProvider);
+    await prefsStore.disableTomlStructuredSave();
+    if (isMounted()) {
+      setState(() {
+        _tomlStructuredSaveEnabled = false;
+      });
+    }
+  }
 }

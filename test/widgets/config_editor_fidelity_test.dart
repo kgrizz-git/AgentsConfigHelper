@@ -23,6 +23,7 @@ Widget _editor(
   })?
   onSave,
   bool tomlStructuredSaveEnabled = false,
+  Future<void> Function()? onDisableTomlStructuredSave,
 }) {
   return MaterialApp(
     home: Scaffold(
@@ -39,6 +40,7 @@ Widget _editor(
         currentSourceParsedAsJsonc: currentSourceParsedAsJsonc,
         onShowHistory: () {},
         tomlStructuredSaveEnabled: tomlStructuredSaveEnabled,
+        onDisableTomlStructuredSave: onDisableTomlStructuredSave,
       ),
     ),
   );
@@ -65,6 +67,8 @@ void main() {
         ),
       );
 
+      await tester.ensureVisible(find.text('Add Item').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Add Item').first);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).at(1), 'new rule');
@@ -108,6 +112,8 @@ void main() {
           ),
         );
 
+        await tester.ensureVisible(find.text('Add Item').first);
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Add Item').first);
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField).at(1), 'new rule');
@@ -150,6 +156,8 @@ void main() {
 
       await tester.pumpWidget(_editor(config));
 
+      await tester.ensureVisible(find.text('Add Item').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Add Item').first);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).at(1), 'new rule');
@@ -187,6 +195,8 @@ void main() {
         ),
       );
 
+      await tester.ensureVisible(find.text('Add Item').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Add Item').first);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).at(1), 'new rule');
@@ -229,6 +239,8 @@ void main() {
         ),
       );
 
+      await tester.ensureVisible(find.text('Add Item').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Add Item').first);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).at(1), 'new rule');
@@ -264,6 +276,8 @@ void main() {
           ),
         );
 
+        await tester.ensureVisible(find.text('Add Item').first);
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Add Item').first);
         await tester.pumpAndSettle();
         final ruleEditor = find.byType(TextField).at(1);
@@ -332,12 +346,8 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('comments or trailing commas) was detected'),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('discard comments or trailing commas'),
-        findsOneWidget,
+        find.text('Structured TOML editing is disabled'),
+        findsNothing,
       );
     });
 
@@ -566,6 +576,8 @@ void main() {
           ),
         );
 
+        await tester.ensureVisible(find.text('Add Item').first);
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Add Item').first);
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField).at(1), 'new');
@@ -612,6 +624,8 @@ void main() {
         ),
       );
 
+      await tester.ensureVisible(find.text('Add Item').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Add Item').first);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).at(1), 'new');
@@ -650,6 +664,37 @@ void main() {
       );
       expect(find.byType(FormattingFidelityNotice), findsNothing);
       expect(find.byType(StringListEditor), findsNothing);
+    });
+
+    testWidgets('enabled TOML offers an opt-out control that fires', (
+      tester,
+    ) async {
+      var disableCalled = false;
+      final config = ToolConfig(
+        toolName: 'Test Tool',
+        filePath: '${Directory.systemTemp.path}/config.toml',
+        format: ConfigFormat.toml,
+        originalContent: 'rules = ["rule1"]\n',
+        rules: const ['rule1'],
+      );
+
+      await tester.pumpWidget(
+        _editor(
+          config,
+          tomlStructuredSaveEnabled: true,
+          onDisableTomlStructuredSave: () async {
+            disableCalled = true;
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FormattingFidelityNotice), findsOneWidget);
+
+      await tester.tap(find.text('Disable'));
+      await tester.pumpAndSettle();
+
+      expect(disableCalled, isTrue);
     });
   });
 }

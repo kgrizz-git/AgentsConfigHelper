@@ -86,7 +86,9 @@ Reopen this ADR and implement **Alternative A** if any of these occur:
 explaining that structured editing is disabled and an explicit enable control
 that restates the loss (comments discarded, file reformatted). With the
 preference on (`tomlStructuredSaveEnabled` in discovery preferences), the
-persistent TOML fidelity warning stays visible at all times. This resolves open
+persistent TOML fidelity warning stays visible at all times. The banner doubles
+as the opt-out: while enabled it offers "Disable structured TOML editing",
+which clears the persisted preference. This resolves open
 plan question 2 ("warning or read-only?") as: read-only by default, writable
 only with informed opt-in — disclosure plus consent, not disclosure alone.
 
