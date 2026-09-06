@@ -380,7 +380,7 @@ void main() {
       expect(config.parseWarnings, isEmpty);
     });
 
-    test('serializeWithOutcome reports usedFallback on full rewrite', () {
+    test('serializeWithOutcome reports no fallback on in-place success', () {
       const original = '''
 {
   "rules": ["old"],

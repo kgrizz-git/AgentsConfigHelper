@@ -165,17 +165,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
         format == ConfigFormat.yaml;
   }
 
-  bool get _isTomlOptedOut =>
-      _currentConfig.format == ConfigFormat.toml &&
-      !widget.tomlStructuredSaveEnabled;
-
-  bool get _isTomlOptedIn =>
-      _currentConfig.format == ConfigFormat.toml &&
-      widget.tomlStructuredSaveEnabled &&
-      !widget.rawOnly;
-
   List<Widget> _buildTomlOptWidgets() {
-    if (_isTomlOptedOut) {
+    final isTomlStructured =
+        _currentConfig.format == ConfigFormat.toml && !widget.rawOnly;
+    if (isTomlStructured && !widget.tomlStructuredSaveEnabled) {
       return [
         const SizedBox(height: 16),
         TomlOptInBanner(
@@ -183,7 +176,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
         ),
       ];
     }
-    if (_isTomlOptedIn) {
+    if (isTomlStructured && widget.tomlStructuredSaveEnabled) {
       return [
         TomlOptOutRow(
           onDisable: _toSetState(widget.onDisableTomlStructuredSave),
