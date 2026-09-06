@@ -194,9 +194,9 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   VoidCallback _toSetState(Future<void> Function()? action) => () async {
-        await action?.call();
-        if (mounted) setState(() {});
-      };
+    await action?.call();
+    if (mounted) setState(() {});
+  };
 
   FidelityAssessment? get _openingFidelityAssessment =>
       _fidelityAssessor.assessOpening(
