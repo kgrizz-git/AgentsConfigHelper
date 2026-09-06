@@ -148,12 +148,14 @@ rules: *b
       const originalContent = '# comment\nrules:\n  - old\n';
       await yamlFile.writeAsString(originalContent);
 
+      // rules match the baseline, so there is NO structured divergence: this
+      // is a true direct raw write of rawEdit, never a merge/serialize.
       final config = ToolConfig(
         toolName: 'Test',
         filePath: yamlFile.path,
         format: ConfigFormat.yaml,
         originalContent: originalContent,
-        rules: const ['new'],
+        rules: const ['old'],
       );
 
       const rawEdit = '# new comment\nrules:\n  - new\n';
@@ -161,6 +163,22 @@ rules: *b
 
       expect(await yamlFile.readAsString(), equals(rawEdit));
       expect(updated.originalContent, equals(rawEdit));
+    });
+
+    test('saveConfig new-file YAML is not spuriously blocked', () async {
+      final newFile = File(p.join(tempDir.path, 'newdir', 'config.yaml'));
+      final config = ToolConfig(
+        toolName: 'Unknown',
+        format: ConfigFormat.yaml,
+        filePath: newFile.path,
+        rules: const ['rule1'],
+      );
+
+      // A brand-new file has no baseline to lose; saveConfig must not throw a
+      // SerializationFallbackException even though it serializes from scratch.
+      final saved = await configService.saveConfig(config);
+      expect(saved.format, equals(ConfigFormat.yaml));
+      expect(newFile.existsSync(), isTrue);
     });
   });
 }

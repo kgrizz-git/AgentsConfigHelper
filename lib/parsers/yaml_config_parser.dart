@@ -163,7 +163,11 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
     }
 
     editor.update([], outputMap);
-    return SerializeOutcome(content: editor.toString(), usedFallback: true);
+    return SerializeOutcome(
+      content: editor.toString(),
+      usedFallback:
+          originalContent != null && originalContent.trim().isNotEmpty,
+    );
   }
 
   Map<String, Object?> _deepConvertMap(YamlMap yamlMap) {
