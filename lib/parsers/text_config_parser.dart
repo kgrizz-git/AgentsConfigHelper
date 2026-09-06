@@ -35,7 +35,21 @@ class TextConfigParser implements ConfigParser {
   /// disk state instead of a stale in-memory copy.
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
-    return originalContent ?? config.originalContent;
+    return serializeWithOutcome(
+      config,
+      originalContent: originalContent,
+    ).content;
+  }
+
+  @override
+  SerializeOutcome serializeWithOutcome(
+    ToolConfig config, {
+    String? originalContent,
+  }) {
+    return SerializeOutcome(
+      content: originalContent ?? config.originalContent,
+      usedFallback: false,
+    );
   }
 
   ConfigFormat _determineFormat(String filePath) {

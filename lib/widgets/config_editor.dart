@@ -12,6 +12,8 @@ import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/formatting_fidelity_notice.dart';
 import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
+import 'package:agents_config_helper/widgets/structured_save_flow.dart';
+import 'package:agents_config_helper/widgets/toml_opt_in_banner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -31,6 +33,8 @@ class ConfigEditor extends StatefulWidget {
     this.currentSourceParsedAsJsonc,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
+    this.tomlStructuredSaveEnabled = false,
+    this.onEnableTomlStructuredSave,
     super.key,
   });
 
@@ -41,7 +45,11 @@ class ConfigEditor extends StatefulWidget {
   final DiscoveredConfig? discoveredConfig;
 
   /// Persists a confirmed edited configuration.
-  final Future<ToolConfig> Function(ToolConfig config, [String? rawContent])
+  final Future<ToolConfig> Function(
+    ToolConfig config, {
+    String? rawContent,
+    bool? allowRewrite,
+  })
   onSave;
 
   /// Resolves the configuration path before opening its directory.
@@ -75,6 +83,15 @@ class ConfigEditor extends StatefulWidget {
   /// sections and the history button are hidden. Used for corrupt files that
   /// cannot be parsed into structured fields.
   final bool rawOnly;
+
+  /// Whether the user has opted in to structured TOML saves. When false,
+  /// TOML structured controls are disabled and the editor surfaces an
+  /// explanation with an explicit opt-in affordance.
+  final bool tomlStructuredSaveEnabled;
+
+  /// Called when the user accepts the TOML opt-in warning and enables
+  /// structured saves for TOML files.
+  final Future<void> Function()? onEnableTomlStructuredSave;
 
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
@@ -134,11 +151,19 @@ class _ConfigEditorState extends State<ConfigEditor> {
         _rawContent != _currentConfig.originalContent;
   }
 
-  bool get _supportsStructuredFields =>
-      _currentConfig.format == ConfigFormat.json ||
-      _currentConfig.format == ConfigFormat.jsonc ||
-      _currentConfig.format == ConfigFormat.yaml ||
-      _currentConfig.format == ConfigFormat.toml;
+  bool get _supportsStructuredFields {
+    final format = _currentConfig.format;
+    if (format == ConfigFormat.toml) {
+      return widget.tomlStructuredSaveEnabled;
+    }
+    return format == ConfigFormat.json ||
+        format == ConfigFormat.jsonc ||
+        format == ConfigFormat.yaml;
+  }
+
+  bool get _isTomlOptedOut =>
+      _currentConfig.format == ConfigFormat.toml &&
+      !widget.tomlStructuredSaveEnabled;
 
   FidelityAssessment? get _openingFidelityAssessment =>
       _fidelityAssessor.assessOpening(
@@ -146,6 +171,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
         filePath: _currentConfig.filePath,
         rawOnly: widget.rawOnly,
         parsedAsJsonc: _currentConfig.parsedAsJsonc,
+        tomlStructuredSaveEnabled: widget.tomlStructuredSaveEnabled,
       );
 
   Future<FidelityAssessment?> _pendingFidelityAssessment() async {
@@ -176,6 +202,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
           widget.hasUsableBaseline?.call(_currentConfig) ?? false,
       structuredDiverged: structuredDiverged,
       parsedAsJsonc: parsedAsJsonc,
+      tomlStructuredSaveEnabled: widget.tomlStructuredSaveEnabled,
     );
   }
 
@@ -197,25 +224,18 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
-  Future<void> _saveChanges() async {
-    if (_saving) return;
-
-    final updatedConfig = _currentConfig.copyWith(
-      rules: _rules,
-      permissions: _permissions,
-    );
-
-    setState(() {
-      _saving = true;
-    });
-
-    try {
-      final rawChanged = _rawContent != _currentConfig.originalContent;
-      final savedConfig = await widget.onSave(
-        updatedConfig,
-        rawChanged ? _rawContent : null,
-      );
-      if (mounted) {
+  Future<void> _saveChanges() {
+    return StructuredSaveFlow.run(
+      context: context,
+      isMounted: () => mounted,
+      rawContent: () =>
+          _rawContent != _currentConfig.originalContent ? _rawContent : null,
+      buildUpdatedConfig: () => _currentConfig.copyWith(
+        rules: _rules,
+        permissions: _permissions,
+      ),
+      onSave: widget.onSave,
+      onSuccess: (savedConfig) {
         setState(() {
           _currentConfig = savedConfig;
           _initLocalState(_currentConfig);
@@ -224,92 +244,44 @@ class _ConfigEditorState extends State<ConfigEditor> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Settings saved successfully.')),
         );
-      }
-    } on Object catch (error) {
-      if (mounted) {
+      },
+      onError: (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving: $error'),
             backgroundColor: Colors.red,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-        });
-      }
-    }
+      },
+      setSavingFalse: () {
+        if (mounted) {
+          setState(() {
+            _saving = false;
+          });
+        }
+      },
+    );
   }
 
-  /// Shows the review modal for unsaved changes.
-  Future<void> _showDiffModal() async {
+  Future<void> _showDiffModal() {
     final editRevision = _editRevision;
-    final pendingFidelityAssessment = await _pendingFidelityAssessment();
-    if (!mounted || editRevision != _editRevision) return;
-
-    await showDialog<void>(
+    return StructuredSaveFlow.showDiffModal(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.backgroundDark,
-          title: const Text('Review Changes', style: AppTextStyles.uiHeader),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                if (_supportsStructuredFields && !widget.rawOnly) ...[
-                  _buildDiffSection('Rules', _currentConfig.rules, _rules),
-                  const SizedBox(height: 16),
-                  _buildDiffSection(
-                    'Permissions',
-                    _currentConfig.permissions,
-                    _permissions,
-                  ),
-                  if (pendingFidelityAssessment != null) ...[
-                    const SizedBox(height: 16),
-                    FormattingFidelityNotice(
-                      assessment: pendingFidelityAssessment,
-                      showOpeningStatement: false,
-                    ),
-                  ],
-                ],
-                if (_rawContent != _currentConfig.originalContent) ...[
-                  const SizedBox(height: 16),
-                  _buildRawDiffSection(
-                    _currentConfig.originalContent,
-                    _rawContent,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textPrimaryDark,
-              ),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: _saving
-                  ? null
-                  : () {
-                      Navigator.of(context).pop();
-                      unawaited(_saveChanges());
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryAccent,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Confirm & Save'),
-            ),
-          ],
-        );
-      },
+      isMounted: () => mounted,
+      isCurrentRevision: () => _editRevision == editRevision,
+      pendingFidelityAssessment: _pendingFidelityAssessment,
+      supportsStructuredFields: _supportsStructuredFields,
+      rawOnly: widget.rawOnly,
+      currentRules: _currentConfig.rules,
+      currentPermissions: _currentConfig.permissions,
+      rules: _rules,
+      permissions: _permissions,
+      originalContent: _currentConfig.originalContent,
+      rawContent: _rawContent,
+      buildDiffSection: _buildDiffSection,
+      buildRawDiffSection: _buildRawDiffSection,
+      saving: _saving,
+      onSaveChanges: _saveChanges,
     );
   }
 
@@ -544,6 +516,18 @@ class _ConfigEditorState extends State<ConfigEditor> {
                     ),
                     const SizedBox(height: 8),
                   ],
+                ],
+
+                if (_isTomlOptedOut) ...[
+                  const SizedBox(height: 16),
+                  TomlOptInBanner(
+                    onEnable: () async {
+                      await widget.onEnableTomlStructuredSave?.call();
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    },
+                  ),
                 ],
 
                 // Form Body

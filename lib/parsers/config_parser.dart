@@ -23,6 +23,37 @@ class ConfigParseException implements Exception {
   }
 }
 
+/// Thrown when a structured serializer cannot preserve the original source and
+/// the save path is blocked unless the caller explicitly opts into a rewrite.
+class SerializationFallbackException implements Exception {
+  const SerializationFallbackException({
+    required this.format,
+    required this.wouldBeLost,
+  });
+
+  final String format;
+  final String wouldBeLost;
+
+  @override
+  String toString() =>
+      'SerializationFallbackException: $format save would lose $wouldBeLost';
+}
+
+/// Result of a structured serialization attempt.
+class SerializeOutcome {
+  const SerializeOutcome({
+    required this.content,
+    required this.usedFallback,
+  });
+
+  /// The serialized content to write.
+  final String content;
+
+  /// True when the serializer had to rebuild the document from scratch
+  /// instead of updating the original source in place.
+  final bool usedFallback;
+}
+
 /// A pure interface for parsing tool configurations from strings.
 abstract class ConfigParser {
   /// Parses raw file content into a unified [ToolConfig].
@@ -45,6 +76,18 @@ abstract class ConfigParser {
   /// Implementations preserve formatting and comments from [originalContent]
   /// when their format supports safe in-place updates.
   String serialize(ToolConfig config, {String? originalContent});
+
+  /// Serializes a [ToolConfig] and reports whether the preserving path
+  /// succeeded or the whole-document fallback was used.
+  SerializeOutcome serializeWithOutcome(
+    ToolConfig config, {
+    String? originalContent,
+  }) {
+    return SerializeOutcome(
+      content: serialize(config, originalContent: originalContent),
+      usedFallback: false,
+    );
+  }
 }
 
 /// A mixin with common helper methods for [ConfigParser] implementations.

@@ -85,6 +85,17 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
   /// back to building a fresh YAML document from `config.rawSettings`.
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
+    return serializeWithOutcome(
+      config,
+      originalContent: originalContent,
+    ).content;
+  }
+
+  @override
+  SerializeOutcome serializeWithOutcome(
+    ToolConfig config, {
+    String? originalContent,
+  }) {
     if (originalContent != null && originalContent.trim().isNotEmpty) {
       try {
         final editor = YamlEditor(originalContent);
@@ -117,10 +128,21 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
             editor.remove(['permissions']);
           }
 
-          return editor.toString();
+          return SerializeOutcome(
+            content: editor.toString(),
+            usedFallback: false,
+          );
         }
       } on Exception catch (_) {
-        // Fallback to building from scratch if parsing original fails
+        // Fallback to building from scratch if parsing original fails.
+      }
+      // yaml_edit throws AssertionError on anchor/alias shapes that it cannot
+      // safely update in place. Catching it here is deliberate: it routes the
+      // shape to the whole-document fallback (or a fail-closed block upstream)
+      // instead of propagating an unhandled error to the caller.
+      // ignore: avoid_catching_errors
+      on AssertionError catch (_) {
+        // Fall through to the whole-document fallback below.
       }
     }
 
@@ -141,7 +163,7 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
     }
 
     editor.update([], outputMap);
-    return editor.toString();
+    return SerializeOutcome(content: editor.toString(), usedFallback: true);
   }
 
   Map<String, Object?> _deepConvertMap(YamlMap yamlMap) {

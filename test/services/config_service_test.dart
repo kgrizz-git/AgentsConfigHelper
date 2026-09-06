@@ -322,6 +322,7 @@ void main() {
         final updatedConfig = await configService.saveRawConfig(
           structurallyEditedConfig,
           rawEdit,
+          allowRewrite: true,
         );
 
         // The structured edit must survive...
@@ -376,6 +377,7 @@ void main() {
         final updatedConfig = await configService.saveRawConfig(
           structurallyEditedConfig,
           rawEdit,
+          allowRewrite: true,
         );
 
         final content = await tomlFile.readAsString();
@@ -603,6 +605,7 @@ void main() {
         final updatedConfig = await configService.saveRawConfig(
           structurallyEditedConfig,
           originalContent,
+          allowRewrite: true,
         );
 
         final content = await tomlFile.readAsString();

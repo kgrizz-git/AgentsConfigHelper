@@ -95,8 +95,10 @@ class FidelityAssessor {
     required String filePath,
     required bool rawOnly,
     bool parsedAsJsonc = false,
+    bool tomlStructuredSaveEnabled = true,
   }) {
     if (rawOnly) return null;
+    if (format == ConfigFormat.toml && !tomlStructuredSaveEnabled) return null;
 
     return _openingForFormat(format, filePath, parsedAsJsonc);
   }
@@ -118,8 +120,10 @@ class FidelityAssessor {
     required bool hasUsableBaseline,
     required bool structuredDiverged,
     bool parsedAsJsonc = false,
+    bool tomlStructuredSaveEnabled = true,
   }) {
     if (rawOnly) return null;
+    if (format == ConfigFormat.toml && !tomlStructuredSaveEnabled) return null;
 
     switch (saveKind) {
       case SaveKind.saveConfig:

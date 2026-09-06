@@ -19,7 +19,10 @@ class FakeConfigService extends ConfigService {
   final savedConfigs = <ToolConfig>[];
 
   @override
-  Future<ToolConfig> saveConfig(ToolConfig config) async {
+  Future<ToolConfig> saveConfig(
+    ToolConfig config, {
+    bool allowRewrite = false,
+  }) async {
     savedConfigs.add(config);
     await Future<void>.delayed(Duration.zero);
     return config;
@@ -47,7 +50,11 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, [r]) => configService.saveConfig(c),
+              onSave: (c, {rawContent, allowRewrite}) =>
+                  configService.saveConfig(
+                    c,
+                    allowRewrite: allowRewrite ?? false,
+                  ),
               resolvePath: configService.resolvePath,
               onShowHistory: () {},
             ),
@@ -97,10 +104,13 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, [r]) {
+              onSave: (c, {rawContent, allowRewrite}) {
                 sawRawArg = true;
-                capturedRaw = r;
-                return configService.saveConfig(c);
+                capturedRaw = rawContent;
+                return configService.saveConfig(
+                  c,
+                  allowRewrite: allowRewrite ?? false,
+                );
               },
               resolvePath: configService.resolvePath,
               onShowHistory: () {},
@@ -143,9 +153,12 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, [r]) {
-                capturedRaw = r;
-                return configService.saveConfig(c);
+              onSave: (c, {rawContent, allowRewrite}) {
+                capturedRaw = rawContent;
+                return configService.saveConfig(
+                  c,
+                  allowRewrite: allowRewrite ?? false,
+                );
               },
               resolvePath: configService.resolvePath,
               onShowHistory: () {},
@@ -187,7 +200,11 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, [r]) => configService.saveConfig(c),
+              onSave: (c, {rawContent, allowRewrite}) =>
+                  configService.saveConfig(
+                    c,
+                    allowRewrite: allowRewrite ?? false,
+                  ),
               resolvePath: configService.resolvePath,
               onShowHistory: () {},
             ),
@@ -234,7 +251,11 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, [r]) => configService.saveConfig(c),
+              onSave: (c, {rawContent, allowRewrite}) =>
+                  configService.saveConfig(
+                    c,
+                    allowRewrite: allowRewrite ?? false,
+                  ),
               resolvePath: configService.resolvePath,
               onShowHistory: () {},
             ),
@@ -254,6 +275,9 @@ void main() {
       tester,
     ) async {
       final tempDir = Directory.systemTemp;
+      final configService = FakeConfigService(
+        BackupService(backupDirectory: tempDir),
+      );
       final config = ToolConfig(
         toolName: 'Test Tool',
         filePath: '${tempDir.path}/null_permissions.json',
@@ -266,8 +290,12 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, [r]) async => c,
-              resolvePath: (path) => path,
+              onSave: (c, {rawContent, allowRewrite}) =>
+                  configService.saveConfig(
+                    c,
+                    allowRewrite: allowRewrite ?? false,
+                  ),
+              resolvePath: configService.resolvePath,
               onShowHistory: () {},
             ),
           ),
@@ -315,7 +343,7 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, [rawContent]) async => config,
+                onSave: (config, {rawContent, allowRewrite}) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -364,7 +392,7 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, [rawContent]) async => config,
+                onSave: (config, {rawContent, allowRewrite}) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -423,7 +451,7 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, [rawContent]) async => config,
+                onSave: (config, {rawContent, allowRewrite}) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -477,7 +505,7 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, [rawContent]) async {
+                onSave: (config, {rawContent, allowRewrite}) async {
                   capturedRawContent = rawContent;
                   return config;
                 },
