@@ -105,9 +105,13 @@ flutter build macos --release   # build release binary
 - Run parallel implementation subagents in isolated git worktrees (one worktree per
   writer), never two writers in the same checkout — observed failure: one agent's
   shell/git commands silently wiped another agent's uncommitted tests. Keep file
-  ownership disjoint as a second layer and merge via branches/PRs. Secure (commit
-  or diff-backup) the working tree before spawning a review/research subagent that
-  shares the checkout.
+  ownership disjoint as a second layer and merge via branches/PRs.
+- Before spawning a review/research subagent that shares the checkout, secure the
+  working tree either with a commit or a diff-backup that preserves **both**
+  tracked and untracked files (`git diff > /tmp/backup.patch && git ls-files
+  --others --exclude-standard | xargs -I{} cp --parents {} /tmp/untracked/`),
+  and run the subagent read-only (no edit tools, no destructive shell/git). Verify
+  `git status` after it finishes.
 - Keep credentials, generated indexes, and local agent state out of version control.
 
 ## macOS distribution note

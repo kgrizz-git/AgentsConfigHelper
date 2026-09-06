@@ -258,6 +258,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   Future<void> _saveChanges() {
+    setState(() => _saving = true);
     return StructuredSaveFlow.run(
       context: context,
       isMounted: () => mounted,

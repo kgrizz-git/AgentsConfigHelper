@@ -31,7 +31,7 @@ class DiscoveryPreferences extends Equatable {
       manualFilePaths: _parseStringList(json['manualFilePaths']),
       projectRoots: _parseStringList(json['projectRoots']),
       tomlStructuredSaveEnabled:
-          (json['tomlStructuredSaveEnabled'] as bool?) ?? false,
+          json['tomlStructuredSaveEnabled'] == true,
       extraFields: Map.unmodifiable(extraFields),
     );
   }

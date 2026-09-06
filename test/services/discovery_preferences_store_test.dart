@@ -280,5 +280,18 @@ void main() {
       final json = jsonDecode(content) as Map<String, dynamic>;
       expect(json['tomlStructuredSaveEnabled'], isTrue);
     });
+
+    test(
+      'non-boolean tomlStructuredSaveEnabled is tolerated as false',
+      () async {
+        await preferencesFile.writeAsString(
+          '{"tomlStructuredSaveEnabled": "yes"}',
+        );
+
+        final result = await store.load();
+
+        expect(result.preferences.tomlStructuredSaveEnabled, isFalse);
+      },
+    );
   });
 }

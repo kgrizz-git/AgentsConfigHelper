@@ -39,7 +39,7 @@ class _MainShellState extends ConsumerState<MainShell>
   String? _error;
   var _loadGeneration = 0;
   late final TomlOptInController _tomlOptInController = TomlOptInController(
-    ref: ref,
+    store: ref.read(discoveryPreferencesStoreProvider),
     isMounted: () => mounted,
     setState: setState,
   );
