@@ -10,6 +10,15 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
+- **Fail-closed structured saves.** When a JSON/JSONC/YAML structured save cannot
+  preserve the file in place, the app no longer silently rewrites the whole
+  document. The save stops before writing anything (no write, no backup) and
+  explains what would be lost, with **Edit raw instead** as the default and an
+  explicit **Rewrite document** confirmation required to proceed.
+- **Opt-in structured TOML editing.** TOML structured controls are read-only by
+  default. Enabling them requires acknowledging that structured saves rebuild the
+  file and discard comments, and the TOML fidelity warning stays visible whenever
+  the opt-in is on. The choice persists across launches.
 - **Formatting-fidelity disclosure.** Structured JSON, JSONC, YAML, and TOML
   editors now show a persistent accessible notice on opening. It explains that
   viewing does not modify the source file, identifies possible formatting loss,

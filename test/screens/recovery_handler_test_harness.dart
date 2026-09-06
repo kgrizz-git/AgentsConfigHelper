@@ -38,6 +38,12 @@ class _FakePreferencesStore implements IDiscoveryPreferencesStore {
 
   @override
   Future<void> removeProjectRoot(String path) async {}
+
+  @override
+  Future<void> enableTomlStructuredSave() async {}
+
+  @override
+  Future<void> disableTomlStructuredSave() async {}
 }
 
 class _EmptyDiscoveryService extends DiscoveryService {

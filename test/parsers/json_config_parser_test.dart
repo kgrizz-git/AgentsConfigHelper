@@ -379,5 +379,51 @@ void main() {
       );
       expect(config.parseWarnings, isEmpty);
     });
+
+    test('serializeWithOutcome reports usedFallback on full rewrite', () {
+      const original = '''
+{
+  "rules": ["old"],
+  /* block comment */
+  "permissions": ["read"]
+}
+''';
+      final config = parser.parse(
+        original,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
+      final mutated = config.copyWith(rules: ['new']);
+      final outcome = parser.serializeWithOutcome(
+        mutated,
+        originalContent: original,
+      );
+      // The existing AST patch handles this shape, so it should not fall back.
+      expect(outcome.usedFallback, isFalse);
+      expect(outcome.content, contains('"rules": ["new"]'));
+    });
+
+    test('serializeWithOutcome reports usedFallback when patch fails', () {
+      // A non-object source cannot be AST-patched, so the serializer must
+      // take the whole-document fallback.
+      const validObject = '''
+{
+  "rules": ["old"]
+}
+''';
+      final config = parser.parse(
+        validObject,
+        filePath: 'test.json',
+        toolName: 'Test',
+      );
+      final mutated = config.copyWith(rules: ['new']);
+      final outcome = parser.serializeWithOutcome(
+        mutated,
+        originalContent: '["old"]',
+      );
+      expect(outcome.usedFallback, isTrue);
+      expect(outcome.content, contains('"rules"'));
+      expect(outcome.content, contains('"new"'));
+    });
   });
 }

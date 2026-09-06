@@ -5,6 +5,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/screens/recovery_handler.dart';
+import 'package:agents_config_helper/screens/toml_opt_in_controller.dart';
 import 'package:agents_config_helper/screens/tool_id_icons.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
@@ -37,6 +38,11 @@ class _MainShellState extends ConsumerState<MainShell>
   bool _rawRecoveryMode = false;
   String? _error;
   var _loadGeneration = 0;
+  late final TomlOptInController _tomlOptInController = TomlOptInController(
+    ref: ref,
+    isMounted: () => mounted,
+    setState: setState,
+  );
 
   @override
   int get loadGeneration => _loadGeneration;
@@ -69,6 +75,7 @@ class _MainShellState extends ConsumerState<MainShell>
   @override
   void initState() {
     super.initState();
+    unawaited(_tomlOptInController.load());
   }
 
   @override
@@ -566,15 +573,19 @@ class _MainShellState extends ConsumerState<MainShell>
             // ConfigEditor itself; this callback only persists the change
             // and updates the active config. Errors propagate to
             // ConfigEditor's own try/catch.
-            onSave: (config, [rawContent]) async {
+            onSave: (config, {rawContent, allowRewrite}) async {
               final ToolConfig updated;
               if (rawContent != null) {
                 updated = await configService.saveRawConfig(
                   config,
                   rawContent,
+                  allowRewrite: allowRewrite ?? false,
                 );
               } else {
-                updated = await configService.saveConfig(config);
+                updated = await configService.saveConfig(
+                  config,
+                  allowRewrite: allowRewrite ?? false,
+                );
               }
               ref.invalidate(backupListProvider(config.filePath));
               if (mounted) {
@@ -595,6 +606,9 @@ class _MainShellState extends ConsumerState<MainShell>
             onShowHistory: showHistoryModal,
             allowOpenDirectory: ref.watch(testRootPathProvider) == null,
             rawOnly: _rawRecoveryMode,
+            tomlStructuredSaveEnabled:
+                _tomlOptInController.tomlStructuredSaveEnabled,
+            onEnableTomlStructuredSave: _tomlOptInController.enable,
             onDirtyChanged: (hasUnsavedChanges) {
               if (mounted) {
                 setState(() {

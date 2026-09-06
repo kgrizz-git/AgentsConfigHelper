@@ -133,5 +133,22 @@ key = "value"
         expect(roundTripped.containsKey('nested'), isTrue);
       },
     );
+
+    test('serializeWithOutcome always reports usedFallback for TOML', () {
+      const originalToml = '''
+# comment
+rules = ["rule1"]
+''';
+      final config = parser.parse(
+        originalToml,
+        filePath: 'test.toml',
+        toolName: 'test',
+      );
+      final outcome = parser.serializeWithOutcome(
+        config,
+        originalContent: originalToml,
+      );
+      expect(outcome.usedFallback, isTrue);
+    });
   });
 }

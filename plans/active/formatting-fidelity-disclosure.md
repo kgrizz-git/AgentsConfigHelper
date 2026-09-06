@@ -249,20 +249,26 @@ silently accept and discard that invalid overlay.
 
 ### Phase 4 — decide fallback safety before broader structured writes
 
-- [ ] Run focused YAML fixtures for comments adjacent to edited keys, anchors,
+- [x] Run focused YAML fixtures for comments adjacent to edited keys, anchors,
       aliases, block scalars, nested maps, and unsupported structures.
-- [ ] Include a comment between a key and its block value, plus an alias whose target
+      (`test/parsers/yaml_fidelity_fixture_test.dart`.)
+- [x] Include a comment between a key and its block value, plus an alias whose target
       key is edited. These are likely `yaml_edit` edge cases; an alias rewritten as a
       literal is a semantic change, not merely a formatting difference.
-- [ ] For each fixture, assert either a supported edit retains the adjacent comment
+      (Alias edits throw `AssertionError`, now caught and routed to fallback.)
+- [x] For each fixture, assert either a supported edit retains the adjacent comment
       or the assessed path is conditional/blocked. Do not rely on a generic
       `YamlEditor` success test to establish behavior for the app's actual shapes.
-- [ ] Decide whether JSONC/YAML fallback must fail closed instead of rewriting.
-      Recommended: block the structured save and direct the user to raw content if
-      the preserving path cannot be proven.
-- [ ] Decide whether generic TOML structured controls stay writable with a warning
+- [x] Decide whether JSONC/YAML fallback must fail closed instead of rewriting.
+      Decided: fail closed with informed override — the save is blocked (no write,
+      no backup) and the user must explicitly choose Rewrite document (default is
+      Edit raw instead). Implemented via `serializeWithOutcome` + `allowRewrite`.
+- [x] Decide whether generic TOML structured controls stay writable with a warning
       or become read-only until an AST-aware patcher exists. Record the decision in
       `ADR-001` and update the notice copy if the behavior changes.
+      Decided: read-only by default, writable only via persisted opt-in with an
+      explicit enable warning and a persistent banner while on (ADR-001 update
+      2026-09-06).
 
 ## File map
 

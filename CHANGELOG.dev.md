@@ -7,6 +7,15 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Serialization-outcome seam and YAML alias crash fix:** parsers expose
+  `serializeWithOutcome` (`SerializeOutcome.content` + `usedFallback`);
+  `ConfigService.saveConfig`/`saveRawConfig` take `allowRewrite` (default false)
+  and throw `SerializationFallbackException` instead of silently rewriting.
+  `YamlConfigParser` now catches `yaml_edit`'s `AssertionError` on
+  anchor/alias shapes so the fallback path is reachable instead of propagating
+  an unhandled error. New `test/parsers/yaml_fidelity_fixture_test.dart`
+  documents per-shape evidence (adjacent comments/nested maps preserved;
+  in-map comments dropped; block scalars rewritten; anchors/aliases fall back).
 - **Fixture-level test-root save/restore coverage:** Added
   `test/services/fixture_test_root_save_restore_test.dart`, which seeds a disposable marked
   root from `staging_home/.claude/settings.json`, wires ConfigService/BackupService like

@@ -79,6 +79,20 @@ Reopen this ADR and implement **Alternative A** if any of these occur:
 - The `toml` Dart package gains source-span or comment-preserving support (prefer that
   over hand-rolled splicing).
 
+## Update 2026-09-06: opt-in structured TOML editing (Phase 4)
+
+**Decision:** generic TOML structured controls stay in the app but are
+**opt-in, default off**. With the preference off, TOML files open with a banner
+explaining that structured editing is disabled and an explicit enable control
+that restates the loss (comments discarded, file reformatted). With the
+preference on (`tomlStructuredSaveEnabled` in discovery preferences), the
+persistent TOML fidelity warning stays visible at all times. This resolves open
+plan question 2 ("warning or read-only?") as: read-only by default, writable
+only with informed opt-in — disclosure plus consent, not disclosure alone.
+
+The from-scratch rebuild (`TomlDocument.fromMap`) is unchanged; no AST-aware
+TOML patcher exists yet, so Alternatives A–E remain deferred as above.
+
 ## References
 
 - `lib/parsers/toml_config_parser.dart` — the lossy `serialize` + `**WARNING:**` doc comment

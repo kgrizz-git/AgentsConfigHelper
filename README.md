@@ -121,8 +121,10 @@ flutter build macos --release    # or linux / windows
 
 - **Comment preservation:** JSON/JSONC and YAML first attempt in-place source edits
   (`json_ast`, `yaml_edit`) for supported changes, preserving unrelated source text on
-  that path. Their current fallback can rewrite the document. TOML serialization is
-  lossy (see [ADR-001](docs/adr/ADR-001-toml-comment-preservation.md)).
+  that path. If the preserving path fails, the save is blocked before writing
+  anything and the user must explicitly allow a rewrite (default is raw editing).
+  TOML serialization is lossy (see [ADR-001](docs/adr/ADR-001-toml-comment-preservation.md))
+  and TOML structured editing is opt-in, off by default.
 
 - **Data classification: Internal.** Config files may contain tokens or sensitive local paths. All file parsing and visualization happens strictly locally on the machine. Nothing is ever transmitted to the cloud or committed to the repository (beyond synthetic fixtures for testing).
 

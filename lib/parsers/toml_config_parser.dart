@@ -73,6 +73,17 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
   /// for revisiting it.
   @override
   String serialize(ToolConfig config, {String? originalContent}) {
+    return serializeWithOutcome(
+      config,
+      originalContent: originalContent,
+    ).content;
+  }
+
+  @override
+  SerializeOutcome serializeWithOutcome(
+    ToolConfig config, {
+    String? originalContent,
+  }) {
     final outputMap = Map<String, Object?>.from(config.rawSettings);
 
     if (config.rules.isNotEmpty) {
@@ -89,7 +100,11 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
 
     try {
       final doc = TomlDocument.fromMap(outputMap);
-      return doc.toString();
+      return SerializeOutcome(
+        content: doc.toString(),
+        usedFallback:
+            originalContent != null && originalContent.trim().isNotEmpty,
+      );
     } catch (e) {
       throw ConfigParseException('Failed to serialize TOML: $e');
     }

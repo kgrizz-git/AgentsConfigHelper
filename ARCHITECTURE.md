@@ -23,8 +23,9 @@ AgentsConfigHelper is a local-only, cross-platform Flutter desktop app. It abstr
    - Pure Dart functions that handle format-specific parsing and serialization.
    - Formats handled: `JSON`, `JSONC`, `YAML`, `TOML`.
    - **Formatting fidelity:** `JSON`/`JSONC` and `YAML` first attempt source-preserving
-     updates for supported edits. Either parser can fall back to a full-document rewrite;
-     TOML always rebuilds from its parsed map. `json_ast` is vendored at
+     updates for supported edits. A fallback full-document rewrite is blocked unless
+     the user explicitly allows it for that save; TOML always rebuilds from its parsed
+     map and its structured editing is opt-in (off by default). `json_ast` is vendored at
      [`lib/vendor/json_ast/`](lib/vendor/json_ast/README.md) (MIT, not a pub dependency);
      `yaml_edit` is a regular pub dependency.
    - Normalizes disparate schemas into a single `ToolConfig` entity.

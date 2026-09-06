@@ -147,6 +147,12 @@ class _FakePreferencesStore implements IDiscoveryPreferencesStore {
     removedProjectRoots.add(path);
     addedProjectRoots.remove(path);
   }
+
+  @override
+  Future<void> enableTomlStructuredSave() async {}
+
+  @override
+  Future<void> disableTomlStructuredSave() async {}
 }
 
 class _DelayedPreferencesStore implements IDiscoveryPreferencesStore {
@@ -178,6 +184,12 @@ class _DelayedPreferencesStore implements IDiscoveryPreferencesStore {
 
   @override
   Future<void> removeProjectRoot(String path) async {}
+
+  @override
+  Future<void> enableTomlStructuredSave() async {}
+
+  @override
+  Future<void> disableTomlStructuredSave() async {}
 }
 
 void main() {
