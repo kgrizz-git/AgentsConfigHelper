@@ -75,12 +75,13 @@ no write-path changes are in scope.
 enum PolicyCardStatus { notApplicable, available, unsupported }
 
 /// No Flutter dependencies. Base class for a schema's display payload.
-abstract class PolicyCardPresentation {
+/// Extends [Equatable] so concrete presentations keep value equality.
+abstract class PolicyCardPresentation extends Equatable {
   const PolicyCardPresentation();
 }
 
 /// Outcome of asking a schema adapter to interpret the current config.
-class PolicyCardSelection {
+class PolicyCardSelection extends Equatable {
   const PolicyCardSelection({
     required this.adapterId,
     required this.status,
@@ -95,12 +96,21 @@ class PolicyCardSelection {
 
   bool get isAvailable => status == PolicyCardStatus.available;
   bool get isUnsupported => status == PolicyCardStatus.unsupported;
+
+  @override
+  List<Object?> get props => [adapterId, status, presentation, unsupportedReason];
 }
 
 /// A tool schema's read-only interpretation step.
 abstract class PolicyCardAdapter {
-  String get id; // e.g. 'claudeCode.permissions'
-  PolicyCardSelection select({
+  /// Stable key used by the widget registry. Each concrete adapter exposes a
+  /// `static const id` so callers reference it by name, never a bare string.
+  String get id;
+
+  /// The adapter **interprets** a config into a selection; only the registry
+  /// below is named `select`. Method is `interpret` to match the existing
+  /// `ClaudeCodePermissionsAdapter.interpret` and avoid renaming its callers.
+  PolicyCardSelection interpret({
     required ToolConfig config,
     required DiscoveredConfig? discoveredConfig,
   });
@@ -109,9 +119,14 @@ abstract class PolicyCardAdapter {
 
 ### Registry (`lib/schemas/policy_card_registry.dart`)
 
-A pure-Dart registry holding the ordered adapter list. `select(...)` iterates adapters,
-returns the first non-`notApplicable` selection, or a `notApplicable` sentinel when none
-match. Registration is explicit and injectable so tests can register a fake adapter.
+A pure-Dart registry holding the ordered adapter list. `select(...)` iterates adapters and
+returns the **first non-`notApplicable` selection** (registration order wins), or a
+`notApplicable` sentinel when none match. The sentinel carries a null `unsupportedReason`
+and null `presentation`; the generic nested-permissions fallback string is supplied by
+`ConfigEditor`, not by the registry.
+
+`shared` is a `final`, immutable default so tests never mutate it. Tests inject a
+registry (and widget registry) explicitly instead.
 
 ```dart
 class PolicyCardRegistry {
@@ -123,7 +138,7 @@ class PolicyCardRegistry {
     required DiscoveredConfig? discoveredConfig,
   }) { /* first non-notApplicable, else sentinel */ }
 
-  static PolicyCardRegistry shared = PolicyCardRegistry([
+  static final PolicyCardRegistry shared = PolicyCardRegistry([
     ClaudeCodePermissionsAdapter(), // Cursor adapter registers here in Phase 4A
   ]);
 }
@@ -132,30 +147,49 @@ class PolicyCardRegistry {
 ### Widget mapping (`lib/widgets/policy_card_widget_registry.dart`)
 
 Because adapters must stay Flutter-free, a separate widget registry maps
-`adapterId` → `Widget Function(PolicyCardPresentation)`. `ConfigEditor` renders the card
-by looking up the resolved selection's `adapterId`. The cast to the concrete presentation
-is safe because the key is the adapter that produced it.
+`adapterId` → a `Widget? Function(PolicyCardSelection)`. `ConfigEditor` resolves the
+selection, then asks the widget registry to `buildCard(selection)`; a `null` return means
+"no card here" and `ConfigEditor` falls back to the generic flat editor. Builders must
+type-check the presentation and never use a null-bang: a non-`available` selection, an
+unknown `adapterId`, or an `available` selection with a null `presentation` all return
+`null` (or a fallback message) instead of throwing. The Claude builder supplies the card's
+default `onOpenDocumentation` launcher (the current `ConfigEditor` relies on that default).
 
 ```dart
 class PolicyCardWidgetRegistry {
   PolicyCardWidgetRegistry(this._builders);
-  final Map<String, Widget Function(PolicyCardPresentation)> _builders;
-  Widget? build(PolicyCardSelection s) =>
-      s.isAvailable ? _builders[s.adapterId]?.call(s.presentation!) : null;
+  final Map<String, Widget? Function(PolicyCardSelection)> _builders;
+
+  Widget? buildCard(PolicyCardSelection s) {
+    if (!s.isAvailable || s.presentation == null) return null;
+    final builder = _builders[s.adapterId];
+    return builder == null ? null : builder(s);
+  }
 }
 ```
 
 ### ConfigEditor changes
 
+`ConfigEditor` gains an optional injectable `registry` and `widgetRegistry`, both
+defaulting to the `shared` instances (so tests pass deterministic fakes and never mutate
+`shared`).
+
 - Remove the `_claudePermissionsAdapter` field, the `_claudePermissions` getter, the
   inline `ClaudeCodePermissionsCard` render, and the `hasUnsupportedPermissions` bool's
   Claude coupling.
-- In `build`: resolve `final selection = PolicyCardRegistry.shared.select(...)`, then:
-  - `selection.isAvailable` → render `PolicyCardWidgetRegistry` card (Claude card).
-  - `selection.isUnsupported` → render `selection.unsupportedReason`.
-  - else keep the **generic** flat-editor path, preserving the existing raw
-    `permissions`-is-a-Map "nested permissions" reason (now computed from the raw config
-    alone, not from Claude status).
+- In `build`: resolve `final selection = registry.select(...)`, then:
+  - `selection.isAvailable` → render `widgetRegistry.buildCard(selection)` (the Claude
+    card). A `null` from `buildCard` falls through to the flat-editor path rather than
+    crashing.
+  - `selection.isUnsupported` → render
+    `selection.unsupportedReason ?? 'Nested permissions are preserved but not editable here yet.'`.
+    The `??` fallback string is required: the generic non-Claude nested-Map path and the
+    registry's `notApplicable` sentinel both yield a null `unsupportedReason`.
+  - else keep the **generic** flat-editor path. Preserve the existing source split:
+    the unsupported check reads `rawSettings['permissions'] is! List` (from raw config
+    alone, not Claude status) while the flat `StringListEditor` binds to the **parsed**
+    `_permissions`. Both sources stay intact so the `permissions: null` case
+    (`config_editor_test.dart:274`) still shows the flat editor.
 - Behavior at every branch must match today's output exactly.
 
 ## Test strategy
@@ -177,31 +211,45 @@ if the pre-existing net stays green **and** we add registry-level tests for the 
     (line 365),
   - the flat-editor and raw-content tests (lines 34, 86, 135, 184, 237, 274, 420, 473).
 
-These three files are the regression contract. The refactor is not complete until they
-all pass unchanged against the new registry path.
+These three files are the regression contract. Because the adapter's status enum is
+renamed `ClaudeCodePermissionsStatus` → `PolicyCardStatus` and the adapter's return type
+becomes `PolicyCardSelection`, `test/schemas/claude_code_permissions_test.dart` is updated
+**only by that mechanical rename** — status references swap to `PolicyCardStatus` and the
+adapter method stays `interpret`. No assertion, fixture, or expected-value changes. The
+card and ConfigEditor widget tests pass unchanged. The refactor is not complete until the
+full suite is green with only that mechanical rename applied.
 
 ### New tests to add
 
 Pure-Dart registry unit tests (`test/schemas/policy_card_registry_test.dart`):
 
 - Returns the Claude selection for a catalog-discovered Claude settings config.
-- Returns a `notApplicable` sentinel when no adapter matches (manual path, other tool).
-- Returns the first matching selection when multiple adapters are registered (with a
-  fake adapter to prove first-match, order-independent selection).
+- Returns a `notApplicable` sentinel when no adapter matches (manual path, other tool,
+  and `discoveredConfig: null`).
+- Returns the first registered match when multiple adapters are registered; assert
+  ordering explicitly with a fake adapter (first match wins — this is inherently
+  order-dependent, not "order-independent").
 - Confirms the registry delegates interpretation to the Claude adapter unchanged (assert
   a known presentation round-trips).
 
 Widget-mapping tests (`test/widgets/policy_card_widget_registry_test.dart`):
 
-- Maps `adapterId` → the correct card widget.
-- Returns `null` for an unknown `adapterId` / non-`available` selection.
+- Maps a known `adapterId` → the correct card widget.
+- Returns `null` for an unknown `adapterId`, a non-`available` selection, and an
+  `available` selection with a null `presentation` (no crash on any of these).
+- Confirms the Claude builder type-checks its presentation (rejects a wrong-type
+  presentation without casting).
 
 ConfigEditor integration additions (`test/widgets/config_editor_test.dart`):
 
 - After refactor, a **non-Claude** tool with a List `permissions` still renders the
   generic flat `StringListEditor` (proves the registry did not swallow generic tools).
+- A **non-Claude** tool whose `rawSettings['permissions']` is a Map still renders the
+  generic nested-permissions text (the exact `??`-fallback path above).
 - A Claude config with an unsupported shape still renders the unsupported-reason text
   through the registry.
+- A Claude config through the registry-built card still shows the default doc-launcher
+  failure feedback when the URL cannot be opened (registry supplies the default).
 
 ### Verification gates
 
@@ -212,22 +260,27 @@ ConfigEditor integration additions (`test/widgets/config_editor_test.dart`):
 
 ## Implementation steps
 
-1. Add `lib/schemas/policy_card.dart` (interface + selection + presentation base).
-2. Add `lib/schemas/policy_card_registry.dart` (registry + injectable adapter list,
+1. Add `lib/schemas/policy_card.dart` (interface + selection + presentation base, all
+   `Equatable`).
+2. Add `lib/schemas/policy_card_registry.dart` (final `shared` + injectable adapter list,
    seeding it with the existing Claude adapter).
-3. Make `ClaudeCodePermissionsAdapter` implement `PolicyCardAdapter` and
-   `ClaudeCodePermissionsPresentation` extend `PolicyCardPresentation`, changing
-   `interpret` → `select` with **no behavior change**; keep the existing status names
-   behind the new enum (or map them) so callers/tests stay aligned.
+3. Make `ClaudeCodePermissionsAdapter` implement `PolicyCardAdapter`: add
+   `static const id = 'claudeCode.permissions'`; keep the `interpret` method name; its
+   return type becomes `PolicyCardSelection` and `ClaudeCodePermissionsStatus` is renamed
+   `PolicyCardStatus` with **no semantic change**. `ClaudeCodePermissionsPresentation`
+   extends `PolicyCardPresentation`. Update `test/schemas/claude_code_permissions_test.dart`
+   only by the mechanical enum/return-type rename.
 4. Add `lib/widgets/policy_card_widget_registry.dart` mapping
-   `'claudeCode.permissions'` → `ClaudeCodePermissionsCard`.
-5. Refactor `ConfigEditor` to the registry + widget mapping, preserving the generic
-   flat-editor and nested-permissions fallback.
-6. Add the new tests; run the full suite; confirm every pre-existing test passes
-   **unchanged**.
-7. Update docs/roadmap only if user-visible; record the seam in
-   `docs/supported-tools.md` / this roadmap as part of Phase 0 progress. Keep the
-   `TO_DO.md` entry open until the slice is validated.
+   `ClaudeCodePermissionsAdapter.id` → `ClaudeCodePermissionsCard`, builder type-checks the
+   presentation and supplies the default doc launcher.
+5. Refactor `ConfigEditor` to the injectable registry + widget mapping, preserving the
+   generic flat-editor and nested-permissions fallback (parsed `_permissions` for the flat
+   editor, `rawSettings['permissions'] is! List` for the unsupported check).
+6. Add the new tests; run the full suite; confirm the card and ConfigEditor tests pass
+   unchanged and the schema-adapter test changed only by the mechanical rename.
+7. Do **not** change `docs/supported-tools.md` (no user-visible change). Record the seam
+   in the parent roadmap (Phase 0 shared-interface box). Keep the `TO_DO.md` entry open
+   until the slice is validated.
 
 ## Acceptance criteria
 
@@ -237,7 +290,9 @@ ConfigEditor integration additions (`test/widgets/config_editor_test.dart`):
   it.
 - Adding a new adapter requires registering it in the registry (and a widget builder),
   with **no** new branch in `ConfigEditor`.
-- All pre-existing tests pass unchanged; new registry + widget + ConfigEditor tests pass.
+- All pre-existing tests pass; the schema-adapter test changes only by the mechanical
+  status-enum/return-type rename, and the card + ConfigEditor tests pass unchanged. New
+  registry + widget + ConfigEditor tests pass.
 - Gates above are green.
 
 ## Completion steps
