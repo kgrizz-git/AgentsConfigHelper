@@ -131,6 +131,30 @@ The durable sequence and architecture decisions are in the
 - [ ] Review the deferred work in the [agent-config discovery plan](plans/active/agent-config-discovery.md)
       and promote only a bounded, current discovery slice when it is ready for implementation.
 
+### Config reporting, export, and agent access
+
+- [ ] **Config reports and copies:** make it easy to produce a consolidated report or
+      snapshot/copy of discovered configs (for example, an export bundle) so a user can
+      review, share, or back up their agent/IDE configuration as a whole. Reuse
+      `DiscoveryService` and the catalog; generate offline and locally. Before any
+      report or copy can leave the machine, redact tokens and sensitive environment
+      variables (see the [AI Agent Integration](#ai-agent-integration) note) and warn
+      that exported configs may contain secrets.
+- [ ] **Agent-readable access (find / read / interpret / edit):** make it easy for an
+      agent to locate, read, interpret, and edit the discovered configs, permissions,
+      and rules. This is the headless-interface goal of the deferred
+      [API/CLI interface plan](plans/active/api-cli-interface.md) (Phase 1 `bin/` CLI,
+      Phase 2 MCP shim) layered on `ConfigService`/`DiscoveryService`/`BackupService`,
+      plus the schema adapters (Claude, Cursor, later tools) so an agent reads structured
+      values rather than raw text. Keep backup-before-write, diff preview, and fidelity
+      disclosure; gate on the Phase 0.5 fidelity and test-root slices before promoting to
+      `Next Up`, and redact secrets before serving context to any agent.
+- [ ] **HTML (or other) config tree with links:** generate a single self-contained HTML
+      page (or similar) that renders a tree of all discovered configs with links to each
+      one, as a human-readable overview of what the app manages. Reuse discovery and the
+      catalog; keep it local and offline (file: links), redact secret-bearing files and
+      values, and preserve the raw-editor-first fallback for anything it cannot classify.
+
 ### API/CLI interface (deferred)
 
 - [ ] Expose local read/write via a headless interface for humans and agents. See
