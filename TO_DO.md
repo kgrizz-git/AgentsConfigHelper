@@ -94,10 +94,10 @@ The durable sequence and architecture decisions are in the
       fixture coverage, then add parser/UI tests per schema. (See gap analysis in
       [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md)
       and [implementation roadmap](plans/active/structured-configuration-roadmap.md).)
-      **Before the next card, make serialization fidelity visible on opening any file
-      whose structured-save path can discard comments or formatting; TOML is
-      unconditionally lossy today, while JSONC and YAML can fall back to a rewrite.**
-      See the focused [formatting-fidelity disclosure plan](plans/active/formatting-fidelity-disclosure.md).
+      Serialization-fidelity disclosure is shipped (Phases 1-4, merged 2026-09-07):
+      persistent notices, fail-closed JSONC/YAML fallback with explicit rewrite consent,
+      and opt-in TOML structured editing. See the archived
+      [formatting-fidelity disclosure plan](plans/archive/formatting-fidelity-disclosure.md).
 
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the

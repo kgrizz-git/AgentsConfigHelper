@@ -69,7 +69,7 @@ lib/services/fidelity_assessor.dart  ->  shared risk/mechanism for CLI and GUI
 
 ### Phase 3 — local HTTP (deferred, not started here)
 
-- [ ] Requires explicit product review: port selection, bearer-token auth, CORS, daemon lifecycle, and macOS sandbox/FLUTTER build implications per `ADR-002`. Not started until Phase 0.5 fallback policy (fail-closed vs warning) in `formatting-fidelity-disclosure.md` is decided, because HTTP would otherwise expose the lossy fallback over the network.
+- [ ] Requires explicit product review: port selection, bearer-token auth, CORS, daemon lifecycle, and macOS sandbox/FLUTTER build implications per `ADR-002`. The Phase 0.5 fallback policy gate is now decided (fail-closed JSONC/YAML with explicit rewrite consent; TOML opt-in — see the archived [formatting-fidelity disclosure plan](../archive/formatting-fidelity-disclosure.md)); HTTP still needs the product review listed here before it can proceed.
 
 ## Non-goals
 

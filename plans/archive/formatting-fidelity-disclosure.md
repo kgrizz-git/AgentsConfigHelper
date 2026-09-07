@@ -3,8 +3,8 @@
 Last reviewed: 2026-08-28
 Date: 2026-08-27
 Author: maintainers
-Status: in progress — disclosure implemented; fallback-safety decisions remain open
-Linked parent: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
+Status: complete — shipped and merged 2026-09-07 (PR #40); plan archived
+Linked parent: [Structured Configuration Roadmap](../active/structured-configuration-roadmap.md)
 Linked task: [TO_DO.md — Structured configuration presentation](../../TO_DO.md#structured-configuration-presentation)
 
 ## Goal
@@ -337,7 +337,7 @@ flutter analyze --fatal-infos
 flutter test
 python3 ci/scripts/check_doc_links.py --internal-only --strict
 pre-commit run --files \
-  plans/active/formatting-fidelity-disclosure.md \
+  plans/archive/formatting-fidelity-disclosure.md \
   plans/active/structured-configuration-roadmap.md \
   TO_DO.md
 ```

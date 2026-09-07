@@ -63,11 +63,11 @@ schema recognition; a later patcher owns writes.
       in the safe-testing plan.
 - [ ] Preserve an explicit raw-editor fallback in all tests and UX states.
 
-### Phase 0.5 — formatting-fidelity disclosure (in progress before another card)
+### Phase 0.5 — formatting-fidelity disclosure (complete; archived 2026-09-07)
 
 The detailed implementation plan, acceptance criteria, and open safety decisions
-are in [Formatting Fidelity Disclosure](formatting-fidelity-disclosure.md). That
-focused plan is authoritative for this phase; the summary below remains the parent
+are in [Formatting Fidelity Disclosure](../archive/formatting-fidelity-disclosure.md). That
+focused plan was authoritative for this phase; the summary below remains the parent
 roadmap decision record.
 
 Viewing a file never changes it. Saving through a structured path is different: the
@@ -115,15 +115,16 @@ tests for the baseline evidence.
 - [x] Keep the existing review-dialog notice as a last confirmation, but derive it
       from the same assessment so its language cannot disagree with the opening
       notice. Do not show a format-loss notice for a raw-only Markdown/text file.
-- [ ] Test the notice on initial display for TOML, parsed JSONC, and YAML; test the
+- [x] Test the notice on initial display for TOML, parsed JSONC, and YAML; test the
       no-notice raw-text case; test keyboard/screen-reader semantics; and retain
       byte-for-byte no-save/view tests. Add parser/service tests that exercise the
       advertised preservation and fallback classifications.
-- [ ] Decide and document the fallback policy before enabling any additional
-      structured write path. Recommended direction: a failed JSONC/YAML patch
-      should fail closed and leave the raw editor available, rather than silently
-      taking the lossy fallback. A warning is disclosure, not permission to make
-      an unexpected whole-document rewrite.
+- [x] Decide and document the fallback policy before enabling any additional
+      structured write path. Decided and shipped: a failed JSONC/YAML patch fails
+      closed (save blocked, no write/backup) unless the user explicitly chooses
+      "Rewrite document"; TOML structured editing is opt-in, default off. Recorded
+      in ADR-001. See the archived
+      [formatting-fidelity disclosure plan](../archive/formatting-fidelity-disclosure.md).
 
 #### Open questions / research remaining
 

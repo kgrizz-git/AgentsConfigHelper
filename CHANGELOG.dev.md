@@ -7,6 +7,10 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Formatting-fidelity plan archived:** `plans/active/formatting-fidelity-disclosure.md`
+  moved to `plans/archive/` after merge (PR #40) completed Phases 1-4; roadmap Phase 0.5
+  boxes checked and the TO_DO entry narrowed (broader structured-card work stays open).
+  The TOML lossless-round-trip follow-up remains open in TO_DO.md.
 - **Serialization-outcome seam and YAML alias crash fix:** parsers expose
   `serializeWithOutcome` (`SerializeOutcome.content` + `usedFallback`);
   `ConfigService.saveConfig`/`saveRawConfig` take `allowRewrite` (default false)
