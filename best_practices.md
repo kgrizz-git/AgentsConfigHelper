@@ -18,7 +18,8 @@ this file to match it, not the reverse.
   `docs/supported-tools.md`.
 - Follow Dart/Flutter style; `dart format` is enforced in CI.
 - Every active plan needs one open, linked `TO_DO.md` entry. Keep plan and TO_DO status aligned;
-  remove the entry and archive the plan only after implementation, validation, review, and any
+  remove the entry and archive the plan as the last commit on the feature branch, before the PR
+  merges — never directly on `main` — and only after implementation, validation, review, and any
   recorded follow-through are complete.
 
 ## Not violations (avoid these false positives)
