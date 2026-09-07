@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -232,7 +233,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
-  ClaudeCodePermissionsInterpretation get _claudePermissions =>
+  PolicyCardSelection get _claudePermissions =>
       _claudePermissionsAdapter.interpret(
         config: _currentConfig,
         discoveredConfig: widget.discoveredConfig,
@@ -361,7 +362,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   Widget _buildPermissionsSection(
-    ClaudeCodePermissionsInterpretation claudePermissions,
+    PolicyCardSelection claudePermissions,
     bool hasUnsupportedPermissions,
   ) {
     return Column(
@@ -370,7 +371,9 @@ class _ConfigEditorState extends State<ConfigEditor> {
         _buildSectionHeader('Permissions'),
         if (claudePermissions.isAvailable)
           ClaudeCodePermissionsCard(
-            presentation: claudePermissions.presentation!,
+            presentation:
+                claudePermissions.presentation!
+                    as ClaudeCodePermissionsPresentation,
           )
         else if (hasUnsupportedPermissions)
           Text(

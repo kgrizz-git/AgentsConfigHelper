@@ -1,20 +1,8 @@
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:equatable/equatable.dart';
-
-/// The outcome of interpreting a Claude Code permissions object for display.
-enum ClaudeCodePermissionsStatus {
-  /// The selected configuration is not a catalog-discovered Claude settings
-  /// file.
-  notApplicable,
-
-  /// The complete supported subtree can be displayed safely.
-  available,
-
-  /// A Claude permissions field exists but is not a supported display shape.
-  unsupported,
-}
 
 /// Reviewed, plain-language help for the fields shown on the Claude card.
 class ClaudeCodePermissionFieldHelp extends Equatable {
@@ -72,7 +60,7 @@ class ClaudeCodePermissionsHelp {
 }
 
 /// A read-only, validated view of Claude Code permission settings.
-class ClaudeCodePermissionsPresentation extends Equatable {
+class ClaudeCodePermissionsPresentation extends PolicyCardPresentation {
   /// Creates a presentation from the recognized Claude permissions subtree.
   ClaudeCodePermissionsPresentation({
     required this.defaultMode,
@@ -115,37 +103,16 @@ class ClaudeCodePermissionsPresentation extends Equatable {
   ];
 }
 
-/// Result of interpreting a configuration as Claude Code permissions.
-class ClaudeCodePermissionsInterpretation extends Equatable {
-  /// Creates an interpretation with an optional display [presentation].
-  const ClaudeCodePermissionsInterpretation({
-    required this.status,
-    this.presentation,
-    this.unsupportedReason,
-  });
-
-  /// Whether the source can be displayed, cannot be displayed, or is
-  /// unrelated.
-  final ClaudeCodePermissionsStatus status;
-
-  /// The presentation to render when [status] is available.
-  final ClaudeCodePermissionsPresentation? presentation;
-
-  /// A concise reason to show when the Claude subtree is unsupported.
-  final String? unsupportedReason;
-
-  /// Whether a card is safe to show.
-  bool get isAvailable => status == ClaudeCodePermissionsStatus.available;
-
-  /// Whether the source is Claude but cannot be represented by this card.
-  bool get isUnsupported => status == ClaudeCodePermissionsStatus.unsupported;
+/// Interprets the known Claude Code permissions subtree without mutating it.
+class ClaudeCodePermissionsAdapter implements PolicyCardAdapter {
+  /// Stable key used by the widget registry. Named `adapterId` (not `id`)
+  /// because Dart forbids a static member and an instance member sharing one
+  /// name; the instance getter below forwards to it for the interface.
+  static const adapterId = 'claudeCode.permissions';
 
   @override
-  List<Object?> get props => [status, presentation, unsupportedReason];
-}
+  String get id => adapterId;
 
-/// Interprets the known Claude Code permissions subtree without mutating it.
-class ClaudeCodePermissionsAdapter {
   /// The primary documentation for the displayed Claude Code permission policy.
   static final Uri documentationUri = Uri.parse(
     'https://code.claude.com/docs/en/permissions',
@@ -169,19 +136,22 @@ class ClaudeCodePermissionsAdapter {
   };
 
   /// Returns a read-only presentation only for known Claude settings targets.
-  ClaudeCodePermissionsInterpretation interpret({
+  @override
+  PolicyCardSelection interpret({
     required ToolConfig config,
     required DiscoveredConfig? discoveredConfig,
   }) {
     if (!_isClaudeSettingsTarget(config, discoveredConfig)) {
-      return const ClaudeCodePermissionsInterpretation(
-        status: ClaudeCodePermissionsStatus.notApplicable,
+      return const PolicyCardSelection(
+        adapterId: adapterId,
+        status: PolicyCardStatus.notApplicable,
       );
     }
 
     if (!config.rawSettings.containsKey('permissions')) {
-      return ClaudeCodePermissionsInterpretation(
-        status: ClaudeCodePermissionsStatus.available,
+      return PolicyCardSelection(
+        adapterId: adapterId,
+        status: PolicyCardStatus.available,
         presentation: ClaudeCodePermissionsPresentation(
           defaultMode: null,
           allow: const [],
@@ -195,8 +165,9 @@ class ClaudeCodePermissionsAdapter {
 
     final rawPermissions = config.rawSettings['permissions'];
     if (rawPermissions is! Map) {
-      return const ClaudeCodePermissionsInterpretation(
-        status: ClaudeCodePermissionsStatus.unsupported,
+      return const PolicyCardSelection(
+        adapterId: adapterId,
+        status: PolicyCardStatus.unsupported,
         unsupportedReason:
             'This Claude Code permissions shape is not supported for '
             'structured display. '
@@ -207,8 +178,9 @@ class ClaudeCodePermissionsAdapter {
     final permissions = <String, Object?>{};
     for (final entry in rawPermissions.entries) {
       if (entry.key is! String) {
-        return const ClaudeCodePermissionsInterpretation(
-          status: ClaudeCodePermissionsStatus.unsupported,
+        return const PolicyCardSelection(
+          adapterId: adapterId,
+          status: PolicyCardStatus.unsupported,
           unsupportedReason:
               'This Claude Code permissions shape is not supported for '
               'structured display. '
@@ -236,8 +208,9 @@ class ClaudeCodePermissionsAdapter {
     final hasUnclassifiedSettings = permissions.keys.any(
       (key) => !_recognizedKeys.contains(key),
     );
-    return ClaudeCodePermissionsInterpretation(
-      status: ClaudeCodePermissionsStatus.available,
+    return PolicyCardSelection(
+      adapterId: adapterId,
+      status: PolicyCardStatus.available,
       presentation: ClaudeCodePermissionsPresentation(
         defaultMode: defaultMode as String?,
         allow: allow,
@@ -273,9 +246,10 @@ class ClaudeCodePermissionsAdapter {
     return List.unmodifiable(value.cast<String>());
   }
 
-  ClaudeCodePermissionsInterpretation _unsupportedField(String field) {
-    return ClaudeCodePermissionsInterpretation(
-      status: ClaudeCodePermissionsStatus.unsupported,
+  PolicyCardSelection _unsupportedField(String field) {
+    return PolicyCardSelection(
+      adapterId: adapterId,
+      status: PolicyCardStatus.unsupported,
       unsupportedReason:
           'Claude Code permission "$field" is not a supported value. '
           'Use the raw editor to review it.',

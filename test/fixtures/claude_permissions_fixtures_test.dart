@@ -6,12 +6,20 @@ import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/parsers/json_config_parser.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
   final parser = JsonConfigParser();
   final adapter = ClaudeCodePermissionsAdapter();
+
+  ClaudeCodePermissionsPresentation? presentationOf(
+    PolicyCardSelection selection,
+  ) {
+    return selection.presentation as ClaudeCodePermissionsPresentation?;
+  }
+
   final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
     (item) => item.id == ToolId.claudeCode,
   );
@@ -47,13 +55,13 @@ void main() {
         adapter
             .interpret(config: complete, discoveredConfig: discoveredConfig)
             .status,
-        ClaudeCodePermissionsStatus.available,
+        PolicyCardStatus.available,
       );
       expect(
         adapter
             .interpret(config: omitted, discoveredConfig: discoveredConfig)
             .status,
-        ClaudeCodePermissionsStatus.available,
+        PolicyCardStatus.available,
       );
     });
 
@@ -64,8 +72,8 @@ void main() {
         discoveredConfig: discoveredConfig,
       );
 
-      expect(result.status, ClaudeCodePermissionsStatus.available);
-      expect(result.presentation?.hasUnclassifiedSettings, isTrue);
+      expect(result.status, PolicyCardStatus.available);
+      expect(presentationOf(result)?.hasUnclassifiedSettings, isTrue);
     });
 
     test('invalid permission fixtures use the raw fallback', () {
@@ -80,7 +88,7 @@ void main() {
           config: parseFixture(path),
           discoveredConfig: discoveredConfig,
         );
-        expect(result.status, ClaudeCodePermissionsStatus.unsupported);
+        expect(result.status, PolicyCardStatus.unsupported);
       }
     });
 
@@ -92,8 +100,8 @@ void main() {
         discoveredConfig: discoveredConfig,
       );
 
-      expect(result.status, ClaudeCodePermissionsStatus.available);
-      expect(result.presentation?.hasConfiguredPolicy, isFalse);
+      expect(result.status, PolicyCardStatus.available);
+      expect(presentationOf(result)?.hasConfiguredPolicy, isFalse);
     });
 
     test(
@@ -109,7 +117,7 @@ void main() {
           adapter
               .interpret(config: config, discoveredConfig: discoveredConfig)
               .status,
-          ClaudeCodePermissionsStatus.available,
+          PolicyCardStatus.available,
         );
       },
     );
