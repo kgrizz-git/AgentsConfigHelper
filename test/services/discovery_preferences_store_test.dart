@@ -253,4 +253,45 @@ void main() {
       expect(result.warnings, contains(contains('outside the test root')));
     },
   );
+
+  group('TOML structured save preference', () {
+    test('defaults to disabled', () async {
+      final result = await store.load();
+      expect(result.preferences.tomlStructuredSaveEnabled, isFalse);
+    });
+
+    test('enableTomlStructuredSave persists and loads', () async {
+      await store.enableTomlStructuredSave();
+      final result = await store.load();
+      expect(result.preferences.tomlStructuredSaveEnabled, isTrue);
+    });
+
+    test('disableTomlStructuredSave persists and loads', () async {
+      await store.enableTomlStructuredSave();
+      await store.disableTomlStructuredSave();
+      final result = await store.load();
+      expect(result.preferences.tomlStructuredSaveEnabled, isFalse);
+    });
+
+    test('enableTomlStructuredSave is idempotent', () async {
+      await store.enableTomlStructuredSave();
+      await store.enableTomlStructuredSave();
+      final content = await preferencesFile.readAsString();
+      final json = jsonDecode(content) as Map<String, dynamic>;
+      expect(json['tomlStructuredSaveEnabled'], isTrue);
+    });
+
+    test(
+      'non-boolean tomlStructuredSaveEnabled is tolerated as false',
+      () async {
+        await preferencesFile.writeAsString(
+          '{"tomlStructuredSaveEnabled": "yes"}',
+        );
+
+        final result = await store.load();
+
+        expect(result.preferences.tomlStructuredSaveEnabled, isFalse);
+      },
+    );
+  });
 }

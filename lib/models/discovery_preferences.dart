@@ -8,6 +8,7 @@ class DiscoveryPreferences extends Equatable {
     this.version = 1,
     this.manualFilePaths = const [],
     this.projectRoots = const [],
+    this.tomlStructuredSaveEnabled = false,
     this.extraFields = const {},
   });
 
@@ -15,7 +16,12 @@ class DiscoveryPreferences extends Equatable {
   /// malformed fields by falling back to defaults. Unknown keys are kept in
   /// [extraFields] so they survive a save/rewrite cycle.
   factory DiscoveryPreferences.fromJson(Map<String, dynamic> json) {
-    const knownKeys = {'version', 'manualFilePaths', 'projectRoots'};
+    const knownKeys = {
+      'version',
+      'manualFilePaths',
+      'projectRoots',
+      'tomlStructuredSaveEnabled',
+    };
     final extraFields = <String, dynamic>{
       for (final entry in json.entries)
         if (!knownKeys.contains(entry.key)) entry.key: entry.value,
@@ -24,6 +30,7 @@ class DiscoveryPreferences extends Equatable {
       version: json['version'] is int ? json['version'] as int : 1,
       manualFilePaths: _parseStringList(json['manualFilePaths']),
       projectRoots: _parseStringList(json['projectRoots']),
+      tomlStructuredSaveEnabled: json['tomlStructuredSaveEnabled'] == true,
       extraFields: Map.unmodifiable(extraFields),
     );
   }
@@ -37,6 +44,10 @@ class DiscoveryPreferences extends Equatable {
   /// Additional project root directories the user registered for discovery.
   final List<String> projectRoots;
 
+  /// Whether the user has opted in to structured TOML saves that discard
+  /// comments and reformat the document.
+  final bool tomlStructuredSaveEnabled;
+
   /// Unknown JSON keys found at load time, preserved unmodified so nothing
   /// written by a newer app version is silently dropped.
   final Map<String, dynamic> extraFields;
@@ -46,12 +57,15 @@ class DiscoveryPreferences extends Equatable {
     int? version,
     List<String>? manualFilePaths,
     List<String>? projectRoots,
+    bool? tomlStructuredSaveEnabled,
     Map<String, dynamic>? extraFields,
   }) {
     return DiscoveryPreferences(
       version: version ?? this.version,
       manualFilePaths: manualFilePaths ?? this.manualFilePaths,
       projectRoots: projectRoots ?? this.projectRoots,
+      tomlStructuredSaveEnabled:
+          tomlStructuredSaveEnabled ?? this.tomlStructuredSaveEnabled,
       extraFields: extraFields ?? this.extraFields,
     );
   }
@@ -62,6 +76,7 @@ class DiscoveryPreferences extends Equatable {
       'version': version,
       'manualFilePaths': manualFilePaths,
       'projectRoots': projectRoots,
+      'tomlStructuredSaveEnabled': tomlStructuredSaveEnabled,
       ...extraFields,
     };
   }
@@ -78,6 +93,7 @@ class DiscoveryPreferences extends Equatable {
     version,
     manualFilePaths,
     projectRoots,
+    tomlStructuredSaveEnabled,
     extraFields,
   ];
 }

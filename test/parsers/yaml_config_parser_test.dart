@@ -145,5 +145,64 @@ extra_key: value
       );
       expect(roundTrippedConfig, equals(parsedConfig));
     });
+
+    test('serializeWithOutcome reports fallback for alias/anchor shapes', () {
+      const original = '''
+base: &base
+  timeout: 30
+override:
+  <<: *base
+  timeout: 60
+rules:
+  - rule1
+''';
+
+      final config = parser.parse(
+        original,
+        filePath: testPath,
+        toolName: testTool,
+      );
+      final updated = config.copyWith(
+        rawSettings: {
+          'base': {'timeout': 45},
+          'override': {'timeout': 90},
+        },
+      );
+
+      final outcome = parser.serializeWithOutcome(
+        updated,
+        originalContent: original,
+      );
+      expect(outcome.usedFallback, isTrue);
+      expect(outcome.content, contains('timeout: 45'));
+      expect(outcome.content, contains('timeout: 90'));
+    });
+
+    test('serialize does not throw for alias/anchor shapes', () {
+      const original = '''
+base: &base
+  timeout: 30
+override:
+  <<: *base
+  timeout: 60
+''';
+
+      final config = parser.parse(
+        original,
+        filePath: testPath,
+        toolName: testTool,
+      );
+      final updated = config.copyWith(
+        rawSettings: {
+          'base': {'timeout': 45},
+          'override': {'timeout': 90},
+        },
+      );
+
+      expect(
+        () => parser.serialize(updated, originalContent: original),
+        returnsNormally,
+      );
+    });
   });
 }

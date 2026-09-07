@@ -95,8 +95,10 @@ class FidelityAssessor {
     required String filePath,
     required bool rawOnly,
     bool parsedAsJsonc = false,
+    bool tomlStructuredSaveEnabled = true,
   }) {
     if (rawOnly) return null;
+    if (format == ConfigFormat.toml && !tomlStructuredSaveEnabled) return null;
 
     return _openingForFormat(format, filePath, parsedAsJsonc);
   }
@@ -118,8 +120,10 @@ class FidelityAssessor {
     required bool hasUsableBaseline,
     required bool structuredDiverged,
     bool parsedAsJsonc = false,
+    bool tomlStructuredSaveEnabled = true,
   }) {
     if (rawOnly) return null;
+    if (format == ConfigFormat.toml && !tomlStructuredSaveEnabled) return null;
 
     switch (saveKind) {
       case SaveKind.saveConfig:
@@ -172,6 +176,19 @@ class FidelityAssessor {
     String filePath,
     bool parsedAsJsonc,
   ) {
+    // Parser fallback behavior for structured saves:
+    //
+    // - TOML: TomlConfigParser.serialize unconditionally reconstructs the
+    //   document via TomlDocument.fromMap. Comments, whitespace, ordering,
+    //   and layout are always discarded.
+    // - JSON / JSONC: JsonConfigParser.serialize attempts an in-place AST
+    //   patch. If that fails, it falls back to full JSON reserialization,
+    //   which discards comments and formatting.
+    // - YAML: YamlConfigParser.serialize attempts an in-place update via
+    //   YamlEditor. If parsing the original content fails or the update
+    //   throws, it falls back to building a fresh YAML document.
+    //
+    // Do not describe successful-path preservation as a guarantee.
     switch (format) {
       case ConfigFormat.json:
       case ConfigFormat.jsonc:
@@ -206,7 +223,25 @@ class FidelityAssessor {
     bool parsedAsJsonc,
   ) {
     // A raw-plus-structured merge runs the parser/serializer over the raw text.
-    // TOML always rewrites; JSON/JSONC/YAML are conservatively caution.
+    // Parser fallback behavior determines the actual risk:
+    //
+    // - TOML: TomlConfigParser.serialize unconditionally reconstructs the
+    //   document via TomlDocument.fromMap. Comments, whitespace, ordering,
+    //   and layout are always discarded. This is unconditional — there is no
+    //   preserving path.
+    // - JSON / JSONC: JsonConfigParser.serialize attempts an in-place AST patch.
+    //   If that patch fails for any reason (unsupported AST shape, parse
+    //   error, nested non-list permissions, etc.), it falls back to full
+    //   JSON reserialization, which discards comments and formatting. The
+    //   assessment is conservative caution regardless of whether a particular
+    //   fixture happens to patch successfully.
+    // - YAML: YamlConfigParser.serialize attempts an in-place update via
+    //   YamlEditor. If parsing the original content fails or the update
+    //   throws, it falls back to building a fresh YAML document from the
+    //   settings map. Comments, anchors, aliases, and block scalars can be
+    //   lost on the fallback path. The assessment is conservative caution.
+    //
+    // Do not describe successful-path preservation as a guarantee.
     switch (format) {
       case ConfigFormat.json:
       case ConfigFormat.jsonc:

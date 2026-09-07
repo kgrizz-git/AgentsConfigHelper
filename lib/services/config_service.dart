@@ -84,25 +84,39 @@ class ConfigService {
   /// Automatically creates a backup of the existing file using [BackupService],
   /// then overwrites the file with the serialized config and re-parses it
   /// so the returned [ToolConfig] has an up-to-date `originalContent`.
-  Future<ToolConfig> saveConfig(ToolConfig config) async {
+  Future<ToolConfig> saveConfig(
+    ToolConfig config, {
+    bool allowRewrite = false,
+  }) async {
     final expandedPath = resolvePath(config.filePath);
     String? originalContent;
 
     if (await _fileOperations.fileExists(expandedPath)) {
       originalContent = await _fileOperations.readText(expandedPath);
-      await backupService.createBackup(expandedPath);
     }
 
     final parser = _getParserForFormat(config.format);
-    final serialized = parser.serialize(
+    final outcome = parser.serializeWithOutcome(
       config,
       originalContent: originalContent,
     );
 
-    await _fileOperations.writeText(expandedPath, serialized);
+    if (outcome.usedFallback && !allowRewrite) {
+      final loss = _fallbackLossDescription(config.format);
+      throw SerializationFallbackException(
+        format: _formatLabel(config.format),
+        wouldBeLost: loss,
+      );
+    }
+
+    if (await _fileOperations.fileExists(expandedPath)) {
+      await backupService.createBackup(expandedPath);
+    }
+
+    await _fileOperations.writeText(expandedPath, outcome.content);
 
     return parser.parse(
-      serialized,
+      outcome.content,
       filePath: config.filePath,
       toolName: config.toolName,
       format: config.format,
@@ -175,7 +189,11 @@ class ConfigService {
   /// diverge from `config.originalContent` (the pre-edit baseline), both
   /// edits are reconciled by re-serializing on top of the raw text rather
   /// than silently discarding one or the other.
-  Future<ToolConfig> saveRawConfig(ToolConfig config, String rawContent) async {
+  Future<ToolConfig> saveRawConfig(
+    ToolConfig config,
+    String rawContent, {
+    bool allowRewrite = false,
+  }) async {
     final parser = _getParserForFormat(config.format);
 
     // Validate the raw content by attempting to parse it before writing.
@@ -223,10 +241,18 @@ class ConfigService {
         rules: config.rules,
         permissions: config.permissions,
       );
-      contentToWrite = parser.serialize(
+      final mergeOutcome = parser.serializeWithOutcome(
         mergedConfig,
         originalContent: rawContent,
       );
+      if (mergeOutcome.usedFallback && !allowRewrite) {
+        final loss = _fallbackLossDescription(config.format);
+        throw SerializationFallbackException(
+          format: _formatLabel(config.format),
+          wouldBeLost: loss,
+        );
+      }
+      contentToWrite = mergeOutcome.content;
       parsedConfig = parser.parse(
         contentToWrite,
         filePath: config.filePath,
@@ -279,6 +305,39 @@ class ConfigService {
       // FormatException) means the baseline is unusable; let Errors —
       // programming bugs — propagate rather than silently skipping the merge.
       return null;
+    }
+  }
+
+  static String _formatLabel(ConfigFormat format) {
+    switch (format) {
+      case ConfigFormat.json:
+        return 'JSON';
+      case ConfigFormat.jsonc:
+        return 'JSONC';
+      case ConfigFormat.yaml:
+        return 'YAML';
+      case ConfigFormat.toml:
+        return 'TOML';
+      case ConfigFormat.markdown:
+      case ConfigFormat.text:
+      case ConfigFormat.unknown:
+        return format.name.toUpperCase();
+    }
+  }
+
+  static String _fallbackLossDescription(ConfigFormat format) {
+    switch (format) {
+      case ConfigFormat.json:
+      case ConfigFormat.jsonc:
+        return 'comments and formatting';
+      case ConfigFormat.yaml:
+        return 'comments, anchors, aliases, and formatting';
+      case ConfigFormat.toml:
+        return 'comments, whitespace, and layout';
+      case ConfigFormat.markdown:
+      case ConfigFormat.text:
+      case ConfigFormat.unknown:
+        return 'formatting';
     }
   }
 }

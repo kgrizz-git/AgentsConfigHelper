@@ -24,6 +24,15 @@ abstract class IDiscoveryPreferencesStore {
 
   /// Removes [path] from the project roots list, if present.
   Future<void> removeProjectRoot(String path);
+
+  /// Enables structured TOML saves, which discard comments and reformat
+  /// the document. This is an explicit opt-in because the current Dart
+  /// TOML package has no source-preserving editor.
+  Future<void> enableTomlStructuredSave();
+
+  /// Disables structured TOML saves, returning to the default read-only
+  /// state for TOML structured controls.
+  Future<void> disableTomlStructuredSave();
 }
 
 /// Thrown when a path passed to the preferences store is not usable
@@ -356,9 +365,33 @@ class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
       final prefs = result.preferences;
       final keyToRemove = _pathDedupKey(p.normalize(path.trim()));
       final updatedRoots = prefs.projectRoots
-          .where((fp) => _pathDedupKey(p.normalize(fp.trim())) != keyToRemove)
+          .where(
+            (fp) => _pathDedupKey(p.normalize(fp.trim())) != keyToRemove,
+          )
           .toList();
       await _save(prefs.copyWith(projectRoots: updatedRoots));
+    });
+  }
+
+  @override
+  Future<void> enableTomlStructuredSave() {
+    return _serialize(() async {
+      final result = await load();
+      final prefs = result.preferences;
+      if (!prefs.tomlStructuredSaveEnabled) {
+        await _save(prefs.copyWith(tomlStructuredSaveEnabled: true));
+      }
+    });
+  }
+
+  @override
+  Future<void> disableTomlStructuredSave() {
+    return _serialize(() async {
+      final result = await load();
+      final prefs = result.preferences;
+      if (prefs.tomlStructuredSaveEnabled) {
+        await _save(prefs.copyWith(tomlStructuredSaveEnabled: false));
+      }
     });
   }
 }

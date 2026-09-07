@@ -181,11 +181,11 @@ direct-raw mechanism.
 - [x] Cover TOML, YAML, explicit `.jsonc`, `.json` parsed using JSONC fallback,
       strict JSON (including a `.jsonc` file containing strict JSON), Markdown/text,
       unknown/raw-only outcomes, and raw-plus-structured merge conditions.
-- [ ] Make raw-only precedence explicit in the pure contract: a recovery editor for
+- [x] Make raw-only precedence explicit in the pure contract: a recovery editor for
       corrupt TOML or JSON returns no opening fidelity assessment even though its
       discovered format is TOML or JSON. Add widget coverage that the recovery editor
       has no notice or structured controls and that its repaired raw save is direct.
-- [ ] Document which current parser fallbacks trigger the conditional risk. Do not
+- [x] Document which current parser fallbacks trigger the conditional risk. Do not
       describe successful-path preservation as a guarantee.
 - [x] Replace `JsonConfigParser.jsoncFallbackWarning`'s unconditional promise that
       comments "are preserved on save" with a parse-only statement that JSONC syntax
@@ -195,7 +195,7 @@ direct-raw mechanism.
       trailing commas and no longer contains "preserved on save". `JsoncCleaner`
       currently cannot say which of comments or trailing commas it removed, so retain
       combined wording rather than claiming the parser identified one exact syntax.
-- [ ] Add service regression tests for an unchanged raw buffer plus independently
+- [x] Add service regression tests for an unchanged raw buffer plus independently
       diverged structured values. In particular, prove that this `saveRawConfig`
       merge routes TOML through the lossy serializer and receives warning/
       parser-serialization rather than `directRaw`.
@@ -205,12 +205,12 @@ direct-raw mechanism.
       warning/parser-serialization rather than `directRaw`. Also assert it creates
       exactly one pre-write backup, so this exceptional merge path retains the normal
       backup-before-write guarantee.
-- [ ] Add JSON/YAML cases with nested/non-list `permissions` and a simultaneous
+- [x] Add JSON/YAML cases with nested/non-list `permissions` and a simultaneous
       flat-field edit. The assessment stays conservatively `caution`; tests may
       document a successful rules-only patch but must not infer pre-save certainty
       from it. Assert the opening assessment remains `caution` even when the known
       fixture happens to patch successfully.
-- [ ] Cover `saveConfig` explicitly for every supported structured format, including
+- [x] Cover `saveConfig` explicitly for every supported structured format, including
       a newly-created file with no usable original source; JSON/JSONC/YAML remain
       caution because serialization can rebuild the document.
 - [x] Assert a `.jsonc` file that is valid strict JSON is still opening-assessed as
@@ -228,11 +228,11 @@ silently accept and discard that invalid overlay.
 - [x] Implement the reusable notice with an accessible semantic label and
       high-contrast text.
 - [x] Render it on initial `ConfigEditor` display for TOML, JSON/JSONC, and YAML.
-- [ ] Assert it is above raw content and does not disappear after editing or opening
+- [x] Assert it is above raw content and does not disappear after editing or opening
       Review Changes.
 - [x] Keep parse warnings separately visible and test both notices together for a
       `.json` file accepted as JSONC.
-- [ ] Assert raw-only recovery editors for corrupt TOML and JSON show neither a
+- [x] Assert raw-only recovery editors for corrupt TOML and JSON show neither a
       fidelity notice nor structured controls. Their repaired raw save remains a
       direct raw write.
 - [x] Assert the notice's explicit semantic label and text equivalent of its icon in
@@ -244,25 +244,31 @@ silently accept and discard that invalid overlay.
 - [x] Replace the TOML-only diff-dialog warning with the shared disclosure.
 - [x] Test that the opening and review notices agree on severity and wording.
 - [x] Preserve existing backup, diff, parse-validation, and direct raw-save behavior.
-- [ ] Add a regression test that merely opening a config or inspecting the notice
+- [x] Add a regression test that merely opening a config or inspecting the notice
       causes no write or backup.
 
 ### Phase 4 — decide fallback safety before broader structured writes
 
-- [ ] Run focused YAML fixtures for comments adjacent to edited keys, anchors,
+- [x] Run focused YAML fixtures for comments adjacent to edited keys, anchors,
       aliases, block scalars, nested maps, and unsupported structures.
-- [ ] Include a comment between a key and its block value, plus an alias whose target
+      (`test/parsers/yaml_fidelity_fixture_test.dart`.)
+- [x] Include a comment between a key and its block value, plus an alias whose target
       key is edited. These are likely `yaml_edit` edge cases; an alias rewritten as a
       literal is a semantic change, not merely a formatting difference.
-- [ ] For each fixture, assert either a supported edit retains the adjacent comment
+      (Alias edits throw `AssertionError`, now caught and routed to fallback.)
+- [x] For each fixture, assert either a supported edit retains the adjacent comment
       or the assessed path is conditional/blocked. Do not rely on a generic
       `YamlEditor` success test to establish behavior for the app's actual shapes.
-- [ ] Decide whether JSONC/YAML fallback must fail closed instead of rewriting.
-      Recommended: block the structured save and direct the user to raw content if
-      the preserving path cannot be proven.
-- [ ] Decide whether generic TOML structured controls stay writable with a warning
+- [x] Decide whether JSONC/YAML fallback must fail closed instead of rewriting.
+      Decided: fail closed with informed override — the save is blocked (no write,
+      no backup) and the user must explicitly choose Rewrite document (default is
+      Edit raw instead). Implemented via `serializeWithOutcome` + `allowRewrite`.
+- [x] Decide whether generic TOML structured controls stay writable with a warning
       or become read-only until an AST-aware patcher exists. Record the decision in
       `ADR-001` and update the notice copy if the behavior changes.
+      Decided: read-only by default, writable only via persisted opt-in with an
+      explicit enable warning and a persistent banner while on (ADR-001 update
+      2026-09-06).
 
 ## File map
 
