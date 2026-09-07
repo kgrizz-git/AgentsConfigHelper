@@ -57,7 +57,12 @@ schema recognition; a later patcher owns writes.
 - [ ] Record the authoritative source, target path, accepted shape, and non-goals for each
       proposed schema before implementing it.
 - [ ] Establish shared adapter/presentation interfaces with no Flutter dependencies and a
-      single registry/selection point.
+      single registry/selection point. **Delivered by the
+      [policy-card adapter registry plan](../archive/policy-card-adapter-registry.md)**
+      (merged via PR #41): `PolicyCardAdapter` interface
+      + `PolicyCardRegistry` (pure Dart) and a Flutter-side `PolicyCardWidgetRegistry`;
+      `ConfigEditor` renders cards through the registries with no tool branches. Mark this
+      box done after the first non-Claude consumer (Cursor, Phase 4A) registers.
 - [ ] Add token-free fixtures for recognized, malformed, unsupported-nested, and
       comments/formatting-preservation cases. Document sanitized-regression-fixture intake
       in the safe-testing plan.

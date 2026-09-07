@@ -3,6 +3,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -33,6 +34,12 @@ void main() {
       format: ConfigFormat.json,
       rawSettings: rawSettings,
     );
+  }
+
+  ClaudeCodePermissionsPresentation? presentationOf(
+    PolicyCardSelection selection,
+  ) {
+    return selection.presentation as ClaudeCodePermissionsPresentation?;
   }
 
   group('ClaudeCodePermissionsAdapter', () {
@@ -76,13 +83,13 @@ void main() {
         discoveredConfig: claudeConfig(),
       );
 
-      expect(result.status, ClaudeCodePermissionsStatus.available);
-      expect(result.presentation?.defaultMode, 'default');
-      expect(result.presentation?.allow, ['Read(./fixtures/**)']);
-      expect(result.presentation?.ask, ['Bash(git status)']);
-      expect(result.presentation?.deny, ['Read(./private/**)']);
+      expect(result.status, PolicyCardStatus.available);
+      expect(presentationOf(result)?.defaultMode, 'default');
+      expect(presentationOf(result)?.allow, ['Read(./fixtures/**)']);
+      expect(presentationOf(result)?.ask, ['Bash(git status)']);
+      expect(presentationOf(result)?.deny, ['Read(./private/**)']);
       expect(
-        () => result.presentation!.allow.add('Write(./fixtures/**)'),
+        () => presentationOf(result)!.allow.add('Write(./fixtures/**)'),
         throwsUnsupportedError,
       );
     });
@@ -98,8 +105,8 @@ void main() {
         discoveredConfig: claudeConfig(),
       );
 
-      expect(result.status, ClaudeCodePermissionsStatus.available);
-      expect(result.presentation?.hasUnclassifiedSettings, isTrue);
+      expect(result.status, PolicyCardStatus.available);
+      expect(presentationOf(result)?.hasUnclassifiedSettings, isTrue);
     });
 
     test('accepts only documented default modes', () {
@@ -119,8 +126,8 @@ void main() {
           discoveredConfig: claudeConfig(),
         );
 
-        expect(result.status, ClaudeCodePermissionsStatus.available);
-        expect(result.presentation?.defaultMode, defaultMode);
+        expect(result.status, PolicyCardStatus.available);
+        expect(presentationOf(result)?.defaultMode, defaultMode);
       }
     });
 
@@ -134,7 +141,7 @@ void main() {
         discoveredConfig: claudeConfig(),
       );
 
-      expect(result.status, ClaudeCodePermissionsStatus.unsupported);
+      expect(result.status, PolicyCardStatus.unsupported);
       expect(result.presentation, isNull);
       expect(result.unsupportedReason, contains('allow'));
     });
@@ -147,9 +154,9 @@ void main() {
           discoveredConfig: claudeConfig(),
         );
 
-        expect(result.status, ClaudeCodePermissionsStatus.available);
-        expect(result.presentation?.hasConfiguredPolicy, isFalse);
-        expect(result.presentation?.allow, isEmpty);
+        expect(result.status, PolicyCardStatus.available);
+        expect(presentationOf(result)?.hasConfiguredPolicy, isFalse);
+        expect(presentationOf(result)?.allow, isEmpty);
       },
     );
 
@@ -163,7 +170,7 @@ void main() {
         discoveredConfig: claudeConfig(fromCatalog: false),
       );
 
-      expect(result.status, ClaudeCodePermissionsStatus.notApplicable);
+      expect(result.status, PolicyCardStatus.notApplicable);
     });
 
     test('does not apply to a different tool descriptor', () {
@@ -189,7 +196,7 @@ void main() {
         discoveredConfig: cursorConfig,
       );
 
-      expect(result.status, ClaudeCodePermissionsStatus.notApplicable);
+      expect(result.status, PolicyCardStatus.notApplicable);
     });
   });
 }

@@ -7,6 +7,15 @@ Internal / developer-facing changes that do not belong in the public
 
 ### Added
 
+- **Shared policy-card adapter registry (Phase 0):** extracted the Claude-only
+  permissions-card wiring out of `ConfigEditor` into a pure-Dart
+  `PolicyCardAdapter` interface + `PolicyCardRegistry` (selection) with a
+  Flutter-side `PolicyCardWidgetRegistry` (rendering). `ClaudeCodePermissionsAdapter`
+  now implements the interface; `ConfigEditor` renders cards via the registries
+  (injectable for tests) and preserves the generic non-Claude / manual-path
+  nested-permissions and flat-editor fallbacks. Behavior-preserving; adds
+  registry/widget/ConfigEditor regression tests. See the archived
+  [policy-card adapter registry plan](plans/archive/policy-card-adapter-registry.md).
 - **Formatting-fidelity plan archived:** `plans/active/formatting-fidelity-disclosure.md`
   moved to `plans/archive/` after merge (PR #40) completed Phases 1-4; roadmap Phase 0.5
   boxes checked and the TO_DO entry narrowed (broader structured-card work stays open).
