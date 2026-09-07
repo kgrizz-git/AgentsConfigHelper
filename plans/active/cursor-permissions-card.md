@@ -126,7 +126,11 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
   `_isClaudeSettingsTarget`, so manual paths, other tools, and `null` discovery all
   fall through. (A `.json` Cursor file that parses as JSONC still has discovered
   format `json`; the JSONC nuance is surfaced by the fidelity notice, not by widening
-  the adapter's format match.)
+  the adapter's format match.) The `kind == structuredConfig && format == json`
+  requirement is what keeps the check safe even though `ToolId.cursor` also registers
+  non-structured targets (`.cursorrules`, `.cursor/rules/*.mdc`, `CLAUDE.md`): only
+  the two `.cursor/permissions.json` targets match. Keep this guard in the target
+  check; do not relax it if a future catalog change adds more Cursor targets.
 - **`available`** — a valid policy object. `rawSettings` is the top-level object;
   recognize `mcpAllowlist`, `terminalAllowlist`, and `autoRun` with
   `allow_instructions` / `block_instructions`. Each recognized field is **optional**
@@ -134,6 +138,13 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
   present, must be a `Map` whose recognized subfields are `string[]`. An empty object
   and omitted fields are valid empty policy states. Unknown top-level or `autoRun`
   sibling keys set `hasUnclassifiedSettings` but do not suppress the card.
+
+  The recognized-key sets must be explicit constants (mirroring
+  `ClaudeCodePermissionsAdapter._recognizedKeys`):
+  - top level: `mcpAllowlist`, `terminalAllowlist`, `autoRun`;
+  - `autoRun` sub-keys: `allow_instructions`, `block_instructions`.
+  `hasUnclassifiedSettings` is true when any top-level key is outside the first set
+  **or** any `autoRun` sub-key is outside the second set.
 - **`unsupported`** (with a plain-language `unsupportedReason`) — when a **present
   recognized field** is not the accepted shape: a non-list value, a list containing a
   non-string entry, or `autoRun` present but not a `Map`. This mirrors the Claude
@@ -148,9 +159,13 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
 `CursorPermissionsHelp` — reviewed, plain-language `label` + `description` per field,
 modeled on `ClaudeCodePermissionsHelp`. The card-level statement and each field's
 description must say the card shows **this file's stored entries, not runtime
-decisions**: user and project arrays are combined, and team-admin or in-app settings
-can take precedence. Do not encode reports of version-specific Cursor behavior as
-product truth. All help lives in the pure-Dart schema layer.
+decisions**. Because a `permissions.json` is a single file, the card displays only that
+one file's entries — it does not merge or show user and project arrays together. (Cursor
+combines the user and project files at runtime, and team-admin or in-app settings can
+take precedence; the help text may mention that as Cursor's behavior, but must not claim
+the card itself computes the combined/effective policy.) Do not encode reports of
+version-specific Cursor behavior as product truth. All help lives in the pure-Dart
+schema layer.
 
 ### Card widget (`lib/widgets/cursor_permissions_card.dart`)
 
@@ -172,6 +187,15 @@ no write path; it renders only from the immutable presentation.
   `CursorPermissionsAdapter.adapterId: _buildCursorCard`. `_buildCursorCard` type-checks
   the presentation (`is!`) and returns `CursorPermissionsCard(...)` (default launcher),
   exactly like `_buildClaudeCard`.
+
+### File-length gate
+
+The repo's `check-file-length` hook caps files at 700 lines. The two new source files
+(`lib/schemas/cursor_permissions.dart`, `lib/widgets/cursor_permissions_card.dart`)
+track their Claude mirrors (258 and 225 lines respectively) and are expected to land
+well under the limit, but verify both after implementation. `test/fixtures/
+cursor_permissions_fixtures_test.dart` is new; do not add these tests to any file that
+is already near the cap.
 
 ### ConfigEditor
 
@@ -201,6 +225,11 @@ Follow the Claude vertical-slice test layout so the two adapters stay symmetric.
   `CursorPermissionsPresentation`; a Claude config still resolves to Claude (no
   cross-match).
 
+  The `test/schemas/policy_card_registry_test.dart` file already defines a
+  `cursorConfig()` helper (line 54); reuse it in the new adapter test if convenient,
+  or add a local copy to `test/schemas/cursor_permissions_test.dart` — either is fine,
+  but choose one and keep the registry test's helper untouched.
+
 ### Fixtures (`test/fixtures/cursor_permissions_fixtures_test.dart`)
 
 Token-free inline fixtures (mirroring `claude_permissions_fixtures_test.dart`),
@@ -226,15 +255,22 @@ change bytes.
 
 - A catalog-discovered Cursor `permissions.json` renders the Cursor card (not the
   flat editor, not the nested-permissions text).
-- A **non-Cursor** config with a Map `permissions` still renders the generic
-  nested-permissions text (proves the Cursor adapter did not swallow generic tools).
+- A config with a `permissions` Map for a tool with **no matching adapter** — e.g. a
+  `ToolId.lmStudio` config, or a manual-path config with `descriptor: null` — still
+  renders the generic nested-permissions text. This proves the Cursor adapter did not
+  swallow generic tools. Do **not** use a Claude-style `permissions` Map here: the
+  Claude adapter is registered first in `PolicyCardRegistry.shared` and would match
+  that config, masking the generic-fallback behavior this test is meant to guard.
 - A Cursor card is **read-only**: interacting (opening help/docs) never mutates
   `originalContent` or triggers a save.
 
-### JSONC fidelity labeling (extend `test/widgets/config_editor_fidelity_test.dart` or the fixtures test)
+### JSONC fidelity labeling (in `test/fixtures/cursor_permissions_fixtures_test.dart`)
 
 - Opening a `.json` Cursor fixture that parses as JSONC yields a `JSONC`-labeled
-  opening notice via the existing `FidelityAssessor` (no new notice code).
+  opening notice via the existing `FidelityAssessor` (no new notice code). Put this
+  assertion in the fixtures test, **not** `test/widgets/config_editor_fidelity_test.dart`
+  — that file is already at the 700-line hook limit (checked 2026-09-07) and extending
+  it would breach the gate.
 
 ## Docs, docstrings, and metadata
 
@@ -247,7 +283,10 @@ the Phase 0 registry refactor, which was developer-only).
   - Cursor Config format section (line 341): state that `permissions.json` accepts
     JSONC despite the `.json` filename, and that the app's fidelity notice follows
     parsed content.
-  - Format table row 26 / Cursor section: reflect the read-only structured card.
+  - Tool-overview summary table (line 26, Cursor Agent row): reflect the read-only
+    structured card. (This is the overview table near the top of the file, not the
+    "Config format summary" table around line 697, which lists only JSON/TOML/YAML
+    and needs no Cursor change.)
 - `CHANGELOG.md`: add a user-facing entry for the read-only Cursor permissions card.
 - `plans/active/structured-configuration-roadmap.md`: mark the Phase 0 shared-interface
   box done (Cursor is the first non-Claude consumer); check off the completed Phase 4A
