@@ -15,8 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ConfigEditor policy-card integration', () {
     testWidgets(
-      'shows the nested permissions notice for a non-Claude tool with Map '
-      'permissions',
+      'shows the nested permissions notice, not the flat editor, for a '
+      'non-Claude tool with Map permissions',
       (tester) async {
         final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
           (item) => item.id == ToolId.cursor,
@@ -123,6 +123,62 @@ void main() {
           findsNothing,
         );
         expect(find.byType(StringListEditor), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'falls back to the flat editor when the widget registry cannot build '
+      'the card',
+      (tester) async {
+        final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+          (item) => item.id == ToolId.claudeCode,
+        );
+        final discoveredConfig = DiscoveredConfig.fromPath(
+          filePath: '${Directory.systemTemp.path}/.claude/settings.json',
+          descriptor: descriptor,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+          format: ConfigFormat.json,
+          sourceLabel: 'Claude Code',
+          fromCatalog: true,
+        );
+        final config = ToolConfig(
+          toolName: 'Claude Code',
+          filePath: discoveredConfig.filePath,
+          format: ConfigFormat.json,
+          originalContent: '{"permissions":{"allow":["Read(./fixtures/**)"]}}',
+          rawSettings: const {
+            'permissions': {
+              'allow': ['Read(./fixtures/**)'],
+            },
+          },
+        );
+        // An available selection whose adapterId has no registered builder
+        // makes buildCard return null; ConfigEditor falls through to the flat
+        // editor rather than rendering nothing.
+        final widgetRegistry = PolicyCardWidgetRegistry(const {});
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ConfigEditor(
+                config: config,
+                discoveredConfig: discoveredConfig,
+                onSave: (config, {rawContent, allowRewrite}) async => config,
+                resolvePath: (path) => path,
+                onShowHistory: () {},
+                widgetRegistry: widgetRegistry,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Claude Code permissions'), findsNothing);
+        expect(
+          find.text('Allowed directories or commands for this agent.'),
+          findsOneWidget,
+        );
+        expect(find.byType(StringListEditor), findsNWidgets(2));
       },
     );
 

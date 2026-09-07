@@ -88,7 +88,8 @@ void main() {
       },
     );
 
-    test('rejects a wrong-type presentation without throwing', () {
+    test('returns null when the Claude builder receives a wrong-type '
+        'presentation', () {
       const selection = PolicyCardSelection(
         adapterId: ClaudeCodePermissionsAdapter.adapterId,
         status: PolicyCardStatus.available,
