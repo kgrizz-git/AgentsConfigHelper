@@ -107,8 +107,11 @@ class PolicyCardSelection extends Equatable {
 
 /// A tool schema's read-only interpretation step.
 abstract class PolicyCardAdapter {
-  /// Stable key used by the widget registry. Each concrete adapter exposes a
-  /// `static const id` so callers reference it by name, never a bare string.
+  /// Stable key used by the widget registry. The interface requires an
+  /// **instance** getter; each concrete adapter also exposes a `static const id`
+  /// so callers reference it by name, and the instance getter forwards to it
+  /// (a `static` member does NOT satisfy an `implements` instance getter):
+  /// `String get id => ClaudeCodePermissionsAdapter.id;`
   String get id;
 
   /// The adapter **interprets** a config into a selection; only the registry
@@ -288,9 +291,11 @@ ConfigEditor integration additions (`test/widgets/config_editor_test.dart`):
 2. Add `lib/schemas/policy_card_registry.dart` (final `shared` + injectable adapter list,
    seeding it with the existing Claude adapter).
 3. Make `ClaudeCodePermissionsAdapter` implement `PolicyCardAdapter`: add
-   `static const id = 'claudeCode.permissions'`; keep the `interpret` method name; its
-   return type becomes `PolicyCardSelection` and `ClaudeCodePermissionsStatus` is renamed
-   `PolicyCardStatus` with **no semantic change**. `ClaudeCodePermissionsPresentation`
+   `static const id = 'claudeCode.permissions'` **and** an instance getter
+   `String get id => ClaudeCodePermissionsAdapter.id;` (required by the interface; a
+   `static` member alone does not satisfy `implements`). Keep the `interpret` method name;
+   its return type becomes `PolicyCardSelection` and `ClaudeCodePermissionsStatus` is
+   renamed `PolicyCardStatus` with **no semantic change**. `ClaudeCodePermissionsPresentation`
    extends `PolicyCardPresentation`. Update `test/schemas/claude_code_permissions_test.dart`
    only by the mechanical enum/return-type rename.
 4. Add `lib/widgets/policy_card_widget_registry.dart` mapping
