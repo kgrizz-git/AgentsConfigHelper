@@ -3,7 +3,7 @@
 Last reviewed: 2026-09-06
 Date: 2026-09-06
 Author: maintainers
-Status: in progress — shared selection interface to be extracted before Phase 4A
+Status: implementation complete (Chunks 1-5, each reviewed); pending merge + archive
 Linked parent: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
 Linked task: [TO_DO.md — Structured configuration presentation](../../TO_DO.md#structured-configuration-presentation)
 
