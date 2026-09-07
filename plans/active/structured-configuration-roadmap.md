@@ -58,8 +58,8 @@ schema recognition; a later patcher owns writes.
       proposed schema before implementing it.
 - [ ] Establish shared adapter/presentation interfaces with no Flutter dependencies and a
       single registry/selection point. **Delivered by the
-      [policy-card adapter registry plan](policy-card-adapter-registry.md)** (implemented
-      on branch `plan/policy-card-adapter-registry`, PR #41): `PolicyCardAdapter` interface
+      [policy-card adapter registry plan](../archive/policy-card-adapter-registry.md)**
+      (merged via PR #41): `PolicyCardAdapter` interface
       + `PolicyCardRegistry` (pure Dart) and a Flutter-side `PolicyCardWidgetRegistry`;
       `ConfigEditor` renders cards through the registries with no tool branches. Mark this
       box done after the first non-Claude consumer (Cursor, Phase 4A) registers.

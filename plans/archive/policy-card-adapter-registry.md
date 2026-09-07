@@ -3,9 +3,20 @@
 Last reviewed: 2026-09-06
 Date: 2026-09-06
 Author: maintainers
-Status: implementation complete (Chunks 1-5, each reviewed); pending merge + archive
-Linked parent: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
+Status: complete — implemented via PR #41 (2026-09-07) and archived
+Linked parent: [Structured Configuration Roadmap](../active/structured-configuration-roadmap.md)
 Linked task: [TO_DO.md — Structured configuration presentation](../../TO_DO.md#structured-configuration-presentation)
+
+## Outcome
+
+Shipped and merged in PR #41. The Claude-only permissions-card wiring in `ConfigEditor`
+was extracted into a shared pure-Dart interface (`PolicyCardAdapter`) with a
+`PolicyCardRegistry` (selection) and a Flutter-side `PolicyCardWidgetRegistry`
+(rendering); `ClaudeCodePermissionsAdapter` implements the interface and `ConfigEditor`
+renders cards through the registries (injectable for tests), preserving the generic
+non-Claude / manual-path nested-permissions and flat-editor fallbacks. Behavior was kept
+byte-for-byte identical (existing tests green, +13 new regression tests). The next
+consumer, the Cursor `permissions.json` card, is roadmap Phase 4A.
 
 ## Objective
 
@@ -47,7 +58,11 @@ no write-path changes are in scope.
   notice (`FidelityAssessor`), `StructuredSaveFlow`, or the raw-editor fallback.
 - Any write-path / patch / serialization changes.
 
-## Current state (evidence)
+## Pre-refactor baseline (as of plan start)
+
+The state below is the pre-refactor starting point this plan was written against, kept
+as the archival record of what changed. The shipped architecture is summarized in
+[Outcome](#outcome).
 
 - `lib/schemas/claude_code_permissions.dart` — already pure Dart (no Flutter imports):
   `ClaudeCodePermissionsAdapter.interpret({config, discoveredConfig})` →
@@ -331,8 +346,10 @@ ConfigEditor integration additions (`test/widgets/config_editor_test.dart`):
 Per AGENTS.md, archive this plan as the last step before merging (final commit on this
 feature branch, riding in the PR; never a direct-to-main post-merge step):
 
-1. Record the seam in the parent roadmap (mark Phase 0's shared-interface box
-   `[x]` after the Cursor adapter lands, or note this plan as its deliverable).
-2. Keep the `TO_DO.md` "Structured configuration presentation" entry open and aligned.
-3. Log the change in `CHANGELOG.dev.md` (developer-only refactor; not user-visible).
-4. Move this file to `plans/archive/` as the final commit on the branch.
+1. [x] Record the seam in the parent roadmap (noted this plan as the shared-interface
+   deliverable; the Phase 0 box stays open until the first non-Claude consumer, Cursor
+   Phase 4A, registers).
+2. [x] Keep the `TO_DO.md` "Structured configuration presentation" entry open and aligned
+   (prerequisite note updated to reference the archived plan).
+3. [x] Log the change in `CHANGELOG.dev.md` (developer-only refactor; not user-visible).
+4. [x] Move this file to `plans/archive/` as the final commit on the branch.
