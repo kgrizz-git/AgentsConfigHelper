@@ -81,6 +81,10 @@ abstract class PolicyCardPresentation extends Equatable {
 }
 
 /// Outcome of asking a schema adapter to interpret the current config.
+///
+/// Invariant: an `available` selection MUST carry a non-null [presentation];
+/// a null [presentation] on `available` is a contract violation and is treated
+/// as "no card" by the widget registry.
 class PolicyCardSelection extends Equatable {
   const PolicyCardSelection({
     required this.adapterId,
@@ -122,8 +126,11 @@ abstract class PolicyCardAdapter {
 A pure-Dart registry holding the ordered adapter list. `select(...)` iterates adapters and
 returns the **first non-`notApplicable` selection** (registration order wins), or a
 `notApplicable` sentinel when none match. The sentinel carries a null `unsupportedReason`
-and null `presentation`; the generic nested-permissions fallback string is supplied by
-`ConfigEditor`, not by the registry.
+and null `presentation`, and its `adapterId` is a named constant
+(`PolicyCardRegistry.noAdapterId`, value `''`) so callers and tests never rely on an
+implicit default; `buildCard` looks up that id, finds no builder, and returns `null`. The
+generic nested-permissions fallback string is supplied by `ConfigEditor`, not by the
+registry.
 
 `shared` is a `final`, immutable default so tests never mutate it. Tests inject a
 registry (and widget registry) explicitly instead.
@@ -174,22 +181,32 @@ class PolicyCardWidgetRegistry {
 defaulting to the `shared` instances (so tests pass deterministic fakes and never mutate
 `shared`).
 
-- Remove the `_claudePermissionsAdapter` field, the `_claudePermissions` getter, the
-  inline `ClaudeCodePermissionsCard` render, and the `hasUnsupportedPermissions` bool's
-  Claude coupling.
+- Remove the `_claudePermissionsAdapter` field, the `_claudePermissions` getter, and the
+  inline `ClaudeCodePermissionsCard` render. Replace the `hasUnsupportedPermissions`
+  bool with the raw-config generic check it encodes, so the **non-Claude nested-Map path
+  survives the refactor** (it applies to any tool, not just Claude):
+
+  ```dart
+  final hasNestedUnsupportedPermissions =
+      _currentConfig.rawSettings['permissions'] != null &&
+      _currentConfig.rawSettings['permissions'] is! List &&
+      _currentConfig.rawSettings.containsKey('permissions');
+  ```
+
 - In `build`: resolve `final selection = registry.select(...)`, then:
   - `selection.isAvailable` → render `widgetRegistry.buildCard(selection)` (the Claude
     card). A `null` from `buildCard` falls through to the flat-editor path rather than
     crashing.
-  - `selection.isUnsupported` → render
+  - `selection.isUnsupported || hasNestedUnsupportedPermissions` → render
     `selection.unsupportedReason ?? 'Nested permissions are preserved but not editable here yet.'`.
-    The `??` fallback string is required: the generic non-Claude nested-Map path and the
-    registry's `notApplicable` sentinel both yield a null `unsupportedReason`.
-  - else keep the **generic** flat-editor path. Preserve the existing source split:
-    the unsupported check reads `rawSettings['permissions'] is! List` (from raw config
-    alone, not Claude status) while the flat `StringListEditor` binds to the **parsed**
-    `_permissions`. Both sources stay intact so the `permissions: null` case
-    (`config_editor_test.dart:274`) still shows the flat editor.
+    The OR is required: a non-Claude or manual-path config with a Map `permissions` yields
+    `selection.status == notApplicable` (so `isUnsupported` is false) yet must still show
+    the nested-permissions text, exactly as today. The `??` fallback string is required
+    because both the generic nested-Map path and the registry's `notApplicable` sentinel
+    carry a null `unsupportedReason`.
+  - else keep the **generic** flat-editor path. The flat `StringListEditor` binds to the
+    **parsed** `_permissions` (a different source than the raw check above), so the
+    `permissions: null` case (`config_editor_test.dart:274`) still shows the flat editor.
 - Behavior at every branch must match today's output exactly.
 
 ## Test strategy
@@ -212,12 +229,13 @@ if the pre-existing net stays green **and** we add registry-level tests for the 
   - the flat-editor and raw-content tests (lines 34, 86, 135, 184, 237, 274, 420, 473).
 
 These three files are the regression contract. Because the adapter's status enum is
-renamed `ClaudeCodePermissionsStatus` → `PolicyCardStatus` and the adapter's return type
-becomes `PolicyCardSelection`, `test/schemas/claude_code_permissions_test.dart` is updated
-**only by that mechanical rename** — status references swap to `PolicyCardStatus` and the
-adapter method stays `interpret`. No assertion, fixture, or expected-value changes. The
-card and ConfigEditor widget tests pass unchanged. The refactor is not complete until the
-full suite is green with only that mechanical rename applied.
+renamed `ClaudeCodePermissionsStatus` → `PolicyCardStatus`, the adapter's return type
+becomes `PolicyCardSelection`, and `ConfigEditor` now imports `policy_card.dart` /
+`policy_card_registry.dart`, the schema-adapter test and ConfigEditor test files need
+**mechanical** updates (status references → `PolicyCardStatus`, imports, and
+`_buildPermissionsSection`'s parameter type). No assertion, fixture, test-name, or
+expected-value changes. The card test passes unchanged. The refactor is not complete until
+the full suite is green with only those mechanical edits applied.
 
 ### New tests to add
 
@@ -225,7 +243,7 @@ Pure-Dart registry unit tests (`test/schemas/policy_card_registry_test.dart`):
 
 - Returns the Claude selection for a catalog-discovered Claude settings config.
 - Returns a `notApplicable` sentinel when no adapter matches (manual path, other tool,
-  and `discoveredConfig: null`).
+  and `discoveredConfig: null`); the sentinel's `adapterId` equals `noAdapterId`.
 - Returns the first registered match when multiple adapters are registered; assert
   ordering explicitly with a fake adapter (first match wins — this is inherently
   order-dependent, not "order-independent").
@@ -244,8 +262,13 @@ ConfigEditor integration additions (`test/widgets/config_editor_test.dart`):
 
 - After refactor, a **non-Claude** tool with a List `permissions` still renders the
   generic flat `StringListEditor` (proves the registry did not swallow generic tools).
-- A **non-Claude** tool whose `rawSettings['permissions']` is a Map still renders the
-  generic nested-permissions text (the exact `??`-fallback path above).
+- A **non-Claude** tool whose `rawSettings['permissions']` is a Map renders the generic
+  nested-permissions text **and does not** render the flat `StringListEditor`. This is the
+  generic `hasNestedUnsupportedPermissions` branch (reached via the OR, not via
+  `selection.isUnsupported`).
+- A **manual-path Claude** config (fromCatalog false) with a Map `permissions` renders the
+  nested-permissions text, not the flat editor — the same generic branch, guarding the
+  behavior-transition the refactor could otherwise break.
 - A Claude config with an unsupported shape still renders the unsupported-reason text
   through the registry.
 - A Claude config through the registry-built card still shows the default doc-launcher
