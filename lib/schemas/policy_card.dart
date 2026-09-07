@@ -64,7 +64,9 @@ class PolicyCardSelection extends Equatable {
 /// A tool schema's read-only interpretation step.
 abstract class PolicyCardAdapter {
   /// Stable key used by the widget registry. Each concrete adapter exposes a
-  /// `static const id` so callers reference it by name, never a bare string.
+  /// `static const adapterId` so callers reference it by name (a static member
+  /// cannot share the name `id` with this instance getter), and forwards it:
+  /// `String get id => adapterId;`
   String get id;
 
   /// The adapter **interprets** a config into a selection; only the registry
