@@ -99,6 +99,11 @@ The durable sequence and architecture decisions are in the
       and opt-in TOML structured editing. See the archived
       [formatting-fidelity disclosure plan](plans/archive/formatting-fidelity-disclosure.md).
 
+      **Prerequisite in flight:** extract the Claude-only card wiring in `ConfigEditor`
+      into a shared pure-Dart adapter + selection registry so Cursor (Phase 4A) and later
+      tools register at one point. See the active
+      [policy-card adapter registry plan](plans/active/policy-card-adapter-registry.md).
+
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the
       owning tool's authoritative documentation. Design a versioned metadata source,
