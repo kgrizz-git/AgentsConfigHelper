@@ -3,14 +3,14 @@ import 'dart:io';
 
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
-import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
+import 'package:agents_config_helper/schemas/policy_card_registry.dart';
 import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/utils/open_directory.dart';
-import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/formatting_fidelity_notice.dart';
+import 'package:agents_config_helper/widgets/policy_card_widget_registry.dart';
 import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:agents_config_helper/widgets/structured_save_flow.dart';
@@ -37,6 +37,8 @@ class ConfigEditor extends StatefulWidget {
     this.tomlStructuredSaveEnabled = false,
     this.onEnableTomlStructuredSave,
     this.onDisableTomlStructuredSave,
+    this.registry,
+    this.widgetRegistry,
     super.key,
   });
 
@@ -98,12 +100,17 @@ class ConfigEditor extends StatefulWidget {
   /// Called when the user opts back out of structured saves for TOML files.
   final Future<void> Function()? onDisableTomlStructuredSave;
 
+  /// Policy-card selection registry. Defaults to [PolicyCardRegistry.shared].
+  final PolicyCardRegistry? registry;
+
+  /// Widget mapping registry. Defaults to [PolicyCardWidgetRegistry.shared].
+  final PolicyCardWidgetRegistry? widgetRegistry;
+
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
 }
 
 class _ConfigEditorState extends State<ConfigEditor> {
-  static final _claudePermissionsAdapter = ClaudeCodePermissionsAdapter();
   static const _fidelityAssessor = FidelityAssessor();
 
   late ToolConfig _currentConfig;
@@ -113,10 +120,14 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late String _rawContent;
   bool _saving = false;
   int _editRevision = 0;
+  late final PolicyCardRegistry _registry;
+  late final PolicyCardWidgetRegistry _widgetRegistry;
 
   @override
   void initState() {
     super.initState();
+    _registry = widget.registry ?? PolicyCardRegistry.shared;
+    _widgetRegistry = widget.widgetRegistry ?? PolicyCardWidgetRegistry.shared;
     _rawContentController = TextEditingController();
     _initLocalState(widget.config);
   }
@@ -233,12 +244,6 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
-  PolicyCardSelection get _claudePermissions =>
-      _claudePermissionsAdapter.interpret(
-        config: _currentConfig,
-        discoveredConfig: widget.discoveredConfig,
-      );
-
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 12),
@@ -248,6 +253,46 @@ class _ConfigEditorState extends State<ConfigEditor> {
           color: AppColors.primaryAccent,
         ),
       ),
+    );
+  }
+
+  Widget _buildPermissionsSection(
+    PolicyCardSelection selection,
+    bool hasNestedUnsupportedPermissions,
+  ) {
+    final card = _widgetRegistry.buildCard(selection);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Permissions'),
+        if (card != null)
+          card
+        else if (!selection.isAvailable &&
+            (selection.isUnsupported || hasNestedUnsupportedPermissions))
+          Text(
+            selection.unsupportedReason ??
+                'Nested permissions are preserved but not editable here yet.',
+            style: AppTextStyles.uiSecondary,
+          )
+        else ...[
+          const Text(
+            'Allowed directories or commands for this agent.',
+            style: AppTextStyles.uiSecondary,
+          ),
+          const SizedBox(height: 12),
+          StringListEditor(
+            values: _permissions,
+            hintText: 'e.g., ~/Projects',
+            onChanged: (newValues) {
+              setState(() {
+                _permissions = newValues;
+                _editRevision++;
+              });
+              _notifyDirtyChanged();
+            },
+          ),
+        ],
+      ],
     );
   }
 
@@ -361,58 +406,17 @@ class _ConfigEditorState extends State<ConfigEditor> {
     return RawDiffView(original: original, updated: updated);
   }
 
-  Widget _buildPermissionsSection(
-    PolicyCardSelection claudePermissions,
-    bool hasUnsupportedPermissions,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader('Permissions'),
-        if (claudePermissions.isAvailable)
-          ClaudeCodePermissionsCard(
-            presentation:
-                claudePermissions.presentation!
-                    as ClaudeCodePermissionsPresentation,
-          )
-        else if (hasUnsupportedPermissions)
-          Text(
-            claudePermissions.unsupportedReason ??
-                'Nested permissions are preserved but not editable here yet.',
-            style: AppTextStyles.uiSecondary,
-          )
-        else ...[
-          const Text(
-            'Allowed directories or commands for this agent.',
-            style: AppTextStyles.uiSecondary,
-          ),
-          const SizedBox(height: 12),
-          StringListEditor(
-            values: _permissions,
-            hintText: 'e.g., ~/Projects',
-            onChanged: (newValues) {
-              setState(() {
-                _permissions = newValues;
-                _editRevision++;
-              });
-              _notifyDirtyChanged();
-            },
-          ),
-        ],
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final claudePermissions = _claudePermissions;
+    final selection = _registry.select(
+      config: _currentConfig,
+      discoveredConfig: widget.discoveredConfig,
+    );
     final openingFidelityAssessment = _openingFidelityAssessment;
-    final hasUnsupportedPermissions =
-        claudePermissions.isUnsupported ||
-        (!claudePermissions.isAvailable &&
-            _currentConfig.rawSettings['permissions'] != null &&
-            _currentConfig.rawSettings['permissions'] is! List &&
-            _currentConfig.rawSettings.containsKey('permissions'));
+    final hasNestedUnsupportedPermissions =
+        _currentConfig.rawSettings['permissions'] != null &&
+        _currentConfig.rawSettings['permissions'] is! List &&
+        _currentConfig.rawSettings.containsKey('permissions');
     return ColoredBox(
       color: AppColors.backgroundDark,
       child: Stack(
@@ -581,8 +585,8 @@ class _ConfigEditorState extends State<ConfigEditor> {
                             ),
 
                             _buildPermissionsSection(
-                              claudePermissions,
-                              hasUnsupportedPermissions,
+                              selection,
+                              hasNestedUnsupportedPermissions,
                             ),
                           ],
 
