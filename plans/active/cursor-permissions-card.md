@@ -144,7 +144,9 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
   - top level: `mcpAllowlist`, `terminalAllowlist`, `autoRun`;
   - `autoRun` sub-keys: `allow_instructions`, `block_instructions`.
   `hasUnclassifiedSettings` is true when any top-level key is outside the first set
-  **or** any `autoRun` sub-key is outside the second set.
+  **or** any `autoRun` sub-key is outside the second set. A top-level key or
+  `autoRun` sub-key that is not a `String` is **unsupported**, not an unclassified
+  key — mirror Claude's rejection of non-`String` keys (`claude_code_permissions.dart:179-190`).
 - **`unsupported`** (with a plain-language `unsupportedReason`) — when a **present
   recognized field** is not the accepted shape: a non-list value, a list containing a
   non-string entry, or `autoRun` present but not a `Map`. This mirrors the Claude
@@ -202,7 +204,9 @@ is already near the cap.
 **No changes.** `build` already renders whatever `buildCard(selection)` returns. The
 whole slice reduces to "register an adapter + a card builder", which is the Phase 0
 goal. Any need to touch `ConfigEditor` is a signal the seam is wrong and should be
-flagged, not worked around.
+flagged, not worked around. This is also load-bearing for the file-length gate:
+`lib/widgets/config_editor.dart` is already at **700 lines** (checked 2026-09-07), so
+the slice must not add or grow any `ConfigEditor` code.
 
 ## Test strategy
 
@@ -219,7 +223,8 @@ Follow the Claude vertical-slice test layout so the two adapters stay symmetric.
 - `available` with unknown top-level keys and unknown `autoRun` sibling keys sets
   `hasUnclassifiedSettings: true` but stays available.
 - `unsupported` (raw-editor-first) for: a recognized field that is not a list, a list
-  with a non-string entry, and `autoRun` present but not a `Map`.
+  with a non-string entry, `autoRun` present but not a `Map`, and a non-`String`
+  top-level or `autoRun` sub-key.
 - Registry selection: a Cursor config through `PolicyCardRegistry.shared`-equivalent
   (Claude + Cursor adapters) resolves to the Cursor selection with
   `CursorPermissionsPresentation`; a Claude config still resolves to Claude (no
@@ -232,12 +237,16 @@ Follow the Claude vertical-slice test layout so the two adapters stay symmetric.
 
 ### Fixtures (`test/fixtures/cursor_permissions_fixtures_test.dart`)
 
-Token-free inline fixtures (mirroring `claude_permissions_fixtures_test.dart`),
-covering: a valid user and a valid project `permissions.json`; a **JSONC** fixture with
+**On-disk, token-free fixtures** under `test/fixtures/` (mirroring the Claude fixture
+layout, which reads files from `test/fixtures/` — see `claude_permissions_fixtures_test.dart:36-44`),
+not inline strings. Suggested paths: `test/fixtures/staging_home/.cursor/permissions.json`
+(user), `test/fixtures/staging_home/workspace/.cursor/permissions.json` (project), and
+`test/fixtures/edge_cases/cursor_permissions_*.json` for: a **JSONC** fixture with
 comments and a trailing comma; malformed recognized fields (non-list, non-string
-entry); an unsupported nested shape (`autoRun` non-Map / malformed subfield); unknown
-siblings; and an empty policy. Assert parsing, presentation, and that opening does not
-change bytes.
+entry); an unsupported nested shape (`autoRun` non-Map / malformed subfield / non-string
+key); unknown siblings; and an empty policy. The fixtures test asserts parsing,
+presentation, and that opening does not change bytes. Record the fixture paths in the
+`docs/supported-tools.md` evidence row (below).
 
 ### Widget mapping (`test/widgets/policy_card_widget_registry_test.dart`)
 
@@ -251,16 +260,34 @@ change bytes.
 - Help dialog opens per field; documentation-launcher failure shows the error
   SnackBar when the URL cannot be opened (inject a failing `onOpenDocumentation`).
 
-### ConfigEditor integration (`test/widgets/config_editor_test.dart`)
+### ConfigEditor integration (`test/widgets/config_editor_policy_card_test.dart`)
+
+Policy-card editor integration lives in `test/widgets/config_editor_policy_card_test.dart`
+(257 lines), not `config_editor_test.dart` — route the Cursor card, fallback, and
+read-only integration tests there to match the repo convention (Claude's policy-card
+editor tests already live there). This file already contains a test to **rewrite**:
+`config_editor_policy_card_test.dart:17-71` builds a catalog-discovered `ToolId.cursor`
+`.cursor/permissions.json` with a top-level `permissions` Map and currently expects the
+generic nested notice. Once the Cursor adapter lands, that config is `available` (unknown
+top-level `permissions` → `hasUnclassifiedSettings: true`, empty recognized lists) and
+renders a Cursor card, so the assertion breaks. Rewrite that test to use a tool with **no
+matching adapter** (e.g. `ToolId.lmStudio` or a manual-path config) — it becomes the
+generic-fallback test below.
+
+Add to `test/widgets/config_editor_policy_card_test.dart`:
 
 - A catalog-discovered Cursor `permissions.json` renders the Cursor card (not the
   flat editor, not the nested-permissions text).
 - A config with a `permissions` Map for a tool with **no matching adapter** — e.g. a
   `ToolId.lmStudio` config, or a manual-path config with `descriptor: null` — still
   renders the generic nested-permissions text. This proves the Cursor adapter did not
-  swallow generic tools. Do **not** use a Claude-style `permissions` Map here: the
-  Claude adapter is registered first in `PolicyCardRegistry.shared` and would match
-  that config, masking the generic-fallback behavior this test is meant to guard.
+  swallow generic tools (and replaces the rewritten test above). Do **not** use a
+  Claude-style `permissions` Map here: the Claude adapter is registered first in
+  `PolicyCardRegistry.shared` and would match that config, masking the generic-fallback
+  behavior this test is meant to guard.
+- A **malformed recognized field** (e.g. `mcpAllowlist` not a list) renders the
+  unsupported-reason text and **no** Cursor card (raw-editor-first), mirroring Claude's
+  editor-level unsupported test (`config_editor_test.dart:421-519`).
 - A Cursor card is **read-only**: interacting (opening help/docs) never mutates
   `originalContent` or triggers a save.
 
@@ -279,7 +306,10 @@ the Phase 0 registry refactor, which was developer-only).
 
 - `docs/supported-tools.md`:
   - Evidence row for Cursor Agent (line 53): change "no fixture exercising the
-    structured config" to record the new fixture + card; update the source-review date.
+    structured config" to record the new on-disk fixture paths (for example
+    `test/fixtures/staging_home/.cursor/permissions.json` and
+    `test/fixtures/edge_cases/cursor_permissions_*.json`) and the read-only card;
+    update the source-review date.
   - Cursor Config format section (line 341): state that `permissions.json` accepts
     JSONC despite the `.json` filename, and that the app's fidelity notice follows
     parsed content.
@@ -321,7 +351,10 @@ the Phase 0 registry refactor, which was developer-only).
    launcher, help dialog, no write path).
 3. Register the adapter in `PolicyCardRegistry.shared` and the card builder in
    `PolicyCardWidgetRegistry.shared`. Confirm `ConfigEditor` needs **no** changes.
-4. Add the fixtures and tests from [Test strategy](#test-strategy).
+4. Add the fixtures and tests from [Test strategy](#test-strategy), including
+   **rewriting the existing cursor-nested test** in
+   `config_editor_policy_card_test.dart:17-71` to use a no-adapter tool (it breaks once
+   the Cursor adapter makes that config `available`).
 5. Update the docs, `CHANGELOG.md`, roadmap (check Phase 0 box + Phase 4A items +
    resolve questions), and `TO_DO.md` from
    [Docs, docstrings, and metadata](#docs-docstrings-and-metadata).
