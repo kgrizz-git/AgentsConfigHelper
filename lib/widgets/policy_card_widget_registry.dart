@@ -1,6 +1,8 @@
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/cursor_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
+import 'package:agents_config_helper/widgets/cursor_permissions_card.dart';
 import 'package:flutter/material.dart';
 
 /// Flutter-side mapping from adapter id to card widget.
@@ -20,6 +22,7 @@ class PolicyCardWidgetRegistry {
   /// their own registry explicitly instead.
   static final PolicyCardWidgetRegistry shared = PolicyCardWidgetRegistry({
     ClaudeCodePermissionsAdapter.adapterId: _buildClaudeCard,
+    CursorPermissionsAdapter.adapterId: _buildCursorCard,
   });
 
   /// Returns the card for [selection], or `null` when there is no card.
@@ -45,5 +48,14 @@ class PolicyCardWidgetRegistry {
       return null;
     }
     return ClaudeCodePermissionsCard(presentation: presentation);
+  }
+
+  /// Builds the Cursor card with its default documentation launcher.
+  static Widget? _buildCursorCard(PolicyCardSelection selection) {
+    final presentation = selection.presentation;
+    if (presentation is! CursorPermissionsPresentation) {
+      return null;
+    }
+    return CursorPermissionsCard(presentation: presentation);
   }
 }
