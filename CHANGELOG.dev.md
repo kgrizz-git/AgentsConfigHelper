@@ -16,6 +16,16 @@ Internal / developer-facing changes that do not belong in the public
   nested-permissions and flat-editor fallbacks. Behavior-preserving; adds
   registry/widget/ConfigEditor regression tests. See the archived
   [policy-card adapter registry plan](plans/archive/policy-card-adapter-registry.md).
+- **Cursor permissions card (Phase 4A):** added `CursorPermissionsAdapter` +
+  `CursorPermissionsPresentation` + reviewed help (pure Dart) and a read-only
+  `CursorPermissionsCard` widget, registered in the shared registries so the card
+  renders with no `ConfigEditor` change (the Phase 0 seam). The adapter guards the
+  catalog path with a component-boundary check, preserves omitted-vs-explicit-`[]`,
+  and is raw-editor-first for malformed recognized fields. On-disk fixtures under
+  `test/fixtures/cursor_home` and `edge_cases` plus adapter/card/registry/
+  ConfigEditor tests; the Cursor-nested ConfigEditor test was rewritten to
+  `ToolId.lmStudio`. Full suite green (400 tests). See the archived
+  [Cursor permissions card plan](plans/archive/cursor-permissions-card.md).
 - **Formatting-fidelity plan archived:** `plans/active/formatting-fidelity-disclosure.md`
   moved to `plans/archive/` after merge (PR #40) completed Phases 1-4; roadmap Phase 0.5
   boxes checked and the TO_DO entry narrowed (broader structured-card work stays open).

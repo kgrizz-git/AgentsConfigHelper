@@ -108,8 +108,8 @@ The durable sequence and architecture decisions are in the
       card — the first non-Claude consumer of the shared registry. Renders
       `mcpAllowlist`/`terminalAllowlist`/`autoRun` fields (distinguishing omitted vs
       explicit `[]`), with plain-language help and a doc link; unknown/malformed shapes
-      stay raw-editor-first; never writes. See the
-      [Cursor permissions card plan](plans/active/cursor-permissions-card.md).
+      stay raw-editor-first; never writes. See the archived
+      [Cursor permissions card plan](plans/archive/cursor-permissions-card.md).
 
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the
