@@ -104,6 +104,10 @@ The durable sequence and architecture decisions are in the
       registry so Cursor (Phase 4A) and later tools register at one point. See the archived
       [policy-card adapter registry plan](plans/archive/policy-card-adapter-registry.md).
 
+      **In progress (Phase 4A):** read-only Cursor Agent `permissions.json` card — the
+      first non-Claude consumer of the shared registry. See the active
+      [Cursor permissions card plan](plans/active/cursor-permissions-card.md).
+
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the
       owning tool's authoritative documentation. Design a versioned metadata source,

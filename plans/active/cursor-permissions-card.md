@@ -130,16 +130,20 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
 
   **Do not rely on the kind/format/scope combination alone.** It matches the two
   `.cursor/permissions.json` targets today, but a future catalog addition of any other
-  user/project `structuredConfig` + JSON Cursor file (for example `.cursor/mcp.json` or
-  `~/.cursor/cli-config.json`) would be mis-identified as a permissions card. The
-  adapter must additionally verify the discovered file is one of the two
-  `.cursor/permissions.json` catalog targets by matching its normalized path — e.g.
-  that `discoveredConfig.filePath` (or `config.filePath`) ends with the platform
-  separator plus `.cursor/permissions.json` (match a normalized suffix, not `p.basename`
-  alone, so another directory's `permissions.json` cannot slip through). Keep this
-  path-identity guard in `_isCursorPermissionsTarget`; add a regression test asserting a
-  **different Cursor structured-JSON target** (a `.cursor/…/something.json` with
-  `structuredConfig`, `json`, user scope) is `notApplicable`.
+  user/project `structuredConfig` + JSON Cursor file (for example `.cursor/mcp.json`)
+  would be mis-identified as a permissions card. The adapter must additionally verify
+  the discovered file is one of the two `.cursor/permissions.json` catalog targets by
+  matching its normalized path: check that `discoveredConfig.filePath` ends with the
+  platform-independent suffix `p.join('.cursor', 'permissions.json')`. Use
+  `discoveredConfig.filePath` only — it is normalized via `p.normalize`
+  (`lib/models/discovered_config.dart:33,95`), whereas `config.filePath`
+  (`lib/models/tool_config.dart:48`) is un-normalized user input. Match a normalized
+  suffix rather than `p.basename` alone so another directory's `permissions.json`
+  cannot slip through, and use `p.join` (not a single hard-coded separator) so Windows
+  (`\`) and test temp paths (`/`) compare consistently. Keep this path-identity guard
+  in `_isCursorPermissionsTarget`; add a regression test asserting a **different Cursor
+  structured-JSON target** (a `.cursor/…/something.json` with `structuredConfig`,
+  `json`, user scope) is `notApplicable`.
 - **`available`** — a valid policy object. `rawSettings` is the top-level object;
   recognize `mcpAllowlist`, `terminalAllowlist`, and `autoRun` with
   `allow_instructions` / `block_instructions`. Each recognized field is **optional**
@@ -165,7 +169,14 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
 `CursorPermissionsPresentation extends PolicyCardPresentation` (Equatable):
 `mcpAllowlist`, `terminalAllowlist`, `allowInstructions`, `blockInstructions`
 (immutable `List<String>`) and `hasUnclassifiedSettings` (bool). Field lists are
-`List.unmodifiable` in the constructor, matching the Claude presentation.
+`List.unmodifiable` in the constructor, matching the Claude presentation. Unlike the
+Claude presentation there is **no `hasConfiguredPolicy` flag**: for Cursor the file
+itself is the policy, so an empty object or omitted fields are a valid **configured but
+empty** policy (Claude's flag exists only because the `permissions` subtree can be
+absent from a `settings.json`; that is not a Cursor case). The card therefore shows no
+"no policy is configured" banner; instead each empty field group renders the exact
+copy **"No entries."** (mirroring the Claude card's `"No explicit rules."` at
+`claude_code_permissions_card.dart:117-121`, which is per-field, not a banner).
 
 `CursorPermissionsHelp` — reviewed, plain-language `label` + `description` per field,
 modeled on `ClaudeCodePermissionsHelp`. The card-level statement and each field's
@@ -255,9 +266,11 @@ not inline strings. Suggested paths: `test/fixtures/staging_home/.cursor/permiss
 `test/fixtures/edge_cases/cursor_permissions_*.json` for: a **JSONC** fixture with
 comments and a trailing comma; malformed recognized fields (non-list, non-string
 entry); an unsupported nested shape (`autoRun` non-Map / malformed subfield); unknown
-siblings; and an empty policy. The fixtures test asserts parsing, presentation, and
-that opening does not change bytes. Record the fixture paths in the
-`docs/supported-tools.md` evidence row (below).
+siblings; and an empty policy. The fixtures test asserts parsing and presentation
+correctness. The no-save / no-byte-change assertion lives in the ConfigEditor
+integration test (`test/widgets/config_editor_policy_card_test.dart`, which at 257
+lines has room); it is **not** duplicated in the fixtures test. Record the fixture
+paths in the `docs/supported-tools.md` evidence row (below).
 
 > **Non-string keys are not a fixture case.** JSON/JSONC decoding always yields `String`
 > object keys (an unquoted key is a parse error; a quoted key decodes to a string and
@@ -332,8 +345,8 @@ the Phase 0 registry refactor, which was developer-only).
     parsed content.
   - Tool-overview summary table (line 26, Cursor Agent row): reflect the read-only
     structured card. (This is the overview table near the top of the file, not the
-    "Config format summary" table around line 697, which lists only JSON/TOML/YAML
-    and needs no Cursor change.)
+    "Config format summary" table around line 697, which lists format/parser rows —
+    JSON/JSONC, TOML, YAML, Markdown — and needs no Cursor change.)
 - `CHANGELOG.md`: add a user-facing entry for the read-only Cursor permissions card.
 - `plans/active/structured-configuration-roadmap.md`: mark the Phase 0 shared-interface
   box done (Cursor is the first non-Claude consumer); check off the completed Phase 4A
