@@ -126,11 +126,20 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
   `_isClaudeSettingsTarget`, so manual paths, other tools, and `null` discovery all
   fall through. (A `.json` Cursor file that parses as JSONC still has discovered
   format `json`; the JSONC nuance is surfaced by the fidelity notice, not by widening
-  the adapter's format match.) The `kind == structuredConfig && format == json`
-  requirement is what keeps the check safe even though `ToolId.cursor` also registers
-  non-structured targets (`.cursorrules`, `.cursor/rules/*.mdc`, `CLAUDE.md`): only
-  the two `.cursor/permissions.json` targets match. Keep this guard in the target
-  check; do not relax it if a future catalog change adds more Cursor targets.
+  the adapter's format match.)
+
+  **Do not rely on the kind/format/scope combination alone.** It matches the two
+  `.cursor/permissions.json` targets today, but a future catalog addition of any other
+  user/project `structuredConfig` + JSON Cursor file (for example `.cursor/mcp.json` or
+  `~/.cursor/cli-config.json`) would be mis-identified as a permissions card. The
+  adapter must additionally verify the discovered file is one of the two
+  `.cursor/permissions.json` catalog targets by matching its normalized path — e.g.
+  that `discoveredConfig.filePath` (or `config.filePath`) ends with the platform
+  separator plus `.cursor/permissions.json` (match a normalized suffix, not `p.basename`
+  alone, so another directory's `permissions.json` cannot slip through). Keep this
+  path-identity guard in `_isCursorPermissionsTarget`; add a regression test asserting a
+  **different Cursor structured-JSON target** (a `.cursor/…/something.json` with
+  `structuredConfig`, `json`, user scope) is `notApplicable`.
 - **`available`** — a valid policy object. `rawSettings` is the top-level object;
   recognize `mcpAllowlist`, `terminalAllowlist`, and `autoRun` with
   `allow_instructions` / `block_instructions`. Each recognized field is **optional**
@@ -215,8 +224,10 @@ Follow the Claude vertical-slice test layout so the two adapters stay symmetric.
 ### Adapter unit tests (`test/schemas/cursor_permissions_test.dart`)
 
 - `notApplicable` for: a manual-path Cursor config (`fromCatalog: false`), a
-  non-Cursor tool, `discoveredConfig: null`, and a non-`.cursor/permissions.json`
-  Cursor target (other format/kind).
+  non-Cursor tool, `discoveredConfig: null`, a non-`.cursor/permissions.json`
+  Cursor target (other format/kind), and a **different Cursor structured-JSON target**
+  (a `.cursor/…/something.json` with `structuredConfig`, `json`, user scope — proves the
+  path-identity guard, per the target-check note above).
 - `available` for catalog-discovered user-scope and project-scope targets; each of the
   four fields parses to its list; omitted fields and an empty object are valid empty
   policy (`hasUnclassifiedSettings: false`).
@@ -243,10 +254,16 @@ not inline strings. Suggested paths: `test/fixtures/staging_home/.cursor/permiss
 (user), `test/fixtures/staging_home/workspace/.cursor/permissions.json` (project), and
 `test/fixtures/edge_cases/cursor_permissions_*.json` for: a **JSONC** fixture with
 comments and a trailing comma; malformed recognized fields (non-list, non-string
-entry); an unsupported nested shape (`autoRun` non-Map / malformed subfield / non-string
-key); unknown siblings; and an empty policy. The fixtures test asserts parsing,
-presentation, and that opening does not change bytes. Record the fixture paths in the
+entry); an unsupported nested shape (`autoRun` non-Map / malformed subfield); unknown
+siblings; and an empty policy. The fixtures test asserts parsing, presentation, and
+that opening does not change bytes. Record the fixture paths in the
 `docs/supported-tools.md` evidence row (below).
+
+> **Non-string keys are not a fixture case.** JSON/JSONC decoding always yields `String`
+> object keys (an unquoted key is a parse error; a quoted key decodes to a string and
+> follows the unclassified-key path). A non-`String` key can only be constructed directly
+> in a Dart `Map`, so it is exercised only in the direct-construction adapter unit tests
+> (the `unsupported` case above), not in an on-disk fixture.
 
 ### Widget mapping (`test/widgets/policy_card_widget_registry_test.dart`)
 
