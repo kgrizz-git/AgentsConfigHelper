@@ -133,23 +133,30 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
   user/project `structuredConfig` + JSON Cursor file (for example `.cursor/mcp.json`)
   would be mis-identified as a permissions card. The adapter must additionally verify
   the discovered file is one of the two `.cursor/permissions.json` catalog targets by
-  matching its normalized path: check that `discoveredConfig.filePath` ends with the
-  platform-independent suffix `p.join('.cursor', 'permissions.json')`. Use
+  matching its normalized path at a **path-component boundary**: `p.basename(filePath)
+  == 'permissions.json' && p.basename(p.dirname(filePath)) == '.cursor'`. Use
   `discoveredConfig.filePath` only — it is normalized via `p.normalize`
   (`lib/models/discovered_config.dart:33,95`), whereas `config.filePath`
-  (`lib/models/tool_config.dart:48`) is un-normalized user input. Match a normalized
-  suffix rather than `p.basename` alone so another directory's `permissions.json`
-  cannot slip through, and use `p.join` (not a single hard-coded separator) so Windows
-  (`\`) and test temp paths (`/`) compare consistently. Keep this path-identity guard
-  in `_isCursorPermissionsTarget`; add a regression test asserting a **different Cursor
+  (`lib/models/tool_config.dart:48`) is un-normalized user input. This basename +
+  immediate-parent check (both platform-independent via `p`) rejects near-misses that a
+  raw `endsWith('.cursor/permissions.json')` would wrongly accept — for example
+  `workspace.cursor/permissions.json` (whose parent is `workspace.cursor`, not
+  `.cursor`) or any other directory's `permissions.json`. Keep this path-identity guard
+  in `_isCursorPermissionsTarget`; add regression tests asserting a **different Cursor
   structured-JSON target** (a `.cursor/…/something.json` with `structuredConfig`,
-  `json`, user scope) is `notApplicable`.
+  `json`, user scope) is `notApplicable`, and that a **near-miss path**
+  (`workspace.cursor/permissions.json` with the same catalog-descriptor/kind/format/
+  scope) is also `notApplicable`.
 - **`available`** — a valid policy object. `rawSettings` is the top-level object;
   recognize `mcpAllowlist`, `terminalAllowlist`, and `autoRun` with
-  `allow_instructions` / `block_instructions`. Each recognized field is **optional**
-  and must be a `string[]` (a missing field is an empty list). `autoRun`, when
-  present, must be a `Map` whose recognized subfields are `string[]`. An empty object
-  and omitted fields are valid empty policy states. Unknown top-level or `autoRun`
+  `allow_instructions` / `block_instructions`. Each recognized field is **optional**;
+  **preserve whether a field was omitted vs explicitly present**, since both are valid
+  stored states. A field that is **present** must be a `string[]` (it may be empty), and
+  its value is retained. A field that is **absent** is recorded as omitted (null), not
+  as an empty list — this matters for the card copy ("Not set" vs "No entries.", below).
+  `autoRun`, when present, must be a `Map` whose recognized subfields are `string[]`
+  (each also tracked as present-or-omitted). An empty object and omitted fields are
+  valid empty policy states. Unknown top-level or `autoRun`
   sibling keys set `hasUnclassifiedSettings` but do not suppress the card.
 
   The recognized-key sets must be explicit constants (mirroring
@@ -168,15 +175,20 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
 
 `CursorPermissionsPresentation extends PolicyCardPresentation` (Equatable):
 `mcpAllowlist`, `terminalAllowlist`, `allowInstructions`, `blockInstructions`
-(immutable `List<String>`) and `hasUnclassifiedSettings` (bool). Field lists are
+(non-null `List<String>`? per field, **null = omitted from the file**; an explicit `[]`
+is a non-null empty list) and `hasUnclassifiedSettings` (bool). Field lists are
 `List.unmodifiable` in the constructor, matching the Claude presentation. Unlike the
 Claude presentation there is **no `hasConfiguredPolicy` flag**: for Cursor the file
 itself is the policy, so an empty object or omitted fields are a valid **configured but
 empty** policy (Claude's flag exists only because the `permissions` subtree can be
 absent from a `settings.json`; that is not a Cursor case). The card therefore shows no
-"no policy is configured" banner; instead each empty field group renders the exact
-copy **"No entries."** (mirroring the Claude card's `"No explicit rules."` at
-`claude_code_permissions_card.dart:117-121`, which is per-field, not a banner).
+"no policy is configured" banner. Because a field's presence is preserved, each field
+group renders one of three states, mirroring the Claude card's per-field copy
+(`claude_code_permissions_card.dart:117-121`):
+
+- **omitted** (`null`) → **"Not set."** (the field is not present in this file);
+- **present and empty** (`[]`) → **"No entries."** (deliberately allow nothing here);
+- **non-empty** → the bulleted entries, as before.
 
 `CursorPermissionsHelp` — reviewed, plain-language `label` + `description` per field,
 modeled on `ClaudeCodePermissionsHelp`. The card-level statement and each field's
@@ -193,8 +205,10 @@ schema layer.
 
 A read-only `StatelessWidget` mirroring `ClaudeCodePermissionsCard`: header with
 `Icons.policy_outlined`, the card-level help statement, a per-field group (label +
-count, help button, bulleted `SelectableText` entries, "No entries." when empty),
-an unclassified-settings note when `hasUnclassifiedSettings`, and a documentation
+count, help button, and the three-state entry rendering from the presentation spec:
+bulleted `SelectableText` entries for non-empty, **"No entries."** for explicit `[]`,
+**"Not set."** for omitted), an unclassified-settings note when
+`hasUnclassifiedSettings`, and a documentation
 launcher (`TextButton.icon` → `documentationUri`) with the same
 `onOpenDocumentation`/error-SnackBar pattern as the Claude card. No editing controls,
 no write path; it renders only from the immutable presentation.
@@ -236,12 +250,17 @@ Follow the Claude vertical-slice test layout so the two adapters stay symmetric.
 
 - `notApplicable` for: a manual-path Cursor config (`fromCatalog: false`), a
   non-Cursor tool, `discoveredConfig: null`, a non-`.cursor/permissions.json`
-  Cursor target (other format/kind), and a **different Cursor structured-JSON target**
+  Cursor target (other format/kind), a **different Cursor structured-JSON target**
   (a `.cursor/…/something.json` with `structuredConfig`, `json`, user scope — proves the
-  path-identity guard, per the target-check note above).
+  path-identity guard, per the target-check note above), and a **near-miss path**
+  (`workspace.cursor/permissions.json` with the same descriptor/kind/format/scope —
+  its parent is `workspace.cursor`, not `.cursor`).
 - `available` for catalog-discovered user-scope and project-scope targets; each of the
-  four fields parses to its list; omitted fields and an empty object are valid empty
-  policy (`hasUnclassifiedSettings: false`).
+  four fields parses to its list.
+- `available` with a present-but-empty `[]` field is distinct from an **omitted** field:
+  a present `[]` yields a non-null empty list, an omitted field yields `null`
+  (assert both explicitly, for a top-level field and for an `autoRun` subfield).
+  An empty object is a valid empty policy (`hasUnclassifiedSettings: false`).
 - `available` with unknown top-level keys and unknown `autoRun` sibling keys sets
   `hasUnclassifiedSettings: true` but stays available.
 - `unsupported` (raw-editor-first) for: a recognized field that is not a list, a list
@@ -266,8 +285,11 @@ not inline strings. Suggested paths: `test/fixtures/staging_home/.cursor/permiss
 `test/fixtures/edge_cases/cursor_permissions_*.json` for: a **JSONC** fixture with
 comments and a trailing comma; malformed recognized fields (non-list, non-string
 entry); an unsupported nested shape (`autoRun` non-Map / malformed subfield); unknown
-siblings; and an empty policy. The fixtures test asserts parsing and presentation
-correctness. The no-save / no-byte-change assertion lives in the ConfigEditor
+siblings; an **explicit-empty** policy (one or more fields set to `[]`); an **omitted**
+policy (a field absent from the object, distinct from `[]`); and an empty policy.
+The fixtures test asserts parsing and presentation correctness, including that an
+explicit `[]` and an omitted field are preserved as distinct states.
+The no-save / no-byte-change assertion lives in the ConfigEditor
 integration test (`test/widgets/config_editor_policy_card_test.dart`, which at 257
 lines has room); it is **not** duplicated in the fixtures test. Record the fixture
 paths in the `docs/supported-tools.md` evidence row (below).
@@ -286,7 +308,9 @@ paths in the `docs/supported-tools.md` evidence row (below).
 
 ### Card widget (`test/widgets/cursor_permissions_card_test.dart`)
 
-- Renders each field group with its count and entries; "No entries." for empties.
+- Renders each field group with its count and entries; the three empty-states are
+  distinct: an omitted field shows **"Not set."**, a present-but-empty `[]` field shows
+  **"No entries."**, and a non-empty field shows its bulleted entries.
 - Help dialog opens per field; documentation-launcher failure shows the error
   SnackBar when the URL cannot be opened (inject a failing `onOpenDocumentation`).
 
