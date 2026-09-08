@@ -202,7 +202,7 @@ plan section. Do not add a schema merely because the generic parser can decode i
 the source of truth. This is a presentation slice only: it must not calculate the
 effective Cursor permission policy or write a Cursor file.
 
-**Primary evidence reviewed 2026-08-27:** Cursor's
+**Primary evidence reviewed 2026-08-27, re-checked 2026-09-07:** Cursor's
 [permissions.json reference](https://cursor.com/docs/reference/permissions) documents
 the user path `~/.cursor/permissions.json`, project path
 `<workspace>/.cursor/permissions.json`, JSONC support, and these optional fields:

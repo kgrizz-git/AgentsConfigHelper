@@ -43,8 +43,9 @@ uses [Semantic Versioning](https://semver.org/).
   help and a link to the official documentation. The card distinguishes a field that is omitted
   ("Not set.") from one explicitly set to an empty list ("No entries."), and states it shows this
   file's stored entries rather than Cursor's combined runtime policy. Unknown or malformed
-  permission shapes remain available in the raw editor; the card never writes. Cursor files that
-  use JSONC (comments or trailing commas) are parsed and labeled accordingly.
+  permission shapes remain available in the raw editor; the card never writes. Cursor
+  files that use JSONC (comments or trailing commas) are parsed via the JSONC fallback,
+  and the formatting-fidelity notice labels them as JSONC.
 - **Adaptive desktop window sizing:** New macOS, Windows, and Linux windows now open
   centered at roughly 75% of the usable display, with a display-aware minimum so they
   remain usable without extending beyond smaller screens. After moving or resizing a
