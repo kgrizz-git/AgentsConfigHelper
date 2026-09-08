@@ -127,6 +127,7 @@ void main() {
       expect(find.text('Not set.'), findsOneWidget);
       expect(find.text('Allow instructions (0)'), findsOneWidget);
       expect(find.text('No entries.'), findsOneWidget);
+      expect(find.text('Block instructions (1)'), findsOneWidget);
       expect(
         find.text('• Pause delete operations for review.'),
         findsOneWidget,
