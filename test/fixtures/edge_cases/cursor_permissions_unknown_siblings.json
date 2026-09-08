@@ -1,0 +1,8 @@
+{
+  "mcpAllowlist": ["github:*"],
+  "autoRun": {
+    "allow_instructions": ["Read-only inspections are fine."],
+    "someFutureKey": "x"
+  },
+  "unknownTopLevel": 1
+}

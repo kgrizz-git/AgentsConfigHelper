@@ -3,6 +3,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/cursor_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/schemas/policy_card_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -175,5 +176,63 @@ void main() {
       );
       expect(viaRegistry.status, PolicyCardStatus.available);
     });
+
+    test(
+      'resolves a Cursor config to the Cursor adapter when both are '
+      'registered',
+      () {
+        final registry = PolicyCardRegistry([
+          ClaudeCodePermissionsAdapter(),
+          CursorPermissionsAdapter(),
+        ]);
+        final cursor = cursorConfig();
+        final toolConfig = ToolConfig(
+          toolName: 'Cursor Agent',
+          filePath: cursor.filePath,
+          format: ConfigFormat.json,
+          rawSettings: const {
+            'mcpAllowlist': ['github:*'],
+          },
+        );
+
+        final selection = registry.select(
+          config: toolConfig,
+          discoveredConfig: cursor,
+        );
+
+        expect(selection.status, PolicyCardStatus.available);
+        expect(selection.adapterId, CursorPermissionsAdapter.adapterId);
+        expect(selection.presentation, isA<CursorPermissionsPresentation>());
+      },
+    );
+
+    test(
+      'resolves a Claude config to Claude even when the Cursor adapter is '
+      'registered',
+      () {
+        final registry = PolicyCardRegistry([
+          ClaudeCodePermissionsAdapter(),
+          CursorPermissionsAdapter(),
+        ]);
+        final claude = claudeConfig();
+        final toolConfig = config({
+          'permissions': {
+            'allow': ['Read(./fixtures/**)'],
+          },
+        });
+
+        final selection = registry.select(
+          config: toolConfig,
+          discoveredConfig: claude,
+        );
+
+        expect(selection.status, PolicyCardStatus.available);
+        expect(selection.adapterId, ClaudeCodePermissionsAdapter.adapterId);
+        expect(
+          selection.presentation,
+          isA<ClaudeCodePermissionsPresentation>(),
+        );
+      },
+    );
   });
 }
