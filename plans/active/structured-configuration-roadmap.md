@@ -258,8 +258,12 @@ Resolved during implementation (2026-09-07):
 1. The official reference says user/project files are combined at runtime and settings
    are re-read on change. The card avoids computing an effective policy and states it
    shows this file's stored entries only, so the version-specific desktop
-   inconsistency reports do not affect read-only presentation. The source-review date
-   is retained in `docs/supported-tools.md`.
+   inconsistency reports do not affect read-only presentation. The primary reference was
+   re-checked 2026-09-07 and confirms the two paths, the four optional fields, JSONC,
+   that unknown keys are ignored, that non-string array entries are silently dropped
+   (which is why this app shows malformed recognized fields raw-editor-first), and that
+   per-user and per-repo files are concatenated; the review date is retained in
+   `docs/supported-tools.md`.
 2. The first view shows **all four documented fields** (`mcpAllowlist`,
    `terminalAllowlist`, `autoRun.allow_instructions`, `autoRun.block_instructions`);
    `autoRun` was not split into a later card. The card additionally distinguishes an
