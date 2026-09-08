@@ -37,6 +37,14 @@ uses [Semantic Versioning](https://semver.org/).
   card. Settings without a policy show a safe empty state rather than the legacy flat
   permissions editor. If the documentation link cannot be opened, the app reports the failure
   without disrupting the editor.
+- **Cursor Agent permissions card:** Recognized Cursor Agent `permissions.json` allowlists and
+  auto-review instructions (`mcpAllowlist`, `terminalAllowlist`, `autoRun.allow_instructions`,
+  and `autoRun.block_instructions`) now appear in a read-only policy card with plain-language
+  help and a link to the official documentation. The card distinguishes a field that is omitted
+  ("Not set.") from one explicitly set to an empty list ("No entries."), and states it shows this
+  file's stored entries rather than Cursor's combined runtime policy. Unknown or malformed
+  permission shapes remain available in the raw editor; the card never writes. Cursor files that
+  use JSONC (comments or trailing commas) are parsed and labeled accordingly.
 - **Adaptive desktop window sizing:** New macOS, Windows, and Linux windows now open
   centered at roughly 75% of the usable display, with a display-aware minimum so they
   remain usable without extending beyond smaller screens. After moving or resizing a

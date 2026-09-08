@@ -104,8 +104,11 @@ The durable sequence and architecture decisions are in the
       registry so Cursor (Phase 4A) and later tools register at one point. See the archived
       [policy-card adapter registry plan](plans/archive/policy-card-adapter-registry.md).
 
-      **In progress (Phase 4A):** read-only Cursor Agent `permissions.json` card — the
-      first non-Claude consumer of the shared registry. See the active
+      **Shipped (Phase 4A, 2026-09-07):** read-only Cursor Agent `permissions.json`
+      card — the first non-Claude consumer of the shared registry. Renders
+      `mcpAllowlist`/`terminalAllowlist`/`autoRun` fields (distinguishing omitted vs
+      explicit `[]`), with plain-language help and a doc link; unknown/malformed shapes
+      stay raw-editor-first; never writes. See the
       [Cursor permissions card plan](plans/active/cursor-permissions-card.md).
 
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
