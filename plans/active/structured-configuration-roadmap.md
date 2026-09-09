@@ -188,7 +188,7 @@ Exit criteria:
 Prioritize only after a fixture and primary-source review. The next bounded slice is
 Cursor Agent `permissions.json`, defined below. A likely later progression is:
 
-1. Opencode's per-tool allow/ask/deny maps, as a distinct nested-map adapter.
+1. [x] Opencode's per-tool allow/ask/deny maps, as a distinct nested-map adapter (implemented 2026-09-08; shared-interface box stays done).
 2. Kiro's YAML capability model and Devin's scope-based model.
 3. Codex TOML profiles, only after an AST-preserving TOML edit strategy exists.
 
