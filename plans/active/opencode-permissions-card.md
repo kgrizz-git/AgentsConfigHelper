@@ -62,6 +62,10 @@ but are out of scope for this card.
   per-agent overrides, external-directory inheritance, defaults).
 - Other Opencode config (`model`, `instructions`, `mcp`, `plugin`, `agent`),
   rules/skills/agents markdown, or the `~/.config/opencode/auth.json`.
+- The **deprecated legacy `tools` boolean key** (documented as merged into `permission`
+  as of Opencode v1.1.1). It is out of scope: an Opencode config that uses only `tools`
+  (with no `permission`) renders the empty state, and the plan does not translate the
+  legacy key. A follow-up may add it.
 - Any change to the generic flat editors, `FidelityAssessor`, `StructuredSaveFlow`,
   or `ConfigEditor` structure.
 
@@ -109,19 +113,27 @@ decoded `opencode.json`). It returns:
   discoveredConfig.descriptor?.id == ToolId.opencode &&
   kind == ConfigSourceKind.structuredConfig &&
   discoveredConfig.format == ConfigFormat.jsonc &&
-  config.format == ConfigFormat.json &&
+  config.format == ConfigFormat.jsonc &&
   scope in {user, project} && p.basename(filePath) == 'opencode.json'`.
-  The catalog declares both Opencode structured targets as `ConfigFormat.jsonc`
-  (`tool_descriptor_registry.dart:90,96`), so match that on the discovered side, while
-  the parsed `.json` file carries `ConfigFormat.json` on the config side (see
-  `json_config_parser.dart:40-42`). The basename guard is defensive (both structured
-  targets are named `opencode.json`; the parent directory varies — `~/.config/opencode/`
-  and `.opencode/` — so a parent check like Cursor's is not possible). It prevents a
-  future catalog addition of a different Opencode structured file from being
-  mis-identified.
+  Both Opencode structured targets are declared `ConfigFormat.jsonc`
+  (`tool_descriptor_registry.dart:90,96`), and `ConfigService.loadDiscoveredConfig`
+  passes that catalog format into the parser (`config_service.dart:73-78`), so the
+  parsed `config.format` is `jsonc` too — **both sides must be `jsonc`**. Do not use
+  `ConfigFormat.json` here: the parser's extension-based JSON default
+  (`json_config_parser.dart:40-42`) only applies when `format` is omitted, and
+  production always supplies the discovered format. Tests that hand-build a
+  `ToolConfig` must set `format: ConfigFormat.jsonc` to mirror production (a `json`
+  ToolConfig would pass a synthetic test but fail the real load path). The basename
+  guard is defensive (both structured targets are named `opencode.json`; the parent
+  directory varies — `~/.config/opencode/` and `.opencode/` — so a parent check like
+  Cursor's is not possible). It prevents a future catalog addition of a different
+  Opencode structured file from being mis-identified.
 - **`available`** — a valid `permission`. When the key is **absent**, present an empty
   presentation with `hasConfiguredPermission: false` (like Claude's `hasConfiguredPolicy`
-  for "no permissions subtree"); the card shows a safe empty state.
+  for "no permissions subtree"); the card shows a safe empty state. When the key is
+  **present but empty** (`permission: {}`), present `hasConfiguredPermission: true` with
+  empty `tools` and no `globalAction` (analogous to Cursor's explicit-`[]` vs omitted
+  distinction: a present-but-empty `permission` is a configured empty policy).
   - `permission` is a **scalar action string** → `globalAction = <action>` (validated as
     `allow`/`ask`/`deny`).
   - `permission` is an **object** → for each entry, a non-`String` key is unsupported
@@ -132,16 +144,22 @@ decoded `opencode.json`). It returns:
     displayed as stored; there is no "unclassified sibling" concept within `permission`
     because every entry is a tool or `*`.
 - **`unsupported`** (raw-editor-first) — when a present recognized shape is malformed:
-  a `permission` value that is neither a valid action string nor an object; a `*` key
-  whose value is not a scalar action string; a tool value that is neither a valid action
-  string nor a map whose values are all valid actions (a non-`String` pattern key, a
-  non-action value, or a value that is not a string/map).
+  a `permission` value that is neither a valid action string nor an object (including a
+  JSON `null` and a non-string/number/bool); a `*` key whose value is not a scalar
+  action string; a tool value that is neither a valid action string nor a map whose
+  values are all valid actions (a non-`String` pattern key, a non-action value, or a
+  value that is not a string/map). Each unsupported case returns a stable
+  `unsupportedReason`, e.g. `'Opencode permission "<field>" is not a supported value. '
+  'Use the raw editor to review it.'` for a malformed field and
+  `'This Opencode permission shape is not supported for structured display. Use the '
+  'raw editor to review it.'` for a whole-`permission` shape that is neither action nor
+  object — mirroring the Claude/Cursor reason patterns.
 
 `OpencodePermissionsPresentation extends PolicyCardPresentation` (Equatable):
 `globalAction` (`String?`), `tools` (an ordered `Map<String, OpencodeToolPermission>`),
-and `hasConfiguredPermission` (`bool`). `OpencodeToolPermission` (Equatable) holds a
-simple `action` (`String?`) **or** `patterns` (`Map<String,String>?`); exactly one is
-set per stored tool. All maps are unmodifiable. `rawSettings` values are typed
+and `hasConfiguredPermission` (`bool`). `OpencodeToolPermission` (Equatable, props
+`[action, patterns]`) holds a simple `action` (`String?`) **or** `patterns`
+(`Map<String,String>?`); exactly one is set per stored tool. All maps are unmodifiable. `rawSettings` values are typed
 `Map<String, Object?>` (`tool_config.dart:60`), so when building `patterns` the adapter
 must validate each pattern value with an `is! String` check and copy into a
 `Map<String, Object?>` first (mirroring the Cursor adapter's copy loop), then cast to
@@ -163,11 +181,13 @@ implementation):
 - `global`: label `'Global'`; description `'An action applied to every tool when the '
   'permission block is a single value or a * rule. Stored here; Opencode applies it at '
   'runtime.'`
-- per-tool `toolPermission(label, description)`: the label is the tool name; the
-  description is `'Rules stored for this tool in this file. Opencode matches them at '
-  'runtime; the last matching rule wins.'`
+- per-tool `toolPermission(String toolName)`: returns a `CursorPermissionFieldHelp`
+  whose label is the tool name (e.g. `'bash'`) and whose description is
+  `'Rules stored for this tool in this file. Opencode matches them at runtime; the '
+  'last matching rule wins.'` — a single-argument factory, not a two-argument one.
 
-All help lives in the pure-Dart schema layer.
+All help lives in the pure-Dart schema layer. The adapter tests must assert these exact
+help strings (mirroring `cursor_permissions_test.dart:49-76`).
 
 ### Card widget (`lib/widgets/opencode_permissions_card.dart`)
 
@@ -176,10 +196,12 @@ A read-only `StatelessWidget` mirroring `CursorPermissionsCard`: header with
 "Global" group showing `globalAction` (when present, e.g. "allow"), a per-tool group
 showing either its simple action or its bulleted `pattern → action` rules, a
 hasUnclassified-free layout (no note needed — everything in `permission` is shown), and
-a documentation launcher → `documentationUri` with the same `onOpenDocumentation`/
-mounted-guarded SnackBar pattern. No editing controls, no write path. When
-`hasConfiguredPermission` is false, show a safe empty state ("No Opencode permissions
-policy is configured. Use raw content to add a `permission` block.").
+a documentation launcher labeled **"Opencode permissions documentation"** →
+`documentationUri` with the same `onOpenDocumentation`/mounted-guarded SnackBar pattern.
+No editing controls, no write path. When `hasConfiguredPermission` is false, show a
+safe empty state: **"No Opencode permissions policy is configured. Use raw content to
+add a `permission` block."** — this exact string is the one the card-widget test asserts
+(via `find.textContaining`, mirroring `claude_code_permissions_card_test.dart`).
 
 ### Registrations
 
@@ -191,10 +213,13 @@ policy is configured. Use raw content to add a `permission` block.").
 
 ### ConfigEditor
 
-**No changes.** `build` already renders whatever `buildCard(selection)` returns. The
-whole slice reduces to "register an adapter + a card builder" — the proven Phase 0/4A
-seam. `lib/widgets/config_editor.dart` is at the 700-line cap, so this is also
-load-bearing for the file-length gate.
+**No changes.** `build` already renders whatever `buildCard(selection)` returns: it
+resolves `_registry.select(...)` (~`config_editor.dart:411-414`) and renders
+`_widgetRegistry.buildCard(selection)`; the nested-permissions fallback
+(`:416-419`) keys on the **plural** `permissions`, which Opencode's singular
+`permission` does not collide with. The whole slice reduces to "register an adapter +
+a card builder" — the proven Phase 0/4A seam. `lib/widgets/config_editor.dart` is at
+the 700-line cap, so this is also load-bearing for the file-length gate.
 
 ## Test strategy
 
@@ -204,19 +229,24 @@ Follow the Claude/Cursor vertical-slice test layout.
 
 - `notApplicable` for: a manual-path Opencode config, a non-Opencode tool, `null`
   discovery, a non-`opencode.json` basename with the same descriptor/kind/format/scope,
-  and another format/kind.
+  and another format/kind. The `available` tests must build `ToolConfig` with
+  `format: ConfigFormat.jsonc` (matching `loadDiscoveredConfig`) so the target guard
+  passes exactly as in production.
 - `available` for user-scope and project-scope catalog targets; a scalar `permission`
   string sets `globalAction`; an object with `*` sets `globalAction`; a tool with a
   scalar action vs one with a granular pattern map are preserved distinctly; an absent
-  `permission` yields `hasConfiguredPermission: false`; an empty object is a valid
-  empty policy.
-- `unsupported` for: a `permission` that is neither an action string nor an object; a
-  `*` value that is not a scalar action; a tool value that is not a valid action and
-  not a map whose values are all valid actions (including a pattern map with a
-  non-action value, and a directly-constructed non-`String` pattern key).
+  `permission` yields `hasConfiguredPermission: false`; a present empty object `{}`
+  yields `hasConfiguredPermission: true` with empty `tools` and no `globalAction`.
+- `unsupported` for: a `permission` that is neither an action string nor an object
+  (including `permission: null`); a `*` value that is not a scalar action; a tool value
+  that is not a valid action and not a map whose values are all valid actions
+  (including a pattern map with a non-action value, and a directly-constructed
+  non-`String` pattern key). Assert the stable `unsupportedReason` string.
 - Registry selection: with Claude + Cursor + Opencode registered, an Opencode config
   resolves to the Opencode adapter and the other two remain `notApplicable` (no
-  cross-match, both directions).
+  cross-match, both directions). Add these 3-adapter cross-match tests to
+  `test/schemas/policy_card_registry_test.dart` (parallel to the Cursor ones added for
+  Phase 4A), not only in the adapter test file.
 
 ### Fixtures (`test/fixtures/opencode_permissions_fixtures_test.dart`)
 
@@ -224,9 +254,15 @@ On-disk, token-free fixtures under `test/fixtures/edge_cases/opencode_permission
 (mirroring the Cursor fixture layout; no need to touch `staging_home`), covering: a
 global scalar (`"permission": "allow"`); an object with `*` + a scalar tool + a
 granular tool; malformed (non-action value, non-string pattern key is direct-construction
-only, a `permission` value that is neither action nor object); and an absent `permission`.
-Assert parsing, presentation, and that opening does not change bytes (the no-save/no-byte
-assertion lives in the ConfigEditor integration test, not duplicated here).
+only, a `permission` value that is neither action nor object, and `permission: null`);
+and an absent `permission`. Plus **one JSONC fixture**,
+`test/fixtures/edge_cases/opencode_permission_comments.jsonc`, with a comment and a
+trailing comma. Assert parsing, presentation, and that opening does not change bytes
+(the no-save/no-byte assertion lives in the ConfigEditor integration test, not
+duplicated here). Mirror Cursor's JSONC assertions
+(`cursor_permissions_fixtures_test.dart:85-103,159-172`): the JSONC fixture parses with
+`parsedAsJsonc == true` and `parseWarnings` non-empty, and a `FidelityAssessor`
+`assessOpening` on it labels the notice `JSONC`.
 
 ### Widget mapping (`test/widgets/policy_card_widget_registry_test.dart`)
 
@@ -237,14 +273,16 @@ assertion lives in the ConfigEditor integration test, not duplicated here).
 ### Card widget (`test/widgets/opencode_permissions_card_test.dart`)
 
 - Renders the global action and each tool group (simple action vs granular rules);
-  "No Opencode permissions policy is configured." for the empty state.
+  for the empty state asserts `find.textContaining('No Opencode permissions policy is '
+  'configured')` (matching the card's exact string, via `textContaining` like Claude).
 - Help dialog opens per group; documentation-launcher failure shows the SnackBar
   (inject a failing `onOpenDocumentation`).
 
 ### ConfigEditor integration (`test/widgets/config_editor_policy_card_test.dart`)
 
-- A catalog-discovered Opencode `opencode.json` renders the Opencode card (not the flat
-  editor, not the nested-permissions text).
+- A catalog-discovered Opencode `opencode.json` (built with `format: ConfigFormat.jsonc`
+  on both the `DiscoveredConfig` and the `ToolConfig`, mirroring production) renders the
+  Opencode card (not the flat editor, not the nested-permissions text).
 - A malformed `permission` renders the unsupported-reason text and no card.
 - An Opencode card is **read-only**: interacting (help/docs) never mutates
   `originalContent` nor triggers a save.
@@ -255,7 +293,10 @@ assertion lives in the ConfigEditor integration test, not duplicated here).
 
 Opencode config supports JSONC; a `.json` file parsed via the JSONC fallback already
 gets a JSONC-labeled notice from the existing `FidelityAssessor._jsonLabel` (labels by
-`parsedAsJsonc`, not the filename). Add one fixtures-test assertion, not a new notice.
+`parsedAsJsonc`, not the filename). The `test/fixtures/edge_cases/opencode_permission_comments.jsonc`
+fixture (with a comment and a trailing comma) exercises this: assert `parsedAsJsonc ==
+true`, `parseWarnings` non-empty, and a `FidelityAssessor.assessOpening` label of
+`JSONC`. No new notice code.
 
 ## Docs, docstrings, and metadata
 
@@ -266,8 +307,9 @@ The Opencode card is **user-visible**, so this slice updates user-facing docs.
     `verified example (fixture exercises \`model\` + \`permission\` object shape; full JSON schema published)`
     to `verified example (fixture exercises \`model\` + \`permission\` object shape; read-only card)`;
     update the source-review date to 2026-09-08.
-  - Opencode Permissions section (~line 236): add a note that the app renders
-    `permission` as a read-only card showing stored entries, not effective policy.
+  - Opencode Permissions section (~line 236): add this bullet under "Opencode
+    Permissions":
+    `- **Read-only card:** The app renders the \`permission\` block of a discovered \`opencode.json\` as a read-only policy card showing the file's stored entries; it does not compute Opencode's effective policy.`
 - `CHANGELOG.md`: add a user-facing entry for the read-only Opencode permissions card.
 - `plans/active/structured-configuration-roadmap.md`: mark the Phase 4 progression item 1
   (Opencode) done; note the shared-interface box stays done (it is not undone by adding
@@ -298,7 +340,8 @@ The Opencode card is **user-visible**, so this slice updates user-facing docs.
 
 1. Add `lib/schemas/opencode_permissions.dart` (adapter + presentation + help, pure
    Dart, docstrings). `OpencodePermissionsAdapter.adapterId = 'opencode.permissions'`
-   with `String get id => adapterId;`.
+   with `String get id => adapterId;`. Import `package:path/path.dart` as `p` for the
+   `p.basename` target guard (mirroring `cursor_permissions.dart`).
 2. Add `lib/widgets/opencode_permissions_card.dart` (read-only card, default doc
    launcher, help dialog, no write path).
 3. Register the adapter in `PolicyCardRegistry.shared` and the card builder in
