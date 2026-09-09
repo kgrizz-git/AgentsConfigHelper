@@ -64,8 +64,8 @@ class OpencodeToolPermission extends Equatable {
     Map<String, String>? patterns,
   }) : patterns = patterns == null ? null : Map.unmodifiable(patterns),
        assert(
-         action == null || patterns == null,
-         'action and patterns are exclusive',
+         (action == null) != (patterns == null),
+         'exactly one of action or patterns must be set',
        );
 
   /// The scalar action (`allow`/`ask`/`deny`) for this tool, when simple.
