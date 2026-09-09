@@ -77,9 +77,9 @@ but are out of scope for this card.
   `PolicyCardSelection`/`PolicyCardStatus`/`PolicyCardPresentation`.
 - `lib/widgets/config_editor.dart` — resolves `_registry.select` then
   `_widgetRegistry.buildCard`, with generic flat/nested fallbacks. No Opencode branch.
-- `lib/catalog/tool_descriptor_registry.dart` — `ToolId.opencode` declares structured
-  JSON targets: `~/.config/opencode/opencode.json` (user) and `opencode.json` /
-  `.opencode/opencode.json` (project), plus `AGENTS.md` (instruction).
+- `lib/catalog/tool_descriptor_registry.dart` — `ToolId.opencode` declares two structured
+  targets, both `ConfigFormat.jsonc`: `.config/opencode/opencode.json` (user) and
+  `.opencode/opencode.json` (project), plus an `AGENTS.md` instruction target.
 - `lib/parsers/json_config_parser.dart` — `ToolConfig.rawSettings` is the decoded
   top-level object; `parsedAsJsonc` marks a JSONC fallback. Opencode config is JSON and
   supports JSONC; the fidelity notice labels by parsed content.
@@ -104,17 +104,21 @@ class OpencodePermissionsAdapter implements PolicyCardAdapter {
 decoded `opencode.json`). It returns:
 
 - **`notApplicable`** — when the config is not a catalog-discovered `ToolId.opencode`
-  structured-JSON target. Target check (`_isOpencodeTarget`):
+  structured target. Target check (`_isOpencodeTarget`):
   `discoveredConfig != null && fromCatalog &&
   discoveredConfig.descriptor?.id == ToolId.opencode &&
   kind == ConfigSourceKind.structuredConfig &&
-  discoveredConfig.format == ConfigFormat.json &&
+  discoveredConfig.format == ConfigFormat.jsonc &&
   config.format == ConfigFormat.json &&
   scope in {user, project} && p.basename(filePath) == 'opencode.json'`.
-  The basename guard is defensive (all three catalog targets are `opencode.json`; the
-  parent directory varies — `~/.config/opencode/`, project root, `.opencode/` — so a
-  parent check like Cursor's is not possible). It prevents a future catalog addition of
-  a different Opencode structured-JSON file from being mis-identified.
+  The catalog declares both Opencode structured targets as `ConfigFormat.jsonc`
+  (`tool_descriptor_registry.dart:90,96`), so match that on the discovered side, while
+  the parsed `.json` file carries `ConfigFormat.json` on the config side (see
+  `json_config_parser.dart:40-42`). The basename guard is defensive (both structured
+  targets are named `opencode.json`; the parent directory varies — `~/.config/opencode/`
+  and `.opencode/` — so a parent check like Cursor's is not possible). It prevents a
+  future catalog addition of a different Opencode structured file from being
+  mis-identified.
 - **`available`** — a valid `permission`. When the key is **absent**, present an empty
   presentation with `hasConfiguredPermission: false` (like Claude's `hasConfiguredPolicy`
   for "no permissions subtree"); the card shows a safe empty state.
@@ -137,16 +141,33 @@ decoded `opencode.json`). It returns:
 `globalAction` (`String?`), `tools` (an ordered `Map<String, OpencodeToolPermission>`),
 and `hasConfiguredPermission` (`bool`). `OpencodeToolPermission` (Equatable) holds a
 simple `action` (`String?`) **or** `patterns` (`Map<String,String>?`); exactly one is
-set per stored tool. All maps are unmodifiable. This mirrors how Claude/Cursor
-presentations preserve exactly what is stored.
+set per stored tool. All maps are unmodifiable. `rawSettings` values are typed
+`Map<String, Object?>` (`tool_config.dart:60`), so when building `patterns` the adapter
+must validate each pattern value with an `is! String` check and copy into a
+`Map<String, Object?>` first (mirroring the Cursor adapter's copy loop), then cast to
+`Map<String, String>`; a non-`String` value is unsupported, never silently coerced.
+This mirrors how Claude/Cursor presentations preserve exactly what is stored.
 
 `OpencodePermissionsHelp` — reviewed, plain-language `label` + `description` per
-field/group, modeled on the existing help classes. The card-level statement and each
+group, modeled on the existing help classes. The card-level statement and each
 group's description must say the card shows **this file's stored `permission` entries,
 not Opencode's effective policy** (which resolves last-match-wins, applies per-agent
 overrides and `--auto`, and inherits defaults). It must not claim the app can predict
-whether a future action will run without approval. All help lives in the pure-Dart
-schema layer.
+whether a future action will run without approval. Exact strings (draft, finalized at
+implementation):
+
+- `policy`: label `'Opencode permissions'`; description `'This card shows the allow, '
+  'ask, and deny rules stored in the permission block of this opencode.json file. '
+  'Opencode resolves those rules at runtime (last match wins, with per-agent overrides '
+  'and auto mode); this card does not compute that effective policy.'`
+- `global`: label `'Global'`; description `'An action applied to every tool when the '
+  'permission block is a single value or a * rule. Stored here; Opencode applies it at '
+  'runtime.'`
+- per-tool `toolPermission(label, description)`: the label is the tool name; the
+  description is `'Rules stored for this tool in this file. Opencode matches them at '
+  'runtime; the last matching rule wins.'`
+
+All help lives in the pure-Dart schema layer.
 
 ### Card widget (`lib/widgets/opencode_permissions_card.dart`)
 
@@ -241,9 +262,10 @@ gets a JSONC-labeled notice from the existing `FidelityAssessor._jsonLabel` (lab
 The Opencode card is **user-visible**, so this slice updates user-facing docs.
 
 - `docs/supported-tools.md`:
-  - Opencode evidence row (~line 56): change "verified example (fixture exercises
-    `model` + `permission` object shape...)" to note the read-only card; update the
-    source-review date to 2026-09-08.
+  - Opencode evidence row (~line 56): change the "Schema evidence" cell from
+    `verified example (fixture exercises \`model\` + \`permission\` object shape; full JSON schema published)`
+    to `verified example (fixture exercises \`model\` + \`permission\` object shape; read-only card)`;
+    update the source-review date to 2026-09-08.
   - Opencode Permissions section (~line 236): add a note that the app renders
     `permission` as a read-only card showing stored entries, not effective policy.
 - `CHANGELOG.md`: add a user-facing entry for the read-only Opencode permissions card.
