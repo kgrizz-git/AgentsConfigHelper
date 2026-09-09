@@ -1,0 +1,7 @@
+{
+  // A token-free Opencode fixture.
+  "model": "fixture-model",
+  "permission": {
+    "bash": "allow",
+  },
+}

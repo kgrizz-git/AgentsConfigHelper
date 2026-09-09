@@ -4,6 +4,7 @@ import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
+import 'package:agents_config_helper/schemas/opencode_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/schemas/policy_card_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,6 +64,21 @@ void main() {
       kind: ConfigSourceKind.structuredConfig,
       format: ConfigFormat.json,
       sourceLabel: 'Cursor Agent',
+      fromCatalog: true,
+    );
+  }
+
+  DiscoveredConfig opencodeConfig() {
+    final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+      (item) => item.id == ToolId.opencode,
+    );
+    return DiscoveredConfig.fromPath(
+      filePath: '/fixture/.config/opencode/opencode.json',
+      descriptor: descriptor,
+      scope: ConfigLocationScope.user,
+      kind: ConfigSourceKind.structuredConfig,
+      format: ConfigFormat.jsonc,
+      sourceLabel: 'Opencode',
       fromCatalog: true,
     );
   }
@@ -231,6 +247,39 @@ void main() {
         expect(
           selection.presentation,
           isA<ClaudeCodePermissionsPresentation>(),
+        );
+      },
+    );
+
+    test(
+      'resolves an Opencode config to the Opencode adapter when all three '
+      'are registered',
+      () {
+        final registry = PolicyCardRegistry([
+          ClaudeCodePermissionsAdapter(),
+          CursorPermissionsAdapter(),
+          OpencodePermissionsAdapter(),
+        ]);
+        final opencode = opencodeConfig();
+        final toolConfig = ToolConfig(
+          toolName: 'Opencode',
+          filePath: opencode.filePath,
+          format: ConfigFormat.jsonc,
+          rawSettings: const {
+            'permission': 'allow',
+          },
+        );
+
+        final selection = registry.select(
+          config: toolConfig,
+          discoveredConfig: opencode,
+        );
+
+        expect(selection.status, PolicyCardStatus.available);
+        expect(selection.adapterId, OpencodePermissionsAdapter.adapterId);
+        expect(
+          selection.presentation,
+          isA<OpencodePermissionsPresentation>(),
         );
       },
     );

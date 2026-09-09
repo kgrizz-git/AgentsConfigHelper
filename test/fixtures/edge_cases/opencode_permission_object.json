@@ -1,0 +1,11 @@
+{
+  "model": "fixture-model",
+  "permission": {
+    "*": "ask",
+    "bash": "allow",
+    "edit": {
+      "*": "deny",
+      "packages/web/src/content/docs/*.mdx": "allow"
+    }
+  }
+}
