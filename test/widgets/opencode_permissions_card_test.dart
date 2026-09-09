@@ -129,7 +129,7 @@ void main() {
     expect(
       find.textContaining(
         'No Opencode permissions policy is configured. Legacy tools settings '
-        'are not shown.',
+        'are not shown. Use raw content to add a permission block.',
       ),
       findsOneWidget,
     );
