@@ -154,17 +154,19 @@ decoded `opencode.json`). It returns:
   `'This Opencode permission shape is not supported for structured display. Use the '
   'raw editor to review it.'` for a whole-`permission` shape that is neither action nor
   object — mirroring the Claude/Cursor reason patterns.
-
 `OpencodePermissionsPresentation extends PolicyCardPresentation` (Equatable):
 `globalAction` (`String?`), `tools` (an ordered `Map<String, OpencodeToolPermission>`),
 and `hasConfiguredPermission` (`bool`). `OpencodeToolPermission` (Equatable, props
 `[action, patterns]`) holds a simple `action` (`String?`) **or** `patterns`
-(`Map<String,String>?`); exactly one is set per stored tool. All maps are unmodifiable. `rawSettings` values are typed
-`Map<String, Object?>` (`tool_config.dart:60`), so when building `patterns` the adapter
-must validate each pattern value with an `is! String` check and copy into a
-`Map<String, Object?>` first (mirroring the Cursor adapter's copy loop), then cast to
-`Map<String, String>`; a non-`String` value is unsupported, never silently coerced.
-This mirrors how Claude/Cursor presentations preserve exactly what is stored.
+(`Map<String,String>?`); exactly one is set per stored tool. All maps are unmodifiable.
+`rawSettings` values are typed `Map<String, Object?>` (`tool_config.dart:60`), so when
+building `patterns` the adapter must validate each pattern value with an `is! String`
+check and copy directly into a `Map<String, String>` (e.g. `Map<String, String>.from(
+entries)`). **Never cast the `Map<String, Object?>` instance to `Map<String, String>`**:
+Dart generic map types are invariant, so an `as Map<String, String>` cast throws at
+runtime even when every value has been validated as a `String`. A non-`String` value is
+unsupported, never silently coerced. This mirrors how Claude/Cursor presentations
+preserve exactly what is stored.
 
 `OpencodePermissionsHelp` — reviewed, plain-language `label` + `description` per
 group, modeled on the existing help classes. The card-level statement and each
@@ -284,8 +286,10 @@ duplicated here). Mirror Cursor's JSONC assertions
   on both the `DiscoveredConfig` and the `ToolConfig`, mirroring production) renders the
   Opencode card (not the flat editor, not the nested-permissions text).
 - A malformed `permission` renders the unsupported-reason text and no card.
-- An Opencode card is **read-only**: interacting (help/docs) never mutates
-  `originalContent` nor triggers a save.
+- An Opencode card is **read-only**: interacting (help/docs) never triggers a save —
+  assert `onSave` is **not** invoked (a save-counter stays `0`). Do not rely on comparing
+  `ToolConfig.originalContent`, which is a final field and cannot change; the meaningful
+  assertion is that no save/edit path runs.
 - The existing no-adapter nested-fallback test (`ToolId.lmStudio`) stays green — the
   Opencode adapter must not swallow generic tools.
 
@@ -335,6 +339,12 @@ The Opencode card is **user-visible**, so this slice updates user-facing docs.
 4. **Effective-policy caveats.** The card must not encode last-match-wins, `--auto`,
    defaults, or external-directory inheritance as product truth; its help states it
    shows stored entries and that Opencode resolves them at runtime.
+5. **Project-root `opencode.json` is not catalog-registered.** The catalog registers
+   only `.config/opencode/opencode.json` (user) and `.opencode/opencode.json` (project);
+   a plain project-root `opencode.json` (listed in `docs/supported-tools.md`) is **not**
+   a registered discovery target, so it will not render the card. Reconcile the
+   `docs/supported-tools.md` path table with the catalog (add the root target, or remove
+   it from the docs) as a catalog-integrity follow-up, out of scope for this card slice.
 
 ## Implementation steps
 
