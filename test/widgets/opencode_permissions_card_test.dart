@@ -56,6 +56,10 @@ void main() {
       expect(find.text('allow'), findsOneWidget);
       expect(find.text('edit (2)'), findsOneWidget);
       expect(find.text('• * → deny'), findsOneWidget);
+      expect(
+        find.text('• packages/web/src/content/docs/*.mdx → allow'),
+        findsOneWidget,
+      );
 
       expect(
         find.byTooltip(
