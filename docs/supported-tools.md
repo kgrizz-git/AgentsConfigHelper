@@ -39,8 +39,10 @@ to auto-detect, parse, visualize, and edit settings across tools.
 
 ## Catalog evidence
 
-Catalog reviewed through: 2026-08-25 (catalog-wide baseline). Rows re-checked after the
-baseline carry their own newer date in the "Reviewed" column.
+Catalog reviewed through: 2026-08-25
+
+The catalog-wide baseline is 2026-08-25; a row re-checked after the baseline carries
+its own newer date in the "Reviewed" column (Cursor Agent, 2026-09-07).
 
 > **Status:** All 17 registered tools have a recorded evidence/status row in the table below,
 > substantively reviewed against current vendor sources as of the catalog-wide baseline
