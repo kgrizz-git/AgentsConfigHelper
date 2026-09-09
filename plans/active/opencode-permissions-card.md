@@ -185,8 +185,10 @@ implementation):
   'runtime.'`
 - per-tool `toolPermission(String toolName)`: returns a `CursorPermissionFieldHelp`
   whose label is the tool name (e.g. `'bash'`) and whose description is
-  `'Rules stored for this tool in this file. Opencode matches them at runtime; the '
-  'last matching rule wins.'` — a single-argument factory, not a two-argument one.
+  `'The action or rules stored for this tool in this file. Opencode applies them at '
+  'runtime; for granular pattern rules, the last matching rule wins.'` — distinguishing
+  a scalar action from a granular rule map (the "last matching rule wins" statement
+  applies only to granular rules). A single-argument factory, not a two-argument one.
 
 All help lives in the pure-Dart schema layer. The adapter tests must assert these exact
 help strings (mirroring `cursor_permissions_test.dart:49-76`).
@@ -201,9 +203,10 @@ hasUnclassified-free layout (no note needed — everything in `permission` is sh
 a documentation launcher labeled **"Opencode permissions documentation"** →
 `documentationUri` with the same `onOpenDocumentation`/mounted-guarded SnackBar pattern.
 No editing controls, no write path. When `hasConfiguredPermission` is false, show a
-safe empty state: **"No Opencode permissions policy is configured. Use raw content to
-add a `permission` block."** — this exact string is the one the card-widget test asserts
-(via `find.textContaining`, mirroring `claude_code_permissions_card_test.dart`).
+safe empty state: **"No Opencode permissions policy is configured. Legacy `tools`
+settings are not shown. Use raw content to add a `permission` block."** — this exact
+string is the one the card-widget test asserts (via `find.textContaining`, mirroring
+`claude_code_permissions_card_test.dart`).
 
 ### Registrations
 
@@ -276,7 +279,8 @@ duplicated here). Mirror Cursor's JSONC assertions
 
 - Renders the global action and each tool group (simple action vs granular rules);
   for the empty state asserts `find.textContaining('No Opencode permissions policy is '
-  'configured')` (matching the card's exact string, via `textContaining` like Claude).
+  'configured. Legacy tools settings are not shown.')` (matching the card's exact
+  revised string, via `textContaining` like Claude).
 - Help dialog opens per group; documentation-launcher failure shows the SnackBar
   (inject a failing `onOpenDocumentation`).
 
@@ -287,9 +291,11 @@ duplicated here). Mirror Cursor's JSONC assertions
   Opencode card (not the flat editor, not the nested-permissions text).
 - A malformed `permission` renders the unsupported-reason text and no card.
 - An Opencode card is **read-only**: interacting (help/docs) never triggers a save —
-  assert `onSave` is **not** invoked (a save-counter stays `0`). Do not rely on comparing
-  `ToolConfig.originalContent`, which is a final field and cannot change; the meaningful
-  assertion is that no save/edit path runs.
+  assert `onSave` is **not** invoked (a save-counter stays `0`). Because the harness
+  builds the `ToolConfig` directly (no on-disk file is involved), it cannot snapshot and
+  compare file bytes; the meaningful assertion is that no save/edit path runs. Do not
+  rely on comparing `ToolConfig.originalContent`, which is a final field and cannot
+  change.
 - The existing no-adapter nested-fallback test (`ToolId.lmStudio`) stays green — the
   Opencode adapter must not swallow generic tools.
 
