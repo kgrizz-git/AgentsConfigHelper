@@ -114,8 +114,8 @@ The durable sequence and architecture decisions are in the
       **Shipped (Phase 4, item 1, 2026-09-08):** read-only Opencode `permission`
       card — a global scalar action or per-tool simple actions and granular
       `pattern → action` rules, with plain-language help and a doc link;
-      unknown/malformed shapes stay raw-editor-first; never writes. See the
-      [Opencode permissions card plan](plans/active/opencode-permissions-card.md).
+      unknown/malformed shapes stay raw-editor-first; never writes. See the archived
+      [Opencode permissions card plan](plans/archive/opencode-permissions-card.md).
 
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the

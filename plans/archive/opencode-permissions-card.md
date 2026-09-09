@@ -3,9 +3,28 @@
 Last reviewed: 2026-09-08
 Date: 2026-09-08
 Author: maintainers
-Status: active — awaiting review and implementation
+Status: complete — implemented on the `impl/opencode-permissions-card` branch (2026-09-08) and archived
 Linked parent: [Structured Configuration Roadmap](../active/structured-configuration-roadmap.md)
 Linked task: [TO_DO.md — Structured configuration presentation](../../TO_DO.md#structured-configuration-presentation)
+
+## Outcome
+
+Shipped on the `impl/opencode-permissions-card` branch. A pure-Dart
+`OpencodePermissionsAdapter` + `OpencodePermissionsPresentation` + reviewed help implement
+`PolicyCardAdapter` for the `permission` block (a scalar action or per-tool simple
+actions and granular `pattern → action` rules); a read-only `OpencodePermissionsCard`
+widget mirrors the Cursor card. All three register in the shared
+`PolicyCardRegistry`/`PolicyCardWidgetRegistry`, so the card renders with **no
+`ConfigEditor` change** (the Phase 0/4A seam holds a third time). The adapter guards
+the catalog path (jsonc on both sides via `loadDiscoveredConfig`, basename
+`opencode.json`), preserves a present-but-empty `{}` as a configured empty policy, keeps
+all stored tools/unclassified content visible, and returns unsupported (raw-editor-first)
+for malformed shapes (never imitating silent drops). On-disk fixtures under
+`test/fixtures/edge_cases` exercise scalar/object/malformed/JSONC states; the full suite
+is green (437 tests, +37 from the 400 baseline). Docs: `docs/supported-tools.md`
+(fixtures + JSONC note + card), user-facing `CHANGELOG.md` entry, roadmap Phase 4
+progression item 1 done with open questions resolved, and the `TO_DO.md` note updated.
+The primary Opencode reference was reviewed 2026-09-08.
 
 ## Objective
 
@@ -390,9 +409,9 @@ The Opencode card is **user-visible**, so this slice updates user-facing docs.
 Per AGENTS.md, archive this plan as the last step before merging (final commit on this
 feature branch, riding in the PR; never a direct-to-main post-merge step):
 
-1. Record the seam in the parent roadmap (mark the Phase 4 progression item 1, Opencode,
+1. [x] Record the seam in the parent roadmap (mark the Phase 4 progression item 1, Opencode,
    done).
-2. Keep the `TO_DO.md` "Structured configuration presentation" entry open and aligned.
-3. Log the change in `CHANGELOG.md` (user-visible card) and `CHANGELOG.dev.md` if any
+2. [x] Keep the `TO_DO.md` "Structured configuration presentation" entry open and aligned.
+3. [x] Log the change in `CHANGELOG.md` (user-visible card) and `CHANGELOG.dev.md` if any
    developer-only note is warranted.
-4. Move this file to `plans/archive/` as the final commit on the branch.
+4. [x] Move this file to `plans/archive/` as the final commit on the branch.

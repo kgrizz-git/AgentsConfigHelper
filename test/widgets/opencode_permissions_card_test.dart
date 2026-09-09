@@ -69,9 +69,11 @@ void main() {
       );
 
       await tester.tap(
-        find.byTooltip(
-          OpencodePermissionsHelp.toolPermission('bash').description,
-        ).first,
+        find
+            .byTooltip(
+              OpencodePermissionsHelp.toolPermission('bash').description,
+            )
+            .first,
       );
       await tester.pumpAndSettle();
 
