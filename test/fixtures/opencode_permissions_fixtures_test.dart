@@ -84,6 +84,21 @@ void main() {
 
       expect(result.status, PolicyCardStatus.unsupported);
       expect(result.presentation, isNull);
+      expect(result.unsupportedReason, contains('permission'));
+    });
+
+    test('a null permission and a non-object permission are unsupported', () {
+      final nullPermission = interpret(
+        parseFixture('edge_cases/opencode_permission_null.json'),
+      );
+      final arrayPermission = interpret(
+        parseFixture('edge_cases/opencode_permission_array.json'),
+      );
+
+      for (final result in [nullPermission, arrayPermission]) {
+        expect(result.status, PolicyCardStatus.unsupported);
+        expect(result.presentation, isNull);
+      }
     });
 
     test('a JSONC fixture parses as JSONC and stays available', () {

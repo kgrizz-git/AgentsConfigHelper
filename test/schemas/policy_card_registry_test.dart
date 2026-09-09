@@ -283,5 +283,56 @@ void main() {
         );
       },
     );
+
+    test(
+      'resolves Claude and Cursor configs even when the Opencode adapter '
+      'is registered',
+      () {
+        final registry = PolicyCardRegistry([
+          ClaudeCodePermissionsAdapter(),
+          CursorPermissionsAdapter(),
+          OpencodePermissionsAdapter(),
+        ]);
+        final claude = claudeConfig();
+        final claudeToolConfig = config({
+          'permissions': {
+            'allow': ['Read(./fixtures/**)'],
+          },
+        });
+        final claudeSelection = registry.select(
+          config: claudeToolConfig,
+          discoveredConfig: claude,
+        );
+
+        expect(
+          claudeSelection.adapterId,
+          ClaudeCodePermissionsAdapter.adapterId,
+        );
+        expect(
+          claudeSelection.presentation,
+          isA<ClaudeCodePermissionsPresentation>(),
+        );
+
+        final cursor = cursorConfig();
+        final cursorToolConfig = ToolConfig(
+          toolName: 'Cursor Agent',
+          filePath: cursor.filePath,
+          format: ConfigFormat.json,
+          rawSettings: const {
+            'mcpAllowlist': ['github:*'],
+          },
+        );
+        final cursorSelection = registry.select(
+          config: cursorToolConfig,
+          discoveredConfig: cursor,
+        );
+
+        expect(cursorSelection.adapterId, CursorPermissionsAdapter.adapterId);
+        expect(
+          cursorSelection.presentation,
+          isA<CursorPermissionsPresentation>(),
+        );
+      },
+    );
   });
 }

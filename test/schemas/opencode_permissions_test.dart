@@ -170,6 +170,7 @@ void main() {
 
       expect(result.status, PolicyCardStatus.unsupported);
       expect(result.presentation, isNull);
+      expect(result.unsupportedReason, contains('permission'));
     });
 
     test(
@@ -186,6 +187,7 @@ void main() {
 
         expect(result.status, PolicyCardStatus.unsupported);
         expect(result.presentation, isNull);
+        expect(result.unsupportedReason, contains('*'));
       },
     );
 
@@ -204,7 +206,9 @@ void main() {
       );
 
       expect(nonAction.status, PolicyCardStatus.unsupported);
+      expect(nonAction.unsupportedReason, contains('bash'));
       expect(nonMapOrString.status, PolicyCardStatus.unsupported);
+      expect(nonMapOrString.unsupportedReason, contains('bash'));
     });
 
     test(
@@ -221,8 +225,36 @@ void main() {
 
         expect(result.status, PolicyCardStatus.unsupported);
         expect(result.presentation, isNull);
+        expect(result.unsupportedReason, contains('edit'));
       },
     );
+
+    test('does not present a card for a non-String tool key', () {
+      final result = adapter.interpret(
+        config: config({
+          'permission': <int, Object?>{1: 'allow'},
+        }),
+        discoveredConfig: opencodeConfig(),
+      );
+
+      expect(result.status, PolicyCardStatus.unsupported);
+      expect(result.presentation, isNull);
+    });
+
+    test('does not present a card for a non-String pattern key', () {
+      final result = adapter.interpret(
+        config: config({
+          'permission': {
+            'bash': <int, Object?>{1: 'allow'},
+          },
+        }),
+        discoveredConfig: opencodeConfig(),
+      );
+
+      expect(result.status, PolicyCardStatus.unsupported);
+      expect(result.presentation, isNull);
+      expect(result.unsupportedReason, contains('bash'));
+    });
 
     test('does not apply to a manually added Opencode path', () {
       final result = adapter.interpret(
