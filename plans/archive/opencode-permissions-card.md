@@ -202,7 +202,7 @@ implementation):
 - `global`: label `'Global'`; description `'An action applied to every tool when the '
   'permission block is a single value or a * rule. Stored here; Opencode applies it at '
   'runtime.'`
-- per-tool `toolPermission(String toolName)`: returns a `CursorPermissionFieldHelp`
+- per-tool `toolPermission(String toolName)`: returns an `OpencodePermissionFieldHelp`
   whose label is the tool name (e.g. `'bash'`) and whose description is
   `'The action or rules stored for this tool in this file. Opencode applies them at '
   'runtime; for granular pattern rules, the last matching rule wins.'` — distinguishing
