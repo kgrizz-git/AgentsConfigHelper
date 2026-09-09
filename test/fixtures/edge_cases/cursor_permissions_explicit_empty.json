@@ -1,0 +1,8 @@
+{
+  "mcpAllowlist": [],
+  "terminalAllowlist": ["git"],
+  "autoRun": {
+    "allow_instructions": [],
+    "block_instructions": []
+  }
+}

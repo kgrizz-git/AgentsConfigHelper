@@ -3,9 +3,26 @@
 Last reviewed: 2026-09-07
 Date: 2026-09-07
 Author: maintainers
-Status: active — awaiting review and implementation
+Status: complete — implemented on the `impl/cursor-permissions-card` branch (2026-09-07) and archived
 Linked parent: [Structured Configuration Roadmap](../active/structured-configuration-roadmap.md)
 Linked task: [TO_DO.md — Structured configuration presentation](../../TO_DO.md#structured-configuration-presentation)
+
+## Outcome
+
+Shipped on the `impl/cursor-permissions-card` branch. A pure-Dart
+`CursorPermissionsAdapter` + `CursorPermissionsPresentation` + reviewed help implement
+`PolicyCardAdapter`; a read-only `CursorPermissionsCard` widget mirrors the Claude card.
+Both register in the shared `PolicyCardRegistry`/`PolicyCardWidgetRegistry`, so the card
+renders with **no `ConfigEditor` change** (the Phase 0 seam holds). The adapter guards
+the catalog path with a component-boundary check (rejecting near-misses), preserves
+omitted-vs-explicit-`[]` per field, keeps unknown siblings unclassified, and returns
+unsupported (raw-editor-first) for malformed recognized fields (never imitating Cursor's
+silent drop). On-disk fixtures under `test/fixtures/cursor_home` and `edge_cases`
+exercise the states, including a JSONC file; the full suite is green (400 tests, +36
+from the 364 baseline). Docs: `docs/supported-tools.md` (fixtures + JSONC note + card),
+user-facing `CHANGELOG.md` entry, roadmap Phase 0 + Phase 4A marked done with open
+questions resolved, and the `TO_DO.md` note updated. The primary Cursor reference was
+re-checked 2026-09-07.
 
 ## Objective
 
@@ -438,10 +455,10 @@ the Phase 0 registry refactor, which was developer-only).
 Per AGENTS.md, archive this plan as the last step before merging (final commit on this
 feature branch, riding in the PR; never a direct-to-main post-merge step):
 
-1. Record the seam in the parent roadmap: mark Phase 0's shared-interface box `[x]`
+1. [x] Record the seam in the parent roadmap: mark Phase 0's shared-interface box `[x]`
    (Cursor is the first non-Claude consumer) and the completed Phase 4A acceptance
    items; resolve the open questions.
-2. Keep the `TO_DO.md` "Structured configuration presentation" entry open and aligned.
-3. Log the change in `CHANGELOG.md` (user-visible card) and `CHANGELOG.dev.md` if any
+2. [x] Keep the `TO_DO.md` "Structured configuration presentation" entry open and aligned.
+3. [x] Log the change in `CHANGELOG.md` (user-visible card) and `CHANGELOG.dev.md` if any
    developer-only note is warranted.
-4. Move this file to `plans/archive/` as the final commit on the branch.
+4. [x] Move this file to `plans/archive/` as the final commit on the branch.

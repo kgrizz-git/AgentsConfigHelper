@@ -1,0 +1,3 @@
+{
+  "terminalAllowlist": ["git", 5]
+}

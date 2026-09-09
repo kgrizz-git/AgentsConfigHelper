@@ -56,13 +56,14 @@ schema recognition; a later patcher owns writes.
 
 - [ ] Record the authoritative source, target path, accepted shape, and non-goals for each
       proposed schema before implementing it.
-- [ ] Establish shared adapter/presentation interfaces with no Flutter dependencies and a
+- [x] Establish shared adapter/presentation interfaces with no Flutter dependencies and a
       single registry/selection point. **Delivered by the
       [policy-card adapter registry plan](../archive/policy-card-adapter-registry.md)**
       (merged via PR #41): `PolicyCardAdapter` interface
       + `PolicyCardRegistry` (pure Dart) and a Flutter-side `PolicyCardWidgetRegistry`;
-      `ConfigEditor` renders cards through the registries with no tool branches. Mark this
-      box done after the first non-Claude consumer (Cursor, Phase 4A) registers.
+      `ConfigEditor` renders cards through the registries with no tool branches. Done: the
+      first non-Claude consumer (Cursor, Phase 4A) is registered and renders via the shared
+      seam.
 - [ ] Add token-free fixtures for recognized, malformed, unsupported-nested, and
       comments/formatting-preservation cases. Document sanitized-regression-fixture intake
       in the safe-testing plan.
@@ -194,14 +195,14 @@ Cursor Agent `permissions.json`, defined below. A likely later progression is:
 Each schema gets its own acceptance contract, fixtures, raw fallback, and focused plan or
 plan section. Do not add a schema merely because the generic parser can decode it.
 
-#### Phase 4A — Cursor Agent permissions card (read-only, planned)
+#### Phase 4A — Cursor Agent permissions card (read-only, implemented 2026-09-07)
 
 **Goal:** Show the validated contents of a catalog-discovered Cursor Agent
 `permissions.json` as one read-only policy card while preserving the raw editor as
 the source of truth. This is a presentation slice only: it must not calculate the
 effective Cursor permission policy or write a Cursor file.
 
-**Primary evidence reviewed 2026-08-27:** Cursor's
+**Primary evidence reviewed 2026-08-27, re-checked 2026-09-07:** Cursor's
 [permissions.json reference](https://cursor.com/docs/reference/permissions) documents
 the user path `~/.cursor/permissions.json`, project path
 `<workspace>/.cursor/permissions.json`, JSONC support, and these optional fields:
@@ -215,53 +216,62 @@ the user path `~/.cursor/permissions.json`, project path
 
 All four fields are optional. Unknown top-level or `autoRun` sibling keys remain
 unclassified and available in raw content. The card must say that it displays this
-file's stored entries, not runtime decisions: user and project arrays are combined,
-and team-admin or in-app settings can take precedence. It must not encode reports of
-version-specific Cursor behavior as product truth.
+file's stored entries, not runtime decisions: user and project files are combined by
+Cursor at runtime, and team-admin or in-app settings can take precedence. It must not
+encode reports of version-specific Cursor behavior as product truth.
 
 ##### Scope and acceptance contract
 
-- [ ] Complete Phase 0's shared pure-Dart presentation/selection interface first;
+- [x] Complete Phase 0's shared pure-Dart presentation/selection interface first;
       register the Claude and Cursor adapters in one selection point without adding
-      tool branches throughout `ConfigEditor`.
-- [ ] Apply only to catalog-discovered `ToolId.cursor` structured targets at the two
-      documented paths, never a manual path that merely has a matching JSON shape.
+      tool branches throughout `ConfigEditor`. Done — `ConfigEditor` is unchanged.
+- [x] Apply only to catalog-discovered `ToolId.cursor` structured targets at the two
+      documented paths, never a manual path that merely has a matching JSON shape
+      (the adapter also guards the path-component boundary, rejecting near-misses
+      like `workspace.cursor/permissions.json`).
       Update catalog/docs format metadata to reflect that Cursor accepts JSONC even
       though the filename is `permissions.json`; the fidelity notice must follow
-      parsed content rather than that filename.
-- [ ] Treat a present recognized field with a non-list or a non-string entry as an
+      parsed content rather than that filename (done — `docs/supported-tools.md`).
+- [x] Treat a present recognized field with a non-list or a non-string entry as an
       unsupported subtree and show raw-editor-first rather than imitating Cursor's
       silent dropping of malformed entries. Unknown keys alone do not suppress an
       otherwise valid card. An empty object and omitted fields are valid empty
-      policy states.
-- [ ] Give each displayed field reviewed, plain-language help and a link to the
+      policy states; the card distinguishes an omitted field from an explicit `[]`.
+- [x] Give each displayed field reviewed, plain-language help and a link to the
       primary reference. Explain matching and precedence only at the level the
       source documents; do not claim the app can determine whether a future action
       will run without approval.
-- [ ] Add token-free user and project fixtures, including a JSONC fixture with
+- [x] Add token-free user and project fixtures, including a JSONC fixture with
       comments/trailing commas, plus malformed recognized fields, unsupported
       nested shapes, unknown siblings, and an empty policy. Test the adapter,
       selection registry, card, fallback, help/link failure, and that opening or
       interacting with a read-only card never saves or changes bytes.
-- [ ] Run the standard format, analysis, test, and internal-link gates. Update
+- [x] Run the standard format, analysis, test, and internal-link gates. Update
       `docs/supported-tools.md`, this roadmap, and `CHANGELOG.md` only when the
       card is user-visible; keep the `TO_DO.md` entry open until the complete slice
       is validated.
 
 ##### Research complete for planning; open implementation questions
 
-1. The official reference currently says user/project arrays are concatenated and
-   settings are re-read on change. There are recent reports of version-specific
-   desktop inconsistencies. The card avoids computing an effective policy, so this
-   does not block read-only presentation; re-check the primary reference before
-   implementation and retain the source-review date in `docs/supported-tools.md`.
-2. Confirm whether the card should include all four documented fields in its first
-   view (recommended) or split `autoRun` into a later card. Splitting it would make
-   the initial card smaller but leaves a documented permission-adjacent object raw.
-3. Decide the exact relationship between the new generic fidelity notice and a
-   JSONC Cursor fixture. The notice is required on opening whenever a structured
-   save could take a lossy fallback, even though this phase does not add a write
-   control.
+Resolved during implementation (2026-09-07):
+
+1. The official reference says user/project files are combined at runtime and settings
+   are re-read on change. The card avoids computing an effective policy and states it
+   shows this file's stored entries only, so the version-specific desktop
+   inconsistency reports do not affect read-only presentation. The primary reference was
+   re-checked 2026-09-07 and confirms the two paths, the four optional fields, JSONC,
+   that unknown keys are ignored, that non-string array entries are silently dropped
+   (which is why this app shows malformed recognized fields raw-editor-first), and that
+   per-user and per-repo files are concatenated; the review date is retained in
+   `docs/supported-tools.md`.
+2. The first view shows **all four documented fields** (`mcpAllowlist`,
+   `terminalAllowlist`, `autoRun.allow_instructions`, `autoRun.block_instructions`);
+   `autoRun` was not split into a later card. The card additionally distinguishes an
+   omitted field ("Not set.") from an explicit `[]` ("No entries.").
+3. The JSONC relationship is handled by the existing `FidelityAssessor`: its `_jsonLabel`
+   labels by parsed content (`parsedAsJsonc`) and the `.jsonc` suffix, not the filename,
+   so a `.json` Cursor file that parses as JSONC opens with a "JSONC" notice. A fixtures
+   test asserts this. This phase adds no write control.
 
 ### Phase 5 — regression and platform confidence
 

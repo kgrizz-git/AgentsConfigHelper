@@ -1,6 +1,7 @@
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/cursor_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 
 /// Single pure-Dart selection point for policy-card adapters.
@@ -26,6 +27,7 @@ class PolicyCardRegistry {
   /// their own registry explicitly instead.
   static final PolicyCardRegistry shared = PolicyCardRegistry([
     ClaudeCodePermissionsAdapter(),
+    CursorPermissionsAdapter(),
   ]);
 
   /// Returns the first non-`notApplicable` interpretation, else the sentinel.

@@ -1,0 +1,5 @@
+{
+  // MCP servers allowed by this project.
+  "mcpAllowlist": ["github:*", "linear:list_issues",],
+  "terminalAllowlist": ["git", "npm",]
+}

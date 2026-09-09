@@ -5,6 +5,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/cursor_permissions.dart';
 import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/policy_card_widget_registry.dart';
@@ -16,22 +17,22 @@ void main() {
   group('ConfigEditor policy-card integration', () {
     testWidgets(
       'shows the nested permissions notice, not the flat editor, for a '
-      'non-Claude tool with Map permissions',
+      'tool with no matching adapter with Map permissions',
       (tester) async {
         final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
-          (item) => item.id == ToolId.cursor,
+          (item) => item.id == ToolId.lmStudio,
         );
         final discoveredConfig = DiscoveredConfig.fromPath(
-          filePath: '${Directory.systemTemp.path}/.cursor/permissions.json',
+          filePath: '${Directory.systemTemp.path}/.lmstudio/settings.json',
           descriptor: descriptor,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
           format: ConfigFormat.json,
-          sourceLabel: 'Cursor Agent',
+          sourceLabel: 'LM Studio',
           fromCatalog: true,
         );
         final config = ToolConfig(
-          toolName: 'Cursor Agent',
+          toolName: 'LM Studio',
           filePath: discoveredConfig.filePath,
           format: ConfigFormat.json,
           originalContent: '{"permissions":{"allow":["Read(./fixtures/**)"]}}',
@@ -253,5 +254,178 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets(
+      'renders the Cursor card for a catalog-discovered permissions.json',
+      (tester) async {
+        final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+          (item) => item.id == ToolId.cursor,
+        );
+        final discoveredConfig = DiscoveredConfig.fromPath(
+          filePath: '${Directory.systemTemp.path}/.cursor/permissions.json',
+          descriptor: descriptor,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+          format: ConfigFormat.json,
+          sourceLabel: 'Cursor Agent',
+          fromCatalog: true,
+        );
+        final config = ToolConfig(
+          toolName: 'Cursor Agent',
+          filePath: discoveredConfig.filePath,
+          format: ConfigFormat.json,
+          originalContent: '{"mcpAllowlist":["github:*"]}',
+          rawSettings: const {
+            'mcpAllowlist': ['github:*'],
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ConfigEditor(
+                config: config,
+                discoveredConfig: discoveredConfig,
+                onSave: (config, {rawContent, allowRewrite}) async => config,
+                resolvePath: (path) => path,
+                onShowHistory: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Cursor Agent permissions'), findsOneWidget);
+        expect(find.text('MCP allowlist (1)'), findsOneWidget);
+        expect(
+          find.text(
+            'Nested permissions are preserved but not editable here yet.',
+          ),
+          findsNothing,
+        );
+        expect(
+          find.text('Allowed directories or commands for this agent.'),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'shows unsupported-reason text, not a card, for a malformed Cursor '
+      'recognized field',
+      (tester) async {
+        final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+          (item) => item.id == ToolId.cursor,
+        );
+        final discoveredConfig = DiscoveredConfig.fromPath(
+          filePath: '${Directory.systemTemp.path}/.cursor/permissions.json',
+          descriptor: descriptor,
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+          format: ConfigFormat.json,
+          sourceLabel: 'Cursor Agent',
+          fromCatalog: true,
+        );
+        final config = ToolConfig(
+          toolName: 'Cursor Agent',
+          filePath: discoveredConfig.filePath,
+          format: ConfigFormat.json,
+          originalContent: '{"mcpAllowlist":"github:*"}',
+          rawSettings: const {
+            'mcpAllowlist': 'github:*',
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ConfigEditor(
+                config: config,
+                discoveredConfig: discoveredConfig,
+                onSave: (config, {rawContent, allowRewrite}) async => config,
+                resolvePath: (path) => path,
+                onShowHistory: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Cursor Agent permissions'), findsNothing);
+        expect(
+          find.text(
+            'Cursor permission "mcpAllowlist" is not a supported value. '
+            'Use the raw editor to review it.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Allowed directories or commands for this agent.'),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('the Cursor card is read-only', (tester) async {
+      final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+        (item) => item.id == ToolId.cursor,
+      );
+      final discoveredConfig = DiscoveredConfig.fromPath(
+        filePath: '${Directory.systemTemp.path}/.cursor/permissions.json',
+        descriptor: descriptor,
+        scope: ConfigLocationScope.user,
+        kind: ConfigSourceKind.structuredConfig,
+        format: ConfigFormat.json,
+        sourceLabel: 'Cursor Agent',
+        fromCatalog: true,
+      );
+      const originalContent = '{"mcpAllowlist":["github:*"]}';
+      final config = ToolConfig(
+        toolName: 'Cursor Agent',
+        filePath: discoveredConfig.filePath,
+        format: ConfigFormat.json,
+        originalContent: originalContent,
+        rawSettings: const {
+          'mcpAllowlist': ['github:*'],
+        },
+      );
+      var saveCount = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ConfigEditor(
+              config: config,
+              discoveredConfig: discoveredConfig,
+              onSave: (config, {rawContent, allowRewrite}) async {
+                saveCount++;
+                return config;
+              },
+              resolvePath: (path) => path,
+              onShowHistory: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Cursor Agent permissions'), findsOneWidget);
+      expect(
+        find.text('Allowed directories or commands for this agent.'),
+        findsNothing,
+      );
+      await tester.ensureVisible(
+        find.byTooltip(CursorPermissionsHelp.mcpAllowlist.description),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byTooltip(CursorPermissionsHelp.mcpAllowlist.description),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      expect(config.originalContent, originalContent);
+      expect(saveCount, 0);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

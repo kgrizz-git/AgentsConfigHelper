@@ -1,0 +1,8 @@
+{
+  "mcpAllowlist": ["github:*", "linear:list_issues"],
+  "terminalAllowlist": ["git", "npm"],
+  "autoRun": {
+    "allow_instructions": ["Read-only inspections are fine."],
+    "block_instructions": ["Pause delete operations for review."]
+  }
+}
