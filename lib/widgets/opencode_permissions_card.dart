@@ -4,7 +4,7 @@ import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Displays a validated Opencode permission block without editing it.
+/// Displays a validated Opencode permission block without mutating it.
 class OpencodePermissionsCard extends StatelessWidget {
   /// Creates a card for a recognized Opencode permission block.
   const OpencodePermissionsCard({
@@ -89,6 +89,8 @@ class OpencodePermissionsCard extends StatelessWidget {
     );
   }
 
+  /// Builds one permission group: a Global scalar action or a per-tool entry
+  /// that shows either a scalar action or bulleted `pattern → action` rules.
   Widget _buildGroup({
     required BuildContext context,
     required OpencodePermissionFieldHelp help,
@@ -117,7 +119,9 @@ class OpencodePermissionsCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           if (scalar != null)
-            Text(scalar, style: AppTextStyles.codeBase)
+            SelectableText(scalar, style: AppTextStyles.codeBase)
+          else if (patterns != null && patterns.isEmpty)
+            const Text('No rules.', style: AppTextStyles.uiSecondary)
           else if (patterns != null)
             ...patterns.entries.map(
               (entry) => Padding(
@@ -164,6 +168,15 @@ class OpencodePermissionsCard extends StatelessWidget {
             OpencodePermissionsHelp.policy.description,
             style: AppTextStyles.uiSecondary,
           ),
+          if (!presentation.hasConfiguredPermission) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'No Opencode permissions policy is configured. Legacy tools '
+              'settings are not shown. Use raw content to add a permission '
+              'block.',
+              style: AppTextStyles.uiSecondary,
+            ),
+          ],
           if (presentation.globalAction != null)
             _buildGroup(
               context: context,
@@ -178,15 +191,6 @@ class OpencodePermissionsCard extends StatelessWidget {
               patterns: entry.value.patterns,
             ),
           ),
-          if (!presentation.hasConfiguredPermission) ...[
-            const SizedBox(height: 16),
-            const Text(
-              'No Opencode permissions policy is configured. Legacy tools '
-              'settings are not shown. Use raw content to add a permission '
-              'block.',
-              style: AppTextStyles.uiSecondary,
-            ),
-          ],
           const SizedBox(height: 12),
           TextButton.icon(
             onPressed: () async {
