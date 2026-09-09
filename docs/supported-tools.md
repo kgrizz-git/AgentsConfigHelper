@@ -39,10 +39,13 @@ to auto-detect, parse, visualize, and edit settings across tools.
 
 ## Catalog evidence
 
-Catalog reviewed through: 2026-08-25
+Catalog reviewed through: 2026-08-25 (catalog-wide baseline). Rows re-checked after the
+baseline carry their own newer date in the "Reviewed" column.
 
 > **Status:** All 17 registered tools have a recorded evidence/status row in the table below,
-> substantively reviewed against current vendor sources as of 2026-08-25.
+> substantively reviewed against current vendor sources as of the catalog-wide baseline
+> (2026-08-25). A row re-checked after the baseline carries its own newer date in the
+> "Reviewed" column; the only such row today is Cursor Agent (2026-09-07).
 
 | Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |
 | --- | --- | --- | --- | --- | --- |
