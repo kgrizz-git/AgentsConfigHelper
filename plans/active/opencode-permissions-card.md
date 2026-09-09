@@ -203,10 +203,9 @@ hasUnclassified-free layout (no note needed — everything in `permission` is sh
 a documentation launcher labeled **"Opencode permissions documentation"** →
 `documentationUri` with the same `onOpenDocumentation`/mounted-guarded SnackBar pattern.
 No editing controls, no write path. When `hasConfiguredPermission` is false, show a
-safe empty state: **"No Opencode permissions policy is configured. Legacy `tools`
-settings are not shown. Use raw content to add a `permission` block."** — this exact
-string is the one the card-widget test asserts (via `find.textContaining`, mirroring
-`claude_code_permissions_card_test.dart`).
+safe empty state with this exact literal string (plain text, no backticks):
+`"No Opencode permissions policy is configured. Legacy tools settings are not shown. Use raw content to add a permission block."`
+The card-widget test asserts `find.textContaining('No Opencode permissions policy is configured. Legacy tools settings are not shown.')` (mirroring `claude_code_permissions_card_test.dart`).
 
 ### Registrations
 
@@ -280,7 +279,7 @@ duplicated here). Mirror Cursor's JSONC assertions
 - Renders the global action and each tool group (simple action vs granular rules);
   for the empty state asserts `find.textContaining('No Opencode permissions policy is '
   'configured. Legacy tools settings are not shown.')` (matching the card's exact
-  revised string, via `textContaining` like Claude).
+  plain-text string, via `textContaining` like Claude).
 - Help dialog opens per group; documentation-launcher failure shows the SnackBar
   (inject a failing `onOpenDocumentation`).
 
