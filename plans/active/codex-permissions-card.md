@@ -101,6 +101,14 @@ The permission-relevant stored keys are:
   instruction documents, and managed `requirements.toml`.
 - Profile files (`~/.codex/<profile>.config.toml`) and the system config: not
   cataloged, never card-eligible.
+- The legacy `[sandbox_workspace_write]` table is out of card scope: a file with
+  only that table (no `sandbox_mode`, `approval_policy`, `default_permissions`,
+  or `[permissions]`) renders the empty state.
+- The pre-existing structured-save boundary: a map-shaped `permissions` table
+  decodes to `extractStringList → []`, so an opt-in structured TOML save would
+  strip `[permissions.*]` from its output (`toml_config_parser.dart:95-98`).
+  This slice adds no write path and must not widen that behavior; the
+  `FidelityAssessor` TOML notice already warns.
 - Any change to the generic flat editors or `ConfigEditor` structure.
 
 ## Current-state baseline (as of plan start)
@@ -136,13 +144,18 @@ The permission-relevant stored keys are:
 
 `CodexPermissionsAdapter.adapterId = 'codex.permissions'` with
 `String get id => adapterId;` (static/instance names must differ). The target
-guard mirrors the Cursor/Opencode adapters: `ToolId.codex` +
-`structuredConfig` + `ConfigFormat.toml` on both `discoveredConfig.format` and
-`config.format` (both sides carry the catalog format via
-`loadDiscoveredConfig`) + user/project scope + `p.basename(filePath) ==
-'config.toml'` with `p.basename(p.dirname(filePath)) == '.codex'`. The basename
-check excludes profile files (`<profile>.config.toml`) by construction; the
-catalog-discovered check excludes the system config and manual paths.
+guard follows the Cursor pattern (basename + parent-dir — stricter than
+Opencode's basename-only check): `ToolId.codex` + `structuredConfig` +
+`ConfigFormat.toml` on both `discoveredConfig.format` and `config.format` (both
+sides carry the catalog format via `loadDiscoveredConfig`), user/project scope,
+plus `p.basename(discoveredConfig.filePath) == 'config.toml'` with
+`p.basename(p.dirname(discoveredConfig.filePath)) == '.codex'`. Path identity
+comes from the normalized discovery metadata (`discoveredConfig.filePath`,
+normalized in `DiscoveredConfig.fromPath`), never the un-normalized
+`config.filePath`. The basename check excludes profile files
+(`<profile>.config.toml`) by construction; the parent-dir check excludes the
+system config (`/etc/codex/…`, whose parent is `codex`) and near-misses
+(`workspace.codex/…`); the catalog-discovered check excludes manual paths.
 
 The presentation model:
 
@@ -169,8 +182,9 @@ The presentation model:
   `read`/`write`/`deny`, `network.enabled` as a string, a workspace-root value
   that is not boolean) is an unsupported subtree → the adapter declines and the
   raw editor leads. An absent permission block (no legacy keys, no
-  `default_permissions`, no `[permissions]`) renders a safe empty state ("No
-  permission settings stored in this file."), not an error.
+`default_permissions`, no `[permissions]`) renders a safe empty state ("No
+permission settings stored in this file."), not an error. A present-but-empty
+`[permissions]` table (no profile children) renders the same empty state.
 - When `sandbox_mode` coexists with `[permissions]` in the stored file, the card
   shows both stored halves plus a help note that Codex prefers the older sandbox
   settings when `sandbox_mode` appears in any loaded layer (with the doc link);
@@ -201,16 +215,28 @@ today.
 
 ## Exploratory research spike
 
-Before writing the adapter, run a throwaway spike (not committed) confirming:
+The spike ran 2026-09-10 as a throwaway test (not committed) against a
+profile-shaped fixture. Outcomes, recorded here before implementation chunk 1:
 
-1. `TomlDocument.parse(...).toMap()` runtime types for a profile-shaped fixture:
-   nested `[permissions.x.filesystem]` tables decode to `Map`, `writable` lists
-   to `List`, booleans/strings/ints to their Dart scalars; note any `DateTime`
-   or other exotic value types so the adapter's defensive casts cover them.
-2. `extractStringList` behavior on table (non-list) values, to state the exact
-   generic-editor baseline a `[permissions.*]` fixture renders today.
-3. That a `[permissions.*]` staging fixture still round-trips through discovery
-   with `ConfigFormat.toml` on both sides.
+1. `TomlDocument.parse(...).toMap()` returns `Map<String, dynamic>` at every
+   level with `String` keys throughout — TOML keys are always strings, so the
+   adapter has no non-string-key case (unlike the JSON adapters). Dotted table
+   headers nest exactly as the presentation model assumes:
+   `[permissions.project-edit.filesystem.":workspace_roots"]` decodes to
+   `permissions → project-edit → filesystem → :workspace_roots → {...}`.
+   Profile-shape values decode to `String`/`bool`/`int` (`glob_scan_max_depth
+   = 3` → `int`); exotic values (for example TOML dates → `DateTime`) remain
+   possible in principle, so the adapter uses `is Map` checks plus per-value
+   `as` casts and never `as Map<String, String>`.
+2. `extractStringList` on a table value is established behavior
+   (`config_parser.dart:96-99`): non-lists yield `[]`, so a map-shaped
+   `permissions` sets neither `config.permissions` nor the flat editor — the
+   nested-permissions heuristic fires instead. A *list*-shaped `permissions`
+   would populate `config.permissions` and hide that heuristic, so the adapter
+   must decline it as malformed (see [Test strategy](#test-strategy)).
+3. Both-sides `ConfigFormat.toml` is asserted by the chunk-1 guard tests
+   (mirroring the Opencode jsonc-both-sides precedent via
+   `loadDiscoveredConfig`); no separate spike needed.
 
 Record the outcomes in this plan (Resolved open questions) before implementation
 chunk 1; if the decoded shapes differ from the assumptions above, revise the
@@ -231,6 +257,12 @@ recognized values decline (`permissions` as string, access as int, enabled as
 string, workspace-root value as string); empty file renders the empty state;
 unsupportedReason is set on decline. Scope: TOML keys are always strings, so no
 non-string-key case exists (unlike JSON adapters) — assert values only.
+Near-miss paths decline (`workspace.codex/config.toml`, whose parent is not
+`.codex`), mirroring the Cursor `workspace.cursor` regression test. Sibling
+Codex catalog targets decline (for example `.codex/rules/default.rules`),
+mirroring the Cursor `mcp.json` decline test. A list-shaped `permissions`
+declines as malformed: it would otherwise populate `config.permissions` and
+hide the nested-permissions heuristic, risking flat-editor exposure.
 
 ### Fixtures (`test/fixtures/codex_permissions_fixtures_test.dart`)
 
@@ -254,7 +286,11 @@ the stored-entries notice; malformed states are covered at the adapter level.
 Extend with: a Codex card renders for a catalog-discovered `config.toml`; a
 malformed Codex file falls back to the generic TOML editor; interacting with
 the read-only card never saves or changes bytes (byte-compare via
-`originalContent`, since it is final — assert `onSave` is never invoked).
+`originalContent`, since it is final — assert `onSave` is never invoked). When
+the card renders for a profile-shaped file, assert the nested-permissions
+notice and the flat permissions editor stay hidden (mirroring the Opencode
+`findsNothing` assertions), proving the card wins over the
+`hasNestedUnsupportedPermissions` heuristic.
 
 ### TOML fidelity (no new code)
 
@@ -269,10 +305,10 @@ Every statement must keep the read-only boundary explicit: the card shows
 stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
 
 - `docs/supported-tools.md`:
-  - Codex evidence row (~line 55): append the read-only card to the "Schema
+  - Codex evidence row: append the read-only card to the "Schema
     evidence" cell; re-check the primary references and update the
     source-review date.
-  - Codex Permissions section (~line 177): add this bullet:
+  - Codex Permissions section: add this bullet:
     `- **Read-only card:** The app renders the permission block of a discovered
     config.toml as a read-only policy card showing the file's stored entries;
     it does not compute Codex's effective policy and cannot edit TOML structure.`
@@ -314,7 +350,8 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
 
 ## Implementation steps
 
-1. Run the exploratory research spike; record outcomes above before writing code.
+1. The exploratory research spike already ran (2026-09-10); outcomes are
+   recorded above. Re-run only if the presentation model changes.
 2. Add `lib/schemas/codex_permissions.dart` (adapter + presentation + help, pure
    Dart, docstrings). `CodexPermissionsAdapter.adapterId = 'codex.permissions'`
    with `String get id => adapterId;`. Import `package:path/path.dart` as `p`

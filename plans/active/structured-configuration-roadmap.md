@@ -308,7 +308,7 @@ Every implementation slice must run:
 dart format --output=none --set-exit-if-changed .
 flutter analyze --fatal-infos
 flutter test
-python3 ci/scripts/check_doc_links.py --internal-only --strict
+python3 ci/scripts/check_doc_links.py --internal-only --catalog-strict
 ```
 
 Before a schema is marked editable, additionally require fixture tests showing unchanged
