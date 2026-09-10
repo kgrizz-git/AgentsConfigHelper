@@ -94,7 +94,7 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
         messenger.showSnackBar(
           SnackBar(
             content: Text('Failed to restore backup: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -124,7 +124,7 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
           error: (e, _) => Center(
             child: Text(
               'Error: $e',
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
           data: (backups) {

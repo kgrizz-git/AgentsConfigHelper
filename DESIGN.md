@@ -14,10 +14,12 @@ the UI structure, the editor model, and the data-model shape.
 - `MainShell` (`lib/screens/main_shell.dart`) is a two-pane
   `MultiSplitView`: a sidebar list of discovered configs plus manual paths
   on the left, a `ConfigEditor` for the active selection on the right.
-  Selection is `_activeConfigId`; a dedicated `_showingOverview` flag will
-  host the planned Overview report screen (see
-  `plans/active/config-overview-report.md`) without overloading selection.
-- Sidebar header hosts global actions (add path, manage project roots).
+  Selection is `_activeConfigId`; a dedicated `_showingOverview` flag
+  (planned — does not exist in code yet) will host the Overview report
+  screen (see `plans/active/config-overview-report.md`) without
+  overloading selection.
+- Sidebar header hosts global actions (add path, manage project roots)
+  behind a `+` popup menu.
 - `ConfigEditor` renders, per config: a structured policy card when the
   tool has a schema adapter (Claude, Cursor, Opencode, Codex), otherwise
   the raw text editor — raw-first fallback is the rule, never a dead end.
@@ -64,3 +66,5 @@ the UI structure, the editor model, and the data-model shape.
 - [ ] App-level light theme: the app is dark-only; `DESIGN_LANGUAGE.md`
   defines light tokens for the HTML export only. Promote to a full app
   light theme or keep dark-only — deferred past 0.2.0.
+- [ ] `ARCHITECTURE.md` (last reviewed 2026-08-17) predates the Overview
+  surface: update its data-flow section when the report screen lands.

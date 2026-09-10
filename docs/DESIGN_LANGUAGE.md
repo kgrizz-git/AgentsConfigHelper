@@ -37,8 +37,12 @@ Flutter app (`lib/theme/`) and the exported HTML report
   `-apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`
   for UI and the mono stack above for paths. Same visual intent, zero
   network.
-- **Scale:** 12 meta/label, 13 body, 15 section titles, 20 page title.
-  Code/paths at 12–13.
+- **Scale:** 13 meta/secondary, 14 body, 16 section titles, 24 page title.
+  Code/paths at 13. These match `AppTextStyles` — the spec follows the
+  code, not the other way round.
+- **Weights:** `uiBase` Regular 400 (implicit default), `uiSecondary`
+  Regular 400, `uiSubheader` Medium 500, `uiHeader` SemiBold 600,
+  `codeBase` Regular 400. Name the weight when adding a style.
 
 ## Color tokens
 
@@ -71,12 +75,28 @@ warning follow one pattern: tinted token background + matching foreground
 text + 999px radius + 12px semibold label. Example dark values: neutral
 pill `#2D2D2D` bg / `#E0E0E0` text; warning pill `#3A2406`-class bg /
 `#FFA000` text. Never solid status fills for text-bearing badges.
+Kind pills live in report rows and editor headers — not in sidebar items,
+which stay icon + title + path.
+Explicit exception: full-width alert banners (e.g. the test-root banner)
+may use a solid `warning` fill with dark text; the no-solid-fills rule
+covers badges and pills, not banners.
+Active selection is `surface-hover` background plus a 3px accent left rail
+(the `SidebarItem` pattern) — no separate `surface-active` token; the rail,
+not the fill, is the differentiator.
 
 ## Shape and spacing
 
 - Radius: 8px cards and buttons, 999px pills, 6px inputs.
 - Spacing base 4px; section padding 16–24px; ToC sidebar 240–280px,
   collapsing to a top nav under ~720px width.
+
+## States
+
+- **Focus:** 2px accent ring, 2px offset. `InkWell` ripple is the current
+  mechanism; a dedicated focus-ring token is deferred, not omitted.
+- **Empty:** empty states use `uiSecondary` (`text-muted`).
+- **Loading:** the default Material spinner is intentional on dark
+  surfaces; override only if it clashes with a new surface.
 
 ## Export mapping
 
@@ -88,8 +108,12 @@ no resource hints, no JS (per the report plan's offline rule).
 
 ## Agent rules
 
-1. Use `AppColors` / `AppTextStyles` in widgets — never raw hex outside
-   `lib/theme/` and this file.
+1. Use `AppColors` / `AppTextStyles` in widgets — never raw hex, and never
+   `Colors.*` constants (e.g. `Colors.red`, which duplicates
+   `AppColors.error`), outside `lib/theme/` and this file. Narrow
+   exception: the diff `Before:` / `After:` labels in `raw_diff_view.dart`
+   deliberately use the brighter Material accent variants for contrast on
+   dark diff backgrounds; leave them, don't proliferate them.
 2. Use the token table for export CSS — never ad-hoc colors in builders.
 3. When adding a token, add it here, in `AppColors`, and (if it renders in
    the report) in the export CSS mapping in the same PR.
