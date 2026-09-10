@@ -38,6 +38,8 @@ better — decide at implementation):
   (confirmed: show, don't hide).
 - Kind classification reuses the schema adapters / catalog metadata where
   available; unknown files fall back to `other` with the raw-editor path.
+  Manually-added paths with no catalog match group under a trailing
+  `Other` section (after all catalog tools, sorted by path).
 - `secretBearing` sourcing (Chunk 1 must add this, not hard-code it): true
   when the basename matches a static sensitive-name pattern (`token`,
   `secret`, `credential`, `auth`, `private-key`, `.env`, …) OR the tool is
@@ -57,7 +59,11 @@ better — decide at implementation):
   ToC sidebar (collapses to top-nav on narrow widths), per-tool sections,
   kind badges as pills, `file:` links per row. Must render identically
   offline from disk.
-- Shared ordering: tools in catalog order, files sorted by scope then path.
+- Shared ordering: tools in catalog order, files sorted by scope then path;
+  the `Other` group always comes last.
+- Escaping: no new package needed — use `dart:convert`'s `HtmlEscape`
+  (`HtmlEscapeMode.element` for text nodes, `.attribute` for attribute
+  values) for display names/paths in HTML output.
 - Link construction: build `file:` URIs with `Uri.file(path).toString()`
   so separators and triple-slash form are correct per platform, then
   percent-encoding is handled by `Uri`. In HTML each row is
@@ -85,8 +91,11 @@ better — decide at implementation):
   maintained fork). Wire its `onTapLink` to `url_launcher` (already a
   dependency) so `file:` links work in the preview. No in-app HTML
   renderer — "Open in browser" hands the saved `.html` to the OS.
-- Buttons: `Save .md`, `Save .html`, `Open in editor` per row (OS default
-  app for the extension via `url_launcher`), `Copy path` per row.
+- Buttons: `Save .md`, `Save .html`, per-row `Open in editor` (default app
+  for the extension via `url_launcher`) and per-row `Copy path`. "Open"
+  strictly means launch-with-default-app; there is no reveal-in-file-manager
+  in v1 (the existing `lib/utils/open_directory.dart` only handles
+  directories — a file-reveal helper is follow-up material, not this plan).
 - Save flow uses a native save dialog via `file_selector: ^1.1.0`
   (confirmed: dialog, not an automatic location). `file_selector` is a
   federated native plugin (not pure Dart): no macOS entitlement changes are
@@ -94,7 +103,9 @@ better — decide at implementation):
   `docs/adr/ADR-002-macos-file-access.md`, but Chunk 3 must verify the save
   dialog works in the release build on macOS. Keep the builder layer
   decoupled from the dialog so save-path tests run against test-root
-  fixtures without UI.
+  fixtures without UI. The dialog call itself sits behind a thin injectable
+  seam: tests bypass the native dialog (which cannot appear on headless CI)
+  and exercise the write-bytes-to-path function plus the dialog-cancel path.
 
 ### Secrets
 
@@ -113,16 +124,19 @@ better — decide at implementation):
 ## Chunks
 
 1. **Model + builders + unit tests.** `ConfigOverviewEntry`, model assembly
-   from discovery/catalog fixtures, both builders; golden assertions on a
-   small fixture (ToC anchors, grouping, ordering, escaping, missing-path
-   handling, secrets badge, generated-at stamp).
+   from discovery/catalog fixtures, both builders; text-snapshot assertions
+   (string-equality against checked-in expected outputs under
+   `test/fixtures/` — no pixel goldens, no new test infrastructure) on a
+   small fixture (ToC anchors, grouping, ordering incl. trailing `Other`,
+   escaping, missing-path handling, secrets badge, generated-at stamp).
 2. **Screen + Markdown preview.** New shell destination, `flutter_markdown`
    preview, per-row copy-path; widget tests.
 3. **Save + open actions.** `.md` / `.html` export, `file:` links,
    open-in-editor via `url_launcher`, reveal; widget + integration coverage
    over the save path (test-root fixtures, never real home).
 4. **Docs + changelog.** `docs/supported-tools.md` untouched (tool-agnostic);
-   short section in user docs + `CHANGELOG.md` Unreleased entry.
+   add the report to README.md `### Available now` + `CHANGELOG.md`
+   Unreleased entry.
 
 ## Validation
 
