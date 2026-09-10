@@ -38,6 +38,12 @@ better — decide at implementation):
   (confirmed: show, don't hide).
 - Kind classification reuses the schema adapters / catalog metadata where
   available; unknown files fall back to `other` with the raw-editor path.
+- `secretBearing` sourcing (Chunk 1 must add this, not hard-code it): true
+  when the basename matches a static sensitive-name pattern (`token`,
+  `secret`, `credential`, `auth`, `private-key`, `.env`, …) OR the tool is
+  in an explicit `toolsWithSecretBearingConfigs` set added to the tool
+  registry; default false. Golden fixtures cover both a pattern hit and a
+  registry hit.
 
 ### Builders (pure functions, golden-tested)
 
@@ -46,25 +52,47 @@ better — decide at implementation):
   each file row: kind badge (text), relative path as `file:` link, format
   and scope in muted text. Secret-bearing files get a `⚠ secrets` marker.
 - `buildHtmlReport(model)`: single self-contained file, inline CSS only, no
-  external assets, no JS. Clean sans-serif, sticky ToC sidebar (collapses to
-  top-nav on narrow widths), per-tool sections, kind badges as pills,
-  `file:` links per row. Must render identically offline from disk.
+  external assets, no JS, no `<base>`, no external `<link>` elements, no
+  resource hints (`preconnect`/`prefetch`/etc.). Clean sans-serif, sticky
+  ToC sidebar (collapses to top-nav on narrow widths), per-tool sections,
+  kind badges as pills, `file:` links per row. Must render identically
+  offline from disk.
 - Shared ordering: tools in catalog order, files sorted by scope then path.
-- Escaping: HTML-escape display names/paths; percent-encode `file:` URIs
-  (spaces, `#`, non-ASCII).
+- Link construction: build `file:` URIs with `Uri.file(path).toString()`
+  so separators and triple-slash form are correct per platform, then
+  percent-encoding is handled by `Uri`. In HTML each row is
+  `<a href="<encoded URI>"><code><readable path></code></a>` — no JS means
+  no clipboard in the static file, so copy-path stays an in-app-screen
+  action only. In Markdown each row keeps the plain readable path as text
+  plus the `[label](file:///…)` link; note the limitation that `file:`
+  links are clickable in VS Code but stripped by renderers like GitHub —
+  acceptable since the `.md` is for local use.
+- Missing-path rows render unlinked plain-text paths but still carry the
+  kind badge and the secrets warning where applicable (golden fixture must
+  include a missing row with a secrets badge).
 
 ### Screen + preview
 
-- New `Overview` / `Report` destination in the main shell (alongside the
-  existing tool views), reading discovery state via the existing providers.
-- Preview renders the Markdown via the `flutter_markdown` package (new
-  dependency; pure Dart, no platform plugins). No in-app HTML renderer —
-  "Open in browser" hands the saved `.html` to the OS via `url_launcher`
-  (already a dependency).
+- New `Overview` / `Report` destination in the main shell. `MainShell` is a
+  two-pane `MultiSplitView` (sidebar list + content pane, selection via
+  `_activeConfigId` in `lib/screens/main_shell.dart`): expose Overview as a
+  toolbar button in the sidebar header that sets a dedicated
+  `_showingOverview` flag (do not overload `_activeConfigId`), rendering
+  `ConfigOverviewScreen` in the right pane instead of `ConfigEditor` while
+  set.
+- Preview renders the Markdown via `flutter_markdown_plus: ^1.0.12` (new
+  dependency; note `flutter_markdown` itself is discontinued — use the
+  maintained fork). Wire its `onTapLink` to `url_launcher` (already a
+  dependency) so `file:` links work in the preview. No in-app HTML
+  renderer — "Open in browser" hands the saved `.html` to the OS.
 - Buttons: `Save .md`, `Save .html`, `Open in editor` per row (OS default
   app for the extension via `url_launcher`), `Copy path` per row.
-- Save flow uses a native save dialog via the `file_selector` plugin
-  (confirmed: dialog, not an automatic location). Keep the builder layer
+- Save flow uses a native save dialog via `file_selector: ^1.1.0`
+  (confirmed: dialog, not an automatic location). `file_selector` is a
+  federated native plugin (not pure Dart): no macOS entitlement changes are
+  expected since this app ships unsandboxed per
+  `docs/adr/ADR-002-macos-file-access.md`, but Chunk 3 must verify the save
+  dialog works in the release build on macOS. Keep the builder layer
   decoupled from the dialog so save-path tests run against test-root
   fixtures without UI.
 
