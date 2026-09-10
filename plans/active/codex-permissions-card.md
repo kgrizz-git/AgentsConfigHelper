@@ -90,8 +90,12 @@ The permission-relevant stored keys are:
 - A read-only `CodexPermissionsCard` widget and its registration in
   `PolicyCardWidgetRegistry.shared`; registration of the adapter in
   `PolicyCardRegistry.shared`.
+- Two bounded, tool-agnostic safety companions: the `ConfigEditor`
+  presentation decoupling plus non-list rules notice, and the
+  `TomlConfigParser` preservation rule (neither adds a write capability).
 - Fixtures and tests: adapter, registry selection, widget mapping, card,
-  fallback, help/link failure, and a read-only/no-byte-mutation assertion.
+  fallback, help/link failure, a read-only/no-byte-mutation assertion, parser
+  preservation, and opt-in save-path coverage.
 - An exploratory research spike (recorded below) verifying the TOML decoded-map
   shapes before the adapter is written.
 - Docs and docstring follow-through (see [Docs, docstrings, and metadata](#docs-docstrings-and-metadata)).
@@ -128,10 +132,11 @@ The permission-relevant stored keys are:
   preservation rule in [TOML serializer preservation
   fix](#toml-serializer-preservation-fix) and must not widen structured-save
   behavior in any other way.
-- Any change to the generic flat editors, `FidelityAssessor`, or
-  `StructuredSaveFlow`. Two bounded exceptions, neither adding a write
-  capability or per-tool branch: the `ConfigEditor` presentation decoupling
-  and the `TomlConfigParser` preservation rule, both described below.
+- Any change to `FidelityAssessor` or `StructuredSaveFlow`. Three bounded,
+  tool-agnostic exceptions, none adding a write capability or per-tool branch:
+  the `ConfigEditor` presentation decoupling, the `ConfigEditor` non-list
+  rules notice, and the `TomlConfigParser` preservation rule, all described
+  below.
 
 ## Current-state baseline (as of plan start)
 
@@ -280,6 +285,19 @@ default, which defeats this slice. The fix decouples *presentation* from the
   diff must be minimal (a few lines — for example hoisting the built card or a
   small getter — with no net growth beyond what the cap allows).
 
+### Rules non-list notice (companion ConfigEditor change)
+
+`rules` has no nested heuristic: a map-shaped (or scalar) `rules` value still
+renders the Rules `StringListEditor` under opt-in while `config.rules` stays
+`[]`, so attempted edits would be silently ignored once the map is preserved
+— an editable control over an unsavable shape. The fix mirrors the
+permissions nested-notice pattern: when `rawSettings['rules']` is non-null
+and not a `List`, the Rules block shows the static notice "Nested rules are
+preserved but not editable here yet." instead of the `StringListEditor`; the
+raw editor remains the path for such files. List/absent shapes render exactly
+as today. This is tool-agnostic (any TOML file, not just Codex) and shares the
+700-line budget with the decoupling change — both diffs must stay minimal.
+
 ### TOML serializer preservation fix
 
 `serializeWithOutcome` (`toml_config_parser.dart:87-98`) starts from
@@ -293,10 +311,9 @@ raw key was absent and the new list is non-empty (adding entries to a keyless
 file works today and must keep working); leave the raw value untouched for
 every other shape (Map, scalar — for `permissions` those take the
 nested-notice branch, so the flat editor can never hold an in-flight edit over
-them; `rules` has no nested heuristic, so a map-shaped `rules` still renders
-the Rules editor under opt-in while `config.rules` stays `[]` — pre-existing,
-and preservation strictly beats the status-quo destruction by keeping the map
-instead of deleting it). Consequences, all
+them; map/scalar `rules` takes the companion notice from [Rules non-list
+notice](#rules-non-list-notice-companion-configeditor-change) instead of the
+Rules editor, so the same holds there). Consequences, all
 covered by parser unit tests: map/scalar shapes keep every entry (assert
 decoded-subtree equality after re-parsing the serialized output — formatting
 may still change, so never assert byte equality);
@@ -402,7 +419,9 @@ coverage: with `tomlStructuredSaveEnabled: true`, saving a profile-shaped file
 round-trips the `[permissions]` table with every entry preserved (assert
 decoded-subtree equality after re-parsing, not byte equality — formatting may
 still change) (parser preservation
-fix). Card-absent TOML files
+fix). Add rules-notice coverage: a map-shaped (and scalar) `rules` value under
+opt-in shows the nested-rules notice with no Rules `StringListEditor`, and a
+save round-trips the raw `rules` table with every entry preserved. Card-absent TOML files
 keep today's behavior — the existing fidelity-test `findsNothing`
 `StringListEditor` assertions (for example `config_editor_fidelity_test.dart`
 with a card-less config) must keep passing unchanged, plus a new manual-path
@@ -420,6 +439,11 @@ assert byte equality), as does a scalar
 value; an absent key with an empty list stays absent, while an absent key with
 added entries writes them; a kept list behaves exactly as today; a
 cleared list still removes the key (existing tests cover the kept-list path).
+Include a tool-agnostic regression case: a manual-path-shaped TOML file (path
+outside any `.codex/` dir) with a map-shaped table serializes with the table
+preserved — the rule lives in the shared parser, so manual paths and any
+current/future TOML tool are covered, while card eligibility stays
+Codex-catalog-scoped.
 
 ## Docs, docstrings, and metadata
 
@@ -491,6 +515,14 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
    round-trips with entries preserved), plus parser and opt-in-save tests.
    A broader fail-closed policy for lossy saves on complex TOML is tracked as
    a future product decision, out of this slice.
+10. **Editable Rules editor over an unsavable shape (CodeRabbit review,
+    2026-09-10).** Map/scalar `rules` rendered the Rules `StringListEditor`
+    while `config.rules` stayed `[]`, so attempted edits were silently
+    ignored. Decided: mirror the permissions nested-notice pattern — a static
+    notice replaces the editor for non-list `rules` shapes (tool-agnostic,
+    raw editor remains the path), with widget + save-path tests. Documenting
+    the quirk was rejected: an editable control must not accept edits it
+    cannot persist.
 
 ## Implementation steps
 
@@ -505,9 +537,10 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
    launcher, help dialog, no write path).
 4. Register the adapter in `PolicyCardRegistry.shared` and the card builder in
    `PolicyCardWidgetRegistry.shared`, plus the tool-agnostic presentation
-   decoupling in `ConfigEditor` (card renders under the TOML opt-out; edit
-   controls stay gated) and the bounded `TomlConfigParser` preservation fix.
-   Neither change adds a per-tool branch or a write capability.
+   decoupling and non-list rules notice in `ConfigEditor` (card renders under
+   the TOML opt-out; edit controls stay gated; unsavable rules shapes show a
+   notice) and the bounded `TomlConfigParser` preservation fix.
+   None of the three adds a per-tool branch or a write capability.
 5. Add the fixtures and tests from [Test strategy](#test-strategy).
 6. Update the docs, `CHANGELOG.md`, roadmap, and `TO_DO.md` from
    [Docs, docstrings, and metadata](#docs-docstrings-and-metadata).
@@ -530,8 +563,14 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
   today — that is a direct raw write, not a structured save.)
 - With the opt-in, saving a profile-shaped file preserves the `[permissions]`
   (and `rules`) table with every entry preserved (assert decoded-subtree
-  equality after re-parsing, not byte equality) (parser preservation fix); formatting
+  equality after re-parsing, not byte equality) (parser preservation fix);
+  a map/scalar `rules` value shows the nested-rules notice instead of an
+  editable Rules editor, and also round-trips preserved; formatting
   loss warnings still apply.
+- The preservation rule applies to every TOML serialization — catalog Codex
+  targets, manual TOML paths, and any current/future TOML tool — because it
+  lives in the shared `TomlConfigParser`; card eligibility and presentation
+  stay Codex-catalog-scoped as specified in the guard.
 - Profile files, the system config, manual paths, other tools, and
   non-`config.toml` targets are unaffected; the generic TOML editor and the
   fidelity notice keep working.
@@ -540,9 +579,10 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
 - An absent permission block renders a safe empty state.
 - The card states it shows stored entries, not the effective policy, and offers
   no edit affordance for TOML structure.
-- `ConfigEditor` gains only the tool-agnostic presentation decoupling;
-  `TomlConfigParser` gains only the bounded preservation rule (no new write
-  capability); `FidelityAssessor` and `StructuredSaveFlow` are unchanged.
+- `ConfigEditor` gains only the tool-agnostic presentation decoupling and the
+  non-list rules notice; `TomlConfigParser` gains only the bounded preservation
+  rule (which covers all TOML serializations, not just Codex targets — no new
+  write capability); `FidelityAssessor` and `StructuredSaveFlow` are unchanged.
   `config_editor.dart` must stay within the 700-line cap.
 - No interaction with the card saves or changes bytes.
 - Gates green: `dart format --output=none --set-exit-if-changed .`,
