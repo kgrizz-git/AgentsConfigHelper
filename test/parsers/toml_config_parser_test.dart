@@ -170,6 +170,25 @@ rules = ["rule1"]
       );
     });
 
+    test('preserves a map-shaped rules table on serialize', () {
+      const originalToml = '''
+[rules]
+key = "value"
+''';
+      final config = parser.parse(
+        originalToml,
+        filePath: testPath,
+        toolName: testTool,
+      );
+
+      final serialized = parser.serialize(config);
+      final roundTripped = TomlDocument.parse(serialized).toMap();
+      expect(
+        roundTripped['rules'],
+        config.rawSettings['rules']! as Map,
+      );
+    });
+
     test('preserves a scalar rules value on serialize', () {
       final config = ToolConfig(
         toolName: testTool,
