@@ -247,26 +247,26 @@ void main() {
       );
 
       expect(result.status, PolicyCardStatus.available);
-      final profile = presentationOf(result)?.profiles.single;
-      expect(profile?.extendsProfile, ':workspace');
-      expect(profile?.workspaceRoots, {'~/code/app': true});
-      expect(profile?.globScanMaxDepth, 3);
-      expect(profile?.filesystem?.length, 2);
+      final profile = presentationOf(result)!.profiles.single;
+      expect(profile.extendsProfile, ':workspace');
+      expect(profile.workspaceRoots, {'~/code/app': true});
+      expect(profile.globScanMaxDepth, 3);
+      expect(profile.filesystem?.length, 2);
       final byPath = {
-        for (final entry in profile!.filesystem!) entry.path: entry,
+        for (final entry in profile.filesystem!) entry.path: entry,
       };
       expect(byPath[':minimal']?.access, 'read');
       expect(byPath[':workspace_roots']?.subpaths, {
         '.': 'write',
         '**/*.env': 'deny',
       });
-      expect(profile?.network?.enabled, isTrue);
-      expect(profile?.network?.domains, {'api.openai.com': 'allow'});
+      expect(profile.network?.enabled, isTrue);
+      expect(profile.network?.domains, {'api.openai.com': 'allow'});
       expect(
-        profile?.network?.unixSockets,
+        profile.network?.unixSockets,
         {'/var/run/docker.sock': 'allow'},
       );
-      expect(profile?.network?.allowLocalBinding, isFalse);
+      expect(profile.network?.allowLocalBinding, isFalse);
     });
 
     test('shows both halves when sandbox_mode coexists with profiles', () {

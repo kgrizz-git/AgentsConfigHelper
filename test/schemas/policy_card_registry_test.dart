@@ -400,7 +400,6 @@ void main() {
           toolName: 'Codex',
           filePath: '/fixture/.codex/rules/default.rules',
           format: ConfigFormat.text,
-          rawSettings: const {},
         );
         final codexRules = DiscoveredConfig.fromPath(
           filePath: '/fixture/.codex/rules/default.rules',
@@ -427,7 +426,6 @@ void main() {
           toolName: 'Codex',
           filePath: codex.filePath,
           format: ConfigFormat.toml,
-          rawSettings: const {},
         );
         final empty = registry.select(
           config: codexToolConfig,
