@@ -111,6 +111,12 @@ The durable sequence and architecture decisions are in the
       stay raw-editor-first; never writes. See the archived
       [Cursor permissions card plan](plans/archive/cursor-permissions-card.md).
 
+      **Shipped (Phase 4, item 1, 2026-09-08):** read-only Opencode `permission`
+      card — a global scalar action or per-tool simple actions and granular
+      `pattern → action` rules, with plain-language help and a doc link;
+      unknown/malformed shapes stay raw-editor-first; never writes. See the archived
+      [Opencode permissions card plan](plans/archive/opencode-permissions-card.md).
+
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the
       owning tool's authoritative documentation. Design a versioned metadata source,

@@ -26,6 +26,16 @@ Internal / developer-facing changes that do not belong in the public
   ConfigEditor tests; the Cursor-nested ConfigEditor test was rewritten to
   `ToolId.lmStudio`. Full suite green (400 tests). See the archived
   [Cursor permissions card plan](plans/archive/cursor-permissions-card.md).
+- **Opencode permissions card (Phase 4, item 1):** added `OpencodePermissionsAdapter` +
+  `OpencodePermissionsPresentation` + reviewed help (pure Dart) and a read-only
+  `OpencodePermissionsCard` widget, registered in the shared registries so the card
+  renders with no `ConfigEditor` change (the Phase 0/4A seam). The adapter guards the
+  catalog path (jsonc on both sides via `loadDiscoveredConfig`, basename
+  `opencode.json`), models a scalar action or per-tool simple/granular rules, and is
+  raw-editor-first for malformed shapes. On-disk fixtures under
+  `test/fixtures/edge_cases` plus adapter/card/registry/ConfigEditor tests. Full suite
+  green (437 tests). See the archived
+  [Opencode permissions card plan](plans/archive/opencode-permissions-card.md).
 - **Formatting-fidelity plan archived:** `plans/active/formatting-fidelity-disclosure.md`
   moved to `plans/archive/` after merge (PR #40) completed Phases 1-4; roadmap Phase 0.5
   boxes checked and the TO_DO entry narrowed (broader structured-card work stays open).

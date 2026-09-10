@@ -21,7 +21,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | JSON | `~/.claude/settings.json` | `.claude/settings.json` | `CLAUDE.md` | allow/ask/deny arrays |
 | Codex | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `~/.codex/AGENTS.md` (+ shared) | sandbox + permission profiles |
-| Opencode | JSON | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared) | per-tool allow/ask/deny |
+| Opencode | JSONC | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared) | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
 | Cursor Agent | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `CLAUDE.md` (+ shared) | allowlist + classifier (read-only card) |
 | Cursor IDE | JSON | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
@@ -42,18 +42,18 @@ to auto-detect, parse, visualize, and edit settings across tools.
 Catalog reviewed through: 2026-08-25
 
 The catalog-wide baseline is 2026-08-25; a row re-checked after the baseline carries
-its own newer date in the "Reviewed" column (Cursor Agent, 2026-09-07).
+its own newer date in the "Reviewed" column (Cursor Agent, 2026-09-07; Opencode, 2026-09-08).
 
 > **Status:** All 17 registered tools have a recorded evidence/status row in the table below,
 > substantively reviewed against current vendor sources as of the catalog-wide baseline
 > (2026-08-25). A row re-checked after the baseline carries its own newer date in the
-> "Reviewed" column; the only such row today is Cursor Agent (2026-09-07).
+> "Reviewed" column (Cursor Agent, 2026-09-07; Opencode, 2026-09-08).
 
 | Tool | Discovery coverage | Primary evidence | Schema evidence | Fixture/reference | Reviewed |
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | JSON structured config (user/project); Markdown instruction docs (user `CLAUDE.md`, project `CLAUDE.md`/`.claude/CLAUDE.md`) | [Settings](https://code.claude.com/docs/en/settings) · [Permissions](https://code.claude.com/docs/en/permissions) · [CLAUDE.md](https://code.claude.com/docs/en/claude-md) (code.claude.com) | verified example | `test/fixtures/staging_home/.claude/settings.json` · `test/fixtures/staging_home/workspace/.claude/settings.json` | 2026-08-25 |
 | Codex | TOML structured config (user/project); Markdown instruction docs (user `AGENTS.md`); text rules (user/project `.codex/rules/*.rules`) | [Config basic](https://developers.openai.com/codex/config-basic) · [Permissions](https://developers.openai.com/codex/permissions) (developers.openai.com) | verified structured-config example (fixture exercises TOML config shape; permission-profile semantics are sourced from the primary permissions doc) | `test/fixtures/staging_home/.codex/config.toml` · `test/fixtures/staging_home/workspace/.codex/config.toml` | 2026-08-25 |
-| Opencode | JSONC structured config (user/project); Markdown instruction docs | [Config](https://opencode.ai/docs/config/) · [Permissions](https://opencode.ai/docs/permissions/) · [Schema](https://opencode.ai/config.json) (opencode.ai) | verified example (fixture exercises `model` + `permission` object shape; full JSON schema published) | `test/fixtures/staging_home/.config/opencode/opencode.json` | 2026-08-25 |
+| Opencode | JSONC structured config (user/project); Markdown instruction docs | [Config](https://opencode.ai/docs/config/) · [Permissions](https://opencode.ai/docs/permissions/) · [Schema](https://opencode.ai/config.json) (opencode.ai) | verified example (fixture exercises `model` + `permission` object shape; read-only card) | `test/fixtures/staging_home/.config/opencode/opencode.json` | 2026-09-08 |
 | Paseo | JSON structured config (user `.paseo/config.json`, project `paseo.json`) | [Config schema](https://paseo.sh/schemas/paseo.config.v1.json) (paseo.sh) · [Docs](https://paseo.sh/docs) | primary docs only (full JSON Schema draft-07 is published — top-level keys `version`, `daemon`, `app`, `worktrees`, `providers`, `agents`, `features`, `log`; no token-free fixture exercising the structured config exists in-repo) | none | 2026-08-25 |
 | Cursor Agent | JSON structured config (user/project); text/Markdown instruction docs | [Permissions](https://cursor.com/docs/reference/permissions) · [Rules](https://cursor.com/docs/rules) (cursor.com) · CLI permission tokens ([config](https://cursor.com/docs/cli/reference/configuration) · [permissions](https://cursor.com/docs/cli/reference/permissions); `cli-config.json` is documented by Cursor but is **not** a registered discovery target of this app) | verified structured-config example (fixture exercises `mcpAllowlist`/`terminalAllowlist`/`autoRun`; read-only card) | `test/fixtures/cursor_home/.cursor/permissions.json` · `test/fixtures/cursor_home/workspace/.cursor/permissions.json` · `test/fixtures/edge_cases/cursor_permissions_*.json*` | 2026-09-07 |
 | Cursor IDE | JSON structured config (user/project) | [Cursor docs](https://cursor.com/docs) (cursor.com) | paths recorded; schema needs verification (IDE `settings.json` is the inherited VS Code format; Cursor does not publish a dedicated settings-schema reference) | none | 2026-08-25 |
@@ -239,6 +239,7 @@ JSON. Schema at `https://opencode.ai/config.json`.
 - **Tools:** `read`, `edit`, `glob`, `grep`, `bash`, `task`, `skill`, `lsp`, `question`, `webfetch`, `websearch`, `external_directory`, `doom_loop`
 - **Pattern matching:** `*` (zero+ chars), `?` (one char)
 - **Per-agent overrides** supported
+- **Read-only card:** The app renders the `permission` block of a discovered `opencode.json` as a read-only policy card showing the file's stored entries; it does not compute Opencode's effective policy.
 
 ### Opencode Rules
 

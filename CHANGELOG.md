@@ -46,6 +46,14 @@ uses [Semantic Versioning](https://semver.org/).
   permission shapes remain available in the raw editor; the card never writes. Cursor
   files that use JSONC (comments or trailing commas) are parsed via the JSONC fallback,
   and the formatting-fidelity notice labels them as JSONC.
+- **Opencode permissions card:** The `permission` block of a discovered `opencode.json`
+  (a global action such as `"permission": "allow"`, or per-tool simple actions and
+  granular `pattern → action` rules) now appears in a read-only policy card with
+  plain-language help and a link to the official permissions documentation. The card
+  states it shows this file's stored entries rather than Opencode's effective policy
+  (which resolves last-match-wins with per-agent overrides and auto mode). Unknown or
+  malformed permission shapes remain available in the raw editor; the card never writes.
+  A config with no `permission` block shows a safe empty state.
 - **Adaptive desktop window sizing:** New macOS, Windows, and Linux windows now open
   centered at roughly 75% of the usable display, with a display-aware minimum so they
   remain usable without extending beyond smaller screens. After moving or resizing a

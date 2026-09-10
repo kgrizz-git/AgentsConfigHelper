@@ -1,9 +1,11 @@
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
+import 'package:agents_config_helper/schemas/opencode_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/schemas/policy_card_registry.dart';
 import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/cursor_permissions_card.dart';
+import 'package:agents_config_helper/widgets/opencode_permissions_card.dart';
 import 'package:agents_config_helper/widgets/policy_card_widget_registry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,6 +36,14 @@ void main() {
       allowInstructions: null,
       blockInstructions: null,
       hasUnclassifiedSettings: false,
+    );
+  }
+
+  OpencodePermissionsPresentation opencodePresentation() {
+    return OpencodePermissionsPresentation(
+      globalAction: 'allow',
+      tools: const {},
+      hasConfiguredPermission: true,
     );
   }
 
@@ -74,6 +84,42 @@ void main() {
         adapterId: CursorPermissionsAdapter.adapterId,
         status: PolicyCardStatus.available,
         presentation: _OtherPresentation(),
+      );
+
+      expect(PolicyCardWidgetRegistry.shared.buildCard(selection), isNull);
+    });
+
+    testWidgets('maps a known adapterId to the Opencode card', (tester) async {
+      final selection = PolicyCardSelection(
+        adapterId: OpencodePermissionsAdapter.adapterId,
+        status: PolicyCardStatus.available,
+        presentation: opencodePresentation(),
+      );
+
+      final card = PolicyCardWidgetRegistry.shared.buildCard(selection);
+
+      expect(card, isA<OpencodePermissionsCard>());
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: card)));
+      expect(find.text('Opencode permissions'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    test('returns null when the Opencode builder receives a wrong-type '
+        'presentation', () {
+      const selection = PolicyCardSelection(
+        adapterId: OpencodePermissionsAdapter.adapterId,
+        status: PolicyCardStatus.available,
+        presentation: _OtherPresentation(),
+      );
+
+      expect(PolicyCardWidgetRegistry.shared.buildCard(selection), isNull);
+    });
+
+    test('returns null for an available Opencode selection with a null '
+        'presentation without throwing', () {
+      const selection = PolicyCardSelection(
+        adapterId: OpencodePermissionsAdapter.adapterId,
+        status: PolicyCardStatus.available,
       );
 
       expect(PolicyCardWidgetRegistry.shared.buildCard(selection), isNull);
