@@ -69,10 +69,12 @@ flutter:
     - assets/fonts/
 
   fonts:
-    - family: Inter
+    - family: Manrope
       fonts:
-        - asset: assets/fonts/Inter-Regular.otf
-        - asset: assets/fonts/Inter-SemiBold.otf
+        - asset: assets/fonts/Manrope-Regular.ttf
+        - asset: assets/fonts/Manrope-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-SemiBold.ttf
           weight: 600
     - family: JetBrains Mono
       fonts:

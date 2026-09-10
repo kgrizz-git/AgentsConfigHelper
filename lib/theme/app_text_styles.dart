@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 class AppTextStyles {
   /// Default sans-serif text for UI controls.
   static const TextStyle uiBase = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'Manrope',
     color: AppColors.textPrimaryDark,
     fontSize: 14,
   );
 
   /// Heading style for screen titles.
   static const TextStyle uiHeader = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'Manrope',
     color: AppColors.textPrimaryDark,
     fontSize: 24,
     fontWeight: FontWeight.w600,
@@ -20,7 +20,7 @@ class AppTextStyles {
 
   /// Heading style for editor sections.
   static const TextStyle uiSubheader = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'Manrope',
     color: AppColors.textPrimaryDark,
     fontSize: 16,
     fontWeight: FontWeight.w500,
@@ -28,7 +28,7 @@ class AppTextStyles {
 
   /// Secondary explanatory text style.
   static const TextStyle uiSecondary = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'Manrope',
     color: AppColors.textSecondaryDark,
     fontSize: 13,
   );

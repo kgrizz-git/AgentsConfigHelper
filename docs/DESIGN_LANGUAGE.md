@@ -24,8 +24,9 @@ Flutter app (`lib/theme/`) and the exported HTML report
 
 ## Type
 
-- **UI:** `Inter`, falling back to the platform system stack. Bundled where
-  the app runs; never web-loaded.
+- **UI:** `Manrope` (Regular 400, Medium 500, SemiBold 600), falling back
+  to the platform system stack. Bundled in `assets/fonts/`; never
+  web-loaded.
 - **Code/paths:** `JetBrains Mono`, falling back to `ui-monospace, SF Mono,
   Cascadia Code, Consolas, monospace`.
 - **Export constraint:** the HTML report must render offline from disk, so
