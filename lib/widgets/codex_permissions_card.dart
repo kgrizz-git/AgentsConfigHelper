@@ -161,8 +161,8 @@ class CodexPermissionsCard extends StatelessWidget {
     );
   }
 
-  /// Builds the filesystem rows for one profile, skipping entries that
-  /// carry no information (no access and no subpaths).
+  /// Builds the filesystem rows for one profile. Entries that carry no
+  /// values still render as a bare path so no stored key silently vanishes.
   List<String> _filesystemRows(CodexPermissionProfile profile) {
     final rows = <String>[];
     final filesystem = profile.filesystem;
@@ -170,9 +170,6 @@ class CodexPermissionsCard extends StatelessWidget {
     for (final entry in filesystem) {
       final access = entry.access;
       final subpaths = entry.subpaths;
-      if (access == null && (subpaths == null || subpaths.isEmpty)) {
-        continue;
-      }
       if (access != null) rows.add('• ${entry.path} → $access');
       if (subpaths != null && subpaths.isNotEmpty) {
         rows.add('${entry.path}:');
@@ -180,14 +177,17 @@ class CodexPermissionsCard extends StatelessWidget {
           rows.add('• ${sub.key} → ${sub.value}');
         }
       }
+      if (access == null && (subpaths == null || subpaths.isEmpty)) {
+        rows.add('• ${entry.path}');
+      }
     }
     final depth = profile.globScanMaxDepth;
     if (depth != null) rows.add('glob_scan_max_depth → $depth');
     return rows;
   }
 
-  /// Builds the network rows for one profile, or an empty list when the
-  /// stored table carries no entries.
+  /// Builds the network rows for one profile. An explicitly stored but
+  /// empty table renders no rows, and the group falls back to "No entries."
   List<String> _networkRows(CodexNetworkPolicy? network) {
     if (network == null) return <String>[];
     final rows = <String>[];
@@ -253,16 +253,13 @@ class CodexPermissionsCard extends StatelessWidget {
       );
     }
     if (profile.network != null) {
-      final networkRows = _networkRows(profile.network);
-      if (networkRows.isNotEmpty) {
-        children.add(
-          _buildGroup(
-            context: context,
-            help: CodexPermissionsHelp.network,
-            rows: networkRows,
-          ),
-        );
-      }
+      children.add(
+        _buildGroup(
+          context: context,
+          help: CodexPermissionsHelp.network,
+          rows: _networkRows(profile.network),
+        ),
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -198,13 +198,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('skips entries and groups that carry no rows', (tester) async {
+  testWidgets('renders stored-but-empty entries without hiding them', (
+    tester,
+  ) async {
     await pumpCard(
       tester,
       presentation(
         profiles: [
           CodexPermissionProfile(
             name: 'sparse',
+            description: 'Sparse profile.',
             filesystem: [
               CodexFilesystemEntry(path: 'lonely', subpaths: const {}),
               CodexFilesystemEntry(path: ':minimal', access: 'read'),
@@ -215,9 +218,10 @@ void main() {
       ),
     );
 
-    expect(find.text('lonely:'), findsNothing);
+    expect(find.text('• lonely'), findsOneWidget);
     expect(find.text('• :minimal → read'), findsOneWidget);
-    expect(find.text('Network rules'), findsNothing);
+    expect(find.text('Network rules'), findsOneWidget);
+    expect(find.text('No entries.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

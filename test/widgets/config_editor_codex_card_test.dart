@@ -366,12 +366,13 @@ void main() {
     );
 
     testWidgets(
-      'an opt-in save round-trips the permissions table through the '
-      'editor composition',
+      'an opt-in structured save preserves the permissions table while '
+      'writing edited rules',
       (tester) async {
         await tester.binding.setSurfaceSize(const Size(800, 2500));
         addTearDown(() => tester.binding.setSurfaceSize(null));
         const originalContent =
+            'rules = ["r1"]\n'
             'default_permissions = "project-edit"\n'
             '[permissions.project-edit.filesystem]\n'
             '":minimal" = "read"\n';
@@ -383,7 +384,9 @@ void main() {
           filePath: discoveredConfig.filePath,
           format: ConfigFormat.toml,
           originalContent: originalContent,
+          rules: const ['r1'],
           rawSettings: const {
+            'rules': ['r1'],
             'default_permissions': 'project-edit',
             'permissions': {
               'project-edit': {
@@ -405,11 +408,11 @@ void main() {
           },
         );
 
-        // Make the editor dirty through the raw editor, then save.
-        await tester.enterText(
-          find.byType(TextField),
-          '$originalContent# test note\n',
-        );
+        // Diverge the structured rules through the Rules editor so the
+        // save flows through buildUpdatedConfig, not the raw-only path.
+        await tester.tap(find.text('Add Item').first);
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField).at(1), 'r2');
         await tester.pumpAndSettle();
         await tester.tap(find.text('Save Changes'));
         await tester.pumpAndSettle();
@@ -418,10 +421,12 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(savedConfig, isNotNull);
+        expect(savedConfig!.rules, ['r1', 'r2']);
         final serialized = TomlConfigParser().serializeWithOutcome(
           savedConfig!,
         );
         final roundTripped = TomlDocument.parse(serialized.content).toMap();
+        expect(roundTripped['rules'], ['r1', 'r2']);
         expect(
           (roundTripped['permissions']! as Map)['project-edit'],
           ((savedConfig!.rawSettings['permissions']!) as Map)['project-edit'],
