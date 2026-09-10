@@ -11,10 +11,9 @@ import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/utils/open_directory.dart';
 import 'package:agents_config_helper/widgets/formatting_fidelity_notice.dart';
 import 'package:agents_config_helper/widgets/policy_card_widget_registry.dart';
-import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:agents_config_helper/widgets/structured_save_flow.dart';
-import 'package:agents_config_helper/widgets/toml_opt_in_banner.dart';
+import 'package:agents_config_helper/widgets/toml_opt_widgets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -177,27 +176,6 @@ class _ConfigEditorState extends State<ConfigEditor> {
         format == ConfigFormat.yaml;
   }
 
-  List<Widget> _buildTomlOptWidgets() {
-    final isTomlStructured =
-        _currentConfig.format == ConfigFormat.toml && !widget.rawOnly;
-    if (isTomlStructured && !widget.tomlStructuredSaveEnabled) {
-      return [
-        const SizedBox(height: 16),
-        TomlOptInBanner(
-          onEnable: _toSetState(widget.onEnableTomlStructuredSave),
-        ),
-      ];
-    }
-    if (isTomlStructured && widget.tomlStructuredSaveEnabled) {
-      return [
-        TomlOptOutRow(
-          onDisable: _toSetState(widget.onDisableTomlStructuredSave),
-        ),
-      ];
-    }
-    return const [];
-  }
-
   VoidCallback _toSetState(Future<void> Function()? action) => () async {
     await action?.call();
     if (mounted) setState(() {});
@@ -256,11 +234,47 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
+  /// Builds the Rules section: the string-list editor for list/absent raw
+  /// `rules`, or a nested notice for map/scalar shapes that preservation
+  /// round-trips instead of editing.
+  List<Widget> _buildRulesSection() {
+    final header = _buildSectionHeader('Rules');
+    final rawRules = _currentConfig.rawSettings['rules'];
+    if (rawRules != null && rawRules is! List) {
+      return [
+        header,
+        const Text(
+          'Nested rules are preserved but not editable here yet.',
+          style: AppTextStyles.uiSecondary,
+        ),
+      ];
+    }
+    return [
+      header,
+      const Text(
+        'Define custom rules for this agent.',
+        style: AppTextStyles.uiSecondary,
+      ),
+      const SizedBox(height: 12),
+      StringListEditor(
+        values: _rules,
+        hintText: 'e.g., Always use type hints...',
+        onChanged: (newValues) {
+          setState(() {
+            _rules = newValues;
+            _editRevision++;
+          });
+          _notifyDirtyChanged();
+        },
+      ),
+    ];
+  }
+
   Widget _buildPermissionsSection(
     PolicyCardSelection selection,
     bool hasNestedUnsupportedPermissions,
+    Widget? card,
   ) {
-    final card = _widgetRegistry.buildCard(selection);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -351,59 +365,11 @@ class _ConfigEditorState extends State<ConfigEditor> {
       permissions: _permissions,
       originalContent: _currentConfig.originalContent,
       rawContent: _rawContent,
-      buildDiffSection: _buildDiffSection,
-      buildRawDiffSection: _buildRawDiffSection,
+      buildDiffSection: StructuredSaveFlow.buildDiffSection,
+      buildRawDiffSection: StructuredSaveFlow.buildRawDiffSection,
       saving: _saving,
       onSaveChanges: _saveChanges,
     );
-  }
-
-  /// Builds one list section in the visual diff.
-  Widget _buildDiffSection(
-    String title,
-    List<String> original,
-    List<String> updated,
-  ) {
-    final unmatchedOriginal = List<String>.from(original);
-    final added = <String>[];
-    for (final item in updated) {
-      final matchingIndex = unmatchedOriginal.indexOf(item);
-      if (matchingIndex == -1) {
-        added.add(item);
-      } else {
-        unmatchedOriginal.removeAt(matchingIndex);
-      }
-    }
-    final removed = unmatchedOriginal;
-    if (added.isEmpty && removed.isEmpty) {
-      if (!listEquals(original, updated)) {
-        return Text('$title: Reordered', style: AppTextStyles.uiSecondary);
-      }
-      return Text('$title: No changes', style: AppTextStyles.uiSecondary);
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: AppTextStyles.uiSubheader.copyWith(
-            color: AppColors.primaryAccent,
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...added.map(
-          (item) =>
-              Text('+ $item', style: const TextStyle(color: Colors.green)),
-        ),
-        ...removed.map(
-          (item) => Text('- $item', style: const TextStyle(color: Colors.red)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRawDiffSection(String original, String updated) {
-    return RawDiffView(original: original, updated: updated);
   }
 
   @override
@@ -417,6 +383,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
         _currentConfig.rawSettings['permissions'] != null &&
         _currentConfig.rawSettings['permissions'] is! List &&
         _currentConfig.rawSettings.containsKey('permissions');
+    final card = _widgetRegistry.buildCard(selection);
     return ColoredBox(
       color: AppColors.backgroundDark,
       child: Stack(
@@ -552,7 +519,14 @@ class _ConfigEditorState extends State<ConfigEditor> {
                   ],
                 ],
 
-                ..._buildTomlOptWidgets(),
+                TomlOptWidgets(
+                  isTomlStructured:
+                      _currentConfig.format == ConfigFormat.toml &&
+                      !widget.rawOnly,
+                  enabled: widget.tomlStructuredSaveEnabled,
+                  onEnable: _toSetState(widget.onEnableTomlStructuredSave),
+                  onDisable: _toSetState(widget.onDisableTomlStructuredSave),
+                ),
 
                 // Form Body
                 Expanded(
@@ -566,27 +540,14 @@ class _ConfigEditorState extends State<ConfigEditor> {
                         ), // padding for floating bar
                         children: [
                           if (_supportsStructuredFields && !widget.rawOnly) ...[
-                            _buildSectionHeader('Rules'),
-                            const Text(
-                              'Define custom rules for this agent.',
-                              style: AppTextStyles.uiSecondary,
-                            ),
-                            const SizedBox(height: 12),
-                            StringListEditor(
-                              values: _rules,
-                              hintText: 'e.g., Always use type hints...',
-                              onChanged: (newValues) {
-                                setState(() {
-                                  _rules = newValues;
-                                  _editRevision++;
-                                });
-                                _notifyDirtyChanged();
-                              },
-                            ),
-
+                            ..._buildRulesSection(),
+                          ],
+                          if (!widget.rawOnly &&
+                              (_supportsStructuredFields || card != null)) ...[
                             _buildPermissionsSection(
                               selection,
                               hasNestedUnsupportedPermissions,
+                              card,
                             ),
                           ],
 

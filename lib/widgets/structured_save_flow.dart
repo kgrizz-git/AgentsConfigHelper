@@ -6,6 +6,8 @@ import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/formatting_fidelity_notice.dart';
+import 'package:agents_config_helper/widgets/raw_diff_view.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Encapsulates the fallback-rewrite save flow so the editor only needs a
@@ -99,6 +101,56 @@ class StructuredSaveFlow {
     } finally {
       if (isMounted()) setSavingFalse();
     }
+  }
+
+  /// Builds one list section in the visual diff, moved here from
+  /// `ConfigEditor` to hold that file's line cap; logic unchanged.
+  static Widget buildDiffSection(
+    String title,
+    List<String> original,
+    List<String> updated,
+  ) {
+    final unmatchedOriginal = List<String>.from(original);
+    final added = <String>[];
+    for (final item in updated) {
+      final matchingIndex = unmatchedOriginal.indexOf(item);
+      if (matchingIndex == -1) {
+        added.add(item);
+      } else {
+        unmatchedOriginal.removeAt(matchingIndex);
+      }
+    }
+    final removed = unmatchedOriginal;
+    if (added.isEmpty && removed.isEmpty) {
+      if (!listEquals(original, updated)) {
+        return Text('$title: Reordered', style: AppTextStyles.uiSecondary);
+      }
+      return Text('$title: No changes', style: AppTextStyles.uiSecondary);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.uiSubheader.copyWith(
+            color: AppColors.primaryAccent,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...added.map(
+          (item) =>
+              Text('+ $item', style: const TextStyle(color: Colors.green)),
+        ),
+        ...removed.map(
+          (item) => Text('- $item', style: const TextStyle(color: Colors.red)),
+        ),
+      ],
+    );
+  }
+
+  /// Builds the raw-content section in the visual diff.
+  static Widget buildRawDiffSection(String original, String updated) {
+    return RawDiffView(original: original, updated: updated);
   }
 
   /// Shows the review modal for unsaved changes.
