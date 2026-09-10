@@ -160,7 +160,9 @@ class _HistoryModalState extends ConsumerState<HistoryModal> {
                   ),
                   subtitle: Text(
                     p.basename(backup.path),
-                    style: AppTextStyles.uiSecondary,
+                    style: AppTextStyles.codeBase.copyWith(
+                      color: AppColors.textSecondaryDark,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   trailing: ElevatedButton.icon(

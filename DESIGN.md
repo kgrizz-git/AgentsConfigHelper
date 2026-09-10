@@ -1,56 +1,66 @@
 # Design: AgentsConfigHelper UI & Data Model
 
-Last reviewed: 2026-08-11
-Author: Antigravity
-Status: draft
-Supersedes: n/a
+Last reviewed: 2026-09-10
+Status: living doc — update with the code, not after it.
+Supersedes: the 2026-08-11 draft (placeholders never filled).
 
----
+Visual language (colors, type, badges, shape) lives in
+[`docs/DESIGN_LANGUAGE.md`](docs/DESIGN_LANGUAGE.md). Service layers and
+data flow live in [`ARCHITECTURE.md`](ARCHITECTURE.md). This file records
+the UI structure, the editor model, and the data-model shape.
 
-## Problem
+## UI structure
 
-Different AI tools (Claude, Cursor, Opencode, etc.) scatter their configuration across various files and formats. Developers need a unified way to visualize, edit, and back up these configurations safely.
+- `MainShell` (`lib/screens/main_shell.dart`) is a two-pane
+  `MultiSplitView`: a sidebar list of discovered configs plus manual paths
+  on the left, a `ConfigEditor` for the active selection on the right.
+  Selection is `_activeConfigId`; a dedicated `_showingOverview` flag will
+  host the planned Overview report screen (see
+  `plans/active/config-overview-report.md`) without overloading selection.
+- Sidebar header hosts global actions (add path, manage project roots).
+- `ConfigEditor` renders, per config: a structured policy card when the
+  tool has a schema adapter (Claude, Cursor, Opencode, Codex), otherwise
+  the raw text editor — raw-first fallback is the rule, never a dead end.
+- Overlays: add-path dialog, history/backups modal with timestamped
+  restore, review-and-confirm save flow with diff preview
+  (`StructuredSaveFlow`), fidelity and TOML opt-in banners where the
+  parser cannot round-trip losslessly.
 
-## Requirements
+## Editor model
 
-### Must have
+1. Structured cards edit typed fields; every save goes through diff
+   preview → explicit confirm → backup-before-write to centralized
+   `<appSupport>/backups` (10 newest snapshots per path, older pruned
+   best-effort) → overwrite.
+2. `JSON`/`JSONC` and `YAML` attempt source-preserving updates; a full
+   rewrite requires explicit per-save opt-in. TOML structured editing is
+   opt-in (off by default) and always rebuilds from its parsed map.
+3. The raw editor is always available and is the only editor for
+   unclassified files.
 
-- Abstracted unified configuration model.
-- Safe backup-before-write functionality.
-- Support for JSON, YAML, TOML, and Markdown.
+## Data model
 
-### Nice to have
+- `ToolConfig`: one discovered file — path, format, `rawSettings`
+  (`Map<String, Object?>`), `originalContent` for fidelity comparison.
+- `DiscoveredConfig`: discovery result (tool id, scope, path, format).
+- `ToolDescriptor` / `ConfigTarget` catalog: known tools, their managed
+  paths, formats, and schema-adapter bindings. Manual paths group under
+  `Other` wherever listings are grouped by tool.
+- Parsers are pure functions (`lib/parsers/`); business logic lives in
+  services/models, never in widgets beyond service orchestration.
 
-- Syntax highlighting for raw config editing.
-- Integration directly with tool CLIs.
-
-### Non-requirements
-
-- Cloud sync / remote backup.
-
-## Proposed design
-
-*(To be filled out during the UI prototyping phase)*
-
-### Key decisions
+## Key decisions
 
 | Decision | Choice | Rationale |
-|---|---|---|
-| [decision point] | [chosen option] | [why] |
-
-## Data model / schema changes
-
-```dart
-// Placeholder for ToolConfig model definitions
-```
-
-## API / interface changes
-
-```dart
-// Placeholder for Parser interfaces
-```
+| --- | --- | --- |
+| Backup location | Centralized `<appSupport>/backups`, not alongside originals | Keeps user config dirs clean; single restore source |
+| Unknown files | Raw editor, never blocked | Fidelity first; classification is progressive |
+| TOML structured editing | Opt-in, rebuild semantics disclosed | `toml` package cannot round-trip source |
+| macOS distribution | Unsandboxed source builds only | Discovery needs real home-dir access; see ADR-002 |
+| Overview report | Generated snapshot (HTML+MD), metadata-only | No live watching; paths listed, values never embedded |
 
 ## Open questions
 
-- [ ] How should we handle nested structures in TOML/YAML when mapping to a flat UI?
-- [x] Should backups live next to the original file (e.g., `.cursorrules.bak`) or in a centralized app data directory? **Resolved:** centralized `<appSupport>/backups` (per-OS app-support directory, not alongside originals).
+- [ ] App-level light theme: the app is dark-only; `DESIGN_LANGUAGE.md`
+  defines light tokens for the HTML export only. Promote to a full app
+  light theme or keep dark-only — deferred past 0.2.0.
