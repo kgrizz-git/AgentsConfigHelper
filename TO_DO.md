@@ -22,14 +22,6 @@ its full entry, which remains the source of scope and completion detail.
 
 ## Release and maintenance
 
-### Release readiness — prepare 0.2.0
-
-- [ ] Confirm the scope of the accumulated
-      backward-compatible user-facing changes, then bump `VERSION` and `pubspec.yaml`, move
-      `CHANGELOG.md` entries from Unreleased into a dated release section, and choose the next
-      platform build number. Do this when cutting a release, not for every feature PR.
-- [ ] check and possibly clarify harness guidance about the use of TO_DO.md, "CHANGELOG.dev.md", "CHANGELOG.md"
-
 ### Master plan delivery
 
 - [ ] Complete all remaining phases of the [master plan](plans/active/initial_master_plan.md).
