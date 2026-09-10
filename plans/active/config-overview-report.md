@@ -117,9 +117,9 @@ better — decide at implementation):
 
 ### Styling
 
-- Light + dark via `prefers-color-scheme` in the HTML; Markdown stays plain
-  (rendered by whatever viewer the user prefers). One small inline
-  stylesheet; no frameworks, no JS.
+Follows `docs/DESIGN_LANGUAGE.md` (tokens, badges, type stacks, export CSS mapping).
+Sticky ToC sidebar (collapses to top-nav on narrow widths), per-tool
+sections, kind badges as pills, `file:` links per row.
 
 ## Chunks
 
