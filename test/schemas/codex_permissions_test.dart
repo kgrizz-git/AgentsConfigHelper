@@ -328,6 +328,9 @@ void main() {
         },
         {'permissions': 42},
         {
+          'permissions': DateTime.utc(2021),
+        },
+        {
           'permissions': {
             'broken': {'extends': 42},
           },
