@@ -122,6 +122,17 @@ void main() {
             .status,
         PolicyCardStatus.notApplicable,
       );
+      expect(
+        adapter
+            .interpret(
+              config: config({'sandbox_mode': 'workspace-write'}),
+              discoveredConfig: codexConfig(
+                scope: ConfigLocationScope.manual,
+              ),
+            )
+            .status,
+        PolicyCardStatus.notApplicable,
+      );
     });
 
     test('declines profile files, other basenames, and near-miss paths', () {
@@ -241,8 +252,11 @@ void main() {
       expect(profile?.workspaceRoots, {'~/code/app': true});
       expect(profile?.globScanMaxDepth, 3);
       expect(profile?.filesystem?.length, 2);
-      expect(profile?.filesystem?.first.access, 'read');
-      expect(profile?.filesystem?.last.subpaths, {
+      final byPath = {
+        for (final entry in profile!.filesystem!) entry.path: entry,
+      };
+      expect(byPath[':minimal']?.access, 'read');
+      expect(byPath[':workspace_roots']?.subpaths, {
         '.': 'write',
         '**/*.env': 'deny',
       });
