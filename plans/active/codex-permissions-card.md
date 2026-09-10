@@ -211,8 +211,9 @@ launcher, and help dialog. No write path, no save control, no editable inputs.
 ### Registrations
 
 Register the adapter in `PolicyCardRegistry.shared` (after Opencode) and the
-card builder in `PolicyCardWidgetRegistry.shared`. Confirm `ConfigEditor` needs
-**no** changes.
+card builder in `PolicyCardWidgetRegistry.shared`, plus the tool-agnostic
+`ConfigEditor` presentation decoupling from [ConfigEditor](#configeditor) so
+the card renders under the default TOML opt-out. No per-tool branches.
 
 ### ConfigEditor
 
