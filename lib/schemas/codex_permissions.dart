@@ -94,8 +94,8 @@ class CodexPermissionsHelp {
   );
 }
 
-/// One stored filesystem rule: either a direct access value or a scoped
-/// subpath map.
+/// One stored filesystem rule: a direct access value, a scoped subpath map,
+/// or both (the parser never produces both at once).
 class CodexFilesystemEntry extends Equatable {
   /// Creates a filesystem entry from its stored access and subpaths.
   CodexFilesystemEntry({
