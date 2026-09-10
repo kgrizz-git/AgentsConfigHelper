@@ -26,7 +26,10 @@ Flutter app (`lib/theme/`) and the exported HTML report
 
 - **UI:** `Manrope` (Regular 400, Medium 500, SemiBold 600), falling back
   to the platform system stack. Bundled in `assets/fonts/`; never
-  web-loaded.
+  web-loaded. Evaluated alternatives, kept on the table if Manrope feels
+  off at small sizes: `Plus Jakarta Sans` (warmer, rounder) and `Outfit`
+  (more distinctive, techy edge). Swapping later is the same 4-file change
+  (fonts, `pubspec.yaml`, `app_text_styles.dart`, this file).
 - **Code/paths:** `JetBrains Mono`, falling back to `ui-monospace, SF Mono,
   Cascadia Code, Consolas, monospace`.
 - **Export constraint:** the HTML report must render offline from disk, so
