@@ -161,16 +161,20 @@ class CodexPermissionsCard extends StatelessWidget {
     );
   }
 
-  /// Builds the filesystem rows for one profile.
+  /// Builds the filesystem rows for one profile, skipping entries that
+  /// carry no information (no access and no subpaths).
   List<String> _filesystemRows(CodexPermissionProfile profile) {
     final rows = <String>[];
     final filesystem = profile.filesystem;
     if (filesystem == null) return rows;
     for (final entry in filesystem) {
       final access = entry.access;
-      if (access != null) rows.add('• ${entry.path} → $access');
       final subpaths = entry.subpaths;
-      if (subpaths != null) {
+      if (access == null && (subpaths == null || subpaths.isEmpty)) {
+        continue;
+      }
+      if (access != null) rows.add('• ${entry.path} → $access');
+      if (subpaths != null && subpaths.isNotEmpty) {
         rows.add('${entry.path}:');
         for (final sub in subpaths.entries) {
           rows.add('• ${sub.key} → ${sub.value}');
@@ -182,7 +186,8 @@ class CodexPermissionsCard extends StatelessWidget {
     return rows;
   }
 
-  /// Builds the network rows for one profile.
+  /// Builds the network rows for one profile, or an empty list when the
+  /// stored table carries no entries.
   List<String> _networkRows(CodexNetworkPolicy? network) {
     if (network == null) return <String>[];
     final rows = <String>[];
@@ -248,13 +253,16 @@ class CodexPermissionsCard extends StatelessWidget {
       );
     }
     if (profile.network != null) {
-      children.add(
-        _buildGroup(
-          context: context,
-          help: CodexPermissionsHelp.network,
-          rows: _networkRows(profile.network),
-        ),
-      );
+      final networkRows = _networkRows(profile.network);
+      if (networkRows.isNotEmpty) {
+        children.add(
+          _buildGroup(
+            context: context,
+            help: CodexPermissionsHelp.network,
+            rows: networkRows,
+          ),
+        );
+      }
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

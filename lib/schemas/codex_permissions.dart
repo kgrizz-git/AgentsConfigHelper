@@ -94,8 +94,8 @@ class CodexPermissionsHelp {
   );
 }
 
-/// One stored filesystem rule: a direct access value, a scoped subpath map,
-/// or both (TOML allows a path key with nested subpath tables).
+/// One stored filesystem rule: either a direct access value or a scoped
+/// subpath map.
 class CodexFilesystemEntry extends Equatable {
   /// Creates a filesystem entry from its stored access and subpaths.
   CodexFilesystemEntry({

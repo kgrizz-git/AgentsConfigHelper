@@ -286,6 +286,36 @@ void main() {
       expect(presentationOf(result)?.profiles.single.name, 'project-edit');
     });
 
+    test('ignores unknown keys without suppressing the card', () {
+      final result = adapter.interpret(
+        config: config({
+          'model': 'gpt-5',
+          'sandbox_mode': 'workspace-write',
+          'permissions': {
+            'project-edit': {
+              'description': 'Edits.',
+              'unknown_profile_key': 42,
+              'filesystem': {':minimal': 'read'},
+              'network': {
+                'enabled': true,
+                'proxy_url': 'http://127.0.0.1:3128',
+                'dangerously_allow_all_unix_sockets': true,
+              },
+            },
+          },
+        }),
+        discoveredConfig: codexConfig(),
+      );
+
+      expect(result.status, PolicyCardStatus.available);
+      expect(presentationOf(result)?.sandboxMode, 'workspace-write');
+      expect(presentationOf(result)?.profiles.single.name, 'project-edit');
+      expect(
+        presentationOf(result)?.profiles.single.network?.enabled,
+        isTrue,
+      );
+    });
+
     test('flags a present sandbox_workspace_write table without parsing', () {
       final result = adapter.interpret(
         config: config({

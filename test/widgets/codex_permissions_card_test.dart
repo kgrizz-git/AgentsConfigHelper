@@ -193,4 +193,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('skips entries and groups that carry no rows', (tester) async {
+    await pumpCard(
+      tester,
+      presentation(
+        profiles: [
+          CodexPermissionProfile(
+            name: 'sparse',
+            filesystem: [
+              CodexFilesystemEntry(path: 'lonely', subpaths: const {}),
+              CodexFilesystemEntry(path: ':minimal', access: 'read'),
+            ],
+            network: CodexNetworkPolicy(),
+          ),
+        ],
+      ),
+    );
+
+    expect(find.text('lonely:'), findsNothing);
+    expect(find.text('• :minimal → read'), findsOneWidget);
+    expect(find.text('Network rules'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

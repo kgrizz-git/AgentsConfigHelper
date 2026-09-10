@@ -20,7 +20,9 @@ Cursor/Opencode cards. All three register in the shared
 companions: the card renders under the default TOML opt-out without exposing edit
 controls, non-list `rules` shows a nested notice instead of the Rules editor, and
 the TOML serializer preserves non-list `rules`/`permissions` tables instead of
-silently deleting them (diff-review + fidelity notice unchanged). The adapter guards
+silently deleting them (diff-review flow and fidelity notice unchanged in
+behavior; the diff builders moved to `StructuredSaveFlow` statics as part of
+the line-cap extraction). The adapter guards
 the catalog path (toml on both sides, basename `config.toml` with a `.codex`
 parent dir — profile files, system config, near-misses, and sibling targets
 excluded), keeps unknown keys visible, and returns unsupported (raw-editor-first)
@@ -307,8 +309,10 @@ default, which defeats this slice. The fix decouples *presentation* from the
   editor with no nested notice — identical to today, documented as intentional.
 - The opt-in banner, opt-out row, fidelity notice, and save flow are untouched.
 - Line budget: `config_editor.dart` sits exactly at the 700-line cap, so the
-  diff must be minimal (a few lines — for example hoisting the built card or a
-  small getter — with no net growth beyond what the cap allows).
+  `ConfigEditor` share of this slice stays minimal: hoist the built card (or a
+  small getter) for the split gate, and extract state-free widgets
+  (`TomlOptWidgets`, diff builders) rather than growing the file — it ships
+  at 661 lines with no net logic change in moved code.
 
 ### Rules non-list notice (companion ConfigEditor change)
 
@@ -425,9 +429,10 @@ stored-entries notice, the legacy-table presence note (when the table
 co-exists), and the proxy-enforcement help line; malformed states are covered
 at the adapter level.
 
-### ConfigEditor integration (`test/widgets/config_editor_policy_card_test.dart`)
+### ConfigEditor integration (`test/widgets/config_editor_codex_card_test.dart`)
 
-Extend with: a Codex card renders for a catalog-discovered `config.toml`; a
+New file (kept separate from `config_editor_policy_card_test.dart` to hold the
+700-line cap). Extend with: a Codex card renders for a catalog-discovered `config.toml`; a
 malformed Codex file falls back to the generic TOML editor; interacting with
 the read-only card never saves or changes bytes (assert `onSave` is never
 invoked and the captured raw content is unchanged). When
