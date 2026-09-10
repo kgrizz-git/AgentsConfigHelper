@@ -13,6 +13,7 @@ class CodexPermissionFieldHelp extends Equatable {
     required this.description,
   });
 
+  /// The display label for this help entry.
   final String label;
 
   /// A description of the stored setting, not a prediction of enforcement.
@@ -242,6 +243,7 @@ class CodexPermissionsAdapter implements PolicyCardAdapter {
   /// name; the instance getter below forwards to it for the interface.
   static const adapterId = 'codex.permissions';
 
+  /// Forwards [adapterId] for the [PolicyCardAdapter] interface.
   @override
   String get id => adapterId;
 
