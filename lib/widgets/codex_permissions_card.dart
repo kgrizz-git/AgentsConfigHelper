@@ -305,7 +305,8 @@ class CodexPermissionsCard extends StatelessWidget {
               presentation.approvalPolicy != null)
             _buildLegacy(context),
           if (presentation.defaultPermissions != null) _buildSelection(context),
-          if (presentation.hasSandboxWorkspaceWriteTable)
+          if (presentation.hasSandboxWorkspaceWriteTable &&
+              presentation.hasConfiguredPermissions)
             _buildGroup(
               context: context,
               help: CodexPermissionsHelp.legacyTable,
