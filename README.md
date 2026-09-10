@@ -15,7 +15,7 @@ A cross-platform desktop application for visualizing, editing, and managing conf
 > **at your own risk**. Always review pending changes and keep your backups before relying on it for
 > production configuration.
 
-**Project status:** Early development (0.1.0)
+**Project status:** Early development (0.2.0)
 
 ![Screenshot placeholder — add a screenshot or GIF to `assets/screenshots/`](https://img.shields.io/badge/screenshot-coming_soon-lightgrey)
 
