@@ -98,10 +98,12 @@ The permission-relevant stored keys are:
 
 ### Out of scope
 
-- Any write, patch, or serialization path. No save control; `TomlConfigParser`,
-  `FidelityAssessor`, `StructuredSaveFlow`, and the generic TOML editor are
-  untouched. Codex structured editing remains a later roadmap item gated on an
-  AST-preserving TOML strategy.
+- Any new write capability, patch path, or save control. No save control is
+  added; `FidelityAssessor`, `StructuredSaveFlow`, and the generic TOML editor
+  are untouched, and `TomlConfigParser` gains only the bounded preservation
+  rule in [TOML serializer preservation
+  fix](#toml-serializer-preservation-fix). Codex structured editing remains a
+  later roadmap item gated on an AST-preserving TOML strategy.
 - Computing the effective Codex policy: layer merging across user/project/profile
   files, `extends` inheritance resolution, runtime workspace-root expansion, the
   sandbox-vs-profiles precedence decision, and proxy-active network enforcement.
@@ -112,7 +114,10 @@ The permission-relevant stored keys are:
   cataloged, never card-eligible.
 - The legacy `[sandbox_workspace_write]` table is out of card scope: a file with
   only that table (no `sandbox_mode`, `approval_policy`, `default_permissions`,
-  or `[permissions]`) renders the empty state.
+  or `[permissions]`) renders the empty state. When the table co-exists with
+  displayed keys, the card shows a static "legacy table present but not shown —
+  see the raw editor" note (presence detected via `rawSettings.containsKey`,
+  contents never parsed).
 - The pre-existing structured-save data-loss hazard: a map-shaped `permissions`
   (or `rules`) table decodes to `extractStringList → []`, so an opt-in
   structured TOML save today strips the whole table from its output
@@ -123,10 +128,10 @@ The permission-relevant stored keys are:
   preservation rule in [TOML serializer preservation
   fix](#toml-serializer-preservation-fix) and must not widen structured-save
   behavior in any other way.
-- Any change to the generic flat editors, `FidelityAssessor`, `StructuredSaveFlow`,
-  or `TomlConfigParser`. The single `ConfigEditor` exception is the
-  tool-agnostic presentation decoupling described below — no per-tool branches,
-  no new write path.
+- Any change to the generic flat editors, `FidelityAssessor`, or
+  `StructuredSaveFlow`. Two bounded exceptions, neither adding a write
+  capability or per-tool branch: the `ConfigEditor` presentation decoupling
+  and the `TomlConfigParser` preservation rule, both described below.
 
 ## Current-state baseline (as of plan start)
 
@@ -173,13 +178,18 @@ normalized in `DiscoveredConfig.fromPath`), never the un-normalized
 (`<profile>.config.toml`) by construction; the parent-dir check excludes the
 system config (`/etc/codex/…`, whose parent is `codex`) and near-misses
 (`workspace.codex/…`); the catalog-discovered check excludes manual paths.
+Adapter invariant: once this guard passes, `interpret` returns `available` or
+`unsupported`, never `notApplicable` — `select` returns the first
+non-`notApplicable` selection (`policy_card_registry.dart:43-48`), so a stray
+`notApplicable` would hide the card even for valid files under opt-out.
 
 The presentation model:
 
 - `sandboxMode` / `approvalPolicy`: top-level strings when present (`null` when
   omitted — the card distinguishes "Not set." from a stored value, including a
   stored retired `untrusted` policy, which help annotates with the migration
-  link rather than translating).
+  link rather than translating). A present `[sandbox_workspace_write]` table
+  adds the static legacy-table note from Scope (presence only, never parsed).
 - `defaultPermissions`: top-level string when present. When it names a profile
   with no table in this file (a built-in, or possibly defined in another layer
   — or an unknown value Codex itself would reject), the card
@@ -193,7 +203,10 @@ The presentation model:
   subset (`enabled`, `domains`, `unix_sockets`, `allow_local_binding`). Proxy
   listener/transport keys (`proxy_url`, `enable_socks5`, `socks_url`,
   `enable_socks5_udp`, `allow_upstream_proxy`) and `dangerously_*` operational
-  keys are left to the raw editor (see unclassified rule below).
+  keys are left to the raw editor (see unclassified rule below). The network
+  section carries a static, non-evaluative help line that domain rules are
+  enforced only when the network proxy is active (see `features.network_proxy`
+  or managed requirements) — the card never evaluates enforcement.
 - Unrecognized keys — at top level or inside a profile table — do not suppress
   an otherwise valid card; they stay visible in raw content. A present
   recognized value with the wrong type (for example `sandbox_mode` as a table,
@@ -249,13 +262,19 @@ default, which defeats this slice. The fix decouples *presentation* from the
   `_supportsStructuredFields && !rawOnly`, exactly as today.
 - The `_buildPermissionsSection` call site gets one exact widened condition:
   render iff `!rawOnly && (_supportsStructuredFields || card != null)`, where
-  `card` is the already-built card for the current selection. The section
+  `card` is the already-built card for the current selection. Concretely, split
+  the single outer gate: keep the Rules editor under
+  `if (_supportsStructuredFields && !widget.rawOnly)`, and call
+  `_buildPermissionsSection` under `if (!widget.rawOnly &&
+  (_supportsStructuredFields || card != null))`. The section
   internals are not restructured: when the card is available only the card
   branch shows, and the `:270-294` flat-editor/notice branches keep no
   independent opt-in check — so they must never be hoisted outside the gate on
   their own. Card-absent TOML files (manual paths, non-permission files) render
   exactly as today (banner + raw editor). A manual-path TOML regression test
-  under opt-out pins `findsNothing` `StringListEditor`.
+  under opt-out pins `findsNothing` `StringListEditor`. A malformed
+  (adapter-declined) Codex file under opt-out likewise renders banner + raw
+  editor with no nested notice — identical to today, documented as intentional.
 - The opt-in banner, opt-out row, fidelity notice, and save flow are untouched.
 - Line budget: `config_editor.dart` sits exactly at the 700-line cap, so the
   diff must be minimal (a few lines — for example hoisting the built card or a
@@ -272,9 +291,15 @@ when the new list is non-empty and remove when emptied if the raw value was a
 `List` (exactly as today); additionally write the user's additions when the
 raw key was absent and the new list is non-empty (adding entries to a keyless
 file works today and must keep working); leave the raw value untouched for
-every other shape (Map, scalar — those take the nested-notice branch, so the
-flat editor can never hold an in-flight edit over them). Consequences, all
-covered by parser unit tests: map/scalar shapes round-trip byte-identically;
+every other shape (Map, scalar — for `permissions` those take the
+nested-notice branch, so the flat editor can never hold an in-flight edit over
+them; `rules` has no nested heuristic, so a map-shaped `rules` still renders
+the Rules editor under opt-in while `config.rules` stays `[]` — pre-existing,
+and preservation strictly beats the status-quo destruction by keeping the map
+instead of deleting it). Consequences, all
+covered by parser unit tests: map/scalar shapes keep every entry (assert
+decoded-subtree equality after re-parsing the serialized output — formatting
+may still change, so never assert byte equality);
 absent+empty stays absent; absent+added writes; kept lists behave exactly as
 today; cleared lists still remove the key. It enables no new editing and
 changes no other key. Broader fail-closed policy
@@ -353,8 +378,10 @@ Extend with the Codex adapter id → card builder mapping and the null cases
 
 ### Card widget (`test/widgets/codex_permissions_card_test.dart`)
 
-Renders legacy rows, the selection row, profile sections, the empty state, and
-the stored-entries notice; malformed states are covered at the adapter level.
+Renders legacy rows, the selection row, profile sections, the empty state, the
+stored-entries notice, the legacy-table presence note (when the table
+co-exists), and the proxy-enforcement help line; malformed states are covered
+at the adapter level.
 
 ### ConfigEditor integration (`test/widgets/config_editor_policy_card_test.dart`)
 
@@ -372,7 +399,9 @@ hidden, the permissions section shows only the card); assert the
 `Permissions` section header renders with the card (it is part of the
 section, new under opt-out alongside the card). Add opt-in preservation
 coverage: with `tomlStructuredSaveEnabled: true`, saving a profile-shaped file
-round-trips the `[permissions]` table byte-identically (parser preservation
+round-trips the `[permissions]` table with every entry preserved (assert
+decoded-subtree equality after re-parsing, not byte equality — formatting may
+still change) (parser preservation
 fix). Card-absent TOML files
 keep today's behavior — the existing fidelity-test `findsNothing`
 `StringListEditor` assertions (for example `config_editor_fidelity_test.dart`
@@ -385,7 +414,9 @@ TOML structured saves stay lossy for formatting and opt-in; the existing
 `FidelityAssessor` opening notice already covers Codex files. Assert the notice
 is present on a Codex target (viewing is safe) without adding notice code.
 Additionally pin the preservation fix with parser unit tests: a map-shaped
-`permissions`/`rules` value round-trips byte-identically, as does a scalar
+`permissions`/`rules` value keeps every entry (assert decoded-subtree equality
+after re-parsing the serialized output — formatting may still change, so never
+assert byte equality), as does a scalar
 value; an absent key with an empty list stays absent, while an absent key with
 added entries writes them; a kept list behaves exactly as today; a
 cleared list still removes the key (existing tests cover the kept-list path).
@@ -455,10 +486,9 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
    the decoded value was not a non-empty list, silently deleting
    `[permissions.*]` on any opt-in save; the fidelity notice never warned
    about data loss. Decided with the maintainer: fix the root cause in-slice
-   about data loss. Decided with the maintainer: fix the root cause in-slice
    with the bounded preservation rule (list-shaped raw values are managed as
    today, user additions onto absent keys still write, everything else
-   round-trips), plus parser and opt-in-save tests.
+   round-trips with entries preserved), plus parser and opt-in-save tests.
    A broader fail-closed policy for lossy saves on complex TOML is tracked as
    a future product decision, out of this slice.
 
@@ -499,7 +529,8 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
   of the section, asserted in tests). (The raw text editor remains editable as
   today — that is a direct raw write, not a structured save.)
 - With the opt-in, saving a profile-shaped file preserves the `[permissions]`
-  (and `rules`) table byte-identically (parser preservation fix); formatting
+  (and `rules`) table with every entry preserved (assert decoded-subtree
+  equality after re-parsing, not byte equality) (parser preservation fix); formatting
   loss warnings still apply.
 - Profile files, the system config, manual paths, other tools, and
   non-`config.toml` targets are unaffected; the generic TOML editor and the
