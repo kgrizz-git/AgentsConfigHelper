@@ -70,7 +70,7 @@ better — decide at implementation):
   `<a href="<encoded URI>"><code><readable path></code></a>` — no JS means
   no clipboard in the static file, so copy-path stays an in-app-screen
   action only. In Markdown each row keeps the plain readable path as text
-  plus the `[label](file:///…)` link; note the limitation that `file:`
+   plus the ``[label](file:///…)`` link; note the limitation that `file:`
   links are clickable in VS Code but stripped by renderers like GitHub —
   acceptable since the `.md` is for local use.
 - Missing-path rows render unlinked plain-text paths but still carry the
