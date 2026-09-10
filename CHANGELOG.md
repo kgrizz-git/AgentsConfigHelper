@@ -9,6 +9,8 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## [0.2.0] - 2026-09-10
+
 ### Added
 - **Fail-closed structured saves.** When a JSON/JSONC/YAML structured save cannot
   preserve the file in place, the app no longer silently rewrites the whole
