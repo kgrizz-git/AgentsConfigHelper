@@ -171,8 +171,9 @@ The presentation model:
   stored retired `untrusted` policy, which help annotates with the migration
   link rather than translating).
 - `defaultPermissions`: top-level string when present. When it names a profile
-  with no table in this file (built-in, or defined in another layer), the card
-  shows the selection plus a "defined in another config layer" note — it never
+  with no table in this file (a built-in, or possibly defined in another layer
+  — or an unknown value Codex itself would reject), the card
+  shows the selection plus a "not defined in this file" note — it never
   resolves across files.
 - `profiles`: one entry per `[permissions.<name>]` table with `description`,
   `extends` (stored value only, never resolved; unknown-parent and cycle
@@ -237,7 +238,7 @@ default, which defeats this slice. The fix decouples *presentation* from the
 - `_buildPermissionsSection` additionally renders when a card is available
   (`buildCard` non-null), even with the opt-out. When the card is available
   the section shows only the card — the flat `StringListEditor` and nested
-  notice live on the card-absent branches (`:267-276`) and therefore cannot
+  notice live on the card-absent branches (`:270-294`) and therefore cannot
   appear without the opt-in. Card-absent TOML files render exactly as today
   (banner + raw editor).
 - The opt-in banner, opt-out row, fidelity notice, and save flow are untouched.
@@ -370,7 +371,8 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
    boundary explicitly.
 2. **`extends` resolution.** Displayed, never resolved. Cross-file parents and
    inheritance semantics are Codex runtime behavior; the card shows the stored
-   value and notes definitions may live in another layer.
+   value and notes when the parent is not defined in this file (a built-in, a
+   possible other-layer definition, or an unknown value Codex would reject).
 3. **Legacy + profiles in one file.** Both halves shown as stored, plus the
    documented both-systems rule as a help note with a doc link. The card never
    decides which system Codex will use.
@@ -425,9 +427,10 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
   sandbox/approval keys, the `default_permissions` selection, and each stored
   `[permissions.*]` profile's policy entries — **including with the default
   TOML structured-save opt-out** (no write capability required to view).
-- With the opt-out, no edit affordance appears: the Rules editor and flat
+- With the opt-out, no structured edit affordance appears: the Rules editor and flat
   permissions editor stay hidden and the opt-in banner still shows; the only
-  addition is the read-only card.
+  addition is the read-only card. (The raw text editor remains editable as
+  today — that is a direct raw write, not a structured save.)
 - Profile files, the system config, manual paths, other tools, and
   non-`config.toml` targets are unaffected; the generic TOML editor and the
   fidelity notice keep working.
