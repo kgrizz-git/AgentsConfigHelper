@@ -252,6 +252,14 @@ class CodexPermissionsAdapter implements PolicyCardAdapter {
     'https://developers.openai.com/codex/permissions',
   );
 
+  /// The built-in profile names a `default_permissions` value may select
+  /// without a same-file `[permissions.<name>]` table.
+  static const builtinProfileNames = {
+    ':read-only',
+    ':workspace',
+    ':danger-full-access',
+  };
+
   static const _filesystemAccess = {'read', 'write', 'deny'};
   static const _domainAccess = {'allow', 'deny'};
 
