@@ -14,7 +14,11 @@ catalog-discovered `.codex/config.toml`), as the next non-Claude consumer of the
 shared policy-card registry after Cursor (Phase 4A) and Opencode (Phase 4 item 1).
 Codex is the roadmap's Phase 4 "expand one schema at a time" progression item 2.
 A new `CodexPermissionsAdapter` + `CodexPermissionsCard` register in the shared
-registries with **no `ConfigEditor` change**, proving the seam a fourth way.
+registries, plus one tool-agnostic `ConfigEditor` change (see [ConfigEditor
+presentation decoupling](#configeditor-presentation-decoupling)): Codex is the
+first TOML card, and today the TOML structured-save opt-out hides the whole
+structured block including policy cards. The read-only card must render under
+the default opt-out without enabling any write capability.
 
 It is a **presentation slice only**: the card displays the file's stored permission
 entries and must not compute the effective Codex policy (config-layer merging,
@@ -109,7 +113,10 @@ The permission-relevant stored keys are:
   strip `[permissions.*]` from its output (`toml_config_parser.dart:95-98`).
   This slice adds no write path and must not widen that behavior; the
   `FidelityAssessor` TOML notice already warns.
-- Any change to the generic flat editors or `ConfigEditor` structure.
+- Any change to the generic flat editors, `FidelityAssessor`, `StructuredSaveFlow`,
+  or `TomlConfigParser`. The single `ConfigEditor` exception is the
+  tool-agnostic presentation decoupling described below — no per-tool branches,
+  no new write path.
 
 ## Current-state baseline (as of plan start)
 
@@ -209,9 +216,33 @@ card builder in `PolicyCardWidgetRegistry.shared`. Confirm `ConfigEditor` needs
 
 ### ConfigEditor
 
-Unchanged. The card renders through the existing select/buildCard seam; the
-generic TOML editor and the fidelity notice keep working for Codex files as
-today.
+One tool-agnostic change (see [ConfigEditor presentation
+decoupling](#configeditor-presentation-decoupling) below). No per-tool
+branches; the card still renders through the existing select/buildCard seam,
+and the generic TOML editor, fidelity notice, and opt-in banner keep working
+as today.
+
+### ConfigEditor presentation decoupling
+
+Today `_supportsStructuredFields` (`config_editor.dart:170-178`) returns the
+TOML opt-in flag, so with the default opt-out the whole structured block —
+Rules editor and `_buildPermissionsSection` (the card host, `:587-591`) — is
+skipped. A read-only card gated behind a lossy-write opt-in is unreachable by
+default, which defeats this slice. The fix decouples *presentation* from the
+*write* gate, without touching what the opt-in protects:
+
+- The Rules `StringListEditor` and every other edit control stay gated on the
+  opt-in exactly as today.
+- `_buildPermissionsSection` additionally renders when a card is available
+  (`buildCard` non-null), even with the opt-out. When the card is available
+  the section shows only the card — the flat `StringListEditor` and nested
+  notice live on the card-absent branches (`:267-276`) and therefore cannot
+  appear without the opt-in. Card-absent TOML files render exactly as today
+  (banner + raw editor).
+- The opt-in banner, opt-out row, fidelity notice, and save flow are untouched.
+- Line budget: `config_editor.dart` sits exactly at the 700-line cap, so the
+  diff must be minimal (a few lines — for example hoisting the built card or a
+  small getter — with no net growth beyond what the cap allows).
 
 ## Exploratory research spike
 
@@ -290,7 +321,13 @@ the read-only card never saves or changes bytes (byte-compare via
 the card renders for a profile-shaped file, assert the nested-permissions
 notice and the flat permissions editor stay hidden (mirroring the Opencode
 `findsNothing` assertions), proving the card wins over the
-`hasNestedUnsupportedPermissions` heuristic.
+`hasNestedUnsupportedPermissions` heuristic. Add opt-out coverage: with
+`tomlStructuredSaveEnabled: false`, a Codex card still renders, the opt-in
+banner still shows, and no `StringListEditor` appears anywhere (Rules stays
+hidden, the permissions section shows only the card). Card-absent TOML files
+keep today's behavior — the existing fidelity-test `findsNothing`
+`StringListEditor` assertions (for example `config_editor_fidelity_test.dart`
+with a card-less config) must keep passing unchanged.
 
 ### TOML fidelity (no new code)
 
@@ -347,6 +384,15 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
    the basename + catalog-discovered guard excludes them by construction.
 7. **Retired `approval_policy = "untrusted"`.** Shown as stored with a
    migration help link, never translated.
+8. **TOML opt-out hides the card host (Greptile review, 2026-09-10).**
+   `_supportsStructuredFields` returns the opt-in flag for TOML, so the
+   default opt-out skipped the whole structured block including
+   `_buildPermissionsSection` — the read-only card would have been reachable
+   only after enabling lossy writes. Decided: decouple presentation from the
+   write gate (one tool-agnostic `ConfigEditor` change, specified above)
+   instead of leaving the card opt-in-gated (rejected: contradicts the
+   read-only premise) or building a separate screen (rejected:
+   over-engineering).
 
 ## Implementation steps
 
@@ -360,7 +406,9 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
 3. Add `lib/widgets/codex_permissions_card.dart` (read-only card, default doc
    launcher, help dialog, no write path).
 4. Register the adapter in `PolicyCardRegistry.shared` and the card builder in
-   `PolicyCardWidgetRegistry.shared`. Confirm `ConfigEditor` needs **no** changes.
+   `PolicyCardWidgetRegistry.shared`, plus the tool-agnostic presentation
+   decoupling in `ConfigEditor` (card renders under the TOML opt-out; edit
+   controls stay gated). No per-tool branches.
 5. Add the fixtures and tests from [Test strategy](#test-strategy).
 6. Update the docs, `CHANGELOG.md`, roadmap, and `TO_DO.md` from
    [Docs, docstrings, and metadata](#docs-docstrings-and-metadata).
@@ -374,7 +422,11 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
 - A catalog-discovered Codex `config.toml` (user or project) renders a
   read-only card showing the stored permission configuration: legacy
   sandbox/approval keys, the `default_permissions` selection, and each stored
-  `[permissions.*]` profile's policy entries.
+  `[permissions.*]` profile's policy entries — **including with the default
+  TOML structured-save opt-out** (no write capability required to view).
+- With the opt-out, no edit affordance appears: the Rules editor and flat
+  permissions editor stay hidden and the opt-in banner still shows; the only
+  addition is the read-only card.
 - Profile files, the system config, manual paths, other tools, and
   non-`config.toml` targets are unaffected; the generic TOML editor and the
   fidelity notice keep working.
@@ -383,8 +435,10 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
 - An absent permission block renders a safe empty state.
 - The card states it shows stored entries, not the effective policy, and offers
   no edit affordance for TOML structure.
-- `ConfigEditor`, `TomlConfigParser`, `FidelityAssessor`, and
-  `StructuredSaveFlow` are unchanged (no new tool branches, no new write path).
+- `ConfigEditor` gains only the tool-agnostic presentation decoupling (no
+  per-tool branches); `TomlConfigParser`, `FidelityAssessor`, and
+  `StructuredSaveFlow` are unchanged (no new write path). `config_editor.dart`
+  must stay within the 700-line cap.
 - No interaction with the card saves or changes bytes.
 - Gates green: `dart format --output=none --set-exit-if-changed .`,
   `flutter analyze --fatal-infos`, `flutter test`, and
