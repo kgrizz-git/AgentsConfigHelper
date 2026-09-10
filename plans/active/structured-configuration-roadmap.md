@@ -185,12 +185,20 @@ Exit criteria:
 
 ### Phase 4 — expand one schema at a time
 
-Prioritize only after a fixture and primary-source review. The next bounded slice is
-Cursor Agent `permissions.json`, defined below. A likely later progression is:
+Prioritize only after a fixture and primary-source review. Each schema ships as a
+**read-only** presentation slice first; structured **editing** for a schema is a
+separate decision gated by that format's lossless/minimal-patch story (see
+"Before a schema is marked editable" under Validation below). In particular, TOML
+structured saves are unconditionally lossy today (see ADR-001), so Codex
+*editing* waits for an AST-preserving TOML edit strategy — but a read-only Codex
+card needs no write path and is not blocked by it.
+
+A likely later progression is:
 
 1. [x] Opencode's per-tool allow/ask/deny maps, as a distinct nested-map adapter (implemented 2026-09-08; shared-interface box stays done).
-2. Kiro's YAML capability model and Devin's scope-based model.
-3. Codex TOML profiles, only after an AST-preserving TOML edit strategy exists.
+2. Codex TOML permission profiles as a read-only card (legacy sandbox/approval keys, `default_permissions`, named `[permissions.*]` profiles). No TOML write path; Codex editing stays gated on the AST-preserving TOML strategy.
+3. Kiro's YAML capability model and Devin's scope-based model.
+4. Codex structured editing, only after an AST-preserving TOML edit strategy exists.
 
 Each schema gets its own acceptance contract, fixtures, raw fallback, and focused plan or
 plan section. Do not add a schema merely because the generic parser can decode it.
