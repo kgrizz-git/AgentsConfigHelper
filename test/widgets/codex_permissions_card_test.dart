@@ -118,6 +118,7 @@ void main() {
 
     expect(find.text('other-layer'), findsOneWidget);
     expect(find.text('Not defined in this file.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('renders the empty state with no configured entries', (
@@ -132,6 +133,7 @@ void main() {
       find.text('No permission settings stored in this file.'),
       findsOneWidget,
     );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('shows the legacy-table note only with co-existing keys', (
@@ -168,15 +170,19 @@ void main() {
       ),
       findsNothing,
     );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('shows help dialogs and stays read-only', (tester) async {
     await pumpCard(tester, presentation(profiles: [profile()]));
 
     expect(find.byType(TextField), findsNothing);
-    await tester.tap(
-      find.byTooltip(CodexPermissionsHelp.network.description).first,
+    final helpButton = find.byTooltip(
+      CodexPermissionsHelp.network.description,
     );
+    await tester.ensureVisible(helpButton.first);
+    await tester.pumpAndSettle();
+    await tester.tap(helpButton.first);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(
