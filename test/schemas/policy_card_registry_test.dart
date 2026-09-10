@@ -3,6 +3,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/codex_permissions.dart';
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
 import 'package:agents_config_helper/schemas/opencode_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
@@ -79,6 +80,21 @@ void main() {
       kind: ConfigSourceKind.structuredConfig,
       format: ConfigFormat.jsonc,
       sourceLabel: 'Opencode',
+      fromCatalog: true,
+    );
+  }
+
+  DiscoveredConfig codexConfig() {
+    final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+      (item) => item.id == ToolId.codex,
+    );
+    return DiscoveredConfig.fromPath(
+      filePath: '/fixture/.codex/config.toml',
+      descriptor: descriptor,
+      scope: ConfigLocationScope.user,
+      kind: ConfigSourceKind.structuredConfig,
+      format: ConfigFormat.toml,
+      sourceLabel: 'Codex',
       fromCatalog: true,
     );
   }
@@ -332,6 +348,92 @@ void main() {
           cursorSelection.presentation,
           isA<CursorPermissionsPresentation>(),
         );
+      },
+    );
+
+    test(
+      'resolves a Codex config to the Codex adapter when all four '
+      'are registered',
+      () {
+        final registry = PolicyCardRegistry([
+          ClaudeCodePermissionsAdapter(),
+          CursorPermissionsAdapter(),
+          OpencodePermissionsAdapter(),
+          CodexPermissionsAdapter(),
+        ]);
+        final codex = codexConfig();
+        final toolConfig = ToolConfig(
+          toolName: 'Codex',
+          filePath: codex.filePath,
+          format: ConfigFormat.toml,
+          rawSettings: const {
+            'sandbox_mode': 'workspace-write',
+          },
+        );
+
+        final selection = registry.select(
+          config: toolConfig,
+          discoveredConfig: codex,
+        );
+
+        expect(selection.status, PolicyCardStatus.available);
+        expect(selection.adapterId, CodexPermissionsAdapter.adapterId);
+        expect(
+          selection.presentation,
+          isA<CodexPermissionsPresentation>(),
+        );
+      },
+    );
+
+    test(
+      'resolves Claude, Cursor, and Opencode configs even when the Codex '
+      'adapter is registered',
+      () {
+        final registry = PolicyCardRegistry([
+          ClaudeCodePermissionsAdapter(),
+          CursorPermissionsAdapter(),
+          OpencodePermissionsAdapter(),
+          CodexPermissionsAdapter(),
+        ]);
+        final codex = codexConfig();
+        final codexRulesConfig = ToolConfig(
+          toolName: 'Codex',
+          filePath: '/fixture/.codex/rules/default.rules',
+          format: ConfigFormat.text,
+          rawSettings: const {},
+        );
+        final codexRules = DiscoveredConfig.fromPath(
+          filePath: '/fixture/.codex/rules/default.rules',
+          descriptor: ToolDescriptorRegistry.catalog.firstWhere(
+            (item) => item.id == ToolId.codex,
+          ),
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.instructionDocument,
+          format: ConfigFormat.text,
+          sourceLabel: 'Codex',
+          fromCatalog: true,
+        );
+
+        final declined = registry.select(
+          config: codexRulesConfig,
+          discoveredConfig: codexRules,
+        );
+        expect(
+          declined.adapterId,
+          PolicyCardRegistry.noAdapterId,
+        );
+
+        final codexToolConfig = ToolConfig(
+          toolName: 'Codex',
+          filePath: codex.filePath,
+          format: ConfigFormat.toml,
+          rawSettings: const {},
+        );
+        final empty = registry.select(
+          config: codexToolConfig,
+          discoveredConfig: codex,
+        );
+        expect(empty.adapterId, CodexPermissionsAdapter.adapterId);
       },
     );
   });

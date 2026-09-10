@@ -1,0 +1,26 @@
+default_permissions = "project-edit"
+
+[permissions.project-edit]
+description = "Fixture editing profile."
+extends = ":workspace"
+
+[permissions.project-edit.workspace_roots]
+"~/code/app" = true
+
+[permissions.project-edit.filesystem]
+":minimal" = "read"
+glob_scan_max_depth = 3
+
+[permissions.project-edit.filesystem.":workspace_roots"]
+"." = "write"
+"**/*.env" = "deny"
+
+[permissions.project-edit.network]
+enabled = true
+allow_local_binding = false
+
+[permissions.project-edit.network.domains]
+"api.openai.com" = "allow"
+
+[permissions.project-edit.network.unix_sockets]
+"/var/run/docker.sock" = "allow"
