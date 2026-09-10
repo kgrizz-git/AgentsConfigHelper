@@ -21,7 +21,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | JSON | `~/.claude/settings.json` | `.claude/settings.json` | `CLAUDE.md` | allow/ask/deny arrays |
 | Codex | TOML | `~/.codex/config.toml` | `.codex/config.toml` | `~/.codex/AGENTS.md` (+ shared) | sandbox + permission profiles |
-| Opencode | JSON | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared) | per-tool allow/ask/deny |
+| Opencode | JSONC | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared) | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
 | Cursor Agent | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `CLAUDE.md` (+ shared) | allowlist + classifier (read-only card) |
 | Cursor IDE | JSON | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
