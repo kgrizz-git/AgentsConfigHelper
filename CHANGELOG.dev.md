@@ -36,6 +36,19 @@ Internal / developer-facing changes that do not belong in the public
   `test/fixtures/edge_cases` plus adapter/card/registry/ConfigEditor tests. Full suite
   green (437 tests). See the archived
   [Opencode permissions card plan](plans/archive/opencode-permissions-card.md).
+- **Codex permissions card (Phase 4, item 2):** added `CodexPermissionsAdapter` +
+  `CodexPermissionsPresentation` + reviewed help (pure Dart) and a read-only
+  `CodexPermissionsCard` widget, registered in the shared registries. The adapter
+  guards the catalog path (toml on both sides, basename `config.toml` with a
+  `.codex` parent dir, excluding profile files), models legacy keys plus named
+  profiles with filesystem/network rules, and is raw-editor-first for malformed
+  shapes. Tool-agnostic companions: the read-only card renders under the TOML
+  structured-save opt-out, non-list `rules` shows a nested notice instead of an
+  editable editor, and the TOML serializer preserves non-list `rules`/`permissions`
+  tables instead of silently deleting them. On-disk fixtures under
+  `test/fixtures/edge_cases` plus adapter/card/registry/ConfigEditor/parser tests.
+  Full suite green (478 tests). See the archived
+  [Codex permissions card plan](plans/archive/codex-permissions-card.md).
 - **Formatting-fidelity plan archived:** `plans/active/formatting-fidelity-disclosure.md`
   moved to `plans/archive/` after merge (PR #40) completed Phases 1-4; roadmap Phase 0.5
   boxes checked and the TO_DO entry narrowed (broader structured-card work stays open).

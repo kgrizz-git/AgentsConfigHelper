@@ -3,9 +3,34 @@
 Last reviewed: 2026-09-10
 Date: 2026-09-10
 Author: maintainers
-Status: active — planning on the `plan/codex-permissions-card` branch
-Linked parent: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
+Status: complete — implemented on the `impl/codex-permissions-card` branch (2026-09-10) and archived
+Linked parent: [Structured Configuration Roadmap](../active/structured-configuration-roadmap.md)
 Linked task: [TO_DO.md — Structured configuration presentation](../../TO_DO.md#structured-configuration-presentation)
+
+## Outcome
+
+Shipped on the `impl/codex-permissions-card` branch. A pure-Dart
+`CodexPermissionsAdapter` + `CodexPermissionsPresentation` + reviewed help implement
+`PolicyCardAdapter` for legacy `sandbox_mode`/`approval_policy` keys, the
+`default_permissions` selection, and named `[permissions.*]` profiles (filesystem
+rules with scoped subpaths, network policy subset, workspace roots, extends
+displayed-not-resolved); a read-only `CodexPermissionsCard` widget mirrors the
+Cursor/Opencode cards. All three register in the shared
+`PolicyCardRegistry`/`PolicyCardWidgetRegistry`, plus two bounded tool-agnostic
+companions: the card renders under the default TOML opt-out without exposing edit
+controls, non-list `rules` shows a nested notice instead of the Rules editor, and
+the TOML serializer preserves non-list `rules`/`permissions` tables instead of
+silently deleting them (diff-review + fidelity notice unchanged). The adapter guards
+the catalog path (toml on both sides, basename `config.toml` with a `.codex`
+parent dir — profile files, system config, near-misses, and sibling targets
+excluded), keeps unknown keys visible, and returns unsupported (raw-editor-first)
+for malformed shapes. On-disk fixtures under `test/fixtures/edge_cases` exercise
+legacy/profile/malformed/empty states including the quoted dotted-key decode path;
+the full suite is green (478 tests, +41 from the 437 baseline). Docs:
+`docs/supported-tools.md` (evidence + read-only bullet, re-checked 2026-09-10),
+user-facing `CHANGELOG.md` entry, `CHANGELOG.dev.md` entry, roadmap Phase 4
+progression item 2 done with item 4 (Codex editing) still gated, and the `TO_DO.md`
+note updated. The primary Codex references were reviewed 2026-09-10.
 
 ## Objective
 

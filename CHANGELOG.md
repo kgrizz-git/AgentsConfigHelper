@@ -54,6 +54,15 @@ uses [Semantic Versioning](https://semver.org/).
   (which resolves last-match-wins with per-agent overrides and auto mode). Unknown or
   malformed permission shapes remain available in the raw editor; the card never writes.
   A config with no `permission` block shows a safe empty state.
+- **Codex permissions card:** The permission block of a discovered `config.toml`
+  (legacy `sandbox_mode`/`approval_policy` keys, the `default_permissions`
+  selection, and named `[permissions.*]` profiles with filesystem and network
+  rules) now appears in a read-only policy card with plain-language help and a
+  link to the official permissions documentation. The card states it shows this
+  file's stored entries rather than Codex's effective policy and cannot edit TOML
+  structure. Unknown or malformed permission shapes remain available in the raw
+  editor; the card never writes. A config with no permission block shows a safe
+  empty state.
 - **Adaptive desktop window sizing:** New macOS, Windows, and Linux windows now open
   centered at roughly 75% of the usable display, with a display-aware minimum so they
   remain usable without extending beyond smaller screens. After moving or resizing a
