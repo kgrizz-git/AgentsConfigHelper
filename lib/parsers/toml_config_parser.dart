@@ -59,6 +59,31 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
     );
   }
 
+  /// Writes a flat-editor-owned list key without destroying other shapes.
+  ///
+  /// List-shaped raw values are managed exactly as before (set when the new
+  /// list is non-empty, removed when emptied). User additions onto an absent
+  /// key still write. Map, scalar, and other non-list shapes are left
+  /// untouched so structured saves preserve tables the flat editor cannot
+  /// represent. Adds no new write capability.
+  void _writeFlatListKey(
+    Map<String, Object?> outputMap,
+    ToolConfig config,
+    String key,
+    List<String> values,
+  ) {
+    if (!config.rawSettings.containsKey(key)) {
+      if (values.isNotEmpty) outputMap[key] = values;
+      return;
+    }
+    if (config.rawSettings[key] is! List) return;
+    if (values.isNotEmpty) {
+      outputMap[key] = values;
+    } else {
+      outputMap.remove(key);
+    }
+  }
+
   /// Serializes a [ToolConfig] into a TOML string.
   ///
   /// **WARNING:** Unlike JSON and YAML, the current Dart TOML package does not
@@ -86,17 +111,13 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
   }) {
     final outputMap = Map<String, Object?>.from(config.rawSettings);
 
-    if (config.rules.isNotEmpty) {
-      outputMap['rules'] = config.rules;
-    } else {
-      outputMap.remove('rules');
-    }
-
-    if (config.permissions.isNotEmpty) {
-      outputMap['permissions'] = config.permissions;
-    } else {
-      outputMap.remove('permissions');
-    }
+    _writeFlatListKey(outputMap, config, 'rules', config.rules);
+    _writeFlatListKey(
+      outputMap,
+      config,
+      'permissions',
+      config.permissions,
+    );
 
     try {
       final doc = TomlDocument.fromMap(outputMap);

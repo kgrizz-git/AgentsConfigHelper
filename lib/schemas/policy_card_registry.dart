@@ -1,6 +1,7 @@
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/codex_permissions.dart';
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
 import 'package:agents_config_helper/schemas/opencode_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
@@ -30,6 +31,7 @@ class PolicyCardRegistry {
     ClaudeCodePermissionsAdapter(),
     CursorPermissionsAdapter(),
     OpencodePermissionsAdapter(),
+    CodexPermissionsAdapter(),
   ]);
 
   /// Returns the first non-`notApplicable` interpretation, else the sentinel.

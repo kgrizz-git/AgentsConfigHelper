@@ -1,8 +1,10 @@
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
+import 'package:agents_config_helper/schemas/codex_permissions.dart';
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
 import 'package:agents_config_helper/schemas/opencode_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
+import 'package:agents_config_helper/widgets/codex_permissions_card.dart';
 import 'package:agents_config_helper/widgets/cursor_permissions_card.dart';
 import 'package:agents_config_helper/widgets/opencode_permissions_card.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +28,7 @@ class PolicyCardWidgetRegistry {
     ClaudeCodePermissionsAdapter.adapterId: _buildClaudeCard,
     CursorPermissionsAdapter.adapterId: _buildCursorCard,
     OpencodePermissionsAdapter.adapterId: _buildOpencodeCard,
+    CodexPermissionsAdapter.adapterId: _buildCodexCard,
   });
 
   /// Returns the card for [selection], or `null` when there is no card.
@@ -69,5 +72,14 @@ class PolicyCardWidgetRegistry {
       return null;
     }
     return OpencodePermissionsCard(presentation: presentation);
+  }
+
+  /// Builds the Codex card with its default documentation launcher.
+  static Widget? _buildCodexCard(PolicyCardSelection selection) {
+    final presentation = selection.presentation;
+    if (presentation is! CodexPermissionsPresentation) {
+      return null;
+    }
+    return CodexPermissionsCard(presentation: presentation);
   }
 }

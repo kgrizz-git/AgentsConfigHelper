@@ -150,5 +150,124 @@ rules = ["rule1"]
       );
       expect(outcome.usedFallback, isTrue);
     });
+
+    test('preserves a map-shaped permissions table on serialize', () {
+      const originalToml = '''
+[permissions.project-edit.filesystem]
+":minimal" = "read"
+''';
+      final config = parser.parse(
+        originalToml,
+        filePath: testPath,
+        toolName: testTool,
+      );
+
+      final serialized = parser.serialize(config);
+      final roundTripped = TomlDocument.parse(serialized).toMap();
+      expect(
+        (roundTripped['permissions']! as Map)['project-edit'],
+        (config.rawSettings['permissions']! as Map)['project-edit'],
+      );
+    });
+
+    test('preserves a map-shaped rules table on serialize', () {
+      const originalToml = '''
+[rules]
+key = "value"
+''';
+      final config = parser.parse(
+        originalToml,
+        filePath: testPath,
+        toolName: testTool,
+      );
+
+      final serialized = parser.serialize(config);
+      final roundTripped = TomlDocument.parse(serialized).toMap();
+      expect(
+        roundTripped['rules'],
+        config.rawSettings['rules']! as Map,
+      );
+    });
+
+    test('preserves a scalar rules value on serialize', () {
+      final config = ToolConfig(
+        toolName: testTool,
+        filePath: testPath,
+        format: ConfigFormat.toml,
+        originalContent: 'rules = "legacy"\n',
+        rawSettings: const {'rules': 'legacy'},
+      );
+
+      final serialized = parser.serialize(config);
+      final roundTripped = TomlDocument.parse(serialized).toMap();
+      expect(roundTripped['rules'], 'legacy');
+    });
+
+    test('keeps an absent key absent with an empty list', () {
+      final config = ToolConfig(
+        toolName: testTool,
+        filePath: testPath,
+        format: ConfigFormat.toml,
+        originalContent: 'model = "x"\n',
+        rawSettings: const {'model': 'x'},
+      );
+
+      final serialized = parser.serialize(config);
+      final roundTripped = TomlDocument.parse(serialized).toMap();
+      expect(roundTripped.containsKey('permissions'), isFalse);
+      expect(roundTripped.containsKey('rules'), isFalse);
+    });
+
+    test('writes user additions onto an absent key', () {
+      final config = ToolConfig(
+        toolName: testTool,
+        filePath: testPath,
+        format: ConfigFormat.toml,
+        originalContent: 'model = "x"\n',
+        rules: const ['rule1'],
+        rawSettings: const {'model': 'x'},
+      );
+
+      final serialized = parser.serialize(config);
+      final roundTripped = TomlDocument.parse(serialized).toMap();
+      expect(roundTripped['rules'], ['rule1']);
+    });
+
+    test('removes a cleared list key', () {
+      final config = ToolConfig(
+        toolName: testTool,
+        filePath: testPath,
+        format: ConfigFormat.toml,
+        originalContent: 'rules = ["rule1"]\n',
+        rawSettings: const {
+          'rules': ['rule1'],
+        },
+      );
+
+      final serialized = parser.serialize(config);
+      final roundTripped = TomlDocument.parse(serialized).toMap();
+      expect(roundTripped.containsKey('rules'), isFalse);
+    });
+
+    test('preserves map tables for a manual-path-shaped TOML file', () {
+      // The preservation rule lives in the shared parser, so manual paths
+      // and any current or future TOML tool are covered the same way.
+      const originalToml = '''
+[permissions.profx.filesystem]
+":minimal" = "read"
+''';
+      final config = parser.parse(
+        originalToml,
+        filePath: '/elsewhere/manual.toml',
+        toolName: 'Manual',
+      );
+
+      final serialized = parser.serialize(config);
+      final roundTripped = TomlDocument.parse(serialized).toMap();
+      expect(
+        (roundTripped['permissions']! as Map)['profx'],
+        (config.rawSettings['permissions']! as Map)['profx'],
+      );
+    });
   });
 }

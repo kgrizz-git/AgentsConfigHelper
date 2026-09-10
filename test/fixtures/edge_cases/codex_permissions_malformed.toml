@@ -1,0 +1,7 @@
+sandbox_mode = "workspace-write"
+
+[permissions.broken]
+extends = 42
+
+[permissions.broken.network]
+enabled = "yes"

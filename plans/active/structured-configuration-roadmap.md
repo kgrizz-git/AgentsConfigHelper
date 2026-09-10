@@ -196,7 +196,7 @@ card needs no write path and is not blocked by it.
 A likely later progression is:
 
 1. [x] Opencode's per-tool allow/ask/deny maps, as a distinct nested-map adapter (implemented 2026-09-08; shared-interface box stays done).
-2. Codex TOML permission profiles as a read-only card (legacy sandbox/approval keys, `default_permissions`, named `[permissions.*]` profiles). No TOML write path; Codex editing stays gated on the AST-preserving TOML strategy.
+2. [x] Codex TOML permission profiles as a read-only card (implemented 2026-09-10; shared-interface box stays done). No TOML write path; Codex editing stays gated on the AST-preserving TOML strategy (item 4).
 3. Kiro's YAML capability model and Devin's scope-based model.
 4. Codex structured editing, only after an AST-preserving TOML edit strategy exists.
 
