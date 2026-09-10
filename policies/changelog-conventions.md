@@ -85,3 +85,16 @@ Example developer entry:
    Internal section); bump PATCH if you cut a release.
 3. Do not invent user-facing bullets for internal work.
 4. Link PRs/issues when helpful; keep bullets scannable (one idea each).
+
+## Release checklist
+
+When cutting a release (see the release-readiness entry in `TO_DO.md`):
+
+1. Confirm the SemVer impact from the table above, then bump `VERSION` and
+   `pubspec.yaml` together (including the platform build number).
+2. Move `Unreleased` entries into dated `## [x.y.z] - YYYY-MM-DD` sections in
+   both changelogs; leave an empty `## Unreleased` on top.
+3. Grep the repo for stale references to the old version (e.g. a status line
+   in `README.md`) — version strings live outside the changelogs too.
+4. Run the full gates plus a `flutter build macos --release` compile proof,
+   then ship via the normal branch/PR/review workflow.
