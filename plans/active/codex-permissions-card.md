@@ -267,15 +267,17 @@ default, which defeats this slice. The fix decouples *presentation* from the
 `config.rawSettings` but then unconditionally overwrites or removes the
 `rules`/`permissions` keys from `config.rules`/`config.permissions` — which
 `extractStringList` maps to `[]` for any map-shaped (or scalar) table. The
-bounded fix: only set/remove `outputMap['rules']`/`outputMap['permissions']`
-when the corresponding raw value was a `List` (the flat-editor-owned shape);
-otherwise leave the raw value untouched. Consequences, all covered by parser
-unit tests: a map/scalar/absent shape round-trips those keys byte-identically;
-a kept list behaves exactly as today; clearing a list still removes the key.
-This is safe by construction — the flat editors are the only writers of those
-keys and they render only for list shapes (map shapes take the nested-notice
-branch), so preserved raw values can never silently override a user edit. It
-enables no new editing and changes no other key. Broader fail-closed policy
+bounded fix manages those keys exactly where the flat editor is active: set
+when the new list is non-empty and remove when emptied if the raw value was a
+`List` (exactly as today); additionally write the user's additions when the
+raw key was absent and the new list is non-empty (adding entries to a keyless
+file works today and must keep working); leave the raw value untouched for
+every other shape (Map, scalar — those take the nested-notice branch, so the
+flat editor can never hold an in-flight edit over them). Consequences, all
+covered by parser unit tests: map/scalar shapes round-trip byte-identically;
+absent+empty stays absent; absent+added writes; kept lists behave exactly as
+today; cleared lists still remove the key. It enables no new editing and
+changes no other key. Broader fail-closed policy
 for lossy saves on complex TOML (refusing saves rather than warning) stays a
 future product decision — tracked in [Resolved open
 questions](#resolved-open-questions), out of this slice.
@@ -383,8 +385,9 @@ TOML structured saves stay lossy for formatting and opt-in; the existing
 `FidelityAssessor` opening notice already covers Codex files. Assert the notice
 is present on a Codex target (viewing is safe) without adding notice code.
 Additionally pin the preservation fix with parser unit tests: a map-shaped
-`permissions`/`rules` value round-trips byte-identically; a scalar value and
-an absent key are preserved as-is; a kept list behaves exactly as today; a
+`permissions`/`rules` value round-trips byte-identically, as does a scalar
+value; an absent key with an empty list stays absent, while an absent key with
+added entries writes them; a kept list behaves exactly as today; a
 cleared list still removes the key (existing tests cover the kept-list path).
 
 ## Docs, docstrings, and metadata
@@ -452,8 +455,10 @@ stored entries; structured editing of TOML stays opt-in/lossy and out of scope.
    the decoded value was not a non-empty list, silently deleting
    `[permissions.*]` on any opt-in save; the fidelity notice never warned
    about data loss. Decided with the maintainer: fix the root cause in-slice
-   with the bounded preservation rule (only list-shaped raw values are
-   managed; everything else round-trips), plus parser and opt-in-save tests.
+   about data loss. Decided with the maintainer: fix the root cause in-slice
+   with the bounded preservation rule (list-shaped raw values are managed as
+   today, user additions onto absent keys still write, everything else
+   round-trips), plus parser and opt-in-save tests.
    A broader fail-closed policy for lossy saves on complex TOML is tracked as
    a future product decision, out of this slice.
 
