@@ -136,7 +136,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('shows the legacy-table note only with co-existing keys', (
+  testWidgets('shows the legacy-table note with co-existing keys', (
     tester,
   ) async {
     await pumpCard(
@@ -152,7 +152,11 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
 
+  testWidgets('shows the legacy-table note for a table-only file', (
+    tester,
+  ) async {
     await pumpCard(
       tester,
       presentation(
@@ -168,7 +172,7 @@ void main() {
       find.text(
         'A [sandbox_workspace_write] table is present but not shown.',
       ),
-      findsNothing,
+      findsOneWidget,
     );
     expect(tester.takeException(), isNull);
   });

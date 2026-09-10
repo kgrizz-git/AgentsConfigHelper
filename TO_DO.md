@@ -117,16 +117,6 @@ The durable sequence and architecture decisions are in the
       unknown/malformed shapes stay raw-editor-first; never writes. See the archived
       [Opencode permissions card plan](plans/archive/opencode-permissions-card.md).
 
-      **Shipped (Phase 4, item 2, 2026-09-10):** read-only Codex TOML
-      permission-profiles card — legacy `sandbox_mode`/`approval_policy` keys,
-      `default_permissions`, and named `[permissions.*]` profiles, presentation
-      only with plain-language help and a doc link; unknown/malformed shapes stay
-      raw-editor-first; never writes. Tool-agnostic companions: card renders under
-      the TOML opt-out, non-list `rules` shows a nested notice, and the TOML
-      serializer preserves non-list tables. Codex structured editing stays gated
-      on the AST-preserving TOML strategy. See the archived
-      [Codex permissions card plan](plans/archive/codex-permissions-card.md).
-
 - [ ] **Plain-language configuration help:** For the structured rule/permission UI, add
       contextual hover help that explains each setting in plain language and links to the
       owning tool's authoritative documentation. Design a versioned metadata source,

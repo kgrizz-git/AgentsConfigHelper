@@ -15,8 +15,10 @@ Shipped on the `impl/codex-permissions-card` branch. A pure-Dart
 `default_permissions` selection, and named `[permissions.*]` profiles (filesystem
 rules with scoped subpaths, network policy subset, workspace roots, extends
 displayed-not-resolved); a read-only `CodexPermissionsCard` widget mirrors the
-Cursor/Opencode cards. All three register in the shared
-`PolicyCardRegistry`/`PolicyCardWidgetRegistry`, plus two bounded tool-agnostic
+Cursor/Opencode cards. The adapter registers in the shared
+`PolicyCardRegistry` and its card builder in the shared
+`PolicyCardWidgetRegistry` (presentation and help metadata are plain data
+passed to the builder, not registry entries), plus two bounded tool-agnostic
 companions: the card renders under the default TOML opt-out without exposing edit
 controls, non-list `rules` shows a nested notice instead of the Rules editor, and
 the TOML serializer preserves non-list `rules`/`permissions` tables instead of
@@ -28,7 +30,7 @@ parent dir — profile files, system config, near-misses, and sibling targets
 excluded), keeps unknown keys visible, and returns unsupported (raw-editor-first)
 for malformed shapes. On-disk fixtures under `test/fixtures/edge_cases` exercise
 legacy/profile/malformed/empty states including the quoted dotted-key decode path;
-the full suite is green (478 tests, +41 from the 437 baseline). Docs:
+the full suite is green (485 tests, +48 from the 437 baseline). Docs:
 `docs/supported-tools.md` (evidence + read-only bullet, re-checked 2026-09-10),
 user-facing `CHANGELOG.md` entry, `CHANGELOG.dev.md` entry, roadmap Phase 4
 progression item 2 done with item 4 (Codex editing) still gated, and the `TO_DO.md`
@@ -145,7 +147,8 @@ The permission-relevant stored keys are:
   cataloged, never card-eligible.
 - The legacy `[sandbox_workspace_write]` table is out of card scope: a file with
   only that table (no `sandbox_mode`, `approval_policy`, `default_permissions`,
-  or `[permissions]`) renders the empty state. When the table co-exists with
+  or `[permissions]`) renders the empty state plus a static presence note
+  pointing at the raw editor (the note shows whenever the table is present). When the table co-exists with
   displayed keys, the card shows a static "legacy table present but not shown —
   see the raw editor" note (presence detected via `rawSettings.containsKey`,
   contents never parsed).

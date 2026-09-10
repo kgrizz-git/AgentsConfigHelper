@@ -6,6 +6,7 @@ import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/parsers/toml_config_parser.dart';
 import 'package:agents_config_helper/schemas/codex_permissions.dart';
+import 'package:agents_config_helper/widgets/codex_permissions_card.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
 import 'package:flutter/material.dart';
@@ -213,7 +214,6 @@ void main() {
         originalContent: 'default_permissions = ":workspace"\n',
         rawSettings: const {'default_permissions': ':workspace'},
       );
-      final rawBefore = config.originalContent;
       var saveCount = 0;
 
       await pumpCodexEditor(
@@ -239,7 +239,25 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(saveCount, 0);
-      expect(config.originalContent, rawBefore);
+      // The card itself offers no edit affordance: no text fields or flat
+      // editors below it. (SelectableText builds an internal EditableText,
+      // so TextField absence — not EditableText absence — is the assertion.)
+      final card = find.byType(CodexPermissionsCard);
+      expect(card, findsOneWidget);
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.byType(TextField),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.byType(StringListEditor),
+        ),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     });
 
