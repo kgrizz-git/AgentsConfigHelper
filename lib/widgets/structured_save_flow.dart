@@ -142,7 +142,8 @@ class StructuredSaveFlow {
               Text('+ $item', style: const TextStyle(color: AppColors.success)),
         ),
         ...removed.map(
-          (item) => Text('- $item', style: const TextStyle(color: Colors.red)),
+          (item) =>
+              Text('- $item', style: const TextStyle(color: AppColors.error)),
         ),
       ],
     );

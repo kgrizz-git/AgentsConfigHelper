@@ -129,11 +129,11 @@ sections, kind badges as pills, `file:` links per row.
    `test/fixtures/` — no pixel goldens, no new test infrastructure) on a
    small fixture (ToC anchors, grouping, ordering incl. trailing `Other`,
    escaping, missing-path handling, secrets badge, generated-at stamp).
-2. **Screen + Markdown preview.** New shell destination, `flutter_markdown`
-   preview, per-row copy-path; widget tests.
+2. **Screen + Markdown preview.** New shell destination,
+   `flutter_markdown_plus` preview, per-row copy-path; widget tests.
 3. **Save + open actions.** `.md` / `.html` export, `file:` links,
-   open-in-editor via `url_launcher`, reveal; widget + integration coverage
-   over the save path (test-root fixtures, never real home).
+   open-in-editor via `url_launcher`, copy-path; widget + integration
+   coverage over the save path (test-root fixtures, never real home).
 4. **Docs + changelog.** `docs/supported-tools.md` untouched (tool-agnostic);
    add the report to README.md `### Available now` + `CHANGELOG.md`
    Unreleased entry.
