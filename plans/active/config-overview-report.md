@@ -30,8 +30,9 @@ better — decide at implementation):
 
 - `ConfigOverviewEntry`: tool id + display name, file path, kind badge
   (`config` / `permissions` / `rules` / `other`), format (`JSON`, `TOML`,
-  `YAML`, `Markdown`, `plain`), scope (`user` / `project` / `managed`),
-  `secretBearing` flag, `missing` flag for known-but-absent paths.
+  `YAML`, `Markdown`, `plain`), scope mirroring `ConfigLocationScope`
+  (`user` / `project` / `manual`), `secretBearing` flag, `missing` flag
+  for known-but-absent paths.
 - `buildOverviewModel(discovery, catalog)`: assemble from
   `DiscoveryService` results + the tool catalog, so managed paths that have
   not been discovered yet still appear flagged as missing and unlinked
@@ -39,7 +40,9 @@ better — decide at implementation):
 - Kind classification reuses the schema adapters / catalog metadata where
   available; unknown files fall back to `other` with the raw-editor path.
   Manually-added paths with no catalog match group under a trailing
-  `Other` section (after all catalog tools, sorted by path).
+  `Other` section (after all catalog tools, sorted by path) but keep
+  their `manual` scope metadata — grouping is by tool match, scope is per
+  entry and always preserved.
 - `secretBearing` sourcing (Chunk 1 must add this, not hard-code it): true
   when the basename matches a static sensitive-name pattern (`token`,
   `secret`, `credential`, `auth`, `private-key`, `.env`, …) OR the tool is
@@ -59,11 +62,17 @@ better — decide at implementation):
   ToC sidebar (collapses to top-nav on narrow widths), per-tool sections,
   kind badges as pills, `file:` links per row. Must render identically
   offline from disk.
-- Shared ordering: tools in catalog order, files sorted by scope then path;
-  the `Other` group always comes last.
+- Shared ordering: tools in catalog order, files sorted by scope
+  (`user` → `project` → `manual`) then path; the `Other` group always
+  comes last.
 - Escaping: no new package needed — use `dart:convert`'s `HtmlEscape`
   (`HtmlEscapeMode.element` for text nodes, `.attribute` for attribute
-  values) for display names/paths in HTML output.
+  values) for display names/paths in HTML output. For Markdown, escape
+  link-label and body text (`\` before `\ [ ] ( )` and backticks;
+  collapse line breaks to spaces) so paths containing `]`, `(`, or spaces
+  cannot break row structure; URIs themselves are safe via `Uri.file`.
+  Golden fixtures must include a path with `] (` and a space to lock this
+  in for both formats.
 - Link construction: build `file:` URIs with `Uri.file(path).toString()`
   so separators and triple-slash form are correct per platform, then
   percent-encoding is handled by `Uri`. In HTML each row is
