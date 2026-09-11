@@ -25,7 +25,7 @@ Flutter app (`lib/theme/`) and the exported HTML report
 ## Type
 
 - **UI:** `Manrope` (Regular 400, Medium 500, SemiBold 600). Bundled in
-  `assets/fonts/`; never web-loaded. No explicit `fontFamilyFallback` —
+  `assets/fonts/`; never web-loaded. No fallback list is declared —
   Flutter falls back to platform system fonts automatically. Evaluated alternatives, kept on the table if Manrope feels
   off at small sizes: `Plus Jakarta Sans` (warmer, rounder) and `Outfit`
   (more distinctive, techy edge). Swapping later is the same 4-file change
