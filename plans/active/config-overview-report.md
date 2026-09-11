@@ -38,9 +38,11 @@ better — decide at implementation):
   - Catalog user-scope match: the target's `relativePath`.
   - Catalog project-scope match: `<root-basename>/<relativePath>` (e.g.
     `myproject/.cursorrules`) so identical filenames in different
-    projects disambiguate; the root is matched by prefix of `filePath`
-    against the active project roots, falling back to absolute when no
-    root matches.
+    projects disambiguate; the root is matched with `p.isWithin`
+    semantics (`package:path`, already a dependency) after normalizing
+    both sides to absolute without trailing separators — case-sensitive
+    except on Windows — falling back to absolute display when no root
+    matches (so `/proj/` never falsely matches `/proj-sub/`).
   - Anything else: `~/`-shortened on POSIX when under `homePath`,
     absolute otherwise — and always absolute on Windows (no `~/`
     shortening there).
@@ -55,8 +57,10 @@ better — decide at implementation):
   assemble from `DiscoveryService` results + the tool catalog, so managed
   paths that have not been discovered yet still appear flagged as missing
   and unlinked (confirmed: show, don't hide). The builder is pure, so the
-  home directory and active project roots are explicit parameters — taken
-  from the same resolver discovery used, never re-derived inside (e.g. no
+  home directory and active project roots are explicit parameters —
+  `homePath` from `resolveHomeDirectory` (the `homeDirectoryResolver`
+  provider already consumed by `ConfigService`), `projectRoots` from
+  `DiscoveryResult.projectRoots` — never re-derived inside (e.g. no
   `Platform.environment['HOME']`), so display is stable regardless of how
   discovery ran.
 - Kind classification reuses the schema adapters / catalog metadata where
