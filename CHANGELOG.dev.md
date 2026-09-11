@@ -5,6 +5,11 @@ Internal / developer-facing changes that do not belong in the public
 
 ## Unreleased
 
+### Changed
+- Widgets use `AppColors` tokens instead of `Colors.*` constants; error
+  snackbars share a `_showErrorSnackBar` helper; empty-state and diff-label
+  styles covered by widget tests.
+
 ## [0.2.0] - 2026-09-10
 
 ### Added

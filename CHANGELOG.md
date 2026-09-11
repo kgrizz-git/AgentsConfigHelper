@@ -9,6 +9,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+### Changed
+- UI typeface is now Manrope (code and paths stay JetBrains Mono).
+
 ## [0.2.0] - 2026-09-10
 
 ### Added

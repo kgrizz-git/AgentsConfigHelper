@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/state/providers.dart';
+import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/history_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,6 +52,9 @@ void main() {
       // Find the restore button
       final restoreButton = find.text('Restore');
       expect(restoreButton, findsOneWidget);
+      // Backup filenames render in mono; the date title stays UI text.
+      final subtitle = tester.widget<Text>(find.text('path.bak'));
+      expect(subtitle.style?.fontFamily, AppTextStyles.codeBase.fontFamily);
       final restoreLabel = tester.widget<Text>(restoreButton);
       expect(restoreLabel.style?.color, Colors.white);
       expect(restoreLabel.style?.fontWeight, FontWeight.w600);

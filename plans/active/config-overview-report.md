@@ -130,10 +130,13 @@ sections, kind badges as pills, `file:` links per row.
    small fixture (ToC anchors, grouping, ordering incl. trailing `Other`,
    escaping, missing-path handling, secrets badge, generated-at stamp).
 2. **Screen + Markdown preview.** New shell destination,
-   `flutter_markdown_plus` preview, per-row copy-path; widget tests.
-3. **Save + open actions.** `.md` / `.html` export, `file:` links,
-   open-in-editor via `url_launcher`, copy-path; widget + integration
-   coverage over the save path (test-root fixtures, never real home).
+   `flutter_markdown_plus` preview (add `flutter_markdown_plus: ^1.0.12`
+   to `pubspec.yaml` in this chunk), per-row copy-path; widget tests.
+3. **Save + open actions.** `.md` / `.html` export via `file_selector`
+   save dialog (add `file_selector: ^1.1.0` to `pubspec.yaml` in this
+   chunk), `file:` links, open-in-editor via `url_launcher`, copy-path;
+   widget + integration coverage over the save path (test-root fixtures,
+   never real home).
 4. **Docs + changelog.** `docs/supported-tools.md` untouched (tool-agnostic);
    add the report to README.md `### Available now` + `CHANGELOG.md`
    Unreleased entry.
