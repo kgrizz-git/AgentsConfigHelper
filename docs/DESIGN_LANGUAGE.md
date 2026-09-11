@@ -26,8 +26,9 @@ Flutter app (`lib/theme/`) and the exported HTML report
 
 - **UI:** `Manrope` (Regular 400, Medium 500, SemiBold 600). Bundled in
   `assets/fonts/`; never web-loaded. No fallback list is declared —
-  Flutter falls back to platform system fonts automatically. Evaluated alternatives, kept on the table if Manrope feels
-  off at small sizes: `Plus Jakarta Sans` (warmer, rounder) and `Outfit`
+  Flutter falls back to platform system fonts automatically.
+- **Evaluated alternatives**, kept on the table if Manrope feels off at
+  small sizes: `Plus Jakarta Sans` (warmer, rounder) and `Outfit`
   (more distinctive, techy edge). Swapping later is the same 4-file change
   (fonts, `pubspec.yaml`, `app_text_styles.dart`, this file).
 - **Code/paths:** `JetBrains Mono`, falling back to `ui-monospace, SF Mono,
@@ -109,13 +110,13 @@ no resource hints, no JS (per the report plan's offline rule).
 ## Agent rules
 
 1. Use `AppColors` / `AppTextStyles` in widgets — never raw hex, and never
-   `Colors.*` constants (e.g. `Colors.red`, which duplicates
-   `AppColors.error`), outside `lib/theme/` and this file. Narrow
-   exceptions, both deliberate contrast choices on dark fills — leave them,
-   don't proliferate them: the diff `Before:` / `After:` labels in
-   `raw_diff_view.dart` (brighter Material accent variants), and the
-   `Colors.black` text on the solid-warning test-root banner in
-   `main_shell.dart`.
+   a `Colors.*` constant that duplicates an `AppColors` token (e.g.
+   `Colors.red` for `AppColors.error`), outside `lib/theme/` and this
+   file. Grandfathered neutrals (deliberate, don't proliferate): pure-white
+   text/icons on accent fills, black scrim/overlay opacities, the
+   `Colors.black` text on the solid-warning test-root banner, and the diff
+   `Before:` / `After:` accent labels in `raw_diff_view.dart`. A future
+   token pass may absorb the neutrals; until then, match surrounding code.
 2. Use the token table for export CSS — never ad-hoc colors in builders.
 3. When adding a token, add it here, in `AppColors`, and (if it renders in
    the report) in the export CSS mapping in the same PR.
