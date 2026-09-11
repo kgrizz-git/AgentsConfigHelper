@@ -34,15 +34,31 @@ better — decide at implementation):
   `YAML`, `Markdown`, `plain`), scope mirroring `ConfigLocationScope`
   (`user` / `project` / `manual`), `secretBearing` flag, `missing` flag
   for known-but-absent paths.
-- `displayPath` rule: catalog-matched entries show the target's
-  `relativePath` (e.g. `.claude/settings.json`); anything else
-  (manual/absolute discoveries) shows `~/`-shortened form when under the
-  user's home, else the full absolute path. Links always derive from the
-  absolute `filePath`, never from the display form.
-- `buildOverviewModel(discovery, catalog)`: assemble from
-  `DiscoveryService` results + the tool catalog, so managed paths that have
-  not been discovered yet still appear flagged as missing and unlinked
-  (confirmed: show, don't hide).
+- `displayPath` rule:
+  - Catalog user-scope match: the target's `relativePath`.
+  - Catalog project-scope match: `<root-basename>/<relativePath>` (e.g.
+    `myproject/.cursorrules`) so identical filenames in different
+    projects disambiguate; the root is matched by prefix of `filePath`
+    against the active project roots, falling back to absolute when no
+    root matches.
+  - Anything else: `~/`-shortened on POSIX when under `homePath`,
+    absolute otherwise — and always absolute on Windows (no `~/`
+    shortening there).
+- `filePath` is nullable: populated with the resolved absolute path
+  whenever constructible (user scope: `homePath + relativePath`;
+  project scope: one row fanned out per matching active root, no row at
+  all when zero roots apply). `missing` entries are never linked no
+  matter what `filePath` holds — `missing` suppresses the link, it does
+  not empty the path. Links always derive from the absolute `filePath`,
+  never from the display form.
+- `buildOverviewModel(discovery, catalog, {homePath, projectRoots})`:
+  assemble from `DiscoveryService` results + the tool catalog, so managed
+  paths that have not been discovered yet still appear flagged as missing
+  and unlinked (confirmed: show, don't hide). The builder is pure, so the
+  home directory and active project roots are explicit parameters — taken
+  from the same resolver discovery used, never re-derived inside (e.g. no
+  `Platform.environment['HOME']`), so display is stable regardless of how
+  discovery ran.
 - Kind classification reuses the schema adapters / catalog metadata where
   available; unknown files fall back to `other` with the raw-editor path.
   Manually-added paths with no catalog match group under a trailing
@@ -78,8 +94,11 @@ better — decide at implementation):
   collapse line breaks to spaces) so paths containing `]`, `(`, or spaces
   cannot break row structure; URIs themselves are safe via `Uri.file`.
   Golden fixtures must include a path with `] (` and a space to lock this
-  in for both formats, plus a manual absolute path asserting the
-  `~/`-shortening and absolute-fallback display forms.
+  in for both formats, a manual absolute path asserting the
+  `~/`-shortening and absolute-fallback display forms, project-scope
+  duplicates across two roots asserting the `<root>/…` disambiguation,
+  and a missing project target with zero active roots asserting no row
+  is emitted.
 - Link construction: build `file:` URIs with `Uri.file(path).toString()`
   so separators and triple-slash form are correct per platform, then
   percent-encoding is handled by `Uri`. In HTML each row is
