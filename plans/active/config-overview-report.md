@@ -28,11 +28,17 @@ Modern and sleek styling; no fancy functionality.
 New `lib/reports/config_overview_report.dart` (or `lib/services/` if it fits
 better — decide at implementation):
 
-- `ConfigOverviewEntry`: tool id + display name, file path, kind badge
+- `ConfigOverviewEntry`: tool id + display name, `filePath` (absolute —
+  the link source) + `displayPath` (what the row shows), kind badge
   (`config` / `permissions` / `rules` / `other`), format (`JSON`, `TOML`,
   `YAML`, `Markdown`, `plain`), scope mirroring `ConfigLocationScope`
   (`user` / `project` / `manual`), `secretBearing` flag, `missing` flag
   for known-but-absent paths.
+- `displayPath` rule: catalog-matched entries show the target's
+  `relativePath` (e.g. `.claude/settings.json`); anything else
+  (manual/absolute discoveries) shows `~/`-shortened form when under the
+  user's home, else the full absolute path. Links always derive from the
+  absolute `filePath`, never from the display form.
 - `buildOverviewModel(discovery, catalog)`: assemble from
   `DiscoveryService` results + the tool catalog, so managed paths that have
   not been discovered yet still appear flagged as missing and unlinked
@@ -72,7 +78,8 @@ better — decide at implementation):
   collapse line breaks to spaces) so paths containing `]`, `(`, or spaces
   cannot break row structure; URIs themselves are safe via `Uri.file`.
   Golden fixtures must include a path with `] (` and a space to lock this
-  in for both formats.
+  in for both formats, plus a manual absolute path asserting the
+  `~/`-shortening and absolute-fallback display forms.
 - Link construction: build `file:` URIs with `Uri.file(path).toString()`
   so separators and triple-slash form are correct per platform, then
   percent-encoding is handled by `Uri`. In HTML each row is
