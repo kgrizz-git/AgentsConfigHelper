@@ -139,10 +139,11 @@ class StructuredSaveFlow {
         const SizedBox(height: 8),
         ...added.map(
           (item) =>
-              Text('+ $item', style: const TextStyle(color: Colors.green)),
+              Text('+ $item', style: const TextStyle(color: AppColors.success)),
         ),
         ...removed.map(
-          (item) => Text('- $item', style: const TextStyle(color: Colors.red)),
+          (item) =>
+              Text('- $item', style: const TextStyle(color: AppColors.error)),
         ),
       ],
     );

@@ -159,6 +159,9 @@ The durable sequence and architecture decisions are in the
       one, as a human-readable overview of what the app manages. Reuse discovery and the
       catalog; keep it local and offline (file: links), redact secret-bearing files and
       values, and preserve the raw-editor-first fallback for anything it cannot classify.
+      Active plan: [config-overview-report](plans/active/config-overview-report.md)
+      (HTML + Markdown overview, in-app preview + export, metadata-only with secrets
+      badges).
 
 ### API/CLI interface (deferred)
 

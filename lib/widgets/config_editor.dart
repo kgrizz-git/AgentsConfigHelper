@@ -336,7 +336,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving: $error'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       },
@@ -467,7 +467,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                                     content: Text(
                                       'Could not open the config directory.',
                                     ),
-                                    backgroundColor: Colors.red,
+                                    backgroundColor: AppColors.error,
                                   ),
                                 );
                               }

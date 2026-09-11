@@ -39,6 +39,7 @@ Quick navigation guide for AgentsConfigHelper's documentation. Use this to find 
 ### Design & Decisions
 
 - [`DESIGN.md`](../DESIGN.md) — UI and data model design notes
+- [`docs/DESIGN_LANGUAGE.md`](DESIGN_LANGUAGE.md) — Visual language: color tokens, type, badges, export mapping
 - [`docs/adr/`](adr/) — Architecture Decision Records
 - [`docs/testing-strategies.md`](testing-strategies.md) — layered safe-testing options
 - [`docs/macos-test-root.md`](macos-test-root.md) — macOS disposable-fixture smoke workflow

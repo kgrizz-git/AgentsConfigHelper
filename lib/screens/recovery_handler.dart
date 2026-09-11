@@ -201,7 +201,7 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Could not open the raw editor: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }

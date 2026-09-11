@@ -84,6 +84,12 @@ class _MainShellState extends ConsumerState<MainShell>
     super.dispose();
   }
 
+  void _showErrorSnackBar(ScaffoldMessengerState messenger, String message) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
+    );
+  }
+
   Future<void> _loadConfig(DiscoveredConfig configItem) async {
     final generation = ++_loadGeneration;
     if (_hasUnsavedChanges) {
@@ -120,11 +126,9 @@ class _MainShellState extends ConsumerState<MainShell>
         if (error is ConfigParseException || error is FileSystemException) {
           await showRecoveryDialog(configItem, error, generation);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error loading config: $error'),
-              backgroundColor: Colors.red,
-            ),
+          _showErrorSnackBar(
+            ScaffoldMessenger.of(context),
+            'Error loading config: $error',
           );
         }
       }
@@ -217,12 +221,7 @@ class _MainShellState extends ConsumerState<MainShell>
             _hasUnsavedChanges = savedDirty;
           });
         }
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('Could not remove path: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorSnackBar(messenger, 'Could not remove path: $e');
       }
     }
   }
@@ -296,11 +295,9 @@ class _MainShellState extends ConsumerState<MainShell>
       await ref.read(discoveryControllerProvider.notifier).addManualPath(path);
     } on Object catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not add path: $e'),
-            backgroundColor: Colors.red,
-          ),
+        _showErrorSnackBar(
+          ScaffoldMessenger.of(context),
+          'Could not add path: $e',
         );
       }
     }
@@ -319,11 +316,9 @@ class _MainShellState extends ConsumerState<MainShell>
       await ref.read(discoveryControllerProvider.notifier).addProjectRoot(path);
     } on Object catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not add project root: $e'),
-            backgroundColor: Colors.red,
-          ),
+        _showErrorSnackBar(
+          ScaffoldMessenger.of(context),
+          'Could not add project root: $e',
         );
       }
     }
@@ -353,11 +348,9 @@ class _MainShellState extends ConsumerState<MainShell>
       configService.backupService.backupDirectory,
     );
     if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open the backups folder.'),
-          backgroundColor: Colors.red,
-        ),
+      _showErrorSnackBar(
+        ScaffoldMessenger.of(context),
+        'Could not open the backups folder.',
       );
     }
   }
@@ -460,7 +453,9 @@ class _MainShellState extends ConsumerState<MainShell>
                                     result.warnings
                                         .map((w) => w.message)
                                         .join('\n'),
-                                    style: const TextStyle(color: Colors.red),
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -470,7 +465,10 @@ class _MainShellState extends ConsumerState<MainShell>
                         return warningBanner ??
                             const Padding(
                               padding: EdgeInsets.all(20),
-                              child: Text('No configurations found.'),
+                              child: Text(
+                                'No configurations found.',
+                                style: AppTextStyles.uiSecondary,
+                              ),
                             );
                       }
                       final list = ListView.builder(
@@ -512,7 +510,7 @@ class _MainShellState extends ConsumerState<MainShell>
                       padding: const EdgeInsets.all(20),
                       child: Text(
                         'Error: $e',
-                        style: const TextStyle(color: Colors.red),
+                        style: const TextStyle(color: AppColors.error),
                       ),
                     ),
                   ),
@@ -532,7 +530,7 @@ class _MainShellState extends ConsumerState<MainShell>
             return Center(
               child: Text(
                 'Error: $_error',
-                style: const TextStyle(color: Colors.red),
+                style: const TextStyle(color: AppColors.error),
               ),
             );
           }
