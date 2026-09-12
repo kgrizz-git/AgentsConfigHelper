@@ -204,5 +204,8 @@ sections, kind badges as pills, `file:` links per row.
 - [x] Chunk 2 — screen + Markdown preview (review: zero analyzer infos,
   null-home error state instead of temp fallback, temp-dir cleanup in
   widget tests)
-- [ ] Chunk 3 — save + open actions
+- [x] Chunk 3 — save + open actions (review: zero analyzer infos,
+  warning-badge token instead of raw Color, kindLabel reuse; macOS dialog
+  still needs a manual smoke — release build exists but headless CI cannot
+  open the native sheet)
 - [ ] Chunk 4 — docs + changelog, archive per `AGENTS.md`

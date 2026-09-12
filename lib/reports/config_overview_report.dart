@@ -99,11 +99,11 @@ OverviewKind _kindFromSourceKind(ConfigSourceKind kind) {
   }
 }
 
-String _kindLabel(OverviewKind kind) {
+String kindLabel(OverviewKind kind) {
   return kind.name;
 }
 
-String _formatLabel(ConfigFormat format) {
+String formatLabel(ConfigFormat format) {
   switch (format) {
     case ConfigFormat.json:
       return 'JSON';
@@ -122,7 +122,7 @@ String _formatLabel(ConfigFormat format) {
   }
 }
 
-String _scopeLabel(ConfigLocationScope scope) {
+String scopeLabel(ConfigLocationScope scope) {
   return scope.name;
 }
 
@@ -431,25 +431,25 @@ String buildMarkdownReport(
     }
 
     for (final entry in groupEntries) {
-      final kindLabel = _kindLabel(entry.kind);
+      final kindText = kindLabel(entry.kind);
       final escapedPath = _escapeMarkdown(entry.displayPath);
       final uri = Uri.file(entry.filePath ?? '')
           .toString()
           .replaceAll('(', '%28')
           .replaceAll(')', '%29');
-      final formatLabel = _formatLabel(entry.format);
-      final scopeLabel = _scopeLabel(entry.scope);
+      final formatText = formatLabel(entry.format);
+      final scopeText = scopeLabel(entry.scope);
       final secretMarker = entry.secretBearing ? ' ⚠ secrets' : '';
 
       if (entry.missing) {
         sb.writeln(
-          '- **$kindLabel** $escapedPath — '
-          '$formatLabel, $scopeLabel$secretMarker',
+          '- **$kindText** $escapedPath — '
+          '$formatText, $scopeText$secretMarker',
         );
       } else {
         sb.writeln(
-          '- **$kindLabel** [$escapedPath]($uri) — '
-          '$formatLabel, $scopeLabel$secretMarker',
+          '- **$kindText** [$escapedPath]($uri) — '
+          '$formatText, $scopeText$secretMarker',
         );
       }
     }
@@ -649,11 +649,11 @@ String buildHtmlReport(
     final groupEntries = groups[group]!;
     sb.writeln('<ul class="file-list">');
     for (final entry in groupEntries) {
-      final kindClass = 'badge-${_kindLabel(entry.kind)}';
-      final kindText = _kindLabel(entry.kind);
+      final kindClass = 'badge-${kindLabel(entry.kind)}';
+      final kindText = kindLabel(entry.kind);
       final escapedPath = elementEscaper.convert(entry.displayPath);
-      final formatLabel = _formatLabel(entry.format);
-      final scopeLabel = _scopeLabel(entry.scope);
+      final formatText = formatLabel(entry.format);
+      final scopeText = scopeLabel(entry.scope);
 
       String pathHtml;
       if (entry.missing || entry.filePath == null) {
@@ -674,7 +674,7 @@ String buildHtmlReport(
         )
         ..writeln('  <span class="file-path">$pathHtml</span>')
         ..writeln(
-          '  <span class="file-meta">$formatLabel · $scopeLabel</span>',
+          '  <span class="file-meta">$formatText · $scopeText</span>',
         );
       if (entry.secretBearing) {
         sb.writeln('  <span class="badge badge-warning">⚠ secrets</span>');

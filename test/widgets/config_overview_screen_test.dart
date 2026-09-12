@@ -5,6 +5,7 @@ import 'package:agents_config_helper/models/discovery_preferences.dart';
 import 'package:agents_config_helper/models/discovery_result.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/reports/report_save_service.dart';
 import 'package:agents_config_helper/screens/config_overview_screen.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
 import 'package:agents_config_helper/services/config_service.dart';
@@ -48,6 +49,7 @@ class _StubPrefsStore implements IDiscoveryPreferencesStore {
 Future<void> _pumpScreen(
   WidgetTester tester, {
   DiscoveryResult? discovery,
+  SaveFileDialog? saveFileDialog,
 }) async {
   final tempDir = Directory.systemTemp.createTempSync('ach_overview_test');
   addTearDown(() {
@@ -90,6 +92,8 @@ Future<void> _pumpScreen(
         homeDirectoryResolverProvider.overrideWithValue(
           () => tempDir.path,
         ),
+        if (saveFileDialog != null)
+          saveFileDialogProvider.overrideWithValue(saveFileDialog),
       ],
       child: const MaterialApp(home: Scaffold(body: ConfigOverviewScreen())),
     ),
@@ -138,5 +142,78 @@ void main() {
       find.text('Error: cannot resolve home directory'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('screen shows Save buttons', (tester) async {
+    await _pumpScreen(tester);
+
+    expect(find.text('Save .md'), findsOneWidget);
+    expect(find.text('Save .html'), findsOneWidget);
+  });
+
+  testWidgets('screen shows file list with entries', (tester) async {
+    await _pumpScreen(tester);
+
+    expect(find.text('Files'), findsOneWidget);
+    expect(find.text('.claude/settings.json'), findsWidgets);
+  });
+
+  testWidgets('screen shows Copy path button', (tester) async {
+    await _pumpScreen(tester);
+
+    expect(find.byIcon(Icons.copy), findsWidgets);
+  });
+
+  testWidgets('screen shows Open in editor button', (tester) async {
+    await _pumpScreen(tester);
+
+    expect(find.byIcon(Icons.open_in_new), findsWidgets);
+  });
+
+  testWidgets('Copy button is tappable', (tester) async {
+    await _pumpScreen(tester);
+
+    final copyIcon = find.byIcon(Icons.copy).first;
+    await tester.scrollUntilVisible(copyIcon, 100);
+    await tester.tap(copyIcon);
+    await tester.pump();
+  });
+
+  testWidgets('Save .md triggers save flow', (tester) async {
+    final savedPath = '${Directory.systemTemp.path}/test_save_md.md';
+    await _pumpScreen(
+      tester,
+      saveFileDialog: (_, _) async => savedPath,
+    );
+
+    await tester.tap(find.text('Save .md'));
+    await tester.pumpAndSettle();
+
+    expect(File(savedPath).existsSync(), isTrue);
+  });
+
+  testWidgets('Save .html triggers save flow', (tester) async {
+    final savedPath = '${Directory.systemTemp.path}/test_save_html.html';
+    await _pumpScreen(
+      tester,
+      saveFileDialog: (_, _) async => savedPath,
+    );
+
+    await tester.tap(find.text('Save .html'));
+    await tester.pumpAndSettle();
+
+    expect(File(savedPath).existsSync(), isTrue);
+  });
+
+  testWidgets('Save dialog cancel does not write file', (tester) async {
+    await _pumpScreen(
+      tester,
+      saveFileDialog: (_, _) async => null,
+    );
+
+    await tester.tap(find.text('Save .md'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Report saved as md.'), findsNothing);
   });
 }
