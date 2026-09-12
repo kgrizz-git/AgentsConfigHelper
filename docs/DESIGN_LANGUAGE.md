@@ -3,7 +3,7 @@
 Dark-first, muted, modern. One neutral ramp, one accent, flat surfaces.
 This file is the source of truth for colors, type, and shape in both the
 Flutter app (`lib/theme/`) and the exported HTML report
-(`plans/active/config-overview-report.md`). Keep it in sync with both.
+(`plans/archive/config-overview-report.md`). Keep it in sync with both.
 
 ## Principles
 

@@ -16,7 +16,7 @@ the UI structure, the editor model, and the data-model shape.
   on the left, a `ConfigEditor` for the active selection on the right.
   Selection is `_activeConfigId`; a dedicated `_showingOverview` flag
   (planned — does not exist in code yet) will host the Overview report
-  screen (see `plans/active/config-overview-report.md`) without
+  screen (see `plans/archive/config-overview-report.md`) without
   overloading selection.
 - Sidebar header hosts global actions (add path, manage project roots)
   behind a `+` popup menu.
