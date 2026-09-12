@@ -154,6 +154,12 @@ The durable sequence and architecture decisions are in the
       values rather than raw text. Keep backup-before-write, diff preview, and fidelity
       disclosure; gate on the Phase 0.5 fidelity and test-root slices before promoting to
       `Next Up`, and redact secrets before serving context to any agent.
+- [ ] **File-reveal helper:** add a file-reveal action (show in Finder /
+      Explorer / file manager) next to the report's Open-in-editor and Copy-path
+      row actions. `lib/utils/open_directory.dart` only handles directories;
+      v1 deliberately ships launch-with-default-app only (see
+      [config-overview-report](plans/active/config-overview-report.md)). Keep
+      backup-before-write out of scope — this is navigation, not editing.
 - [ ] **HTML (or other) config tree with links:** generate a single self-contained HTML
       page (or similar) that renders a tree of all discovered configs with links to each
       one, as a human-readable overview of what the app manages. Reuse discovery and the
@@ -179,6 +185,15 @@ The durable sequence and architecture decisions are in the
 - [ ] Add a README screenshot or GIF to `assets/screenshots/` (blocked on user — an agent cannot capture a running Flutter desktop GUI). README currently shows a placeholder badge.
 
 ## Deferred from PR #5 review (Qodo / SonarCloud)
+
+- [ ] Triage the SonarCloud backlog on a cadence (e.g. monthly, alongside the
+      catalog advisory): 20 open CRITICAL + MAJOR code smells as of 2026-09-12,
+      all pre-existing — Flutter-template C++/Swift runner files (never touch),
+      cognitive-complexity flags on `ci/scripts/*.py` and `hooks/scripts/*.py`,
+      `S8550` unlocked-deps notes on `ci.yml`, and `pythonsecurity` LLM-CLI
+      flags on CI scripts. None touch `lib/`; fix or formally accept/won't-fix
+      each so the dashboard stays actionable for new code (PR #52's `css:S7924`
+      contrast flag was fixed at the source in `2026-09`).
 
 - [ ] Wire SonarCloud coverage reporting: switch from Automatic Analysis to a
       CI `sonar-scanner` step and set `sonar.dart.lcov.reportPaths=coverage/lcov.info`
