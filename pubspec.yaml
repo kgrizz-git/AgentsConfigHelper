@@ -32,6 +32,7 @@ dependencies:
   equatable: ^2.1.0
   flutter:
     sdk: flutter
+  flutter_markdown_plus: ^1.0.12
   flutter_riverpod: ^3.4.2
   grapheme_splitter: ^1.0.1
   multi_split_view: ^3.6.2

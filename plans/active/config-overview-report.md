@@ -196,6 +196,8 @@ sections, kind badges as pills, `file:` links per row.
   `feat/config-overview-report`; review fixed analyzer infos, added the
   paths-only disclaimer header, added the absolute-fallback manual
   fixture)
-- [ ] Chunk 2 — screen + Markdown preview
+- [x] Chunk 2 — screen + Markdown preview (review: zero analyzer infos,
+  null-home error state instead of temp fallback, temp-dir cleanup in
+  widget tests)
 - [ ] Chunk 3 — save + open actions
 - [ ] Chunk 4 — docs + changelog, archive per `AGENTS.md`
