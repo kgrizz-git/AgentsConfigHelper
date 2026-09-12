@@ -158,16 +158,8 @@ The durable sequence and architecture decisions are in the
       Explorer / file manager) next to the report's Open-in-editor and Copy-path
       row actions. `lib/utils/open_directory.dart` only handles directories;
       v1 deliberately ships launch-with-default-app only (see
-      [config-overview-report](plans/active/config-overview-report.md)). Keep
+      [config-overview-report](plans/archive/config-overview-report.md)). Keep
       backup-before-write out of scope — this is navigation, not editing.
-- [ ] **HTML (or other) config tree with links:** generate a single self-contained HTML
-      page (or similar) that renders a tree of all discovered configs with links to each
-      one, as a human-readable overview of what the app manages. Reuse discovery and the
-      catalog; keep it local and offline (file: links), redact secret-bearing files and
-      values, and preserve the raw-editor-first fallback for anything it cannot classify.
-      Active plan: [config-overview-report](plans/active/config-overview-report.md)
-      (HTML + Markdown overview, in-app preview + export, metadata-only with secrets
-      badges).
 
 ### API/CLI interface (deferred)
 
