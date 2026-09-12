@@ -215,4 +215,4 @@ sections, kind badges as pills, `file:` links per row.
   warning-badge token instead of raw Color, kindLabel reuse; macOS dialog
   still needs a manual smoke — release build exists but headless CI cannot
   open the native sheet)
-- [ ] Chunk 4 — docs + changelog, archive per `AGENTS.md`
+- [x] Chunk 4 — docs + changelog

@@ -9,6 +9,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+### Added
+- **Config Overview Report.** Generates a tool-grouped tree of every discovered and known config, permissions, and rules file with clickable links, a sticky table of contents, and secret-bearing row warnings. Preview it in the app and export as Markdown or self-contained HTML.
+
 ### Changed
 - UI typeface is now Manrope (code and paths stay JetBrains Mono).
 

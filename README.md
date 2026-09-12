@@ -36,6 +36,7 @@ Different AI tools scatter their configuration across `~/.claude/`, `~/.codex/`,
   Changes before saving any structured config.
 - **Instruction document editing (Markdown/text)** — Raw text editing for `CLAUDE.md`, `AGENTS.md`, `.mdc` rules, and similar instruction files. Content is never reformatted or rewritten.
 - **Edit Safety** — Local-only file operations with a strict backup-before-write policy. Diff preview before every write, plus timestamped backups with one-click restore.
+- **Config Overview Report** — Generates a grouped tree of every discovered and known config, permissions, and rules file with clickable `file:` links and a sticky table of contents. Preview it in the app and export as Markdown or self-contained HTML.
 - **Cross-Platform** — Built in Flutter/Dart, targeting macOS, Windows, and Linux from a single codebase.
 
 ### Planned
