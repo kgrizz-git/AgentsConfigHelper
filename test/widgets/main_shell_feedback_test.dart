@@ -1,8 +1,11 @@
 import 'dart:io';
 
+import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/discovery_preferences.dart';
 import 'package:agents_config_helper/models/discovery_request.dart';
 import 'package:agents_config_helper/models/discovery_result.dart';
+import 'package:agents_config_helper/models/tool_config.dart';
+import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/screens/main_shell.dart';
 import 'package:agents_config_helper/services/backup_service.dart';
 import 'package:agents_config_helper/services/config_service.dart';
@@ -11,6 +14,7 @@ import 'package:agents_config_helper/services/discovery_service.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
+import 'package:agents_config_helper/widgets/sidebar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +23,35 @@ class _EmptyDiscoveryService extends DiscoveryService {
   @override
   Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
     return const DiscoveryResult(items: []);
+  }
+}
+
+class _SingleFileDiscoveryService extends DiscoveryService {
+  _SingleFileDiscoveryService({required this.path, required this.home});
+
+  final String path;
+  final String home;
+
+  @override
+  Future<DiscoveryResult> discoverConfigs(DiscoveryRequest request) async {
+    return DiscoveryResult(
+      items: [
+        DiscoveredConfig(
+          id: 'structuredConfig:$path',
+          filePath: path,
+          descriptor: const ToolDescriptor(
+            id: ToolId.claudeCode,
+            displayName: 'Claude Code',
+            targets: [],
+          ),
+          scope: ConfigLocationScope.user,
+          kind: ConfigSourceKind.structuredConfig,
+          format: ConfigFormat.json,
+          sourceLabel: '.claude/settings.json',
+          fromCatalog: true,
+        ),
+      ],
+    );
   }
 }
 
@@ -116,4 +149,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Config Overview Report'), findsNothing);
   });
+
+  testWidgets(
+    'selecting a config while in overview exits overview',
+    (tester) async {
+      final tempDir = Directory.systemTemp.createTempSync('ach_shell_load');
+      addTearDown(() {
+        if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+      });
+      final settingsPath = '${tempDir.path}/settings.json';
+      File(settingsPath).writeAsStringSync('{}');
+      await _pumpShell(
+        tester,
+        discovery: _SingleFileDiscoveryService(
+          path: settingsPath,
+          home: tempDir.path,
+        ),
+      );
+
+      await tester.tap(find.widgetWithIcon(IconButton, Icons.article));
+      await tester.pumpAndSettle();
+      expect(find.text('Config Overview Report'), findsOneWidget);
+
+      // The real file read runs on dart:io, which needs real async to
+      // finish in widget tests.
+      await tester.runAsync(() async {
+        await tester.tap(
+          find.widgetWithText(SidebarItem, '.claude/settings.json'),
+        );
+        for (var i = 0; i < 50; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          await tester.pump(const Duration(milliseconds: 50));
+          if (find.text('Config Overview Report').evaluate().isEmpty) {
+            return;
+          }
+        }
+      });
+      await tester.pump();
+
+      expect(find.text('Config Overview Report'), findsNothing);
+    },
+  );
 }

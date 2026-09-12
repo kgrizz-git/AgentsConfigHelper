@@ -109,6 +109,7 @@ class _MainShellState extends ConsumerState<MainShell>
       _activeDiscoveredConfig = configItem;
       _hasUnsavedChanges = false;
       _rawRecoveryMode = false;
+      _showingOverview = false;
     });
     try {
       final configService = ref.read(configServiceProvider);
