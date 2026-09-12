@@ -57,6 +57,14 @@ String? Function() homeDirectoryResolver(Ref ref) {
   return resolveHomeDirectory;
 }
 
+/// Effective Copilot CLI config directory from `COPILOT_HOME`, when set,
+/// restricted to the active test root if any.
+final copilotHomePathProvider = Provider<String?>((ref) {
+  final copilotHomeRaw = nonEmptyEnvironmentVariable('COPILOT_HOME');
+  final configuredTestRoot = ref.read(testRootPathProvider);
+  return restrictPathToTestRoot(copilotHomeRaw, configuredTestRoot);
+});
+
 /// Notifier that runs filesystem discovery and exposes the resulting
 /// [DiscoveryResult], combining stored preferences (manual paths, project
 /// roots) with the resolved home directory.

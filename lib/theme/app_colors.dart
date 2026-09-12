@@ -29,6 +29,11 @@ class AppColors {
   /// Warning status color.
   static const Color warning = Color(0xFFFFA000);
 
+  /// Background for warning badges on dark surfaces.
+  static const Color warningBackgroundDark = Color(
+    0xFF3A2406,
+  ); // Matches the HTML export badge-warning mapping
+
   /// Error status color.
   static const Color error = Color(0xFFF44336);
 

@@ -53,16 +53,31 @@ better — decide at implementation):
   matter what `filePath` holds — `missing` suppresses the link, it does
   not empty the path. Links always derive from the absolute `filePath`,
   never from the display form.
-- `buildOverviewModel(discovery, catalog, {homePath, projectRoots})`:
+- `buildOverviewModel(discovery, catalog, {homePath, projectRoots, copilotHome})`:
   assemble from `DiscoveryService` results + the tool catalog, so managed
   paths that have not been discovered yet still appear flagged as missing
-  and unlinked (confirmed: show, don't hide). The builder is pure, so the
-  home directory and active project roots are explicit parameters —
-  `homePath` from `resolveHomeDirectory` (the `homeDirectoryResolver`
-  provider already consumed by `ConfigService`), `projectRoots` from
-  `DiscoveryResult.projectRoots` — never re-derived inside (e.g. no
-  `Platform.environment['HOME']`), so display is stable regardless of how
-  discovery ran.
+  and unlinked (confirmed: show, don't hide). Targets whose `relativePath`
+  contains a glob (`*`) never emit a missing row at the literal `*` path;
+  concrete matches discovered by glob enumeration are swept after the
+  exact-match pass — items carrying a catalog `descriptor` are attributed
+  to their owning tool via `item.descriptor` (discovery merges provenance,
+  so a manually-added path that also matches a catalog target carries both
+  flags and still belongs to its tool); only descriptor-less items fall
+  back to `Other`. Within the exact-match pass, an expected path already
+  emitted for another tool is skipped so shared targets never duplicate.
+  `copilotHome` is the effective Copilot CLI directory from `COPILOT_HOME`
+  (restricted to the active test root when in test mode); it is passed
+  explicitly so the builder never re-derives it. User-scope expected
+  paths are resolved with `RegistryPathMatching.resolveUserTargetPattern`
+  (honoring `copilotHome` for Copilot CLI targets). Discovered user-scope
+  items under `copilotHome` display as absolute paths; other user-scope
+  items display relative to `homePath`. The builder is pure, so the home
+  directory, active project roots, and copilot home are all explicit
+  parameters — `homePath` from `resolveHomeDirectory`, `projectRoots`
+  from `DiscoveryResult.projectRoots`, `copilotHome` from the provider
+  that mirrors `DiscoveryController`'s `normalizedCopilotHomePath`
+  computation — never re-derived inside (e.g. no `Platform.environment`
+  reads), so display is stable regardless of how discovery ran.
 - Kind classification reuses the schema adapters / catalog metadata where
   available; unknown files fall back to `other` with the raw-editor path.
   Manually-added paths with no catalog match group under a trailing
@@ -113,8 +128,10 @@ better — decide at implementation):
    limitation that `file:` links are clickable in VS Code but stripped by
    renderers like GitHub — acceptable since the `.md` is for local use.
 - Missing-path rows render unlinked plain-text paths but still carry the
-  kind badge and the secrets warning where applicable (golden fixture must
-  include a missing row with a secrets badge).
+  kind badge, a `missing` badge/marker, and the secrets warning where
+  applicable (golden fixture must include a missing row with a secrets
+  badge). The `missing` marker appears in all three surfaces: Markdown
+  (`⚠ missing`), HTML (`missing` pill), and the in-app file list.
 
 ### Screen + preview
 
@@ -192,7 +209,15 @@ sections, kind badges as pills, `file:` links per row.
 
 ## Status
 
-- [ ] Chunk 1 — model + builders + unit tests
-- [ ] Chunk 2 — screen + Markdown preview
-- [ ] Chunk 3 — save + open actions
-- [ ] Chunk 4 — docs + changelog, archive per `AGENTS.md`
+- [x] Chunk 1 — model + builders + unit tests (merged onto
+  `feat/config-overview-report`; review fixed analyzer infos, added the
+  paths-only disclaimer header, added the absolute-fallback manual
+  fixture)
+- [x] Chunk 2 — screen + Markdown preview (review: zero analyzer infos,
+  null-home error state instead of temp fallback, temp-dir cleanup in
+  widget tests)
+- [x] Chunk 3 — save + open actions (review: zero analyzer infos,
+  warning-badge token instead of raw Color, kindLabel reuse; macOS dialog
+  still needs a manual smoke — release build exists but headless CI cannot
+  open the native sheet)
+- [x] Chunk 4 — docs + changelog

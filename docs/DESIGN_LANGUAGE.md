@@ -3,7 +3,7 @@
 Dark-first, muted, modern. One neutral ramp, one accent, flat surfaces.
 This file is the source of truth for colors, type, and shape in both the
 Flutter app (`lib/theme/`) and the exported HTML report
-(`plans/active/config-overview-report.md`). Keep it in sync with both.
+(`plans/archive/config-overview-report.md`). Keep it in sync with both.
 
 ## Principles
 
@@ -75,7 +75,9 @@ Kind pills (`config` / `permissions` / `rules` / `other`) and the secrets
 warning follow one pattern: tinted token background + matching foreground
 text + 999px radius + 12px semibold label. Example dark values: neutral
 pill `#2D2D2D` bg / `#E0E0E0` text; warning pill `#3A2406`-class bg /
-`#FFA000` text. Never solid status fills for text-bearing badges.
+`#FFA000` text. Missing rows carry a muted `missing` pill (`text-muted`
+colors) in the report, the HTML export, and the in-app file list — never
+a bare opacity change alone. Never solid status fills for text-bearing badges.
 Kind pills live in report rows and editor headers — not in sidebar items,
 which stay icon + title + path.
 Explicit exception: full-width alert banners (e.g. the test-root banner)
