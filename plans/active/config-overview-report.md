@@ -192,7 +192,10 @@ sections, kind badges as pills, `file:` links per row.
 
 ## Status
 
-- [ ] Chunk 1 — model + builders + unit tests
+- [x] Chunk 1 — model + builders + unit tests (merged onto
+  `feat/config-overview-report`; review fixed analyzer infos, added the
+  paths-only disclaimer header, added the absolute-fallback manual
+  fixture)
 - [ ] Chunk 2 — screen + Markdown preview
 - [ ] Chunk 3 — save + open actions
 - [ ] Chunk 4 — docs + changelog, archive per `AGENTS.md`

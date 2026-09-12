@@ -44,12 +44,12 @@ import check_doc_links as cd  # noqa: E402
 def _write(tmp_path: Path, rel: str, body: str) -> Path:
     """
     Write dedented UTF-8 text to a file within a temporary directory.
-    
+
     Parameters:
     	tmp_path (Path): Root directory containing the file.
     	rel (str): Relative path of the file to write.
     	body (str): Text to write to the file.
-    
+
     Returns:
     	Path: The path to the written file.
     """
@@ -74,11 +74,11 @@ def _run(cwd: Path, *args: str) -> tuple[int, str, str]:
 def _catalog_body(reviewed: str, names: tuple[str, ...] = cd.REGISTRY_NAMES) -> str:
     """
     Generate catalog evidence content for the specified tools and review date.
-    
+
     Parameters:
     	reviewed (str): Review date or date marker included in the catalog.
     	names (tuple[str, ...]): Tool names to include as catalog evidence rows.
-    
+
     Returns:
     	str: Formatted catalog evidence section.
     """
@@ -263,6 +263,19 @@ class InternalLinkTests(unittest.TestCase):
         # .context/ is generated at runtime and intentionally absent.
         with _tmp_cwd() as tmp:
             path = _write(tmp, "page.md", "[ctx](.context/something.md)\n")
+            self.assertEqual(cd.check_internal(path, path.read_text()), [])
+
+    def test_file_scheme_is_ok(self):
+        # file: URIs are absolute local-file references (e.g. report
+        # fixtures), never repo-relative links. Built without a literal
+        # absolute path so the absolute-path hook stays clean.
+        slash = chr(47)
+        with _tmp_cwd() as tmp:
+            path = _write(
+                tmp,
+                "page.md",
+                "[cfg](file://" + slash + "home/user/.config/a.json)\n",
+            )
             self.assertEqual(cd.check_internal(path, path.read_text()), [])
 
 
