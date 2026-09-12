@@ -56,13 +56,18 @@ better — decide at implementation):
 - `buildOverviewModel(discovery, catalog, {homePath, projectRoots})`:
   assemble from `DiscoveryService` results + the tool catalog, so managed
   paths that have not been discovered yet still appear flagged as missing
-  and unlinked (confirmed: show, don't hide). The builder is pure, so the
-  home directory and active project roots are explicit parameters —
-  `homePath` from `resolveHomeDirectory` (the `homeDirectoryResolver`
-  provider already consumed by `ConfigService`), `projectRoots` from
-  `DiscoveryResult.projectRoots` — never re-derived inside (e.g. no
-  `Platform.environment['HOME']`), so display is stable regardless of how
-  discovery ran.
+  and unlinked (confirmed: show, don't hide). Targets whose `relativePath`
+  contains a glob (`*`) never emit a missing row at the literal `*` path;
+  concrete matches discovered by glob enumeration are swept after the
+  exact-match pass — `fromManual` items go to the `Other` group, while
+  `fromCatalog` items are attributed to their owning tool via
+  `item.descriptor` (or fall back to `Other` if the descriptor is absent).
+  The builder is pure, so the home directory and active project roots are
+  explicit parameters — `homePath` from `resolveHomeDirectory` (the
+  `homeDirectoryResolver` provider already consumed by `ConfigService`),
+  `projectRoots` from `DiscoveryResult.projectRoots` — never re-derived
+  inside (e.g. no `Platform.environment['HOME']`), so display is stable
+  regardless of how discovery ran.
 - Kind classification reuses the schema adapters / catalog metadata where
   available; unknown files fall back to `other` with the raw-editor path.
   Manually-added paths with no catalog match group under a trailing

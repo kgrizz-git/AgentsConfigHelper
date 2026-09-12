@@ -116,7 +116,7 @@ String _formatLabel(ConfigFormat format) {
     case ConfigFormat.markdown:
       return 'Markdown';
     case ConfigFormat.text:
-      return 'Plain';
+      return 'plain';
     case ConfigFormat.unknown:
       return 'Unknown';
   }
@@ -127,11 +127,23 @@ String _scopeLabel(ConfigLocationScope scope) {
 }
 
 bool _isSecretBearing(ToolId? toolId, String absolutePath) {
-  final basename = p.basename(absolutePath).toLowerCase();
-  if (_sensitiveBasenames.any(basename.contains)) return true;
   if (toolId != null &&
       ToolDescriptorRegistry.toolsWithSecretBearingConfigs.contains(toolId)) {
     return true;
+  }
+  final basename = p.basename(absolutePath).toLowerCase();
+  if (basename == '.env') return true;
+  if (RegExp(r'^\.env\..+$').hasMatch(basename)) return true;
+
+  final stem = basename.contains('.')
+      ? basename.substring(0, basename.lastIndexOf('.'))
+      : basename;
+  for (final name in _sensitiveBasenames) {
+    if (name == '.env') continue;
+    final pattern = RegExp(
+      r'(^|[.\-_\s])' + RegExp.escape(name) + r'($|[.\-_\s])',
+    );
+    if (pattern.hasMatch(stem)) return true;
   }
   return false;
 }
@@ -158,12 +170,20 @@ String _displayPath(
 
 int _toolIndex(ToolId? toolId, List<ToolDescriptor> catalog) {
   if (toolId == null) return catalog.length;
-  return catalog.indexWhere((t) => t.id == toolId);
+  final index = catalog.indexWhere((t) => t.id == toolId);
+  return index == -1 ? catalog.length : index;
 }
 
 String _groupName(List<ConfigOverviewEntry> entries, ToolId? group) {
   if (group == null) return 'Other';
   return entries.firstWhere((e) => e.toolId == group).displayName;
+}
+
+String? _findProjectRoot(String absolutePath, List<String> normalizedRoots) {
+  for (final root in normalizedRoots) {
+    if (p.isWithin(root, absolutePath)) return root;
+  }
+  return null;
 }
 
 int _scopeOrder(ConfigLocationScope scope) {
@@ -272,6 +292,8 @@ List<ConfigOverviewEntry> buildOverviewModel(
 
   for (final tool in catalog) {
     for (final target in tool.targets) {
+      if (target.relativePath.contains('*')) continue;
+
       if (target.scope == ConfigLocationScope.user) {
         final expected = p.normalize(
           p.join(normalizedHome, target.relativePath),
@@ -310,12 +332,26 @@ List<ConfigOverviewEntry> buildOverviewModel(
   }
 
   final otherEntries = <ConfigOverviewEntry>[];
-  for (final item in discovery.items.where((i) => i.fromManual)) {
+  for (final item in discovery.items) {
     final normalizedPath = p.normalize(item.filePath);
-    if (!addedPaths.contains(normalizedPath)) {
+    if (addedPaths.contains(normalizedPath)) continue;
+
+    if (item.fromManual) {
       otherEntries.add(
         _entryFromDiscovered(item, null, normalizedHome),
       );
+    } else if (item.fromCatalog) {
+      final tool = item.descriptor;
+      if (tool != null) {
+        final root = _findProjectRoot(normalizedPath, normalizedRoots);
+        entries.add(
+          _entryFromDiscovered(item, tool, normalizedHome, root: root),
+        );
+      } else {
+        otherEntries.add(
+          _entryFromDiscovered(item, null, normalizedHome),
+        );
+      }
     }
   }
   otherEntries.sort(
@@ -397,7 +433,10 @@ String buildMarkdownReport(
     for (final entry in groupEntries) {
       final kindLabel = _kindLabel(entry.kind);
       final escapedPath = _escapeMarkdown(entry.displayPath);
-      final uri = Uri.file(entry.filePath ?? '').toString();
+      final uri = Uri.file(entry.filePath ?? '')
+          .toString()
+          .replaceAll('(', '%28')
+          .replaceAll(')', '%29');
       final formatLabel = _formatLabel(entry.format);
       final scopeLabel = _scopeLabel(entry.scope);
       final secretMarker = entry.secretBearing ? ' ⚠ secrets' : '';

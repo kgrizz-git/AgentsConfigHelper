@@ -62,6 +62,18 @@ void main() {
               ),
             ],
           ),
+          const ToolDescriptor(
+            id: ToolId.cursor,
+            displayName: 'Cursor Agent',
+            targets: [
+              ConfigTarget(
+                relativePath: '.cursor/rules/*.mdc',
+                format: ConfigFormat.markdown,
+                scope: ConfigLocationScope.project,
+                kind: ConfigSourceKind.instructionDocument,
+              ),
+            ],
+          ),
         ];
 
         DiscoveredConfig found(
@@ -85,6 +97,7 @@ void main() {
         }
 
         final weirdPath = p.join(homePath, 'weird] ( path.md');
+        final parenPath = p.join(homePath, 'notes) done.md');
         final outsidePath = p.join(outsideDir.path, 'shared-notes.md');
         final discovery = DiscoveryResult(
           items: [
@@ -123,6 +136,13 @@ void main() {
               ConfigSourceKind.instructionDocument,
               ConfigFormat.markdown,
             ),
+            found(
+              p.join('proj1', '.cursor', 'rules', 'foo.mdc'),
+              catalog[2],
+              ConfigLocationScope.project,
+              ConfigSourceKind.instructionDocument,
+              ConfigFormat.markdown,
+            ),
             DiscoveredConfig(
               id: 'instructionDocument:$outsidePath',
               filePath: outsidePath,
@@ -140,6 +160,16 @@ void main() {
               scope: ConfigLocationScope.manual,
               kind: ConfigSourceKind.instructionDocument,
               format: ConfigFormat.markdown,
+              sourceLabel: 'Unknown configuration',
+              fromManual: true,
+            ),
+            DiscoveredConfig(
+              id: 'instructionDocument:$parenPath',
+              filePath: parenPath,
+              descriptor: null,
+              scope: ConfigLocationScope.manual,
+              kind: ConfigSourceKind.instructionDocument,
+              format: ConfigFormat.text,
               sourceLabel: 'Unknown configuration',
               fromManual: true,
             ),
