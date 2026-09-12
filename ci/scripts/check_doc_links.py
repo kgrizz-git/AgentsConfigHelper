@@ -216,9 +216,15 @@ def strip_code(text: str) -> str:
 
 def check_internal(path: Path, text: str) -> list[str]:
     problems = []
+    # Generated report snapshots under test/fixtures/ legitimately contain
+    # absolute file: URIs; those are link targets for the report consumer,
+    # never repo-relative links. Everywhere else file: URIs are checked.
+    skip_file_scheme = "fixtures" in path.parts
     for match in LINK_RE.finditer(text):
         target = match.group(1)
-        if target.startswith(("http://", "https://", "mailto:", "file:", "#", "<")):
+        if target.startswith(("http://", "https://", "mailto:", "#", "<")):
+            continue
+        if skip_file_scheme and target.startswith("file:"):
             continue
         clean = target.split("#", 1)[0].split("?", 1)[0]
         if not clean:

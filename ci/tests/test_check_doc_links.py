@@ -265,18 +265,32 @@ class InternalLinkTests(unittest.TestCase):
             path = _write(tmp, "page.md", "[ctx](.context/something.md)\n")
             self.assertEqual(cd.check_internal(path, path.read_text()), [])
 
-    def test_file_scheme_is_ok(self):
-        # file: URIs are absolute local-file references (e.g. report
-        # fixtures), never repo-relative links. Built without a literal
-        # absolute path so the absolute-path hook stays clean.
+    def test_file_scheme_is_ok_in_fixtures(self):
+        # Generated snapshots under test/fixtures/ legitimately contain
+        # absolute file: URIs. Built without a literal absolute path so
+        # the absolute-path hook stays clean.
         slash = chr(47)
         with _tmp_cwd() as tmp:
             path = _write(
                 tmp,
-                "page.md",
+                "test/fixtures/expected.md",
                 "[cfg](file://" + slash + "home/user/.config/a.json)\n",
             )
             self.assertEqual(cd.check_internal(path, path.read_text()), [])
+
+    def test_file_scheme_is_checked_outside_fixtures(self):
+        # Hand-written docs keep full coverage: a file: URI outside
+        # test/fixtures/ is still resolved as a repo-relative link.
+        slash = chr(47)
+        with _tmp_cwd() as tmp:
+            path = _write(
+                tmp,
+                "docs/page.md",
+                "[cfg](file://" + slash + "home/user/.config/a.json)\n",
+            )
+            problems = cd.check_internal(path, path.read_text())
+            self.assertEqual(len(problems), 1)
+            self.assertIn("broken relative link", problems[0])
 
 
 # ---------------------------------------------------------------------------
