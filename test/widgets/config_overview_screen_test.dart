@@ -174,6 +174,7 @@ void main() {
 
     expect(find.text('Files'), findsOneWidget);
     expect(find.text('.claude/settings.json'), findsWidgets);
+    expect(find.text('missing'), findsWidgets);
   });
 
   testWidgets('screen shows Copy path button', (tester) async {

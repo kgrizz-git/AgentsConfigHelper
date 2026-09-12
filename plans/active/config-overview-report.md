@@ -125,8 +125,10 @@ better — decide at implementation):
    limitation that `file:` links are clickable in VS Code but stripped by
    renderers like GitHub — acceptable since the `.md` is for local use.
 - Missing-path rows render unlinked plain-text paths but still carry the
-  kind badge and the secrets warning where applicable (golden fixture must
-  include a missing row with a secrets badge).
+  kind badge, a `missing` badge/marker, and the secrets warning where
+  applicable (golden fixture must include a missing row with a secrets
+  badge). The `missing` marker appears in all three surfaces: Markdown
+  (`⚠ missing`), HTML (`missing` pill), and the in-app file list.
 
 ### Screen + preview
 

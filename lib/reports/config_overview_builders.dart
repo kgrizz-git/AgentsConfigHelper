@@ -103,11 +103,12 @@ String buildMarkdownReport(
       final formatText = formatLabel(entry.format);
       final scopeText = scopeLabel(entry.scope);
       final secretMarker = entry.secretBearing ? ' ⚠ secrets' : '';
+      final missingMarker = entry.missing ? ' ⚠ missing' : '';
 
       if (entry.missing) {
         sb.writeln(
           '- **$kindText** $escapedPath — '
-          '$formatText, $scopeText$secretMarker',
+          '$formatText, $scopeText$secretMarker$missingMarker',
         );
       } else {
         sb.writeln(
@@ -244,6 +245,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .badge-rules { background: #3A2E1E; color: #FFA000; }
 .badge-other { background: #2D2D2D; color: #E0E0E0; }
 .badge-warning { background: #3A2406; color: #FFA000; }
+.badge-missing { background: #2D2D2D; color: #A0A0A0; }
 
 @media (prefers-color-scheme: light) {
   .badge-config { background: #F4F4F5; color: #18181B; }
@@ -251,6 +253,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   .badge-rules { background: #FEF3C7; color: #B45309; }
   .badge-other { background: #F4F4F5; color: #18181B; }
   .badge-warning { background: #FEF3C7; color: #B45309; }
+  .badge-missing { background: #F4F4F5; color: #52525B; }
 }
 ''';
 
@@ -339,6 +342,9 @@ String buildHtmlReport(
         ..writeln(
           '  <span class="file-meta">$formatText · $scopeText</span>',
         );
+      if (entry.missing) {
+        sb.writeln('  <span class="badge badge-missing">missing</span>');
+      }
       if (entry.secretBearing) {
         sb.writeln('  <span class="badge badge-warning">⚠ secrets</span>');
       }

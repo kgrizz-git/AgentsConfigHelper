@@ -127,6 +127,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .badge-rules { background: #3A2E1E; color: #FFA000; }
 .badge-other { background: #2D2D2D; color: #E0E0E0; }
 .badge-warning { background: #3A2406; color: #FFA000; }
+.badge-missing { background: #2D2D2D; color: #A0A0A0; }
 
 @media (prefers-color-scheme: light) {
   .badge-config { background: #F4F4F5; color: #18181B; }
@@ -134,6 +135,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   .badge-rules { background: #FEF3C7; color: #B45309; }
   .badge-other { background: #F4F4F5; color: #18181B; }
   .badge-warning { background: #FEF3C7; color: #B45309; }
+  .badge-missing { background: #F4F4F5; color: #52525B; }
 }
 </style>
 </head>
@@ -184,6 +186,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   <span class="badge badge-config">config</span>
   <span class="file-path"><code>token.json</code></span>
   <span class="file-meta">JSON · user</span>
+  <span class="badge badge-missing">missing</span>
   <span class="badge badge-warning">⚠ secrets</span>
 </li>
 <li class="file-item">
@@ -195,6 +198,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   <span class="badge badge-rules">rules</span>
   <span class="file-path"><code>proj2/rules.md</code></span>
   <span class="file-meta">Markdown · project</span>
+  <span class="badge badge-missing">missing</span>
 </li>
 </ul>
 <h2 id="cursor-agent">Cursor Agent</h2>

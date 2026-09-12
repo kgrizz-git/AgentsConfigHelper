@@ -197,13 +197,20 @@ class _FileRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            '$formatText · $scopeText',
-            style: AppTextStyles.uiSecondary,
+          Flexible(
+            child: Text(
+              '$formatText · $scopeText',
+              style: AppTextStyles.uiSecondary,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           if (entry.secretBearing) ...[
             const SizedBox(width: 8),
             const _Badge(text: 'secrets', warning: true),
+          ],
+          if (entry.missing) ...[
+            const SizedBox(width: 8),
+            const _Badge(text: 'missing'),
           ],
           if (canOpen) ...[
             const SizedBox(width: 8),

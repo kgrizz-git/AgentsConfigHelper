@@ -31,9 +31,9 @@ Generated at 2026-09-11 22:27:02 UTC
 - token.json
 
 - **config** [auth.json](file://<HOME>/auth.json) — JSON, user ⚠ secrets
-- **config** token.json — JSON, user ⚠ secrets
+- **config** token.json — JSON, user ⚠ secrets ⚠ missing
 - **rules** [proj1/rules.md](file://<HOME>/proj1/rules.md) — Markdown, project
-- **rules** proj2/rules.md — Markdown, project
+- **rules** proj2/rules.md — Markdown, project ⚠ missing
 
 ## Cursor Agent
 
