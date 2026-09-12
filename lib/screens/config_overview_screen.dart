@@ -165,13 +165,13 @@ class ConfigOverviewScreen extends ConsumerWidget {
   }
 }
 
-class _FileRow extends ConsumerWidget {
+class _FileRow extends StatelessWidget {
   const _FileRow({required this.entry});
 
   final ConfigOverviewEntry entry;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final kindText = kindLabel(entry.kind);
     final formatText = formatLabel(entry.format);
     final scopeText = scopeLabel(entry.scope);

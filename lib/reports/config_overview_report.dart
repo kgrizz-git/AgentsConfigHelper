@@ -138,12 +138,18 @@ bool _isSecretBearing(ToolId? toolId, String absolutePath) {
   final stem = basename.contains('.')
       ? basename.substring(0, basename.lastIndexOf('.'))
       : basename;
+  // Also match the singular form so plurals like secrets.json, tokens.json,
+  // and credentials.json are flagged (a single trailing s is stripped;
+  // words ending in ss are left alone).
+  final singularStem = stem.endsWith('s') && !stem.endsWith('ss')
+      ? stem.substring(0, stem.length - 1)
+      : stem;
   for (final name in _sensitiveBasenames) {
     if (name == '.env') continue;
     final pattern = RegExp(
       r'(^|[.\-_\s])' + RegExp.escape(name) + r'($|[.\-_\s])',
     );
-    if (pattern.hasMatch(stem)) return true;
+    if (pattern.hasMatch(stem) || pattern.hasMatch(singularStem)) return true;
   }
   return false;
 }

@@ -246,6 +246,48 @@ void main() {
       expect(model, isEmpty);
     });
 
+    test('plural secret basenames flag secret-bearing', () async {
+      final homeDir = await Directory.systemTemp.createTemp(
+        'ach-overview-home',
+      );
+      try {
+        final homePath = homeDir.path;
+        DiscoveredConfig manual(String name) {
+          final filePath = p.join(homePath, name);
+          return DiscoveredConfig(
+            id: 'manual:$filePath',
+            filePath: filePath,
+            descriptor: null,
+            scope: ConfigLocationScope.manual,
+            kind: ConfigSourceKind.structuredConfig,
+            format: ConfigFormat.json,
+            sourceLabel: 'Unknown configuration',
+            fromManual: true,
+          );
+        }
+
+        final model = buildOverviewModel(
+          DiscoveryResult(
+            items: [
+              manual('secrets.json'),
+              manual('tokens.json'),
+              manual('notes.json'),
+            ],
+          ),
+          const [],
+          homePath: homePath,
+          projectRoots: const [],
+        );
+
+        final byPath = {for (final e in model) e.filePath: e};
+        expect(byPath[p.join(homePath, 'secrets.json')]!.secretBearing, isTrue);
+        expect(byPath[p.join(homePath, 'tokens.json')]!.secretBearing, isTrue);
+        expect(byPath[p.join(homePath, 'notes.json')]!.secretBearing, isFalse);
+      } finally {
+        await homeDir.delete(recursive: true);
+      }
+    });
+
     test(
       'copilotHome resolves Copilot user target without missing row',
       () async {
