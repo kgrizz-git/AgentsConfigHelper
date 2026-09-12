@@ -46,6 +46,24 @@ class _StubPrefsStore implements IDiscoveryPreferencesStore {
   Future<void> disableTomlStructuredSave() async {}
 }
 
+/// Taps a save button and settles real dart:io writes.
+///
+/// Plain pumpAndSettle runs on fake async, which starves real file I/O
+/// (the report file is created but stays at 0 bytes and no snackbar ever
+/// appears). Both the tap and the settle loop must run inside runAsync so
+/// the whole save chain uses real async.
+Future<void> _tapSaveAndSettle(WidgetTester tester, Finder button) async {
+  await tester.runAsync(() async {
+    await tester.tap(button);
+    for (var i = 0; i < 50; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+      if (find.byType(SnackBar).evaluate().isNotEmpty) return;
+    }
+  });
+  await tester.pump();
+}
+
 Future<void> _pumpScreen(
   WidgetTester tester, {
   DiscoveryResult? discovery,
@@ -186,10 +204,10 @@ void main() {
       saveFileDialog: (_, _) async => savedPath,
     );
 
-    await tester.tap(find.text('Save .md'));
-    await tester.pumpAndSettle();
+    await _tapSaveAndSettle(tester, find.text('Save .md'));
 
     expect(File(savedPath).existsSync(), isTrue);
+    expect(find.byType(SnackBar), findsOneWidget);
   });
 
   testWidgets('Save .html triggers save flow', (tester) async {
@@ -199,10 +217,10 @@ void main() {
       saveFileDialog: (_, _) async => savedPath,
     );
 
-    await tester.tap(find.text('Save .html'));
-    await tester.pumpAndSettle();
+    await _tapSaveAndSettle(tester, find.text('Save .html'));
 
     expect(File(savedPath).existsSync(), isTrue);
+    expect(find.byType(SnackBar), findsOneWidget);
   });
 
   testWidgets('Save dialog cancel does not write file', (tester) async {

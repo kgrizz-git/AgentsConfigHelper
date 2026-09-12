@@ -100,4 +100,20 @@ void main() {
     expect(snackbar, findsOneWidget);
     expect(tester.widget<SnackBar>(snackbar).backgroundColor, AppColors.error);
   });
+
+  testWidgets('tapping Overview button toggles the overview screen', (
+    tester,
+  ) async {
+    await _pumpShell(tester);
+
+    expect(find.text('Config Overview Report'), findsNothing);
+
+    await tester.tap(find.widgetWithIcon(IconButton, Icons.article));
+    await tester.pumpAndSettle();
+    expect(find.text('Config Overview Report'), findsOneWidget);
+
+    await tester.tap(find.widgetWithIcon(IconButton, Icons.article));
+    await tester.pumpAndSettle();
+    expect(find.text('Config Overview Report'), findsNothing);
+  });
 }

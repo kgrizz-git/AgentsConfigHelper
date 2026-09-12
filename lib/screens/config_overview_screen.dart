@@ -1,4 +1,5 @@
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
+import 'package:agents_config_helper/reports/config_overview_builders.dart';
 import 'package:agents_config_helper/reports/config_overview_report.dart';
 import 'package:agents_config_helper/reports/report_save_service.dart';
 import 'package:agents_config_helper/state/providers.dart';
@@ -30,11 +31,13 @@ class ConfigOverviewScreen extends ConsumerWidget {
 
     return discoveryAsync.when(
       data: (discovery) {
+        final copilotHome = ref.read(copilotHomePathProvider);
         final entries = buildOverviewModel(
           discovery,
           ToolDescriptorRegistry.catalog,
           homePath: homeDir,
           projectRoots: discovery.projectRoots,
+          copilotHome: copilotHome,
         );
         final markdown = buildMarkdownReport(entries);
 

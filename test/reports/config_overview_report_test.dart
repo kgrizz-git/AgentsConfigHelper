@@ -4,6 +4,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/discovery_result.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/reports/config_overview_builders.dart';
 import 'package:agents_config_helper/reports/config_overview_report.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -244,5 +245,114 @@ void main() {
 
       expect(model, isEmpty);
     });
+
+    test(
+      'copilotHome resolves Copilot user target without missing row',
+      () async {
+        final homeDir = await Directory.systemTemp.createTemp(
+          'ach-overview-home',
+        );
+        final copilotDir = await Directory.systemTemp.createTemp(
+          'ach-overview-copilot',
+        );
+        try {
+          final homePath = homeDir.path;
+          final copilotHomePath = copilotDir.path;
+          final settingsFile = p.join(copilotHomePath, 'settings.json');
+          await File(settingsFile).create(recursive: true);
+
+          final catalog = <ToolDescriptor>[
+            const ToolDescriptor(
+              id: ToolId.copilot,
+              displayName: 'GitHub Copilot',
+              targets: [
+                ConfigTarget(
+                  relativePath: '.copilot/settings.json',
+                  format: ConfigFormat.jsonc,
+                  scope: ConfigLocationScope.user,
+                  kind: ConfigSourceKind.structuredConfig,
+                ),
+              ],
+            ),
+          ];
+
+          final discovery = DiscoveryResult(
+            items: [
+              DiscoveredConfig(
+                id: 'structuredConfig:$settingsFile',
+                filePath: settingsFile,
+                descriptor: catalog[0],
+                scope: ConfigLocationScope.user,
+                kind: ConfigSourceKind.structuredConfig,
+                format: ConfigFormat.jsonc,
+                sourceLabel: 'GitHub Copilot',
+                fromCatalog: true,
+              ),
+            ],
+          );
+
+          final model = buildOverviewModel(
+            discovery,
+            catalog,
+            homePath: homePath,
+            projectRoots: const [],
+            copilotHome: copilotHomePath,
+          );
+
+          expect(model, hasLength(1));
+          expect(model.first.missing, isFalse);
+          expect(model.first.displayPath, settingsFile);
+          expect(model.first.filePath, settingsFile);
+        } finally {
+          await homeDir.delete(recursive: true);
+          await copilotDir.delete(recursive: true);
+        }
+      },
+    );
+
+    test(
+      'without copilotHome, Copilot user target shows missing at home',
+      () async {
+        final homeDir = await Directory.systemTemp.createTemp(
+          'ach-overview-home',
+        );
+        try {
+          final homePath = homeDir.path;
+          final catalog = <ToolDescriptor>[
+            const ToolDescriptor(
+              id: ToolId.copilot,
+              displayName: 'GitHub Copilot',
+              targets: [
+                ConfigTarget(
+                  relativePath: '.copilot/settings.json',
+                  format: ConfigFormat.jsonc,
+                  scope: ConfigLocationScope.user,
+                  kind: ConfigSourceKind.structuredConfig,
+                ),
+              ],
+            ),
+          ];
+
+          const discovery = DiscoveryResult(items: []);
+
+          final model = buildOverviewModel(
+            discovery,
+            catalog,
+            homePath: homePath,
+            projectRoots: const [],
+          );
+
+          expect(model, hasLength(1));
+          expect(model.first.missing, isTrue);
+          expect(model.first.displayPath, '.copilot/settings.json');
+          expect(
+            model.first.filePath,
+            p.join(homePath, '.copilot/settings.json'),
+          );
+        } finally {
+          await homeDir.delete(recursive: true);
+        }
+      },
+    );
   });
 }

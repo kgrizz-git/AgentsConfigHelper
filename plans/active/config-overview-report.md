@@ -53,7 +53,7 @@ better — decide at implementation):
   matter what `filePath` holds — `missing` suppresses the link, it does
   not empty the path. Links always derive from the absolute `filePath`,
   never from the display form.
-- `buildOverviewModel(discovery, catalog, {homePath, projectRoots})`:
+- `buildOverviewModel(discovery, catalog, {homePath, projectRoots, copilotHome})`:
   assemble from `DiscoveryService` results + the tool catalog, so managed
   paths that have not been discovered yet still appear flagged as missing
   and unlinked (confirmed: show, don't hide). Targets whose `relativePath`
@@ -62,12 +62,19 @@ better — decide at implementation):
   exact-match pass — `fromManual` items go to the `Other` group, while
   `fromCatalog` items are attributed to their owning tool via
   `item.descriptor` (or fall back to `Other` if the descriptor is absent).
-  The builder is pure, so the home directory and active project roots are
-  explicit parameters — `homePath` from `resolveHomeDirectory` (the
-  `homeDirectoryResolver` provider already consumed by `ConfigService`),
-  `projectRoots` from `DiscoveryResult.projectRoots` — never re-derived
-  inside (e.g. no `Platform.environment['HOME']`), so display is stable
-  regardless of how discovery ran.
+  `copilotHome` is the effective Copilot CLI directory from `COPILOT_HOME`
+  (restricted to the active test root when in test mode); it is passed
+  explicitly so the builder never re-derives it. User-scope expected
+  paths are resolved with `RegistryPathMatching.resolveUserTargetPattern`
+  (honoring `copilotHome` for Copilot CLI targets). Discovered user-scope
+  items under `copilotHome` display as absolute paths; other user-scope
+  items display relative to `homePath`. The builder is pure, so the home
+  directory, active project roots, and copilot home are all explicit
+  parameters — `homePath` from `resolveHomeDirectory`, `projectRoots`
+  from `DiscoveryResult.projectRoots`, `copilotHome` from the provider
+  that mirrors `DiscoveryController`'s `normalizedCopilotHomePath`
+  computation — never re-derived inside (e.g. no `Platform.environment`
+  reads), so display is stable regardless of how discovery ran.
 - Kind classification reuses the schema adapters / catalog metadata where
   available; unknown files fall back to `other` with the raw-editor path.
   Manually-added paths with no catalog match group under a trailing
