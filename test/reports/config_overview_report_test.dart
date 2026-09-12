@@ -396,5 +396,66 @@ void main() {
         }
       },
     );
+
+    test('dual-provenance glob match attributes to owning tool', () async {
+      final homeDir = await Directory.systemTemp.createTemp(
+        'ach-overview-home',
+      );
+      try {
+        final homePath = homeDir.path;
+        final catalog = <ToolDescriptor>[
+          const ToolDescriptor(
+            id: ToolId.cursor,
+            displayName: 'Cursor Agent',
+            targets: [
+              ConfigTarget(
+                relativePath: '.cursor/rules/*.mdc',
+                format: ConfigFormat.markdown,
+                scope: ConfigLocationScope.project,
+                kind: ConfigSourceKind.instructionDocument,
+              ),
+            ],
+          ),
+        ];
+        final rulePath = p.join(
+          homePath,
+          'proj1',
+          '.cursor',
+          'rules',
+          'mine.mdc',
+        );
+
+        final model = buildOverviewModel(
+          DiscoveryResult(
+            items: [
+              DiscoveredConfig(
+                id: 'instructionDocument:$rulePath',
+                filePath: rulePath,
+                descriptor: catalog[0],
+                scope: ConfigLocationScope.project,
+                kind: ConfigSourceKind.instructionDocument,
+                format: ConfigFormat.markdown,
+                sourceLabel: 'Cursor Agent',
+                fromCatalog: true,
+                fromManual: true,
+              ),
+            ],
+          ),
+          catalog,
+          homePath: homePath,
+          projectRoots: [p.join(homePath, 'proj1')],
+        );
+
+        expect(model, hasLength(1));
+        expect(model.first.toolId, ToolId.cursor);
+        expect(model.first.missing, isFalse);
+        expect(
+          model.first.displayPath,
+          p.join('proj1', '.cursor', 'rules', 'mine.mdc'),
+        );
+      } finally {
+        await homeDir.delete(recursive: true);
+      }
+    });
   });
 }

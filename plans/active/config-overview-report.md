@@ -59,9 +59,12 @@ better — decide at implementation):
   and unlinked (confirmed: show, don't hide). Targets whose `relativePath`
   contains a glob (`*`) never emit a missing row at the literal `*` path;
   concrete matches discovered by glob enumeration are swept after the
-  exact-match pass — `fromManual` items go to the `Other` group, while
-  `fromCatalog` items are attributed to their owning tool via
-  `item.descriptor` (or fall back to `Other` if the descriptor is absent).
+  exact-match pass — items carrying a catalog `descriptor` are attributed
+  to their owning tool via `item.descriptor` (discovery merges provenance,
+  so a manually-added path that also matches a catalog target carries both
+  flags and still belongs to its tool); only descriptor-less items fall
+  back to `Other`. Within the exact-match pass, an expected path already
+  emitted for another tool is skipped so shared targets never duplicate.
   `copilotHome` is the effective Copilot CLI directory from `COPILOT_HOME`
   (restricted to the active test root when in test mode); it is passed
   explicitly so the builder never re-derives it. User-scope expected

@@ -287,7 +287,7 @@ List<ConfigOverviewEntry> buildOverviewModel(
           relativePath: target.relativePath,
           normalizedCopilotHomePath: copilotHome,
         );
-        if (expected == null) continue;
+        if (expected == null || !addedPaths.add(expected)) continue;
         final match = discoveredByPath[expected];
         if (match != null) {
           entries.add(
@@ -298,7 +298,6 @@ List<ConfigOverviewEntry> buildOverviewModel(
               copilotHome: copilotHome,
             ),
           );
-          addedPaths.add(p.normalize(match.filePath));
         } else {
           entries.add(
             _missingEntry(
@@ -309,12 +308,12 @@ List<ConfigOverviewEntry> buildOverviewModel(
               copilotHome: copilotHome,
             ),
           );
-          addedPaths.add(expected);
         }
       } else if (target.scope == ConfigLocationScope.project) {
         if (normalizedRoots.isEmpty) continue;
         for (final root in normalizedRoots) {
           final expected = p.normalize(p.join(root, target.relativePath));
+          if (!addedPaths.add(expected)) continue;
           final match = discoveredByPath[expected];
           if (match != null) {
             entries.add(
@@ -326,7 +325,6 @@ List<ConfigOverviewEntry> buildOverviewModel(
                 copilotHome: copilotHome,
               ),
             );
-            addedPaths.add(p.normalize(match.filePath));
           } else {
             entries.add(
               _missingEntry(
@@ -338,7 +336,6 @@ List<ConfigOverviewEntry> buildOverviewModel(
                 copilotHome: copilotHome,
               ),
             );
-            addedPaths.add(expected);
           }
         }
       }
@@ -350,7 +347,23 @@ List<ConfigOverviewEntry> buildOverviewModel(
     final normalizedPath = p.normalize(item.filePath);
     if (addedPaths.contains(normalizedPath)) continue;
 
-    if (item.fromManual) {
+    // Route by catalog match (descriptor), not by provenance flags:
+    // discovery merges provenance, so a manually-added path that also
+    // matches a catalog target carries both fromManual and fromCatalog.
+    // Such items belong to their owning tool, not to Other.
+    final tool = item.descriptor;
+    if (tool != null && (item.fromCatalog || item.fromManual)) {
+      final root = _findProjectRoot(normalizedPath, normalizedRoots);
+      entries.add(
+        _entryFromDiscovered(
+          item,
+          tool,
+          normalizedHome,
+          root: root,
+          copilotHome: copilotHome,
+        ),
+      );
+    } else {
       otherEntries.add(
         _entryFromDiscovered(
           item,
@@ -359,29 +372,6 @@ List<ConfigOverviewEntry> buildOverviewModel(
           copilotHome: copilotHome,
         ),
       );
-    } else if (item.fromCatalog) {
-      final tool = item.descriptor;
-      if (tool != null) {
-        final root = _findProjectRoot(normalizedPath, normalizedRoots);
-        entries.add(
-          _entryFromDiscovered(
-            item,
-            tool,
-            normalizedHome,
-            root: root,
-            copilotHome: copilotHome,
-          ),
-        );
-      } else {
-        otherEntries.add(
-          _entryFromDiscovered(
-            item,
-            null,
-            normalizedHome,
-            copilotHome: copilotHome,
-          ),
-        );
-      }
     }
   }
   otherEntries.sort(
