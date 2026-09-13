@@ -33,7 +33,13 @@ String _escapeMarkdown(String text) {
     }
     sb.write(c);
   }
-  return sb.toString().replaceAll('\n', ' ').replaceAll('\r', ' ');
+  return sb
+      .toString()
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('\n', ' ')
+      .replaceAll('\r', ' ');
 }
 
 /// Builds a Markdown report from the overview model.
@@ -96,21 +102,21 @@ String buildMarkdownReport(
     for (final entry in groupEntries) {
       final kindText = kindLabel(entry.kind);
       final escapedPath = _escapeMarkdown(entry.displayPath);
-      final uri = Uri.file(entry.filePath ?? '')
-          .toString()
-          .replaceAll('(', '%28')
-          .replaceAll(')', '%29');
       final formatText = formatLabel(entry.format);
       final scopeText = scopeLabel(entry.scope);
       final secretMarker = entry.secretBearing ? ' ⚠ secrets' : '';
       final missingMarker = entry.missing ? ' ⚠ missing' : '';
 
-      if (entry.missing) {
+      if (entry.missing || entry.filePath == null) {
         sb.writeln(
           '- **$kindText** $escapedPath — '
           '$formatText, $scopeText$secretMarker$missingMarker',
         );
       } else {
+        final uri = Uri.file(entry.filePath!)
+            .toString()
+            .replaceAll('(', '%28')
+            .replaceAll(')', '%29');
         sb.writeln(
           '- **$kindText** [$escapedPath]($uri) — '
           '$formatText, $scopeText$secretMarker',

@@ -292,6 +292,18 @@ class InternalLinkTests(unittest.TestCase):
             self.assertEqual(len(problems), 1)
             self.assertIn("broken relative link", problems[0])
 
+    def test_file_scheme_is_checked_in_docs_fixtures(self):
+        slash = chr(47)
+        with _tmp_cwd() as tmp:
+            path = _write(
+                tmp,
+                "docs/fixtures/expected.md",
+                "[cfg](file://" + slash + "home/user/.config/a.json)\n",
+            )
+            problems = cd.check_internal(path, path.read_text())
+            self.assertEqual(len(problems), 1)
+            self.assertIn("broken relative link", problems[0])
+
 
 # ---------------------------------------------------------------------------
 # Catalog detection (path-form normalized)

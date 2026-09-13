@@ -141,9 +141,10 @@ bool _isSecretBearing(ToolId? toolId, String absolutePath) {
   // Also match the singular form so plurals like secrets.json, tokens.json,
   // and credentials.json are flagged (a single trailing s is stripped;
   // words ending in ss are left alone).
-  final singularStem = stem.endsWith('s') && !stem.endsWith('ss')
-      ? stem.substring(0, stem.length - 1)
-      : stem;
+  final singularStem = stem.replaceFirstMapped(
+    RegExp(r'(^|[.\-_\s])([^ .\-_\s]*[^s.\-_\s])s(?=$|[.\-_\s])'),
+    (match) => '${match.group(1)}${match.group(2)}',
+  );
   for (final name in _sensitiveBasenames) {
     if (name == '.env') continue;
     final pattern = RegExp(
@@ -157,7 +158,7 @@ bool _isSecretBearing(ToolId? toolId, String absolutePath) {
 String _displayPath(
   String absolutePath,
   ConfigLocationScope scope,
-  String normalizedHome,
+  String? normalizedHome,
   String? root,
   String? copilotHome,
 ) {
@@ -165,13 +166,17 @@ String _displayPath(
     if (copilotHome != null && p.isWithin(copilotHome, absolutePath)) {
       return absolutePath;
     }
-    return p.relative(absolutePath, from: normalizedHome);
+    if (normalizedHome != null) {
+      return p.relative(absolutePath, from: normalizedHome);
+    }
   } else if (scope == ConfigLocationScope.project && root != null) {
     final basename = p.basename(root);
     final relative = p.relative(absolutePath, from: root);
     return '$basename/$relative';
   }
-  if (!Platform.isWindows && p.isWithin(normalizedHome, absolutePath)) {
+  if (normalizedHome != null &&
+      !Platform.isWindows &&
+      p.isWithin(normalizedHome, absolutePath)) {
     final relative = p.relative(absolutePath, from: normalizedHome);
     return '~/$relative';
   }
@@ -211,7 +216,7 @@ int _scopeOrder(ConfigLocationScope scope) {
 ConfigOverviewEntry _entryFromDiscovered(
   DiscoveredConfig item,
   ToolDescriptor? tool,
-  String normalizedHome, {
+  String? normalizedHome, {
   String? root,
   String? copilotHome,
 }) {
@@ -238,7 +243,7 @@ ConfigOverviewEntry _missingEntry(
   ToolDescriptor tool,
   ConfigTarget target,
   String expectedPath,
-  String normalizedHome, {
+  String? normalizedHome, {
   String? root,
   String? copilotHome,
 }) {
@@ -269,11 +274,11 @@ ConfigOverviewEntry _missingEntry(
 List<ConfigOverviewEntry> buildOverviewModel(
   DiscoveryResult discovery,
   List<ToolDescriptor> catalog, {
-  required String homePath,
   required List<String> projectRoots,
+  String? homePath,
   String? copilotHome,
 }) {
-  final normalizedHome = p.normalize(homePath);
+  final normalizedHome = homePath == null ? null : p.normalize(homePath);
   final normalizedRoots = projectRoots.map(p.normalize).toList();
   final discoveredByPath = <String, DiscoveredConfig>{};
   for (final item in discovery.items) {

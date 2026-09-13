@@ -68,6 +68,8 @@ Future<void> _pumpScreen(
   WidgetTester tester, {
   DiscoveryResult? discovery,
   SaveFileDialog? saveFileDialog,
+  String? Function()? homeDirectoryResolver,
+  String? copilotHome,
 }) async {
   final tempDir = Directory.systemTemp.createTempSync('ach_overview_test');
   addTearDown(() {
@@ -108,8 +110,9 @@ Future<void> _pumpScreen(
           const _StubPrefsStore(),
         ),
         homeDirectoryResolverProvider.overrideWithValue(
-          () => tempDir.path,
+          homeDirectoryResolver ?? () => tempDir.path,
         ),
+        copilotHomePathProvider.overrideWithValue(copilotHome),
         if (saveFileDialog != null)
           saveFileDialogProvider.overrideWithValue(saveFileDialog),
       ],
@@ -139,25 +142,72 @@ void main() {
   testWidgets('screen shows tool section for discovered entry', (tester) async {
     await _pumpScreen(tester);
 
-    expect(find.text('Contents'), findsOneWidget);
+    expect(
+      find.text('Contents', findRichText: true, skipOffstage: false),
+      findsOneWidget,
+    );
     expect(find.text('Claude Code'), findsWidgets);
   });
 
   testWidgets('screen shows error when home directory is null', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          homeDirectoryResolverProvider.overrideWithValue(() => null),
-        ],
-        child: const MaterialApp(home: Scaffold(body: ConfigOverviewScreen())),
-      ),
+    await _pumpScreen(
+      tester,
+      homeDirectoryResolver: () => null,
+      discovery: const DiscoveryResult(items: []),
     );
-    await tester.pumpAndSettle();
 
     expect(
       find.text('Error: cannot resolve home directory'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('screen renders Copilot results when home directory is null', (
+    tester,
+  ) async {
+    final copilotDir = Directory.systemTemp.createTempSync('ach_copilot_test');
+    addTearDown(() {
+      if (copilotDir.existsSync()) copilotDir.deleteSync(recursive: true);
+    });
+    final settingsPath = '${copilotDir.path}/settings.json';
+    await _pumpScreen(
+      tester,
+      homeDirectoryResolver: () => null,
+      copilotHome: copilotDir.path,
+      discovery: DiscoveryResult(
+        items: [
+          DiscoveredConfig(
+            id: 'structuredConfig:$settingsPath',
+            filePath: settingsPath,
+            descriptor: const ToolDescriptor(
+              id: ToolId.copilot,
+              displayName: 'GitHub Copilot',
+              targets: [],
+            ),
+            scope: ConfigLocationScope.user,
+            kind: ConfigSourceKind.structuredConfig,
+            format: ConfigFormat.jsonc,
+            sourceLabel: 'GitHub Copilot',
+            fromCatalog: true,
+          ),
+        ],
+      ),
+    );
+
+    expect(find.text('Error: cannot resolve home directory'), findsNothing);
+    expect(find.text('GitHub Copilot'), findsWidgets);
+  });
+
+  testWidgets('report headings have fragment keys', (tester) async {
+    await _pumpScreen(tester);
+
+    expect(
+      find.byKey(
+        const ValueKey('claude-code'),
+        skipOffstage: false,
+      ),
       findsOneWidget,
     );
   });
@@ -199,7 +249,11 @@ void main() {
   });
 
   testWidgets('Save .md triggers save flow', (tester) async {
-    final savedPath = '${Directory.systemTemp.path}/test_save_md.md';
+    final saveDir = Directory.systemTemp.createTempSync('ach_overview_save_md');
+    addTearDown(() {
+      if (saveDir.existsSync()) saveDir.deleteSync(recursive: true);
+    });
+    final savedPath = '${saveDir.path}/report.md';
     await _pumpScreen(
       tester,
       saveFileDialog: (_, _) async => savedPath,
@@ -212,7 +266,13 @@ void main() {
   });
 
   testWidgets('Save .html triggers save flow', (tester) async {
-    final savedPath = '${Directory.systemTemp.path}/test_save_html.html';
+    final saveDir = Directory.systemTemp.createTempSync(
+      'ach_overview_save_html',
+    );
+    addTearDown(() {
+      if (saveDir.existsSync()) saveDir.deleteSync(recursive: true);
+    });
+    final savedPath = '${saveDir.path}/report.html';
     await _pumpScreen(
       tester,
       saveFileDialog: (_, _) async => savedPath,

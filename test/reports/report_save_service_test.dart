@@ -127,7 +127,7 @@ void main() {
     test(
       'provider dialog forwards markdown args to the native channel',
       () async {
-        const nativePath = '/tmp/ach-native-report.md';
+        final nativePath = '${tempDir.path}/ach-native-report.md';
         _mockSaveLocation((call) async {
           expect(call.method, 'getSavePath');
           final args = call.arguments as Map<dynamic, dynamic>;
@@ -160,7 +160,7 @@ void main() {
     );
 
     test('provider dialog forwards html args to the native channel', () async {
-      const nativePath = '/tmp/ach-native-report.html';
+      final nativePath = '${tempDir.path}/ach-native-report.html';
       _mockSaveLocation((call) async {
         expect(call.method, 'getSavePath');
         final args = call.arguments as Map<dynamic, dynamic>;

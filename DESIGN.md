@@ -14,10 +14,9 @@ the UI structure, the editor model, and the data-model shape.
 - `MainShell` (`lib/screens/main_shell.dart`) is a two-pane
   `MultiSplitView`: a sidebar list of discovered configs plus manual paths
   on the left, a `ConfigEditor` for the active selection on the right.
-  Selection is `_activeConfigId`; a dedicated `_showingOverview` flag
-  (planned — does not exist in code yet) will host the Overview report
-  screen (see `plans/archive/config-overview-report.md`) without
-  overloading selection.
+  Selection is `_activeConfigId`; a dedicated `_showingOverview` flag hosts
+  the Overview report screen (see `plans/archive/config-overview-report.md`)
+  without overloading selection.
 - Sidebar header hosts global actions (add path, manage project roots)
   behind a `+` popup menu.
 - `ConfigEditor` renders, per config: a structured policy card when the

@@ -219,7 +219,10 @@ def check_internal(path: Path, text: str) -> list[str]:
     # Generated report snapshots under test/fixtures/ legitimately contain
     # absolute file: URIs; those are link targets for the report consumer,
     # never repo-relative links. Everywhere else file: URIs are checked.
-    skip_file_scheme = "fixtures" in path.parts
+    skip_file_scheme = any(
+        path.parts[index : index + 2] == ("test", "fixtures")
+        for index in range(len(path.parts) - 1)
+    )
     for match in LINK_RE.finditer(text):
         target = match.group(1)
         if target.startswith(("http://", "https://", "mailto:", "#", "<")):

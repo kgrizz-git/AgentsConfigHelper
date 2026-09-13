@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
 
 /// Renders the Markdown config overview report inline.
@@ -20,14 +21,6 @@ class ConfigOverviewScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final discoveryAsync = ref.watch(discoveryControllerProvider);
     final homeDir = ref.read(homeDirectoryResolverProvider)();
-    if (homeDir == null) {
-      return Center(
-        child: Text(
-          'Error: cannot resolve home directory',
-          style: AppTextStyles.uiBase.copyWith(color: AppColors.error),
-        ),
-      );
-    }
 
     return discoveryAsync.when(
       data: (discovery) {
@@ -39,7 +32,23 @@ class ConfigOverviewScreen extends ConsumerWidget {
           projectRoots: discovery.projectRoots,
           copilotHome: copilotHome,
         );
+        if (homeDir == null && entries.isEmpty) {
+          return Center(
+            child: Text(
+              'Error: cannot resolve home directory',
+              style: AppTextStyles.uiBase.copyWith(color: AppColors.error),
+            ),
+          );
+        }
         final markdown = buildMarkdownReport(entries);
+        final headingKeys = <String, GlobalKey>{
+          for (final entry in entries)
+            _headingFragment(
+              entry.displayName,
+            ): GlobalKey(
+              debugLabel: _headingFragment(entry.displayName),
+            ),
+        };
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,9 +70,24 @@ class ConfigOverviewScreen extends ConsumerWidget {
                         blockquote: AppTextStyles.uiSecondary,
                         code: AppTextStyles.codeBase,
                       ),
+                      builders: <String, MarkdownElementBuilder>{
+                        'h2': _OverviewHeadingBuilder(headingKeys),
+                      },
                       onTapLink: (text, href, title) async {
                         if (href == null) return;
-                        final target = Uri.parse(href);
+                        if (href.startsWith('#')) {
+                          final targetContext =
+                              headingKeys[href.substring(1)]?.currentContext;
+                          if (targetContext != null) {
+                            await Scrollable.ensureVisible(
+                              targetContext,
+                              duration: const Duration(milliseconds: 200),
+                            );
+                          }
+                          return;
+                        }
+                        final target = Uri.tryParse(href);
+                        if (target == null) return;
                         if (await canLaunchUrl(target)) {
                           await launchUrl(target);
                         }
@@ -162,6 +186,34 @@ class ConfigOverviewScreen extends ConsumerWidget {
         ),
       );
     }
+  }
+}
+
+String _headingFragment(String text) {
+  return text
+      .toLowerCase()
+      .replaceAll(' ', '-')
+      .replaceAll(RegExp('[^a-z0-9-]'), '');
+}
+
+class _OverviewHeadingBuilder extends MarkdownElementBuilder {
+  _OverviewHeadingBuilder(this._headingKeys);
+
+  final Map<String, GlobalKey> _headingKeys;
+
+  @override
+  Widget visitText(md.Text text, TextStyle? preferredStyle) {
+    final headingText = text.text;
+    final fragment = _headingFragment(headingText);
+    final key = _headingKeys[fragment];
+    if (key == null) return Text(headingText, style: preferredStyle);
+    return KeyedSubtree(
+      key: key,
+      child: KeyedSubtree(
+        key: ValueKey(fragment),
+        child: Text(headingText, style: preferredStyle),
+      ),
+    );
   }
 }
 

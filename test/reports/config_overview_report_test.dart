@@ -271,6 +271,7 @@ void main() {
             items: [
               manual('secrets.json'),
               manual('tokens.json'),
+              manual('credentials.backup.json'),
               manual('notes.json'),
             ],
           ),
@@ -282,10 +283,57 @@ void main() {
         final byPath = {for (final e in model) e.filePath: e};
         expect(byPath[p.join(homePath, 'secrets.json')]!.secretBearing, isTrue);
         expect(byPath[p.join(homePath, 'tokens.json')]!.secretBearing, isTrue);
+        expect(
+          byPath[p.join(homePath, 'credentials.backup.json')]!.secretBearing,
+          isTrue,
+        );
         expect(byPath[p.join(homePath, 'notes.json')]!.secretBearing, isFalse);
       } finally {
         await homeDir.delete(recursive: true);
       }
+    });
+
+    test('markdown escapes entity characters in paths', () {
+      const entry = ConfigOverviewEntry(
+        toolId: null,
+        displayName: 'Other',
+        filePath: '/tmp/a&b<c>d',
+        displayPath: 'a&b<c>d',
+        kind: OverviewKind.other,
+        format: ConfigFormat.text,
+        scope: ConfigLocationScope.manual,
+        secretBearing: true,
+        missing: false,
+      );
+
+      final report = buildMarkdownReport(
+        [entry],
+        generatedAt: DateTime.utc(2026),
+      );
+
+      expect(report, contains('- a&amp;b&lt;c&gt;d'));
+      expect(report, contains('[a&amp;b&lt;c&gt;d]'));
+    });
+
+    test('markdown renders entries without file paths as plain text', () {
+      const entry = ConfigOverviewEntry(
+        toolId: null,
+        displayName: 'Other',
+        displayPath: 'unresolved path',
+        kind: OverviewKind.other,
+        format: ConfigFormat.text,
+        scope: ConfigLocationScope.manual,
+        secretBearing: false,
+        missing: false,
+      );
+
+      final report = buildMarkdownReport(
+        [entry],
+        generatedAt: DateTime.utc(2026),
+      );
+
+      expect(report, contains('**other** unresolved path — plain, manual'));
+      expect(report, isNot(contains('](file:')));
     });
 
     test(
