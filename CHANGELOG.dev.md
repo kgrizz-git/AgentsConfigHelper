@@ -9,6 +9,7 @@ Internal / developer-facing changes that do not belong in the public
 - Widgets use `AppColors` tokens instead of `Colors.*` constants; error
   snackbars share a `_showErrorSnackBar` helper; empty-state and diff-label
   styles covered by widget tests.
+- **Doc-link checker:** `file:` link skipping is now scoped to `test/fixtures/` only; generated report snapshots legitimately contain absolute `file:` URIs, but hand-written docs still get full link coverage. Added regression tests for both paths.
 
 ## [0.2.0] - 2026-09-10
 

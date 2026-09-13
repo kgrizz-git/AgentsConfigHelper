@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
+import 'package:agents_config_helper/screens/config_overview_screen.dart';
 import 'package:agents_config_helper/screens/recovery_handler.dart';
+import 'package:agents_config_helper/screens/shell_sidebar_header.dart';
 import 'package:agents_config_helper/screens/toml_opt_in_controller.dart';
 import 'package:agents_config_helper/screens/tool_id_icons.dart';
 import 'package:agents_config_helper/state/providers.dart';
@@ -37,6 +39,7 @@ class _MainShellState extends ConsumerState<MainShell>
   bool _hasUnsavedChanges = false;
   bool _rawRecoveryMode = false;
   String? _error;
+  bool _showingOverview = false;
   var _loadGeneration = 0;
   late final TomlOptInController _tomlOptInController = TomlOptInController(
     store: ref.read(discoveryPreferencesStoreProvider),
@@ -106,6 +109,7 @@ class _MainShellState extends ConsumerState<MainShell>
       _activeDiscoveredConfig = configItem;
       _hasUnsavedChanges = false;
       _rawRecoveryMode = false;
+      _showingOverview = false;
     });
     try {
       final configService = ref.read(configServiceProvider);
@@ -355,6 +359,12 @@ class _MainShellState extends ConsumerState<MainShell>
     }
   }
 
+  void _toggleOverview() {
+    setState(() {
+      _showingOverview = !_showingOverview;
+    });
+  }
+
   late final MultiSplitViewController _controller = MultiSplitViewController(
     areas: [
       Area(
@@ -385,55 +395,15 @@ class _MainShellState extends ConsumerState<MainShell>
                       ),
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Agents Config',
-                          style: AppTextStyles.uiHeader,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      PopupMenuButton<VoidCallback>(
-                        icon: const Icon(Icons.add, size: 16),
-                        tooltip: 'Add configuration',
-                        onSelected: (callback) => callback(),
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: () => unawaited(_showAddManualPathDialog()),
-                            child: const Text('Add Manual Config Path'),
-                          ),
-                          PopupMenuItem(
-                            value: () => unawaited(_showAddProjectRootDialog()),
-                            child: const Text('Add Project Root'),
-                          ),
-                          const PopupMenuDivider(),
-                          PopupMenuItem(
-                            value: _showManageProjectRootsDialog,
-                            child: const Text('Manage Project Roots'),
-                          ),
-                          const PopupMenuDivider(),
-                          PopupMenuItem(
-                            enabled: testRoot == null,
-                            value: () => unawaited(_openBackupsFolder()),
-                            child: const Text('Open Backups Folder'),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.refresh, size: 16),
-                        onPressed: () {
-                          unawaited(
-                            ref
-                                .read(discoveryControllerProvider.notifier)
-                                .refresh(),
-                          );
-                        },
-                      ),
-                    ],
+                ShellSidebarHeader(
+                  onShowOverview: _toggleOverview,
+                  onAddManualPath: () => unawaited(_showAddManualPathDialog()),
+                  onAddProjectRoot: () =>
+                      unawaited(_showAddProjectRootDialog()),
+                  onManageProjectRoots: _showManageProjectRootsDialog,
+                  onOpenBackups: () => unawaited(_openBackupsFolder()),
+                  onRefresh: () => unawaited(
+                    ref.read(discoveryControllerProvider.notifier).refresh(),
                   ),
                 ),
                 Expanded(
@@ -523,6 +493,9 @@ class _MainShellState extends ConsumerState<MainShell>
       Area(
         flex: 1,
         builder: (context, area) {
+          if (_showingOverview) {
+            return const ConfigOverviewScreen();
+          }
           if (_isLoading) {
             return const Center(child: CircularProgressIndicator());
           }

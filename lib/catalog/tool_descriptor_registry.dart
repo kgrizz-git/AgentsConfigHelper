@@ -596,6 +596,18 @@ class ToolDescriptorRegistry {
     return null;
   }
 
+  /// Tools whose configuration files are considered secret-bearing by default.
+  /// Combined with basename-pattern matching in the report builder.
+  static final Set<ToolId> toolsWithSecretBearingConfigs = <ToolId>{
+    ToolId.claudeCode,
+    ToolId.cursorIde,
+    ToolId.cursor,
+    ToolId.copilot,
+    ToolId.kilo,
+    ToolId.opencode,
+    ToolId.paseo,
+  };
+
   /// See [RegistryPathMatching.isMatch].
   static bool isMatch(String expectedPattern, String actualNormalizedPath) =>
       RegistryPathMatching.isMatch(expectedPattern, actualNormalizedPath);
