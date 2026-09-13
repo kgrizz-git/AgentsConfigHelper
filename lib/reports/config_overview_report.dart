@@ -185,10 +185,16 @@ int _toolIndex(ToolId? toolId, List<ToolDescriptor> catalog) {
 }
 
 String? _findProjectRoot(String absolutePath, List<String> normalizedRoots) {
+  // Nested roots are allowed, so select the longest (most specific) match —
+  // first-match order would attribute nested-project files to the outer root.
+  String? mostSpecificRoot;
   for (final root in normalizedRoots) {
-    if (p.isWithin(root, absolutePath)) return root;
+    if (p.isWithin(root, absolutePath) &&
+        (mostSpecificRoot == null || root.length > mostSpecificRoot.length)) {
+      mostSpecificRoot = root;
+    }
   }
-  return null;
+  return mostSpecificRoot;
 }
 
 int _scopeOrder(ConfigLocationScope scope) {

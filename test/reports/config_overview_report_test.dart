@@ -457,5 +457,60 @@ void main() {
         await homeDir.delete(recursive: true);
       }
     });
+
+    test('nested project roots attribute to the most specific root', () async {
+      final homeDir = await Directory.systemTemp.createTemp(
+        'ach-overview-home',
+      );
+      try {
+        final homePath = homeDir.path;
+        final outerRoot = p.join(homePath, 'proj');
+        final innerRoot = p.join(outerRoot, 'nested');
+        const catalog = <ToolDescriptor>[
+          ToolDescriptor(
+            id: ToolId.cursor,
+            displayName: 'Cursor Agent',
+            targets: [
+              ConfigTarget(
+                relativePath: '.cursor/rules/*.mdc',
+                format: ConfigFormat.markdown,
+                scope: ConfigLocationScope.project,
+                kind: ConfigSourceKind.instructionDocument,
+              ),
+            ],
+          ),
+        ];
+        final rulePath = p.join(innerRoot, '.cursor', 'rules', 'mine.mdc');
+
+        final model = buildOverviewModel(
+          DiscoveryResult(
+            items: [
+              DiscoveredConfig(
+                id: 'instructionDocument:$rulePath',
+                filePath: rulePath,
+                descriptor: catalog[0],
+                scope: ConfigLocationScope.project,
+                kind: ConfigSourceKind.instructionDocument,
+                format: ConfigFormat.markdown,
+                sourceLabel: 'Cursor Agent',
+                fromCatalog: true,
+              ),
+            ],
+          ),
+          catalog,
+          homePath: homePath,
+          // Outer root listed first: naive first-match would claim the file.
+          projectRoots: [outerRoot, innerRoot],
+        );
+
+        expect(model, hasLength(1));
+        expect(
+          model.first.displayPath,
+          p.join('nested', '.cursor', 'rules', 'mine.mdc'),
+        );
+      } finally {
+        await homeDir.delete(recursive: true);
+      }
+    });
   });
 }

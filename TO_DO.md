@@ -82,10 +82,20 @@ The durable sequence and architecture decisions are in the
       configuration formats can present discovered rules, permissions, and settings as
       focused widgets/cards rather than only raw syntax. Start with tool-schema metadata
       and a single high-value read-only card; preserve a faithful raw-editor fallback for
-      unsupported or ambiguous content. Enable editing only after lossless/minimal-patch
+      unsupported or ambiguous       content. Enable editing only after lossless/minimal-patch
       fixture coverage, then add parser/UI tests per schema. (See gap analysis in
       [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md)
       and [implementation roadmap](plans/active/structured-configuration-roadmap.md).)
+
+- [ ] **Permissions-kind classification for the overview report:** the report
+      model has an `OverviewKind.permissions` badge but nothing produces it —
+      known permission files (Cursor `.cursor/permissions.json`, Kiro
+      `permissions.yaml`) currently render as `config`. Classifying them needs
+      a new signal plumbed through `ConfigTarget` → match results →
+      `DiscoveredConfig` with per-tool evidence (not basename guessing), so it
+      belongs to the schema-adapter work above, not a label tweak. Raised by
+      Greptile on PR #52; deferred as requiring catalog evidence per tool.
+
       Serialization-fidelity disclosure is shipped (Phases 1-4, merged 2026-09-07):
       persistent notices, fail-closed JSONC/YAML fallback with explicit rewrite consent,
       and opt-in TOML structured editing. See the archived
