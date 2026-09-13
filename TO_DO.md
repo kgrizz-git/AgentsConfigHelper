@@ -82,7 +82,7 @@ The durable sequence and architecture decisions are in the
       configuration formats can present discovered rules, permissions, and settings as
       focused widgets/cards rather than only raw syntax. Start with tool-schema metadata
       and a single high-value read-only card; preserve a faithful raw-editor fallback for
-      unsupported or ambiguous       content. Enable editing only after lossless/minimal-patch
+      unsupported or ambiguous content. Enable editing only after lossless/minimal-patch
       fixture coverage, then add parser/UI tests per schema. (See gap analysis in
       [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md)
       and [implementation roadmap](plans/active/structured-configuration-roadmap.md).)
