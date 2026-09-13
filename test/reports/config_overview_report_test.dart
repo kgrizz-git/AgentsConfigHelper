@@ -272,6 +272,7 @@ void main() {
               manual('secrets.json'),
               manual('tokens.json'),
               manual('credentials.backup.json'),
+              manual('notes_secrets.json'),
               manual('notes.json'),
             ],
           ),
@@ -285,6 +286,10 @@ void main() {
         expect(byPath[p.join(homePath, 'tokens.json')]!.secretBearing, isTrue);
         expect(
           byPath[p.join(homePath, 'credentials.backup.json')]!.secretBearing,
+          isTrue,
+        );
+        expect(
+          byPath[p.join(homePath, 'notes_secrets.json')]!.secretBearing,
           isTrue,
         );
         expect(byPath[p.join(homePath, 'notes.json')]!.secretBearing, isFalse);

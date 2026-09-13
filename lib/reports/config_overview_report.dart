@@ -141,7 +141,7 @@ bool _isSecretBearing(ToolId? toolId, String absolutePath) {
   // Also match the singular form so plurals like secrets.json, tokens.json,
   // and credentials.json are flagged (a single trailing s is stripped;
   // words ending in ss are left alone).
-  final singularStem = stem.replaceFirstMapped(
+  final singularStem = stem.replaceAllMapped(
     RegExp(r'(^|[.\-_\s])([^ .\-_\s]*[^s.\-_\s])s(?=$|[.\-_\s])'),
     (match) => '${match.group(1)}${match.group(2)}',
   );
