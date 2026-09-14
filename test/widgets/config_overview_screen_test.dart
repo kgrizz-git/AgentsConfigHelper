@@ -242,6 +242,7 @@ void main() {
     expect(find.byIcon(Icons.copy), findsWidgets);
     expect(find.byTooltip('Copy absolute path'), findsWidgets);
     expect(find.byTooltip('Open in editor'), findsOneWidget);
+    expect(find.byTooltip('Reveal in file manager'), findsOneWidget);
     expect(
       find.byTooltip('Expected configuration file not found on disk.'),
       findsWidgets,

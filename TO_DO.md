@@ -174,10 +174,8 @@ The durable sequence and architecture decisions are in the
       `Next Up`, and redact secrets before serving context to any agent.
 - [ ] **File-reveal helper:** add a file-reveal action (show in Finder /
       Explorer / file manager) next to the report's Open-in-editor and Copy-path
-      row actions. `lib/utils/open_directory.dart` only handles directories;
-      v1 deliberately ships launch-with-default-app only (see
-      [config-overview-report](plans/archive/config-overview-report.md)). Keep
-      backup-before-write out of scope — this is navigation, not editing.
+      row actions. See the active [file-reveal helper plan](plans/active/file-reveal-helper.md).
+      Keep backup-before-write out of scope — this is navigation, not editing.
 
 ### API/CLI interface (deferred)
 

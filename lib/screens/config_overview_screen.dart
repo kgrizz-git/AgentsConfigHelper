@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/reports/config_overview_builders.dart';
 import 'package:agents_config_helper/reports/config_overview_report.dart';
@@ -5,6 +7,7 @@ import 'package:agents_config_helper/reports/report_save_service.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
+import 'package:agents_config_helper/utils/open_directory.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -297,6 +300,25 @@ class _FileRow extends StatelessWidget {
                 final uri = Uri.file(entry.filePath!);
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri);
+                }
+              },
+            ),
+          ],
+          if (canOpen) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.folder_open, size: 16),
+              tooltip: 'Reveal in file manager',
+              visualDensity: VisualDensity.compact,
+              onPressed: () async {
+                final revealed = await revealFile(File(entry.filePath!));
+                if (!revealed && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Could not reveal the configuration file.'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
                 }
               },
             ),
