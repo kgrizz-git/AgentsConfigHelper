@@ -46,32 +46,18 @@ class _StubPrefsStore implements IDiscoveryPreferencesStore {
   Future<void> disableTomlStructuredSave() async {}
 }
 
-/// Taps a save button and settles real dart:io writes.
+/// Taps an action and waits for real dart:io feedback.
 ///
-/// Plain pumpAndSettle runs on fake async, which starves real file I/O
-/// (the report file is created but stays at 0 bytes and no snackbar ever
-/// appears). Both the tap and the settle loop must run inside runAsync so
-/// the whole save chain uses real async.
-Future<void> _tapSaveAndSettle(WidgetTester tester, Finder button) async {
-  await tester.runAsync(() async {
-    await tester.tap(button);
-    for (var i = 0; i < 50; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await tester.pump(const Duration(milliseconds: 50));
-      if (find.byType(SnackBar).evaluate().isNotEmpty) return;
-    }
-  });
-  await tester.pump();
-}
-
-/// Taps an action that performs real file I/O and waits for its feedback.
+/// Plain pumpAndSettle runs on fake async, which starves real file I/O. Both
+/// the tap and the settle loop must run inside runAsync so the whole action
+/// chain uses real async.
 Future<void> _tapAndWaitForSnackBar(WidgetTester tester, Finder button) async {
   await tester.runAsync(() async {
     await tester.tap(button);
     for (var i = 0; i < 50; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
       await tester.pump(const Duration(milliseconds: 50));
       if (find.byType(SnackBar).evaluate().isNotEmpty) return;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
     }
   });
   await tester.pump();
@@ -318,7 +304,7 @@ void main() {
       saveFileDialog: (_, _) async => savedPath,
     );
 
-    await _tapSaveAndSettle(tester, find.text('Export Markdown'));
+    await _tapAndWaitForSnackBar(tester, find.text('Export Markdown'));
 
     expect(File(savedPath).existsSync(), isTrue);
     expect(find.byType(SnackBar), findsOneWidget);
@@ -337,7 +323,7 @@ void main() {
       saveFileDialog: (_, _) async => savedPath,
     );
 
-    await _tapSaveAndSettle(tester, find.text('Export HTML'));
+    await _tapAndWaitForSnackBar(tester, find.text('Export HTML'));
 
     expect(File(savedPath).existsSync(), isTrue);
     expect(find.byType(SnackBar), findsOneWidget);
