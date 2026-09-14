@@ -66,7 +66,10 @@ class ConfigOverviewScreen extends ConsumerWidget {
                         p: AppTextStyles.uiBase,
                         h1: AppTextStyles.uiHeader,
                         h2: AppTextStyles.uiSubheader,
-                        a: const TextStyle(color: AppColors.primaryAccent),
+                        a: const TextStyle(
+                          color: AppColors.primaryAccent,
+                          decoration: TextDecoration.underline,
+                        ),
                         blockquote: AppTextStyles.uiSecondary,
                         code: AppTextStyles.codeBase,
                       ),
@@ -122,18 +125,25 @@ class ConfigOverviewScreen extends ConsumerWidget {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.borderDark)),
       ),
-      child: Row(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
         children: [
-          TextButton.icon(
-            onPressed: () => _saveAndNotify(context, ref, entries, 'md'),
-            icon: const Icon(Icons.download, size: 16),
-            label: const Text('Save .md'),
+          Tooltip(
+            message: 'Save report as a Markdown file',
+            child: TextButton.icon(
+              onPressed: () => _saveAndNotify(context, ref, entries, 'md'),
+              icon: const Icon(Icons.description_outlined, size: 16),
+              label: const Text('Export Markdown'),
+            ),
           ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            onPressed: () => _saveAndNotify(context, ref, entries, 'html'),
-            icon: const Icon(Icons.download, size: 16),
-            label: const Text('Save .html'),
+          Tooltip(
+            message: 'Save report as an HTML file',
+            child: TextButton.icon(
+              onPressed: () => _saveAndNotify(context, ref, entries, 'html'),
+              icon: const Icon(Icons.code_outlined, size: 16),
+              label: const Text('Export HTML'),
+            ),
           ),
         ],
       ),
@@ -148,6 +158,12 @@ class ConfigOverviewScreen extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Files', style: AppTextStyles.uiSubheader),
+        const SizedBox(height: 4),
+        const Text(
+          'Use the copy button, and the open button where available, to '
+          'access individual configuration files.',
+          style: AppTextStyles.uiSecondary,
+        ),
         const SizedBox(height: 8),
         ...entries.map((entry) => _FileRow(entry: entry)),
       ],
@@ -258,11 +274,18 @@ class _FileRow extends StatelessWidget {
           ),
           if (entry.secretBearing) ...[
             const SizedBox(width: 8),
-            const _Badge(text: 'secrets', warning: true),
+            const _Badge(
+              text: 'secrets',
+              tooltip: 'This configuration may contain secrets.',
+              warning: true,
+            ),
           ],
           if (entry.missing) ...[
             const SizedBox(width: 8),
-            const _Badge(text: 'missing'),
+            const _Badge(
+              text: 'missing',
+              tooltip: 'Expected configuration file not found on disk.',
+            ),
           ],
           if (canOpen) ...[
             const SizedBox(width: 8),
@@ -280,16 +303,19 @@ class _FileRow extends StatelessWidget {
           ],
           IconButton(
             icon: const Icon(Icons.copy, size: 16),
-            tooltip: 'Copy path',
+            tooltip: entry.filePath == null
+                ? 'Copy display path'
+                : 'Copy absolute path',
             visualDensity: VisualDensity.compact,
             onPressed: () async {
+              final copiedPath = entry.filePath ?? entry.displayPath;
               await Clipboard.setData(
-                ClipboardData(text: entry.filePath ?? entry.displayPath),
+                ClipboardData(text: copiedPath),
               );
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Copied: ${entry.displayPath}'),
+                    content: Text('Copied: $copiedPath'),
                     backgroundColor: AppColors.surfaceDark,
                   ),
                 );
@@ -303,9 +329,10 @@ class _FileRow extends StatelessWidget {
 }
 
 class _Badge extends StatelessWidget {
-  const _Badge({required this.text, this.warning = false});
+  const _Badge({required this.text, this.tooltip, this.warning = false});
 
   final String text;
+  final String? tooltip;
   final bool warning;
 
   @override
@@ -314,7 +341,7 @@ class _Badge extends StatelessWidget {
         ? AppColors.warningBackgroundDark
         : AppColors.surfaceHighlightDark;
     final fg = warning ? AppColors.warning : AppColors.textSecondaryDark;
-    return Container(
+    final badge = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
@@ -325,5 +352,6 @@ class _Badge extends StatelessWidget {
         style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w500),
       ),
     );
+    return tooltip == null ? badge : Tooltip(message: tooltip, child: badge);
   }
 }

@@ -469,6 +469,7 @@ void main() {
 
       // Verify the root is listed.
       expect(find.text('/workspace/my-project'), findsOneWidget);
+      expect(find.byTooltip('Remove project root'), findsOneWidget);
 
       // Tap the remove button next to the root.
       await tester.tap(find.byIcon(Icons.close));

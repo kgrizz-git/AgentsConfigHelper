@@ -156,11 +156,6 @@ The durable sequence and architecture decisions are in the
 
 ### Config reporting, export, and agent access
 
-- [ ] **Report-action discoverability:** add concise hover tooltips to every
-      icon-only report action and make the Markdown/HTML export controls visibly
-      labeled (or otherwise self-explanatory) rather than relying on download
-      icons alone. Preserve the compact layout and add widget coverage for the
-      accessible labels.
 - [ ] **Config reports and copies:** make it easy to produce a consolidated report or
       snapshot/copy of discovered configs (for example, an export bundle) so a user can
       review, share, or back up their agent/IDE configuration as a whole. Reuse

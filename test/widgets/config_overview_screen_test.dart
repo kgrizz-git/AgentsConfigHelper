@@ -212,25 +212,65 @@ void main() {
     );
   });
 
-  testWidgets('screen shows Save buttons', (tester) async {
+  testWidgets('screen shows clearly labeled export buttons', (tester) async {
     await _pumpScreen(tester);
 
-    expect(find.text('Save .md'), findsOneWidget);
-    expect(find.text('Save .html'), findsOneWidget);
+    expect(find.text('Export Markdown'), findsOneWidget);
+    expect(find.text('Export HTML'), findsOneWidget);
+    expect(find.byTooltip('Save report as a Markdown file'), findsOneWidget);
+    expect(find.byTooltip('Save report as an HTML file'), findsOneWidget);
   });
 
   testWidgets('screen shows file list with entries', (tester) async {
     await _pumpScreen(tester);
 
     expect(find.text('Files'), findsOneWidget);
+    expect(
+      find.text(
+        'Use the copy button, and the open button where available, to '
+        'access individual configuration files.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('.claude/settings.json'), findsWidgets);
     expect(find.text('missing'), findsWidgets);
   });
 
-  testWidgets('screen shows Copy path button', (tester) async {
+  testWidgets('screen shows clarified path actions', (tester) async {
     await _pumpScreen(tester);
 
     expect(find.byIcon(Icons.copy), findsWidgets);
+    expect(find.byTooltip('Copy absolute path'), findsWidgets);
+    expect(find.byTooltip('Open in editor'), findsOneWidget);
+    expect(
+      find.byTooltip('Expected configuration file not found on disk.'),
+      findsWidgets,
+    );
+  });
+
+  testWidgets('screen explains secret-bearing configurations', (tester) async {
+    await _pumpScreen(
+      tester,
+      discovery: const DiscoveryResult(
+        items: [
+          DiscoveredConfig(
+            id: 'manual:/tmp/secrets.json',
+            filePath: '/tmp/secrets.json',
+            descriptor: null,
+            scope: ConfigLocationScope.manual,
+            kind: ConfigSourceKind.structuredConfig,
+            format: ConfigFormat.json,
+            sourceLabel: 'Secrets',
+            fromManual: true,
+          ),
+        ],
+      ),
+    );
+
+    expect(
+      find.byTooltip('This configuration may contain secrets.'),
+      findsWidgets,
+    );
   });
 
   testWidgets('screen shows Open in editor button', (tester) async {
@@ -248,7 +288,7 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('Save .md triggers save flow', (tester) async {
+  testWidgets('Markdown export triggers save flow', (tester) async {
     final saveDir = Directory.systemTemp.createTempSync('ach_overview_save_md');
     addTearDown(() {
       if (saveDir.existsSync()) saveDir.deleteSync(recursive: true);
@@ -259,13 +299,13 @@ void main() {
       saveFileDialog: (_, _) async => savedPath,
     );
 
-    await _tapSaveAndSettle(tester, find.text('Save .md'));
+    await _tapSaveAndSettle(tester, find.text('Export Markdown'));
 
     expect(File(savedPath).existsSync(), isTrue);
     expect(find.byType(SnackBar), findsOneWidget);
   });
 
-  testWidgets('Save .html triggers save flow', (tester) async {
+  testWidgets('HTML export triggers save flow', (tester) async {
     final saveDir = Directory.systemTemp.createTempSync(
       'ach_overview_save_html',
     );
@@ -278,7 +318,7 @@ void main() {
       saveFileDialog: (_, _) async => savedPath,
     );
 
-    await _tapSaveAndSettle(tester, find.text('Save .html'));
+    await _tapSaveAndSettle(tester, find.text('Export HTML'));
 
     expect(File(savedPath).existsSync(), isTrue);
     expect(find.byType(SnackBar), findsOneWidget);
@@ -290,7 +330,7 @@ void main() {
       saveFileDialog: (_, _) async => null,
     );
 
-    await tester.tap(find.text('Save .md'));
+    await tester.tap(find.text('Export Markdown'));
     await tester.pumpAndSettle();
 
     expect(find.text('Report saved as md.'), findsNothing);

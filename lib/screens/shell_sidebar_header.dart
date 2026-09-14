@@ -53,7 +53,7 @@ class ShellSidebarHeader extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.article, size: 16),
-            tooltip: 'Overview',
+            tooltip: 'Show config overview report',
             onPressed: onShowOverview,
           ),
           PopupMenuButton<VoidCallback>(
@@ -87,6 +87,7 @@ class ShellSidebarHeader extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.refresh, size: 16),
+            tooltip: 'Refresh discovery',
             onPressed: onRefresh,
           ),
         ],
