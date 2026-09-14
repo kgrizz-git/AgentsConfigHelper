@@ -64,6 +64,19 @@ Future<void> _tapSaveAndSettle(WidgetTester tester, Finder button) async {
   await tester.pump();
 }
 
+/// Taps an action that performs real file I/O and waits for its feedback.
+Future<void> _tapAndWaitForSnackBar(WidgetTester tester, Finder button) async {
+  await tester.runAsync(() async {
+    await tester.tap(button);
+    for (var i = 0; i < 50; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+      if (find.byType(SnackBar).evaluate().isNotEmpty) return;
+    }
+  });
+  await tester.pump();
+}
+
 Future<void> _pumpScreen(
   WidgetTester tester, {
   DiscoveryResult? discovery,
@@ -267,6 +280,22 @@ void main() {
     await _pumpScreen(tester, discovery: const DiscoveryResult(items: []));
 
     expect(find.byTooltip('Reveal in file manager'), findsNothing);
+  });
+
+  testWidgets('Reveal action reports when the resolved file no longer exists', (
+    tester,
+  ) async {
+    await _pumpScreen(tester);
+
+    await _tapAndWaitForSnackBar(
+      tester,
+      find.byTooltip('Reveal in file manager'),
+    );
+
+    expect(
+      find.text('Could not reveal the configuration file.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Copy button is tappable', (tester) async {
