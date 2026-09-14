@@ -179,10 +179,6 @@ The durable sequence and architecture decisions are in the
       values rather than raw text. Keep backup-before-write, diff preview, and fidelity
       disclosure; gate on the Phase 0.5 fidelity and test-root slices before promoting to
       `Next Up`, and redact secrets before serving context to any agent.
-- [ ] **File-reveal helper:** add a file-reveal action (show in Finder /
-      Explorer / file manager) next to the report's Open-in-editor and Copy-path
-      row actions. See the active [file-reveal helper plan](plans/active/file-reveal-helper.md).
-      Keep backup-before-write out of scope — this is navigation, not editing.
 
 ### API/CLI interface (deferred)
 

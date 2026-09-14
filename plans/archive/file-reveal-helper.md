@@ -3,7 +3,7 @@
 Last reviewed: 2026-09-14
 Date: 2026-09-14
 Author: maintainers
-Status: in progress
+Status: complete
 Linked issue/PR: n/a
 
 ## Goal
@@ -40,7 +40,9 @@ without opening, creating, editing, or copying that file.
       grouped, interactive overview.
 - [x] Run format, analysis, targeted tests, and the full test suite (all passed
       on 2026-09-14; 527 tests in the full suite).
-- [ ] Perform a manual macOS Finder smoke check from a disposable test root.
+- [x] Perform a manual macOS Finder smoke check. On 2026-09-14, the user
+      confirmed that the folder action revealed a real configuration file in
+      Finder and approved the revised grouped overview layout.
 
 ## Acceptance criteria
 
