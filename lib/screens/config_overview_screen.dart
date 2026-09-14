@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
-import 'package:agents_config_helper/reports/config_overview_builders.dart';
 import 'package:agents_config_helper/reports/config_overview_report.dart';
 import 'package:agents_config_helper/reports/report_save_service.dart';
 import 'package:agents_config_helper/state/providers.dart';
@@ -10,12 +9,11 @@ import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/utils/open_directory.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
 
-/// Renders the Markdown config overview report inline.
+/// Renders an interactive overview of discovered and expected configuration
+/// files.
 class ConfigOverviewScreen extends ConsumerWidget {
   /// Creates the screen.
   const ConfigOverviewScreen({super.key});
@@ -43,16 +41,6 @@ class ConfigOverviewScreen extends ConsumerWidget {
             ),
           );
         }
-        final markdown = buildMarkdownReport(entries);
-        final headingKeys = <String, GlobalKey>{
-          for (final entry in entries)
-            _headingFragment(
-              entry.displayName,
-            ): GlobalKey(
-              debugLabel: _headingFragment(entry.displayName),
-            ),
-        };
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -63,44 +51,7 @@ class ConfigOverviewScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    MarkdownBody(
-                      data: markdown,
-                      styleSheet: MarkdownStyleSheet(
-                        p: AppTextStyles.uiBase,
-                        h1: AppTextStyles.uiHeader,
-                        h2: AppTextStyles.uiSubheader,
-                        a: const TextStyle(
-                          color: AppColors.primaryAccent,
-                          decoration: TextDecoration.underline,
-                        ),
-                        blockquote: AppTextStyles.uiSecondary,
-                        code: AppTextStyles.codeBase,
-                      ),
-                      builders: <String, MarkdownElementBuilder>{
-                        'h2': _OverviewHeadingBuilder(headingKeys),
-                      },
-                      onTapLink: (text, href, title) async {
-                        if (href == null) return;
-                        if (href.startsWith('#')) {
-                          final targetContext =
-                              headingKeys[href.substring(1)]?.currentContext;
-                          if (targetContext != null) {
-                            await Scrollable.ensureVisible(
-                              targetContext,
-                              duration: const Duration(milliseconds: 200),
-                            );
-                          }
-                          return;
-                        }
-                        final target = Uri.tryParse(href);
-                        if (target == null) return;
-                        if (await canLaunchUrl(target)) {
-                          await launchUrl(target);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    if (entries.isNotEmpty) _buildFileList(context, entries),
+                    _buildInteractiveOverview(entries),
                   ],
                 ),
               ),
@@ -153,22 +104,26 @@ class ConfigOverviewScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFileList(
-    BuildContext context,
-    List<ConfigOverviewEntry> entries,
-  ) {
+  Widget _buildInteractiveOverview(List<ConfigOverviewEntry> entries) {
+    final groups = <Object?, List<ConfigOverviewEntry>>{};
+    for (final entry in entries) {
+      groups.putIfAbsent(entry.toolId, () => []).add(entry);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Files', style: AppTextStyles.uiSubheader),
+        const Text('Configuration files', style: AppTextStyles.uiHeader),
         const SizedBox(height: 4),
         const Text(
-          'Use the copy button, and the open button where available, to '
-          'access individual configuration files.',
+          'Use the available actions to open, reveal, or copy each '
+          'configuration path.',
           style: AppTextStyles.uiSecondary,
         ),
-        const SizedBox(height: 8),
-        ...entries.map((entry) => _FileRow(entry: entry)),
+        const SizedBox(height: 16),
+        ...groups.values.map(
+          (groupEntries) => _ToolFileGroup(entries: groupEntries),
+        ),
       ],
     );
   }
@@ -208,29 +163,22 @@ class ConfigOverviewScreen extends ConsumerWidget {
   }
 }
 
-String _headingFragment(String text) {
-  return text
-      .toLowerCase()
-      .replaceAll(' ', '-')
-      .replaceAll(RegExp('[^a-z0-9-]'), '');
-}
+class _ToolFileGroup extends StatelessWidget {
+  const _ToolFileGroup({required this.entries});
 
-class _OverviewHeadingBuilder extends MarkdownElementBuilder {
-  _OverviewHeadingBuilder(this._headingKeys);
-
-  final Map<String, GlobalKey> _headingKeys;
+  final List<ConfigOverviewEntry> entries;
 
   @override
-  Widget visitText(md.Text text, TextStyle? preferredStyle) {
-    final headingText = text.text;
-    final fragment = _headingFragment(headingText);
-    final key = _headingKeys[fragment];
-    if (key == null) return Text(headingText, style: preferredStyle);
-    return KeyedSubtree(
-      key: key,
-      child: KeyedSubtree(
-        key: ValueKey(fragment),
-        child: Text(headingText, style: preferredStyle),
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(entries.first.displayName, style: AppTextStyles.uiSubheader),
+          const SizedBox(height: 8),
+          ...entries.map((entry) => _FileRow(entry: entry)),
+        ],
       ),
     );
   }

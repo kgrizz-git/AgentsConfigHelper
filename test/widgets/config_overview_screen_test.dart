@@ -123,10 +123,12 @@ Future<void> _pumpScreen(
 }
 
 void main() {
-  testWidgets('screen renders preview content with entries', (tester) async {
+  testWidgets('screen renders interactive content with entries', (
+    tester,
+  ) async {
     await _pumpScreen(tester);
 
-    expect(find.text('Config Overview Report'), findsOneWidget);
+    expect(find.text('Configuration files'), findsOneWidget);
     expect(find.text('Claude Code'), findsWidgets);
   });
 
@@ -136,17 +138,7 @@ void main() {
       discovery: const DiscoveryResult(items: []),
     );
 
-    expect(find.text('Config Overview Report'), findsOneWidget);
-  });
-
-  testWidgets('screen shows tool section for discovered entry', (tester) async {
-    await _pumpScreen(tester);
-
-    expect(
-      find.text('Contents', findRichText: true, skipOffstage: false),
-      findsOneWidget,
-    );
-    expect(find.text('Claude Code'), findsWidgets);
+    expect(find.text('Configuration files'), findsOneWidget);
   });
 
   testWidgets('screen shows error when home directory is null', (
@@ -200,18 +192,6 @@ void main() {
     expect(find.text('GitHub Copilot'), findsWidgets);
   });
 
-  testWidgets('report headings have fragment keys', (tester) async {
-    await _pumpScreen(tester);
-
-    expect(
-      find.byKey(
-        const ValueKey('claude-code'),
-        skipOffstage: false,
-      ),
-      findsOneWidget,
-    );
-  });
-
   testWidgets('screen shows clearly labeled export buttons', (tester) async {
     await _pumpScreen(tester);
 
@@ -221,19 +201,22 @@ void main() {
     expect(find.byTooltip('Save report as an HTML file'), findsOneWidget);
   });
 
-  testWidgets('screen shows file list with entries', (tester) async {
+  testWidgets('screen groups the single interactive file overview', (
+    tester,
+  ) async {
     await _pumpScreen(tester);
 
-    expect(find.text('Files'), findsOneWidget);
     expect(
       find.text(
-        'Use the copy button, and the open button where available, to '
-        'access individual configuration files.',
+        'Use the available actions to open, reveal, or copy each '
+        'configuration path.',
       ),
       findsOneWidget,
     );
     expect(find.text('.claude/settings.json'), findsWidgets);
     expect(find.text('missing'), findsWidgets);
+    expect(find.text('Config Overview Report'), findsNothing);
+    expect(find.text('Contents', findRichText: true), findsNothing);
   });
 
   testWidgets('screen shows clarified path actions', (tester) async {
@@ -278,6 +261,12 @@ void main() {
     await _pumpScreen(tester);
 
     expect(find.byIcon(Icons.open_in_new), findsWidgets);
+  });
+
+  testWidgets('screen hides reveal action for missing entries', (tester) async {
+    await _pumpScreen(tester, discovery: const DiscoveryResult(items: []));
+
+    expect(find.byTooltip('Reveal in file manager'), findsNothing);
   });
 
   testWidgets('Copy button is tappable', (tester) async {

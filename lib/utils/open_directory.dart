@@ -45,21 +45,21 @@ Future<bool> revealFile(
   String? operatingSystem,
   ProcessRunner? runProcess,
 }) async {
-  // The asynchronous check avoids blocking the UI thread.
-  // ignore: avoid_slow_async_io
-  if (!await file.exists()) return false;
-
-  final path = file.path;
-  final (command, args) = switch (operatingSystem ?? Platform.operatingSystem) {
-    'macos' => ('open', <String>['-R', path]),
-    'windows' => ('explorer', <String>['/select,$path']),
-    'linux' => ('xdg-open', <String>[file.parent.path]),
-    _ => (null, null),
-  };
-
-  if (command == null || args == null) return false;
-
   try {
+    // The asynchronous check avoids blocking the UI thread.
+    // ignore: avoid_slow_async_io
+    if (!await file.exists()) return false;
+
+    final path = file.path;
+    final (command, args) = switch (operatingSystem ??
+        Platform.operatingSystem) {
+      'macos' => ('open', <String>['-R', path]),
+      'windows' => ('explorer', <String>['/select,', path]),
+      'linux' => ('xdg-open', <String>[file.parent.path]),
+      _ => (null, null),
+    };
+
+    if (command == null || args == null) return false;
     final result = await (runProcess ?? Process.run)(command, args);
     return result.exitCode == 0;
   } on Object {

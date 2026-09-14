@@ -9,7 +9,7 @@ void main() {
     late File file;
 
     setUp(() {
-      tempDir = Directory.systemTemp.createTempSync('ach_reveal_file_test');
+      tempDir = Directory.systemTemp.createTempSync('ach reveal file test');
       file = File('${tempDir.path}/settings.json')..writeAsStringSync('{}');
     });
 
@@ -28,7 +28,7 @@ void main() {
       final invocation = await _revealAndCapture(file, 'windows');
 
       expect(invocation.command, 'explorer');
-      expect(invocation.arguments, ['/select,${file.path}']);
+      expect(invocation.arguments, ['/select,', file.path]);
     });
 
     test('opens the parent directory on Linux', () async {
@@ -59,6 +59,16 @@ void main() {
         file,
         operatingSystem: 'macos',
         runProcess: (_, _) async => ProcessResult(0, 1, '', 'failed'),
+      );
+
+      expect(revealed, isFalse);
+    });
+
+    test('reports a launcher exception', () async {
+      final revealed = await revealFile(
+        file,
+        operatingSystem: 'macos',
+        runProcess: (_, _) => throw const ProcessException('open', []),
       );
 
       expect(revealed, isFalse);

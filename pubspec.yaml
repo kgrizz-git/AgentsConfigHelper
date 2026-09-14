@@ -33,7 +33,6 @@ dependencies:
   file_selector: ^1.1.0
   flutter:
     sdk: flutter
-  flutter_markdown_plus: ^1.0.12
   flutter_riverpod: ^3.4.2
   grapheme_splitter: ^1.0.1
   markdown: ^7.3.1

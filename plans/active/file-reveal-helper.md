@@ -20,10 +20,13 @@ without opening, creating, editing, or copying that file.
 - Use a dedicated `revealFile(File)` helper rather than `openDirectory`, whose
   directory-creation behavior is inappropriate here.
 - macOS uses `open -R <file>` to select the file in Finder; Windows uses
-  `explorer /select,<file>`; Linux uses `xdg-open <parent-directory>` because
+  `explorer /select, <file>`; Linux uses `xdg-open <parent-directory>` because
   there is no portable cross-file-manager select-file interface.
 - Return a success flag and surface a concise in-app error if the platform
   launcher fails. Do not add a context menu, backup changes, or editor changes.
+- The screen has one grouped, action-first overview. Markdown and HTML remain
+  export formats rather than a duplicate in-app preview; secret warnings stay
+  attached to their affected rows.
 
 ## Implementation
 
@@ -33,6 +36,8 @@ without opening, creating, editing, or copying that file.
 - [x] Unit-test macOS, Windows, and Linux launch arguments plus missing-file
       and failed-launch behavior.
 - [x] Add report-screen coverage for the visible action.
+- [x] Replace the duplicate Markdown preview and separate file list with one
+      grouped, interactive overview.
 - [x] Run format, analysis, targeted tests, and the full test suite (all passed
       on 2026-09-14; 527 tests in the full suite).
 - [ ] Perform a manual macOS Finder smoke check from a disposable test root.
