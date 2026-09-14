@@ -35,6 +35,14 @@ its full entry, which remains the source of scope and completion detail.
       discovery candidate only after verifying it has a durable, user-editable configuration file
       and fits the app's product scope.
 
+### Dependency maintenance
+
+- [ ] **Dependency maintenance:** periodically review `flutter pub outdated`, merge
+      validated Dependabot patch updates, and update compatible direct dependencies
+      in a focused maintenance change with analysis and tests. Evaluate major tooling
+      upgrades (such as `very_good_analysis`) separately; do not bulk-upgrade locked
+      transitive dependencies without a reasoned compatibility review.
+
 ## Product follow-ups (prioritized)
 
 ### Recommended delivery order

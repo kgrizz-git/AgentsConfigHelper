@@ -651,6 +651,7 @@ class _ManageProjectRootsDialog extends ConsumerWidget {
                     trailing: IconButton(
                       icon: const Icon(Icons.close, size: 16),
                       color: AppColors.textSecondaryDark,
+                      tooltip: 'Remove project root',
                       onPressed: () => onRemove(root),
                     ),
                   );
