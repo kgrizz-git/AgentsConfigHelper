@@ -61,6 +61,10 @@ void main() {
         targetAppliesToPlatform(ConfigPlatform.windows, ConfigPlatform.any),
         isFalse,
       );
+      expect(
+        targetAppliesToPlatform(ConfigPlatform.posix, ConfigPlatform.any),
+        isFalse,
+      );
     });
   });
 
