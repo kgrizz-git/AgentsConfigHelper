@@ -156,13 +156,13 @@ The durable sequence and architecture decisions are in the
 
 ### Config reporting, export, and agent access
 
-- [ ] **Expected-file relevance in the overview:** reduce noisy “missing” rows
-      by suppressing or visibly labeling catalog targets that apply only to a
-      different OS, and by marking optional configuration files separately from
-      expected files for an installed/configured tool. Preserve a way to audit
-      absent catalog targets without making the default overview imply a broken
-      local setup. This needs per-target platform and optionality metadata with
-      catalog evidence, plus report-model and widget coverage.
+- [ ] **Expected-file relevance follow-ups:** verify the first-party Microsoft
+      documentation for Copilot JetBrains `global-git-commit-instructions.md`
+      against current GitHub docs or the shipping extension before adding its
+      POSIX/Windows catalog targets; and reassess or remove the undocumented
+      Kilo `~/.config/kilo/models.json` target after catalog evidence is
+      available (currently labeled optional/legacy). Archived implementation:
+      [expected-file relevance](plans/archive/expected-file-relevance.md).
 - [ ] **Config reports and copies:** make it easy to produce a consolidated report or
       snapshot/copy of discovered configs (for example, an export bundle) so a user can
       review, share, or back up their agent/IDE configuration as a whole. Reuse

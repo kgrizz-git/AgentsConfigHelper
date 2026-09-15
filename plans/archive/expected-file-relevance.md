@@ -1,8 +1,8 @@
 # Plan: Expected-File Relevance in the Overview
 
 Last reviewed: 2026-09-14
-Status: proposed (not started)
-Linked TO_DO item: **Expected-file relevance in the overview**
+Status: complete
+Linked TO_DO item: **Expected-file relevance in the overview** (closed; see follow-ups)
 
 ## Goal
 
