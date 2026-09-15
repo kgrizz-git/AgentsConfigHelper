@@ -156,6 +156,13 @@ The durable sequence and architecture decisions are in the
 
 ### Config reporting, export, and agent access
 
+- [ ] **Expected-file relevance in the overview:** reduce noisy “missing” rows
+      by suppressing or visibly labeling catalog targets that apply only to a
+      different OS, and by marking optional configuration files separately from
+      expected files for an installed/configured tool. Preserve a way to audit
+      absent catalog targets without making the default overview imply a broken
+      local setup. This needs per-target platform and optionality metadata with
+      catalog evidence, plus report-model and widget coverage.
 - [ ] **Config reports and copies:** make it easy to produce a consolidated report or
       snapshot/copy of discovered configs (for example, an export bundle) so a user can
       review, share, or back up their agent/IDE configuration as a whole. Reuse
@@ -172,12 +179,6 @@ The durable sequence and architecture decisions are in the
       values rather than raw text. Keep backup-before-write, diff preview, and fidelity
       disclosure; gate on the Phase 0.5 fidelity and test-root slices before promoting to
       `Next Up`, and redact secrets before serving context to any agent.
-- [ ] **File-reveal helper:** add a file-reveal action (show in Finder /
-      Explorer / file manager) next to the report's Open-in-editor and Copy-path
-      row actions. `lib/utils/open_directory.dart` only handles directories;
-      v1 deliberately ships launch-with-default-app only (see
-      [config-overview-report](plans/archive/config-overview-report.md)). Keep
-      backup-before-write out of scope — this is navigation, not editing.
 
 ### API/CLI interface (deferred)
 

@@ -10,9 +10,15 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
-- **Config Overview Report.** Generates a tool-grouped tree of every discovered and known config, permissions, and rules file with clickable links, a sticky table of contents, and secret-bearing row warnings. Preview it in the app and export as Markdown or self-contained HTML.
+- **Config Overview Report.** Generates a tool-grouped tree of every discovered and known config, permissions, and rules file with clickable links, a sticky table of contents, and secret-bearing row warnings. Review it in the app and export as Markdown or self-contained HTML.
+- **Reveal config file.** Overview rows can now reveal an existing configuration
+  file in Finder, Explorer, or the platform file manager without opening or
+  modifying it.
 
 ### Changed
+- **Interactive config overview.** The app now presents one grouped, action-first
+  file overview instead of repeating a Markdown preview and a separate file list.
+  Secret warnings appear only on the affected file rows.
 - UI typeface is now Manrope (code and paths stay JetBrains Mono).
 
 ## [0.2.0] - 2026-09-10

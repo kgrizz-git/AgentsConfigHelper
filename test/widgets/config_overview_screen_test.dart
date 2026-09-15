@@ -46,19 +46,18 @@ class _StubPrefsStore implements IDiscoveryPreferencesStore {
   Future<void> disableTomlStructuredSave() async {}
 }
 
-/// Taps a save button and settles real dart:io writes.
+/// Taps an action and waits for real dart:io feedback.
 ///
-/// Plain pumpAndSettle runs on fake async, which starves real file I/O
-/// (the report file is created but stays at 0 bytes and no snackbar ever
-/// appears). Both the tap and the settle loop must run inside runAsync so
-/// the whole save chain uses real async.
-Future<void> _tapSaveAndSettle(WidgetTester tester, Finder button) async {
+/// Plain pumpAndSettle runs on fake async, which starves real file I/O. Both
+/// the tap and the settle loop must run inside runAsync so the whole action
+/// chain uses real async.
+Future<void> _tapAndWaitForSnackBar(WidgetTester tester, Finder button) async {
   await tester.runAsync(() async {
     await tester.tap(button);
     for (var i = 0; i < 50; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
       await tester.pump(const Duration(milliseconds: 50));
       if (find.byType(SnackBar).evaluate().isNotEmpty) return;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
     }
   });
   await tester.pump();
@@ -123,10 +122,12 @@ Future<void> _pumpScreen(
 }
 
 void main() {
-  testWidgets('screen renders preview content with entries', (tester) async {
+  testWidgets('screen renders interactive content with entries', (
+    tester,
+  ) async {
     await _pumpScreen(tester);
 
-    expect(find.text('Config Overview Report'), findsOneWidget);
+    expect(find.text('Configuration files'), findsOneWidget);
     expect(find.text('Claude Code'), findsWidgets);
   });
 
@@ -136,17 +137,7 @@ void main() {
       discovery: const DiscoveryResult(items: []),
     );
 
-    expect(find.text('Config Overview Report'), findsOneWidget);
-  });
-
-  testWidgets('screen shows tool section for discovered entry', (tester) async {
-    await _pumpScreen(tester);
-
-    expect(
-      find.text('Contents', findRichText: true, skipOffstage: false),
-      findsOneWidget,
-    );
-    expect(find.text('Claude Code'), findsWidgets);
+    expect(find.text('Configuration files'), findsOneWidget);
   });
 
   testWidgets('screen shows error when home directory is null', (
@@ -200,18 +191,6 @@ void main() {
     expect(find.text('GitHub Copilot'), findsWidgets);
   });
 
-  testWidgets('report headings have fragment keys', (tester) async {
-    await _pumpScreen(tester);
-
-    expect(
-      find.byKey(
-        const ValueKey('claude-code'),
-        skipOffstage: false,
-      ),
-      findsOneWidget,
-    );
-  });
-
   testWidgets('screen shows clearly labeled export buttons', (tester) async {
     await _pumpScreen(tester);
 
@@ -221,19 +200,22 @@ void main() {
     expect(find.byTooltip('Save report as an HTML file'), findsOneWidget);
   });
 
-  testWidgets('screen shows file list with entries', (tester) async {
+  testWidgets('screen groups the single interactive file overview', (
+    tester,
+  ) async {
     await _pumpScreen(tester);
 
-    expect(find.text('Files'), findsOneWidget);
     expect(
       find.text(
-        'Use the copy button, and the open button where available, to '
-        'access individual configuration files.',
+        'Use the available actions to open, reveal, or copy each '
+        'configuration path.',
       ),
       findsOneWidget,
     );
     expect(find.text('.claude/settings.json'), findsWidgets);
     expect(find.text('missing'), findsWidgets);
+    expect(find.text('Config Overview Report'), findsNothing);
+    expect(find.text('Contents', findRichText: true), findsNothing);
   });
 
   testWidgets('screen shows clarified path actions', (tester) async {
@@ -242,6 +224,7 @@ void main() {
     expect(find.byIcon(Icons.copy), findsWidgets);
     expect(find.byTooltip('Copy absolute path'), findsWidgets);
     expect(find.byTooltip('Open in editor'), findsOneWidget);
+    expect(find.byTooltip('Reveal in file manager'), findsOneWidget);
     expect(
       find.byTooltip('Expected configuration file not found on disk.'),
       findsWidgets,
@@ -279,6 +262,28 @@ void main() {
     expect(find.byIcon(Icons.open_in_new), findsWidgets);
   });
 
+  testWidgets('screen hides reveal action for missing entries', (tester) async {
+    await _pumpScreen(tester, discovery: const DiscoveryResult(items: []));
+
+    expect(find.byTooltip('Reveal in file manager'), findsNothing);
+  });
+
+  testWidgets('Reveal action reports when the resolved file no longer exists', (
+    tester,
+  ) async {
+    await _pumpScreen(tester);
+
+    await _tapAndWaitForSnackBar(
+      tester,
+      find.byTooltip('Reveal in file manager'),
+    );
+
+    expect(
+      find.text('Could not reveal the configuration file.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('Copy button is tappable', (tester) async {
     await _pumpScreen(tester);
 
@@ -299,7 +304,7 @@ void main() {
       saveFileDialog: (_, _) async => savedPath,
     );
 
-    await _tapSaveAndSettle(tester, find.text('Export Markdown'));
+    await _tapAndWaitForSnackBar(tester, find.text('Export Markdown'));
 
     expect(File(savedPath).existsSync(), isTrue);
     expect(find.byType(SnackBar), findsOneWidget);
@@ -318,7 +323,7 @@ void main() {
       saveFileDialog: (_, _) async => savedPath,
     );
 
-    await _tapSaveAndSettle(tester, find.text('Export HTML'));
+    await _tapAndWaitForSnackBar(tester, find.text('Export HTML'));
 
     expect(File(savedPath).existsSync(), isTrue);
     expect(find.byType(SnackBar), findsOneWidget);

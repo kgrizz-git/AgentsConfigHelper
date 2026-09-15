@@ -139,15 +139,15 @@ void main() {
   ) async {
     await _pumpShell(tester);
 
-    expect(find.text('Config Overview Report'), findsNothing);
+    expect(find.text('Configuration files'), findsNothing);
 
     await tester.tap(find.widgetWithIcon(IconButton, Icons.article));
     await tester.pumpAndSettle();
-    expect(find.text('Config Overview Report'), findsOneWidget);
+    expect(find.text('Configuration files'), findsOneWidget);
 
     await tester.tap(find.widgetWithIcon(IconButton, Icons.article));
     await tester.pumpAndSettle();
-    expect(find.text('Config Overview Report'), findsNothing);
+    expect(find.text('Configuration files'), findsNothing);
   });
 
   testWidgets(
@@ -169,7 +169,7 @@ void main() {
 
       await tester.tap(find.widgetWithIcon(IconButton, Icons.article));
       await tester.pumpAndSettle();
-      expect(find.text('Config Overview Report'), findsOneWidget);
+      expect(find.text('Configuration files'), findsOneWidget);
 
       // The real file read runs on dart:io, which needs real async to
       // finish in widget tests.
@@ -180,14 +180,14 @@ void main() {
         for (var i = 0; i < 50; i++) {
           await Future<void>.delayed(const Duration(milliseconds: 50));
           await tester.pump(const Duration(milliseconds: 50));
-          if (find.text('Config Overview Report').evaluate().isEmpty) {
+          if (find.text('Configuration files').evaluate().isEmpty) {
             return;
           }
         }
       });
       await tester.pump();
 
-      expect(find.text('Config Overview Report'), findsNothing);
+      expect(find.text('Configuration files'), findsNothing);
     },
   );
 }
