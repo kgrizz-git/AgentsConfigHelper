@@ -401,6 +401,9 @@ void main() {
     await tester.pumpAndSettle();
     await _tapAndWaitForSnackBar(tester, find.text('Export Markdown'));
 
-    expect(File(savedPath).readAsStringSync(), contains('Audit view'));
+    final content = File(savedPath).readAsStringSync();
+    expect(content, contains('Audit view'));
+    expect(content, contains('.config/Cursor/User/settings.json'));
+    expect(content, contains('other OS'));
   });
 }
