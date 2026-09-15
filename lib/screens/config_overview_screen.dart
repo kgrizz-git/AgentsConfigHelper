@@ -15,19 +15,28 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Renders an interactive overview of discovered and expected configuration
 /// files.
-class ConfigOverviewScreen extends ConsumerWidget {
+class ConfigOverviewScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
   const ConfigOverviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConfigOverviewScreen> createState() =>
+      _ConfigOverviewScreenState();
+}
+
+class _ConfigOverviewScreenState extends ConsumerState<ConfigOverviewScreen> {
+  /// Local inspection choice, not a persisted preference.
+  bool _audit = false;
+
+  @override
+  Widget build(BuildContext context) {
     final discoveryAsync = ref.watch(discoveryControllerProvider);
     final homeDir = ref.read(homeDirectoryResolverProvider)();
 
     return discoveryAsync.when(
       data: (discovery) {
         final copilotHome = ref.read(copilotHomePathProvider);
-        final entries = buildOverviewModel(
+        final allEntries = buildOverviewModel(
           discovery,
           ToolDescriptorRegistry.catalog,
           homePath: homeDir,
@@ -35,7 +44,7 @@ class ConfigOverviewScreen extends ConsumerWidget {
           copilotHome: copilotHome,
           platform: resolveHostConfigPlatform(),
         );
-        if (homeDir == null && entries.isEmpty) {
+        if (homeDir == null && allEntries.isEmpty) {
           return Center(
             child: Text(
               'Error: cannot resolve home directory',
@@ -43,17 +52,21 @@ class ConfigOverviewScreen extends ConsumerWidget {
             ),
           );
         }
+        final hiddenCount = allEntries.where(_isHiddenFromDefault).length;
+        final visible = _audit
+            ? allEntries
+            : allEntries.where((e) => !_isHiddenFromDefault(e)).toList();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildActionBar(context, ref, entries),
+            _buildActionBar(context, visible, hiddenCount),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInteractiveOverview(entries),
+                    _buildInteractiveOverview(visible),
                   ],
                 ),
               ),
@@ -71,10 +84,14 @@ class ConfigOverviewScreen extends ConsumerWidget {
     );
   }
 
+  bool _isHiddenFromDefault(ConfigOverviewEntry entry) =>
+      entry.relevance == OverviewRelevance.otherPlatform ||
+      entry.relevance == OverviewRelevance.notConfigured;
+
   Widget _buildActionBar(
     BuildContext context,
-    WidgetRef ref,
-    List<ConfigOverviewEntry> entries,
+    List<ConfigOverviewEntry> visible,
+    int hiddenCount,
   ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -84,11 +101,13 @@ class ConfigOverviewScreen extends ConsumerWidget {
       child: Wrap(
         spacing: 8,
         runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Tooltip(
             message: 'Save report as a Markdown file',
             child: TextButton.icon(
-              onPressed: () => _saveAndNotify(context, ref, entries, 'md'),
+              onPressed: () =>
+                  _saveAndNotify(context, visible, hiddenCount, 'md'),
               icon: const Icon(Icons.description_outlined, size: 16),
               label: const Text('Export Markdown'),
             ),
@@ -96,11 +115,30 @@ class ConfigOverviewScreen extends ConsumerWidget {
           Tooltip(
             message: 'Save report as an HTML file',
             child: TextButton.icon(
-              onPressed: () => _saveAndNotify(context, ref, entries, 'html'),
+              onPressed: () =>
+                  _saveAndNotify(context, visible, hiddenCount, 'html'),
               icon: const Icon(Icons.code_outlined, size: 16),
               label: const Text('Export HTML'),
             ),
           ),
+          if (hiddenCount > 0 || _audit)
+            FilterChip(
+              selected: _audit,
+              onSelected: (value) => setState(() => _audit = value),
+              showCheckmark: false,
+              backgroundColor: AppColors.surfaceDark,
+              selectedColor: AppColors.surfaceHighlightDark,
+              side: const BorderSide(color: AppColors.borderDark),
+              labelStyle: AppTextStyles.uiSecondary,
+              label: Text(
+                _audit
+                    ? 'Showing all catalog targets'
+                    : 'Show all ($hiddenCount hidden)',
+              ),
+              tooltip:
+                  'Includes catalog targets for other operating systems and '
+                  'tools without discovered configuration.',
+            ),
         ],
       ),
     );
@@ -132,18 +170,27 @@ class ConfigOverviewScreen extends ConsumerWidget {
 
   Future<void> _saveAndNotify(
     BuildContext context,
-    WidgetRef ref,
     List<ConfigOverviewEntry> entries,
+    int hiddenCount,
     String format,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final saveService = ReportSaveService(
       saveFileDialog: ref.read(saveFileDialogProvider),
     );
+    final view = _audit ? ReportView.audit : ReportView.relevant;
     try {
       final ok = format == 'md'
-          ? await saveService.saveMarkdown(entries)
-          : await saveService.saveHtml(entries);
+          ? await saveService.saveMarkdown(
+              entries,
+              view: view,
+              hiddenCount: hiddenCount,
+            )
+          : await saveService.saveHtml(
+              entries,
+              view: view,
+              hiddenCount: hiddenCount,
+            );
       if (!context.mounted) return;
       if (ok) {
         messenger.showSnackBar(
