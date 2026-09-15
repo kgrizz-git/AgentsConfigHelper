@@ -54,7 +54,7 @@ view that can show every catalog target.
 - `docs/supported-tools.md` is the evidence source for catalog path/platform
   annotations.
 
-## Decisions to confirm during implementation
+## Adopted design decisions
 
 1. Use a domain enum, not Flutter's `TargetPlatform`, so the catalog stays
    pure-Dart: `ConfigPlatform { any, macOS, linux, windows, posix }`. `posix`
@@ -62,14 +62,19 @@ view that can show every catalog target.
 2. Add `optional: false` to `ConfigTarget`. Missing optional entries for a
    relevant tool are visible with a muted `optional` label, never a warning
    `missing` label.
-3. Treat a tool as installed/configured when discovery contains at least one
-   item associated with that tool descriptor. This avoids new I/O. A custom,
-   unregistered path can be audited through the full catalog view.
+3. Name the heuristic `has discovered configuration`, not `installed`. A tool
+   has discovered configuration when discovery contains at least one item
+   associated with its descriptor. This avoids new I/O, but does not prove the
+   executable is installed. A custom, unregistered path can be audited through
+   the full catalog view.
 4. Hide other-platform and not-installed catalog targets in the default screen.
    The audit control reveals all entries with `other OS` or `not installed`
    labels and an explanatory tooltip/count.
-5. Exports follow the current view: default export is relevant-only; enabling
-   audit exports the complete, labeled catalog view.
+5. Keep audit state local to `ConfigOverviewScreen` with `setState`; it is an
+   inspection choice, not a preference. The screen passes its filtered entries
+   to the existing save service/builders and supplies an optional hidden-target
+   count for a self-describing export header. Default export is relevant-only;
+   audit export is the complete, labeled catalog view.
 
 ## Candidate catalog annotations
 
@@ -80,14 +85,36 @@ Validate each annotation against `docs/supported-tools.md` before applying it.
 | Cursor IDE | `Library/Application Support/Cursor/User/settings.json` | macOS |
 | Cursor IDE | `.config/Cursor/User/settings.json` | Linux |
 | Cursor IDE | `AppData/Roaming/Cursor/User/settings.json` | Windows |
-| Copilot | `.config/github-copilot/intellij/global-copilot-instructions.md` | POSIX, pending macOS evidence confirmation |
+| Copilot | `.config/github-copilot/intellij/global-copilot-instructions.md` | POSIX (macOS documented; Linux follows XDG path convention) |
 | Copilot | `AppData/Local/github-copilot/intellij/global-copilot-instructions.md` | Windows |
-| Kilo | `.config/kilo/models.json` | optional/legacy |
-| Kilo | user and project `kilo.json` alternate targets | optional, only where evidence confirms alternates |
-| Copilot | `.copilot/config.json` | optional only if managed-state evidence supports it |
+| Kilo | `.config/kilo/kilo.json` | optional supported alternate to primary `kilo.jsonc` |
+| Kilo | `kilo.json`, `.kilo/kilo.jsonc`, `.kilo/kilo.json` | optional project alternatives pending a later equivalence-group design |
+| Kilo | `.config/kilo/models.json` | optional undocumented/legacy target; retain a catalog-removal follow-up |
+| Copilot | `.copilot/config.json` | expected managed state, not optional |
 
-Leave uncertain targets at the default metadata and record a follow-up rather
-than guessing.
+GitHub's JetBrains custom-instruction guide documents the `.config` mapping on
+macOS; Linux uses the matching XDG convention and requires a focused test.
+Kilo documents `kilo.jsonc` as primary and `kilo.json` as a supported
+alternate; `.kilo/kilo.jsonc` takes precedence when present. `models.json` is
+not in Kilo's current documented configuration list, so it must never imply a
+broken installation. Leave all other uncertain targets at the default metadata
+and record a follow-up rather than guessing.
+
+`Documents/Cline/Rules` and `Cline/Rules` need no platform metadata in this
+slice: they are glob targets, do not create missing rows, and discovery already
+uses the latter only as a fallback when the former is absent.
+
+### External evidence to retain with implementation
+
+- GitHub documents the Copilot JetBrains global-instructions directory as
+  `~/.config/github-copilot/intellij/` on macOS and `%LOCALAPPDATA%` on
+  Windows: <https://docs.github.com/en/copilot/how-tos/configure-custom-instructions-in-your-ide/add-repository-instructions-in-your-ide>.
+- Kilo documents global `kilo.jsonc`, project `kilo.jsonc` and
+  `.kilo/kilo.jsonc`, with `kilo.json` as a supported alternate:
+  <https://kilo.ai/docs/getting-started/settings>.
+- GitHub defines Copilot CLI `config.json` as automatically managed application
+  state rather than the editable settings file:
+  <https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference>.
 
 ## Implementation stages
 
@@ -107,24 +134,31 @@ than guessing.
 - Add `OverviewRelevance` to `ConfigOverviewEntry` with values for present,
   expected missing, optional missing, other platform, and not installed.
 - Make `buildOverviewModel` accept the current platform explicitly and compute
-  installed tool IDs from discovered descriptor-backed items.
+  tool IDs with discovered configuration from descriptor-backed items.
 - Keep glob-target behavior and existing deduplication intact.
-- During migration, derive the existing `missing` behavior only from expected
-  missing entries; remove compatibility code once every caller is migrated.
+- Replace the public `missing` field in the same change; use a derived
+  `isExpectedMissing` getter only where it improves readability. Migrate every
+  screen, builder, fixture, and test reference in this PR so there are never
+  two independently stored status fields.
 - Update Markdown and HTML builders with neutral optional/audit labels and CSS.
-- Regenerate and review Markdown/HTML fixtures; add focused classification tests
-  for every relevance value and builder label.
+- Update Markdown/HTML fixtures in this stage before the full test suite, then
+  add focused classification tests for every relevance value and builder label.
 
 ### 3. Overview UX and audit control
 
-- Make `ConfigOverviewScreen` stateful only for the audit-view toggle.
+- Make `ConfigOverviewScreen` stateful only for the local audit-view toggle.
 - Default to present, expected-missing, and optional-missing entries.
 - Expose an accessible control such as a `FilterChip` with a hidden-row count
   and tooltip explaining it includes other-OS and not-installed catalog targets.
 - In audit view, show target-platform and not-installed labels. Render warning
   styling only for expected missing files; keep optional and audit labels muted.
-- Preserve Open, Reveal, and Copy only for resolved present entries.
-- Verify default/audit behavior and exports in widget tests.
+- Preserve Open and Reveal only for resolved present entries. Preserve Copy for
+  every entry with a known file path so users can copy an expected missing path.
+- Pass the filtered current-view entry list to the existing save service. Add an
+  optional hidden-target count/view label to the report builders so exports say
+  when entries were omitted; do not add audit state to `ReportSaveService`.
+- Verify default/audit behavior, export filtering, and export provenance text in
+  widget and builder tests.
 
 ### 4. Documentation, release notes, and closure
 
@@ -144,7 +178,8 @@ than guessing.
 - A validated optional target is visibly `optional`, does not receive warning
   styling, and remains auditable.
 - Tools with no discovered configuration do not fill the default Overview with
-  missing rows.
+  missing rows. Project-only tools without configured roots are explicitly
+  subject to this conservative heuristic and remain available in audit view.
 - The audit control exposes every suppressed catalog target with a reason, and
   the exported report matches the selected view.
 - Platform behavior is covered off-host through explicit platform injection.
@@ -165,7 +200,16 @@ than guessing.
 | Risk | Mitigation |
 | --- | --- |
 | Incorrect catalog classification | Annotate only documented paths; retain defaults when evidence is weak. |
-| Installed-tool false negatives | Use an explicit audit view and document the discovery-based heuristic. |
+| Installed-tool false negatives | Call the state `has discovered configuration`, document false negatives for unconfigured, nonstandard-path, shared-file, and project-only tools, and retain audit view. |
 | Platform logic becomes host-dependent in tests | Pass platform into pure report construction. |
 | Optional badges look like errors | Use neutral/muted screen and export styling, with dedicated tests. |
 | Scope expands into permission classification | Keep it explicitly out of scope and leave its separate TO_DO item intact. |
+| Export is mistaken for a complete audit | Include active-view and hidden-target-count provenance in exports. |
+
+## Follow-ups
+
+- Verify the first-party Microsoft documentation for Copilot JetBrains
+  `global-git-commit-instructions.md` against current GitHub docs or the
+  shipping extension before adding its POSIX/Windows catalog targets.
+- Reassess or remove the undocumented Kilo `models.json` target after catalog
+  evidence is available; its optional label is a conservative interim measure.
