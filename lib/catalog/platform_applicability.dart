@@ -19,8 +19,11 @@ bool targetAppliesToPlatform(ConfigPlatform target, ConfigPlatform host) {
 
 /// Resolves the current host platform for UI composition.
 ///
-/// Returns [ConfigPlatform.any] for unrecognized hosts so catalog targets
-/// default to visible rather than silently hidden.
+/// Returns [ConfigPlatform.any] for unrecognized hosts. Because
+/// [targetAppliesToPlatform] does not treat `any` as a match for
+/// platform-specific targets, those targets classify as other-platform and
+/// stay hidden in the default view on unknown hosts (conservative and
+/// auditable).
 ConfigPlatform resolveHostConfigPlatform() {
   if (Platform.isMacOS) return ConfigPlatform.macOS;
   if (Platform.isLinux) return ConfigPlatform.linux;
