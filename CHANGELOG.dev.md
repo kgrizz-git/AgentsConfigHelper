@@ -5,11 +5,23 @@ Internal / developer-facing changes that do not belong in the public
 
 ## Unreleased
 
+### Added
+- **Overview relevance model:** `ConfigTarget` now carries `platform` and
+  `optional` metadata with a pure platform-applicability helper, and
+  `buildOverviewModel` classifies absent targets as expected, optional,
+  other-platform, or not-configured from the host platform plus discovered
+  configuration. Markdown/HTML builders gained optional view/hidden-count
+  provenance text; catalog, report, and widget tests updated, including a new
+  `test/reports/config_overview_relevance_test.dart`.
+
 ### Changed
 - Widgets use `AppColors` tokens instead of `Colors.*` constants; error
   snackbars share a `_showErrorSnackBar` helper; empty-state and diff-label
   styles covered by widget tests.
 - **Doc-link checker:** `file:` link skipping is now scoped to `test/fixtures/` only; generated report snapshots legitimately contain absolute `file:` URIs, but hand-written docs still get full link coverage. Added regression tests for both paths.
+- `docs/supported-tools.md` Copilot JetBrains and Kilo path tables refreshed
+  (POSIX/Windows split; optional Kilo alternates and undocumented `models.json`)
+  with 2026-09-14 review dates.
 
 ## [0.2.0] - 2026-09-10
 
