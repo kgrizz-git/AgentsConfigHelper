@@ -180,6 +180,7 @@ void main() {
         final model = buildOverviewModel(
           discovery,
           catalog,
+          platform: ConfigPlatform.macOS,
           homePath: homePath,
           projectRoots: [
             p.join(homePath, 'proj1'),
@@ -239,6 +240,7 @@ void main() {
       final model = buildOverviewModel(
         discovery,
         catalog,
+        platform: ConfigPlatform.macOS,
         homePath: 'test-home',
         projectRoots: const [],
       );
@@ -277,6 +279,7 @@ void main() {
             ],
           ),
           const [],
+          platform: ConfigPlatform.macOS,
           homePath: homePath,
           projectRoots: const [],
         );
@@ -308,7 +311,7 @@ void main() {
         format: ConfigFormat.text,
         scope: ConfigLocationScope.manual,
         secretBearing: true,
-        missing: false,
+        relevance: OverviewRelevance.present,
       );
 
       final report = buildMarkdownReport(
@@ -329,7 +332,7 @@ void main() {
         format: ConfigFormat.text,
         scope: ConfigLocationScope.manual,
         secretBearing: false,
-        missing: false,
+        relevance: OverviewRelevance.present,
       );
 
       final report = buildMarkdownReport(
@@ -389,13 +392,14 @@ void main() {
           final model = buildOverviewModel(
             discovery,
             catalog,
+            platform: ConfigPlatform.macOS,
             homePath: homePath,
             projectRoots: const [],
             copilotHome: copilotHomePath,
           );
 
           expect(model, hasLength(1));
-          expect(model.first.missing, isFalse);
+          expect(model.first.isPresent, isTrue);
           expect(model.first.displayPath, settingsFile);
           expect(model.first.filePath, settingsFile);
         } finally {
@@ -424,24 +428,47 @@ void main() {
                   scope: ConfigLocationScope.user,
                   kind: ConfigSourceKind.structuredConfig,
                 ),
+                ConfigTarget(
+                  relativePath: '.copilot/mcp-config.json',
+                  format: ConfigFormat.json,
+                  scope: ConfigLocationScope.user,
+                  kind: ConfigSourceKind.structuredConfig,
+                ),
               ],
             ),
           ];
 
-          const discovery = DiscoveryResult(items: []);
+          final mcpPath = p.join(homePath, '.copilot/mcp-config.json');
+          final discovery = DiscoveryResult(
+            items: [
+              DiscoveredConfig(
+                id: 'structuredConfig:$mcpPath',
+                filePath: mcpPath,
+                descriptor: catalog[0],
+                scope: ConfigLocationScope.user,
+                kind: ConfigSourceKind.structuredConfig,
+                format: ConfigFormat.json,
+                sourceLabel: 'GitHub Copilot',
+                fromCatalog: true,
+              ),
+            ],
+          );
 
           final model = buildOverviewModel(
             discovery,
             catalog,
+            platform: ConfigPlatform.macOS,
             homePath: homePath,
             projectRoots: const [],
           );
 
-          expect(model, hasLength(1));
-          expect(model.first.missing, isTrue);
-          expect(model.first.displayPath, '.copilot/settings.json');
+          expect(model, hasLength(2));
+          final settings = model.firstWhere(
+            (e) => e.displayPath == '.copilot/settings.json',
+          );
+          expect(settings.isExpectedMissing, isTrue);
           expect(
-            model.first.filePath,
+            settings.filePath,
             p.join(homePath, '.copilot/settings.json'),
           );
         } finally {
@@ -495,13 +522,14 @@ void main() {
             ],
           ),
           catalog,
+          platform: ConfigPlatform.macOS,
           homePath: homePath,
           projectRoots: [p.join(homePath, 'proj1')],
         );
 
         expect(model, hasLength(1));
         expect(model.first.toolId, ToolId.cursor);
-        expect(model.first.missing, isFalse);
+        expect(model.first.isPresent, isTrue);
         expect(
           model.first.displayPath,
           p.join('proj1', '.cursor', 'rules', 'mine.mdc'),
@@ -551,6 +579,7 @@ void main() {
             ],
           ),
           catalog,
+          platform: ConfigPlatform.macOS,
           homePath: homePath,
           // Outer root listed first: naive first-match would claim the file.
           projectRoots: [outerRoot, innerRoot],

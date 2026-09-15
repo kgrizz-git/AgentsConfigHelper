@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agents_config_helper/catalog/platform_applicability.dart';
 import 'package:agents_config_helper/catalog/registry_path_matching.dart';
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/discovered_config.dart';
@@ -23,6 +24,34 @@ enum OverviewKind {
   other,
 }
 
+/// Why an overview entry is listed, present, or suppressed.
+enum OverviewRelevance {
+  /// The file was discovered on disk.
+  present,
+
+  /// A catalog target for a tool with discovered configuration is absent.
+  expectedMissing,
+
+  /// A documented optional/alternate/legacy target is absent.
+  optionalMissing,
+
+  /// A catalog target that applies only to a different operating system.
+  otherPlatform,
+
+  /// The owning tool has no discovered configuration, so its absent targets
+  /// are suppressed by default.
+  notConfigured,
+}
+
+/// Which subset of catalog targets a report or export contains.
+enum ReportView {
+  /// Present, expected-missing, and optional-missing entries only.
+  relevant,
+
+  /// Every catalog target, including other-platform and not-configured.
+  audit,
+}
+
 /// A single row in the config overview report.
 class ConfigOverviewEntry {
   /// Creates an overview entry.
@@ -34,7 +63,8 @@ class ConfigOverviewEntry {
     required this.format,
     required this.scope,
     required this.secretBearing,
-    required this.missing,
+    required this.relevance,
+    this.platform = ConfigPlatform.any,
     this.filePath,
   });
 
@@ -45,8 +75,7 @@ class ConfigOverviewEntry {
   final String displayName;
 
   /// Absolute path used for `file:` links, or null when unconstructible.
-  /// Missing entries may still carry a path; the missing flag
-  /// suppresses the link.
+  /// Absent entries may still carry a path; [relevance] suppresses the link.
   final String? filePath;
 
   /// Human-readable path shown in the row.
@@ -64,8 +93,18 @@ class ConfigOverviewEntry {
   /// True when this file may contain sensitive values.
   final bool secretBearing;
 
-  /// True when this is a known catalog target that was not discovered on disk.
-  final bool missing;
+  /// Why this entry is listed: present, expected missing, optional missing,
+  /// other platform, or not configured.
+  final OverviewRelevance relevance;
+
+  /// The catalog target's declared host platform, for audit labels.
+  final ConfigPlatform platform;
+
+  /// True when the file exists on disk and can be linked.
+  bool get isPresent => relevance == OverviewRelevance.present;
+
+  /// True only for a genuinely expected catalog target that is absent.
+  bool get isExpectedMissing => relevance == OverviewRelevance.expectedMissing;
 
   @override
   String toString() =>
@@ -78,7 +117,8 @@ class ConfigOverviewEntry {
       'format=$format, '
       'scope=$scope, '
       'secretBearing=$secretBearing, '
-      'missing=$missing)';
+      'relevance=$relevance, '
+      'platform=$platform)';
 }
 
 const _sensitiveBasenames = <String>{
@@ -235,14 +275,15 @@ ConfigOverviewEntry _entryFromDiscovered(
     format: item.format,
     scope: item.scope,
     secretBearing: _isSecretBearing(tool?.id, item.filePath),
-    missing: false,
+    relevance: OverviewRelevance.present,
   );
 }
 
-ConfigOverviewEntry _missingEntry(
+ConfigOverviewEntry _absentEntry(
   ToolDescriptor tool,
   ConfigTarget target,
   String expectedPath,
+  OverviewRelevance relevance,
   String? normalizedHome, {
   String? root,
   String? copilotHome,
@@ -262,19 +303,40 @@ ConfigOverviewEntry _missingEntry(
     format: target.format,
     scope: target.scope,
     secretBearing: _isSecretBearing(tool.id, expectedPath),
-    missing: true,
+    relevance: relevance,
+    platform: target.platform,
   );
+}
+
+/// Classifies an absent catalog target relative to the host platform and
+/// whether its owning tool has any discovered configuration.
+OverviewRelevance _classifyAbsent(
+  ConfigTarget target,
+  ToolDescriptor tool,
+  ConfigPlatform host,
+  Set<ToolId> configuredToolIds,
+) {
+  if (!targetAppliesToPlatform(target.platform, host)) {
+    return OverviewRelevance.otherPlatform;
+  }
+  if (!configuredToolIds.contains(tool.id)) {
+    return OverviewRelevance.notConfigured;
+  }
+  if (target.optional) return OverviewRelevance.optionalMissing;
+  return OverviewRelevance.expectedMissing;
 }
 
 /// Assembles the overview model from discovery results and the tool catalog.
 ///
-/// Managed paths that have not been discovered yet still appear flagged as
-/// missing and unlinked. Manual entries with no catalog match are grouped
-/// under a trailing "Other" section.
+/// Absent catalog targets are classified by relevance: other-platform and
+/// not-configured targets are suppressed by default, while expected and
+/// optional targets stay visible. Manual entries with no catalog match are
+/// grouped under a trailing "Other" section.
 List<ConfigOverviewEntry> buildOverviewModel(
   DiscoveryResult discovery,
   List<ToolDescriptor> catalog, {
   required List<String> projectRoots,
+  required ConfigPlatform platform,
   String? homePath,
   String? copilotHome,
 }) {
@@ -283,6 +345,17 @@ List<ConfigOverviewEntry> buildOverviewModel(
   final discoveredByPath = <String, DiscoveredConfig>{};
   for (final item in discovery.items) {
     discoveredByPath[p.normalize(item.filePath)] = item;
+  }
+
+  // A tool "has discovered configuration" when discovery returned at least one
+  // descriptor-backed item for it. This is not proof the executable is
+  // installed (see the plan's heuristic limitations).
+  final configuredToolIds = <ToolId>{};
+  for (final item in discovery.items) {
+    final tool = item.descriptor;
+    if (tool != null && (item.fromCatalog || item.fromManual)) {
+      configuredToolIds.add(tool.id);
+    }
   }
 
   final entries = <ConfigOverviewEntry>[];
@@ -311,10 +384,11 @@ List<ConfigOverviewEntry> buildOverviewModel(
           );
         } else {
           entries.add(
-            _missingEntry(
+            _absentEntry(
               tool,
               target,
               expected,
+              _classifyAbsent(target, tool, platform, configuredToolIds),
               normalizedHome,
               copilotHome: copilotHome,
             ),
@@ -338,10 +412,11 @@ List<ConfigOverviewEntry> buildOverviewModel(
             );
           } else {
             entries.add(
-              _missingEntry(
+              _absentEntry(
                 tool,
                 target,
                 expected,
+                _classifyAbsent(target, tool, platform, configuredToolIds),
                 normalizedHome,
                 root: root,
                 copilotHome: copilotHome,

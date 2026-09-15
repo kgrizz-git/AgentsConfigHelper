@@ -40,8 +40,16 @@ class ReportSaveService {
   final SaveFileDialog saveFileDialog;
 
   /// Saves a Markdown report, returning true on success.
-  Future<bool> saveMarkdown(List<ConfigOverviewEntry> entries) async {
-    final content = buildMarkdownReport(entries);
+  Future<bool> saveMarkdown(
+    List<ConfigOverviewEntry> entries, {
+    ReportView view = ReportView.relevant,
+    int hiddenCount = 0,
+  }) async {
+    final content = buildMarkdownReport(
+      entries,
+      view: view,
+      hiddenCount: hiddenCount,
+    );
     return _writeWithDialog(
       suggestedName: _defaultMarkdownName,
       extension: 'md',
@@ -50,8 +58,16 @@ class ReportSaveService {
   }
 
   /// Saves an HTML report, returning true on success.
-  Future<bool> saveHtml(List<ConfigOverviewEntry> entries) async {
-    final content = buildHtmlReport(entries);
+  Future<bool> saveHtml(
+    List<ConfigOverviewEntry> entries, {
+    ReportView view = ReportView.relevant,
+    int hiddenCount = 0,
+  }) async {
+    final content = buildHtmlReport(
+      entries,
+      view: view,
+      hiddenCount: hiddenCount,
+    );
     return _writeWithDialog(
       suggestedName: _defaultHtmlName,
       extension: 'html',

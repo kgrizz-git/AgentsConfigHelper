@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agents_config_helper/catalog/platform_applicability.dart';
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/reports/config_overview_report.dart';
 import 'package:agents_config_helper/reports/report_save_service.dart';
@@ -32,6 +33,7 @@ class ConfigOverviewScreen extends ConsumerWidget {
           homePath: homeDir,
           projectRoots: discovery.projectRoots,
           copilotHome: copilotHome,
+          platform: resolveHostConfigPlatform(),
         );
         if (homeDir == null && entries.isEmpty) {
           return Center(
@@ -194,7 +196,7 @@ class _FileRow extends StatelessWidget {
     final kindText = kindLabel(entry.kind);
     final formatText = formatLabel(entry.format);
     final scopeText = scopeLabel(entry.scope);
-    final canOpen = entry.filePath != null && !entry.missing;
+    final canOpen = entry.isPresent && entry.filePath != null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
@@ -231,12 +233,9 @@ class _FileRow extends StatelessWidget {
               warning: true,
             ),
           ],
-          if (entry.missing) ...[
+          if (entry.relevance != OverviewRelevance.present) ...[
             const SizedBox(width: 8),
-            const _Badge(
-              text: 'missing',
-              tooltip: 'Expected configuration file not found on disk.',
-            ),
+            _relevanceBadge(entry),
           ],
           if (canOpen) ...[
             const SizedBox(width: 8),
@@ -295,6 +294,33 @@ class _FileRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+Widget _relevanceBadge(ConfigOverviewEntry entry) {
+  switch (entry.relevance) {
+    case OverviewRelevance.present:
+      return const SizedBox.shrink();
+    case OverviewRelevance.expectedMissing:
+      return const _Badge(
+        text: 'missing',
+        tooltip: 'Expected configuration file not found on disk.',
+      );
+    case OverviewRelevance.optionalMissing:
+      return const _Badge(
+        text: 'optional',
+        tooltip: 'Optional or alternate configuration file, not present.',
+      );
+    case OverviewRelevance.otherPlatform:
+      return _Badge(
+        text: 'other OS',
+        tooltip: 'Applies to ${platformLabel(entry.platform)} only.',
+      );
+    case OverviewRelevance.notConfigured:
+      return const _Badge(
+        text: 'not configured',
+        tooltip: 'No discovered configuration for this tool.',
+      );
   }
 }
 
