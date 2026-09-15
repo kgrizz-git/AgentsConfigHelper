@@ -127,23 +127,27 @@ class ToolDescriptorRegistry {
       id: ToolId.cursorIde,
       displayName: 'Cursor IDE',
       targets: [
+        // VS Code-style user settings, one path per OS (docs/supported-tools.md).
         ConfigTarget(
           relativePath: 'Library/Application Support/Cursor/User/settings.json',
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
+          platform: ConfigPlatform.macOS,
         ),
         ConfigTarget(
           relativePath: '.config/Cursor/User/settings.json',
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
+          platform: ConfigPlatform.linux,
         ),
         ConfigTarget(
           relativePath: 'AppData/Roaming/Cursor/User/settings.json',
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
+          platform: ConfigPlatform.windows,
         ),
         ConfigTarget(
           relativePath: '.cursor/settings.json',
@@ -307,6 +311,8 @@ class ToolDescriptorRegistry {
       id: ToolId.kilo,
       displayName: 'Kilo',
       targets: [
+        // Kilo documents kilo.jsonc as the primary global config and
+        // kilo.json as a supported alternate, so the alternate is optional.
         ConfigTarget(
           relativePath: '.config/kilo/kilo.jsonc',
           format: ConfigFormat.jsonc,
@@ -318,8 +324,11 @@ class ToolDescriptorRegistry {
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
+          optional: true,
         ),
-        // Optional/legacy cache file; may be absent on current installs.
+        // Undocumented/legacy: Kilo's current docs list no models.json under
+        // the config directory (the model catalog is an in-memory cache), so
+        // its absence must never imply a broken install.
         // Secrets more commonly live in kilo.jsonc (provider apiKey) —
         // backups for all of these still go to the app support directory.
         ConfigTarget(
@@ -327,6 +336,7 @@ class ToolDescriptorRegistry {
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
+          optional: true,
         ),
         ConfigTarget(
           relativePath: '.config/kilo/AGENTS.md',
@@ -340,6 +350,9 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.instructionDocument,
         ),
+        // Project config: kilo.jsonc (root) is primary; .kilo/kilo.jsonc takes
+        // priority when present. The remaining forms are supported alternates,
+        // so they stay optional until equivalence groups are designed.
         ConfigTarget(
           relativePath: 'kilo.jsonc',
           format: ConfigFormat.jsonc,
@@ -351,18 +364,21 @@ class ToolDescriptorRegistry {
           format: ConfigFormat.json,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
+          optional: true,
         ),
         ConfigTarget(
           relativePath: '.kilo/kilo.jsonc',
           format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
+          optional: true,
         ),
         ConfigTarget(
           relativePath: '.kilo/kilo.json',
           format: ConfigFormat.json,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
+          optional: true,
         ),
         ConfigTarget(
           relativePath: '.kilo/agents/*.md',
@@ -500,8 +516,9 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
         ),
-        // Managed CLI application state (auth, plugins). Surfaced for
-        // visibility alongside settings.json — not a precedence/hide rule.
+        // Managed CLI application state (auth, plugins, trusted folders).
+        // GitHub documents it as automatically managed, so it is expected
+        // whenever the CLI has run — not an optional file.
         ConfigTarget(
           relativePath: '.copilot/config.json',
           format: ConfigFormat.json,
@@ -550,18 +567,23 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
+        // JetBrains Copilot global instructions. GitHub documents the
+        // `.config` directory on macOS; Linux uses the matching XDG layout,
+        // so both are marked POSIX. Windows uses %LOCALAPPDATA%.
         ConfigTarget(
           relativePath:
               '.config/github-copilot/intellij/global-copilot-instructions.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.instructionDocument,
+          platform: ConfigPlatform.posix,
         ),
         ConfigTarget(
           relativePath: 'AppData/Local/github-copilot/intellij/global-copilot-instructions.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.instructionDocument,
+          platform: ConfigPlatform.windows,
         ),
       ],
     ),
