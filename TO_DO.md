@@ -156,12 +156,13 @@ The durable sequence and architecture decisions are in the
 
 ### Config reporting, export, and agent access
 
-- [ ] **Expected-file relevance follow-ups:** verify the first-party Microsoft
+- [ ] **Catalog evidence follow-ups:** verify the first-party Microsoft
       documentation for Copilot JetBrains `global-git-commit-instructions.md`
       against current GitHub docs or the shipping extension before adding its
-      POSIX/Windows catalog targets; and reassess or remove the undocumented
-      Kilo `~/.config/kilo/models.json` target after catalog evidence is
-      available (currently labeled optional/legacy). Archived implementation:
+      POSIX/Windows catalog targets. (The undocumented Kilo `models.json`
+      config target was removed on 2026-09-15; Kilo's model catalog is the
+      machine-generated `~/.cache/kilo/models.json` cache, not config.)
+      Archived context:
       [expected-file relevance](plans/archive/expected-file-relevance.md).
 - [ ] **Config reports and copies:** make it easy to produce a consolidated report or
       snapshot/copy of discovered configs (for example, an export bundle) so a user can
@@ -251,4 +252,4 @@ The durable sequence and architecture decisions are in the
 
 ## AI Agent Integration
 
-- [ ] If we ever integrate AI agent calls directly into the app (e.g., for automated config fixes), ensure that any secret-bearing configuration files (like `models.json` or `kilo.jsonc`) have their API keys and sensitive environment variables redacted *before* the context is sent to the agents.
+- [ ] If we ever integrate AI agent calls directly into the app (e.g., for automated config fixes), ensure that any secret-bearing configuration files (like `kilo.jsonc` or Cline's `providers.json`) have their API keys and sensitive environment variables redacted *before* the context is sent to the agents.

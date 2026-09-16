@@ -20,7 +20,7 @@ This is the inverse of the existing `Planned` item in `README.md`/`ARCHITECTURE.
 - **CLI first, MCP shim second, HTTP last.** Easiest and most robust is a `bin/` CLI with `--json` output and deterministic exit codes (no networking, no auth, no daemon). A narrow MCP stdio adapter reuses the same command handlers for agents. Local HTTP (`shelf` on `127.0.0.1`) is deferred — it adds port allocation, token auth, and lifecycle complexity that conflicts with the current unsandboxed source-build scope in `ADR-002`.
 - **Reuse the service layer, keep `lib/` pure.** `lib/services/config_service.dart`, `DiscoveryService`, `BackupService`, and `FidelityAssessor` remain pure/testable. `bin/` owns `args` parsing, exit codes, and `dart:io`; `lib/` gains no `dart:io` or Flutter dependencies.
 - **Safety parity with the GUI.** Every write still creates a timestamped backup (`BackupService`), supports `--dry-run` diff without writing, and surfaces the same `FidelityRisk` (`lib/services/fidelity_assessor.dart`) that the GUI's `FormattingFidelityNotice` shows. No `--force` that bypasses backup.
-- **Secrets stay local.** `models.json` / `kilo.jsonc` and similar secret-bearing files are never redacted on local reads, but any future AI-assist that sends context off-machine must follow the redaction rule already in `TO_DO.md` and `plans/active/future_enhancements.md` (In-App AI Assistant).
+- **Secrets stay local.** `kilo.jsonc` / Cline `providers.json` and similar secret-bearing files are never redacted on local reads, but any future AI-assist that sends context off-machine must follow the redaction rule already in `TO_DO.md` and `plans/active/future_enhancements.md` (In-App AI Assistant).
 
 ## Proposed surface (Phase 1 CLI)
 

@@ -1,11 +1,11 @@
 # Phase 10: New Tools Discovery Paths
 
-**Date:** 2026-08-19 (updated 2026-08-20 after review)
+**Date:** 2026-08-19 (updated 2026-08-20 after review; corrected 2026-09-15)
 
 ## Kilo
 
 - **Global Config:** `~/.config/kilo/kilo.jsonc` or `kilo.json` (Windows: `%USERPROFILE%\.config\kilo\`)
-- **Global Models cache (optional/legacy):** `~/.config/kilo/models.json` — may be absent on current installs; not the primary credentials store
+- **Model catalog cache (not config):** `~/.cache/kilo/models.json` — machine-generated cache inherited from OpenCode's models.dev cache; not user-editable, not secret-bearing, and intentionally **not** a discovery target. (An earlier revision of this doc incorrectly listed `~/.config/kilo/models.json` as a credentials/config file.)
 - **Secrets note:** Official docs warn that `provider.*.options.apiKey` (and similar) can appear in `kilo.jsonc`. Prefer env vars for credentials. Never commit config that contains secrets.
 - **Global Rules / agents:** `~/.config/kilo/AGENTS.md` and `~/.config/kilo/agents/*.md`
 - **Project Config:** `kilo.jsonc` / `kilo.json`, or `.kilo/kilo.jsonc` / `.kilo/kilo.json` (`.kilo/` wins if both exist)
@@ -56,7 +56,7 @@
 All backups created by `BackupService` are written exclusively under the app support
 `backups/` directory — never as sibling `.bak` files next to the original. This is
 mandatory for secret-bearing configs (Cline `providers.json`, Kilo `kilo.jsonc` with
-inline API keys, optional `models.json`, Copilot MCP configs, etc.) so project trees
+inline API keys, Copilot MCP configs, etc.) so project trees
 never gain commit-able backup artifacts.
 
 ## Hook Integration Note

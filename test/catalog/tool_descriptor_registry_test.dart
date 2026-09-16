@@ -524,7 +524,13 @@ void main() {
 
       expect(target('.config/kilo/kilo.jsonc').optional, isFalse);
       expect(target('.config/kilo/kilo.json').optional, isTrue);
-      expect(target('.config/kilo/models.json').optional, isTrue);
+      expect(
+        kilo.targets.any((t) => t.relativePath == '.config/kilo/models.json'),
+        isFalse,
+        reason:
+            'Kilo model catalog is a cache (~/.cache/kilo/models.json), '
+            'not a config target',
+      );
       expect(target('kilo.jsonc').optional, isFalse);
       expect(target('kilo.json').optional, isTrue);
       expect(target('.kilo/kilo.jsonc').optional, isTrue);

@@ -20,8 +20,10 @@ Internal / developer-facing changes that do not belong in the public
   styles covered by widget tests.
 - **Doc-link checker:** `file:` link skipping is now scoped to `test/fixtures/` only; generated report snapshots legitimately contain absolute `file:` URIs, but hand-written docs still get full link coverage. Added regression tests for both paths.
 - `docs/supported-tools.md` Copilot JetBrains and Kilo path tables refreshed
-  (POSIX/Windows split; optional Kilo alternates and undocumented `models.json`)
-  with 2026-09-14 review dates.
+  (POSIX/Windows split; optional Kilo alternates; Kilo's model catalog recorded
+  as a cache) with review dates. Removed the incorrect
+  `~/.config/kilo/models.json` catalog target after tracing it to a
+  mis-forwarded OpenCode models.dev cache path (`~/.cache/kilo/models.json`).
 
 ## [0.2.0] - 2026-09-10
 

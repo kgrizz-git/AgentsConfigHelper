@@ -326,18 +326,9 @@ class ToolDescriptorRegistry {
           kind: ConfigSourceKind.structuredConfig,
           optional: true,
         ),
-        // Undocumented/legacy: Kilo's current docs list no models.json under
-        // the config directory (the model catalog is an in-memory cache), so
-        // its absence must never imply a broken install.
-        // Secrets more commonly live in kilo.jsonc (provider apiKey) —
-        // backups for all of these still go to the app support directory.
-        ConfigTarget(
-          relativePath: '.config/kilo/models.json',
-          format: ConfigFormat.json,
-          scope: ConfigLocationScope.user,
-          kind: ConfigSourceKind.structuredConfig,
-          optional: true,
-        ),
+        // Kilo's model catalog is a cache (`~/.cache/kilo/models.json`,
+        // inherited from OpenCode's models.dev cache), not a config file in
+        // the config directory, so it is intentionally not a catalog target.
         ConfigTarget(
           relativePath: '.config/kilo/AGENTS.md',
           format: ConfigFormat.markdown,
