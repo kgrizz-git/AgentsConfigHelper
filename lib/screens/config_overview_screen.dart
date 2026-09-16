@@ -42,7 +42,7 @@ class _ConfigOverviewScreenState extends ConsumerState<ConfigOverviewScreen> {
           homePath: homeDir,
           projectRoots: discovery.projectRoots,
           copilotHome: copilotHome,
-          platform: resolveHostConfigPlatform(),
+          platform: ref.read(hostConfigPlatformProvider),
         );
         if (homeDir == null && allEntries.isEmpty) {
           return Center(

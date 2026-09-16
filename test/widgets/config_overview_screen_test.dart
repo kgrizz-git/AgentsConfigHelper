@@ -69,6 +69,7 @@ Future<void> _pumpScreen(
   SaveFileDialog? saveFileDialog,
   String? Function()? homeDirectoryResolver,
   String? copilotHome,
+  ConfigPlatform hostPlatform = ConfigPlatform.macOS,
 }) async {
   final tempDir = Directory.systemTemp.createTempSync('ach_overview_test');
   addTearDown(() {
@@ -112,6 +113,7 @@ Future<void> _pumpScreen(
           homeDirectoryResolver ?? () => tempDir.path,
         ),
         copilotHomePathProvider.overrideWithValue(copilotHome),
+        hostConfigPlatformProvider.overrideWithValue(hostPlatform),
         if (saveFileDialog != null)
           saveFileDialogProvider.overrideWithValue(saveFileDialog),
       ],
@@ -346,13 +348,30 @@ void main() {
   ) async {
     await _pumpScreen(tester);
 
-    // Linux Cursor settings apply to another OS on this host.
+    // With the injected macOS host, the Linux Cursor settings target applies
+    // to another OS and is hidden by default.
     expect(find.text('.config/Cursor/User/settings.json'), findsNothing);
     // Codex has no discovered configuration in the stub discovery.
     expect(find.text('.codex/config.toml'), findsNothing);
     expect(find.textContaining('hidden'), findsOneWidget);
     expect(find.text('other OS'), findsNothing);
     expect(find.text('not configured'), findsNothing);
+  });
+
+  testWidgets('injected host platform drives relevance classification', (
+    tester,
+  ) async {
+    await _pumpScreen(tester, hostPlatform: ConfigPlatform.linux);
+
+    // The macOS Cursor settings target is other-platform on a Linux host.
+    const macCursorPath =
+        'Library/Application Support/Cursor/User/settings.json';
+    expect(find.text(macCursorPath), findsNothing);
+
+    await tester.tap(find.byType(FilterChip));
+    await tester.pumpAndSettle();
+
+    expect(find.text(macCursorPath), findsWidgets);
   });
 
   testWidgets('audit control reveals hidden targets with labels', (

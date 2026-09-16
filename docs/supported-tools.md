@@ -679,7 +679,7 @@ loads shared project/user [AGENTS.md](#agentsmd-shared).
 | Repo/project settings | `.github/copilot/settings.json`, `.github/copilot/settings.local.json` (gitignore local) |
 | Project instructions | `.github/copilot-instructions.md`, `.github/instructions/**/*.instructions.md` |
 | Shared agent instructions | Project `AGENTS.md`, `~/.agents/AGENTS.md` (see [AGENTS.md (shared)](#agentsmd-shared)) |
-| JetBrains global instructions (macOS/Linux) | `~/.config/github-copilot/intellij/global-copilot-instructions.md` (macOS documented; Linux follows the XDG convention) |
+| JetBrains global instructions (macOS) | `~/.config/github-copilot/intellij/global-copilot-instructions.md` (Linux path is not vendor-documented; classified macOS-only) |
 | JetBrains global instructions (Windows) | `%LOCALAPPDATA%\github-copilot\intellij\global-copilot-instructions.md` |
 | User/agent settings (VS Code) | VS Code `settings.json` (`github.copilot.*`; extra agent-file dirs via `chat.agentFilesLocations`) — not auto-discovered |
 | Agent definitions | `.github/agents/<name>.agent.md` (legacy: `.github/chatmodes/*.chatmode.md`) — not yet in the registry |

@@ -558,16 +558,17 @@ class ToolDescriptorRegistry {
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.instructionDocument,
         ),
-        // JetBrains Copilot global instructions. GitHub documents the
-        // `.config` directory on macOS; Linux uses the matching XDG layout,
-        // so both are marked POSIX. Windows uses %LOCALAPPDATA%.
+        // JetBrains Copilot global instructions. GitHub documents this
+        // `.config` path on macOS and %LOCALAPPDATA% on Windows; Linux is not
+        // vendor-documented, so classify it as macOS only (conservative) with a
+        // follow-up to confirm Linux.
         ConfigTarget(
           relativePath:
               '.config/github-copilot/intellij/global-copilot-instructions.md',
           format: ConfigFormat.markdown,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.instructionDocument,
-          platform: ConfigPlatform.posix,
+          platform: ConfigPlatform.macOS,
         ),
         ConfigTarget(
           relativePath: 'AppData/Local/github-copilot/intellij/global-copilot-instructions.md',

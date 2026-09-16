@@ -12,7 +12,9 @@ Internal / developer-facing changes that do not belong in the public
   other-platform, or not-configured from the host platform plus discovered
   configuration. Markdown/HTML builders gained optional view/hidden-count
   provenance text; catalog, report, and widget tests updated, including a new
-  `test/reports/config_overview_relevance_test.dart`.
+  `test/reports/config_overview_relevance_test.dart`. The host platform is read
+  from an overridable `hostConfigPlatformProvider` so widget tests inject a
+  fixed platform instead of depending on the test runner OS.
 
 ### Changed
 - Widgets use `AppColors` tokens instead of `Colors.*` constants; error
@@ -20,8 +22,8 @@ Internal / developer-facing changes that do not belong in the public
   styles covered by widget tests.
 - **Doc-link checker:** `file:` link skipping is now scoped to `test/fixtures/` only; generated report snapshots legitimately contain absolute `file:` URIs, but hand-written docs still get full link coverage. Added regression tests for both paths.
 - `docs/supported-tools.md` Copilot JetBrains and Kilo path tables refreshed
-  (POSIX/Windows split; optional Kilo alternates; Kilo's model catalog recorded
-  as a cache) with review dates. Removed the incorrect
+  (macOS/Windows Copilot split; optional Kilo alternates; Kilo's model catalog
+  recorded as a cache). Removed the incorrect
   `~/.config/kilo/models.json` catalog target after tracing it to a
   mis-forwarded OpenCode models.dev cache path (`~/.cache/kilo/models.json`).
 

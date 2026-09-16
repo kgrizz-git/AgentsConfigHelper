@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:agents_config_helper/catalog/platform_applicability.dart';
 import 'package:agents_config_helper/models/discovery_request.dart';
 import 'package:agents_config_helper/models/discovery_result.dart';
+import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/discovery_preferences_store.dart';
 import 'package:agents_config_helper/services/discovery_service.dart';
@@ -64,6 +66,14 @@ final copilotHomePathProvider = Provider<String?>((ref) {
   final configuredTestRoot = ref.read(testRootPathProvider);
   return restrictPathToTestRoot(copilotHomeRaw, configuredTestRoot);
 });
+
+/// The host platform used to classify catalog target relevance.
+///
+/// Overridable so widget tests can inject a fixed platform instead of
+/// depending on the machine running the tests.
+final hostConfigPlatformProvider = Provider<ConfigPlatform>(
+  (ref) => resolveHostConfigPlatform(),
+);
 
 /// Notifier that runs filesystem discovery and exposes the resulting
 /// [DiscoveryResult], combining stored preferences (manual paths, project

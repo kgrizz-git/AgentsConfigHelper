@@ -48,7 +48,7 @@
   `AGENTS.md (shared)`)
 - **VS Code Extension:** Managed via `settings.json` (not a dedicated auto-discovered instructions file beyond project `.github/` paths).
 - **JetBrains Plugin:**
-  - macOS/Linux: `~/.config/github-copilot/intellij/global-copilot-instructions.md`
+  - macOS: `~/.config/github-copilot/intellij/global-copilot-instructions.md` (GitHub documents macOS and Windows only; the registry classifies this `.config` path as macOS-only because a Linux path is not vendor-documented, with a follow-up to confirm)
   - Windows: `%LOCALAPPDATA%\github-copilot\intellij\global-copilot-instructions.md` (registered as `AppData/Local/...` under the user home, matching the Cursor IDE Windows path pattern)
 
 ## Secret-bearing backup policy

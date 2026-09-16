@@ -156,10 +156,12 @@ The durable sequence and architecture decisions are in the
 
 ### Config reporting, export, and agent access
 
-- [ ] **Catalog evidence follow-ups:** verify the first-party Microsoft
-      documentation for Copilot JetBrains `global-git-commit-instructions.md`
-      against current GitHub docs or the shipping extension before adding its
-      POSIX/Windows catalog targets. (The undocumented Kilo `models.json`
+- [ ] **Catalog evidence follow-ups:** verify Copilot JetBrains paths against
+      current GitHub docs or the shipping extension before adding targets:
+      (a) `global-git-commit-instructions.md` (first-party Microsoft blog only);
+      (b) whether `global-copilot-instructions.md` also applies on Linux — the
+      registry classifies its `~/.config/...` path as macOS-only because Linux
+      is not vendor-documented. (The undocumented Kilo `models.json`
       config target was removed on 2026-09-15; Kilo's model catalog is the
       machine-generated `~/.cache/kilo/models.json` cache, not config.)
       Archived context:

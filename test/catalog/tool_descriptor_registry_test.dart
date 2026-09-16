@@ -468,7 +468,7 @@ void main() {
           ToolId.copilot,
           '.config/github-copilot/intellij/global-copilot-instructions.md',
         ).platform,
-        ConfigPlatform.posix,
+        ConfigPlatform.macOS,
       );
       expect(
         targetFor(
