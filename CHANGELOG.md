@@ -14,6 +14,12 @@ uses [Semantic Versioning](https://semver.org/).
 - **Reveal config file.** Overview rows can now reveal an existing configuration
   file in Finder, Explorer, or the platform file manager without opening or
   modifying it.
+- **Relevance-aware config overview.** The overview no longer reports catalog
+  targets for other operating systems or tools without discovered configuration
+  as missing. Documented optional/alternate files are labeled `optional` instead
+  of warning as missing, and a **Show all** audit control reveals every
+  suppressed catalog target with its reason. Markdown and HTML exports follow
+  the selected view and state how many targets were hidden.
 
 ### Changed
 - **Interactive config overview.** The app now presents one grouped, action-first

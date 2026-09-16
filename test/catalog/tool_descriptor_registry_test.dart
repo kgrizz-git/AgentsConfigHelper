@@ -454,5 +454,97 @@ void main() {
           .toList();
       expect(duplicates, isEmpty, reason: duplicates.join(', '));
     });
+
+    test('annotates platform-specific user targets', () {
+      ConfigTarget targetFor(ToolId id, String relativePath) {
+        final descriptor = ToolDescriptorRegistry.getById(id)!;
+        return descriptor.targets.firstWhere(
+          (t) => t.relativePath == relativePath,
+        );
+      }
+
+      expect(
+        targetFor(
+          ToolId.copilot,
+          '.config/github-copilot/intellij/global-copilot-instructions.md',
+        ).platform,
+        ConfigPlatform.posix,
+      );
+      expect(
+        targetFor(
+          ToolId.copilot,
+          'AppData/Local/github-copilot/intellij/'
+          'global-copilot-instructions.md',
+        ).platform,
+        ConfigPlatform.windows,
+      );
+      expect(
+        targetFor(
+          ToolId.cursorIde,
+          'Library/Application Support/Cursor/User/settings.json',
+        ).platform,
+        ConfigPlatform.macOS,
+      );
+      expect(
+        targetFor(
+          ToolId.cursorIde,
+          '.config/Cursor/User/settings.json',
+        ).platform,
+        ConfigPlatform.linux,
+      );
+      expect(
+        targetFor(
+          ToolId.cursorIde,
+          'AppData/Roaming/Cursor/User/settings.json',
+        ).platform,
+        ConfigPlatform.windows,
+      );
+    });
+
+    test('project-scope targets default to any platform', () {
+      for (final descriptor in ToolDescriptorRegistry.catalog) {
+        for (final target in descriptor.targets) {
+          if (target.scope == ConfigLocationScope.project) {
+            expect(
+              target.platform,
+              ConfigPlatform.any,
+              reason:
+                  '${descriptor.id.name} ${target.relativePath} should not be '
+                  'platform-specific',
+            );
+          }
+        }
+      }
+    });
+
+    test('Kilo alternates are optional and primaries are not', () {
+      final kilo = ToolDescriptorRegistry.getById(ToolId.kilo)!;
+      ConfigTarget target(String relativePath) =>
+          kilo.targets.firstWhere((t) => t.relativePath == relativePath);
+
+      expect(target('.config/kilo/kilo.jsonc').optional, isFalse);
+      expect(target('.config/kilo/kilo.json').optional, isTrue);
+      expect(
+        kilo.targets.any((t) => t.relativePath == '.config/kilo/models.json'),
+        isFalse,
+        reason:
+            'Kilo model catalog is a cache (~/.cache/kilo/models.json), '
+            'not a config target',
+      );
+      expect(target('kilo.jsonc').optional, isFalse);
+      expect(target('kilo.json').optional, isTrue);
+      expect(target('.kilo/kilo.jsonc').optional, isTrue);
+      expect(target('.kilo/kilo.json').optional, isTrue);
+    });
+
+    test('Copilot config.json is expected managed state, not optional', () {
+      final copilot = ToolDescriptorRegistry.getById(ToolId.copilot)!;
+      expect(
+        copilot.targets
+            .firstWhere((t) => t.relativePath == '.copilot/config.json')
+            .optional,
+        isFalse,
+      );
+    });
   });
 }

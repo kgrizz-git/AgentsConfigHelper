@@ -340,4 +340,70 @@ void main() {
 
     expect(find.text('Report saved as md.'), findsNothing);
   });
+
+  testWidgets('default view hides other-OS and not-configured targets', (
+    tester,
+  ) async {
+    await _pumpScreen(tester);
+
+    // Linux Cursor settings apply to another OS on this host.
+    expect(find.text('.config/Cursor/User/settings.json'), findsNothing);
+    // Codex has no discovered configuration in the stub discovery.
+    expect(find.text('.codex/config.toml'), findsNothing);
+    expect(find.textContaining('hidden'), findsOneWidget);
+    expect(find.text('other OS'), findsNothing);
+    expect(find.text('not configured'), findsNothing);
+  });
+
+  testWidgets('audit control reveals hidden targets with labels', (
+    tester,
+  ) async {
+    await _pumpScreen(tester);
+
+    await tester.tap(find.byType(FilterChip));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('.config/Cursor/User/settings.json'),
+      findsWidgets,
+    );
+    expect(find.text('other OS'), findsWidgets);
+    expect(find.text('not configured'), findsWidgets);
+    expect(find.text('Showing all catalog targets'), findsOneWidget);
+  });
+
+  testWidgets('default export states the relevant view and hidden count', (
+    tester,
+  ) async {
+    final saveDir = Directory.systemTemp.createTempSync('ach_overview_prov');
+    addTearDown(() {
+      if (saveDir.existsSync()) saveDir.deleteSync(recursive: true);
+    });
+    final savedPath = '${saveDir.path}/relevant.md';
+    await _pumpScreen(tester, saveFileDialog: (_, _) async => savedPath);
+
+    await _tapAndWaitForSnackBar(tester, find.text('Export Markdown'));
+
+    final content = File(savedPath).readAsStringSync();
+    expect(content, contains('Relevant view'));
+    expect(content, contains('catalog target(s)'));
+  });
+
+  testWidgets('audit export states the audit view', (tester) async {
+    final saveDir = Directory.systemTemp.createTempSync('ach_overview_audit');
+    addTearDown(() {
+      if (saveDir.existsSync()) saveDir.deleteSync(recursive: true);
+    });
+    final savedPath = '${saveDir.path}/audit.md';
+    await _pumpScreen(tester, saveFileDialog: (_, _) async => savedPath);
+
+    await tester.tap(find.byType(FilterChip));
+    await tester.pumpAndSettle();
+    await _tapAndWaitForSnackBar(tester, find.text('Export Markdown'));
+
+    final content = File(savedPath).readAsStringSync();
+    expect(content, contains('Audit view'));
+    expect(content, contains('.config/Cursor/User/settings.json'));
+    expect(content, contains('other OS'));
+  });
 }

@@ -77,7 +77,11 @@ text + 999px radius + 12px semibold label. Example dark values: neutral
 pill `#2D2D2D` bg / `#E0E0E0` text; warning pill `#3A2406`-class bg /
 `#FFA000` text. Missing rows carry a muted `missing` pill (`text-muted`
 colors) in the report, the HTML export, and the in-app file list — never
-a bare opacity change alone. Never solid status fills for text-bearing badges.
+a bare opacity change alone. Optional, other-OS, and not-configured
+relevance labels use the same muted `text-muted` treatment, so only
+expected-missing rows carry the `missing` marker; the overview's audit
+toggle is a `FilterChip` in the action bar, not a sidebar item. Never
+solid status fills for text-bearing badges.
 Kind pills live in report rows and editor headers — not in sidebar items,
 which stay icon + title + path.
 Explicit exception: full-width alert banners (e.g. the test-root banner)
