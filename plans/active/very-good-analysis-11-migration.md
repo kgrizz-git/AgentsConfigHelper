@@ -5,7 +5,8 @@ Date: 2026-09-16
 Author: maintainers (research spike)
 Status: draft
 Linked issue/PR: Dependabot [#60](https://github.com/kgrizz-git/AgentsConfigHelper/pull/60)
-(superseded by this work)
+(superseded by this work) · plan PR
+[#62](https://github.com/kgrizz-git/AgentsConfigHelper/pull/62)
 Related: [TO_DO dependency maintenance](../../TO_DO.md#dependency-maintenance),
 [Dependency upgrades (archive)](../archive/dependency-upgrades.md),
 [changelog conventions](../../policies/changelog-conventions.md)
@@ -27,23 +28,29 @@ Upstream changes in v11.0.0:
 
 - Requires Dart SDK `^3.13.0`; the repo is on Flutter 3.47.1 / Dart 3.13.1, so the
   constraint is already satisfied.
-- No new transitive dependencies. `pubspec.lock` changes only `very_good_analysis`.
+- No new transitive dependencies: `pubspec.lock` changes only `very_good_analysis`, so there
+  is no `analyzer`-range conflict with `dart_code_linter` 4.3.0. The spike's `flutter pub get`
+  resolved cleanly.
 - Seven rules enabled: `async_return_with_no_await`, `empty_container_bodies`,
   `initialize_in_field_declaration`, `unnecessary_const_in_enum_constructor`,
   `unnecessary_primary_constructor_body`, `unnecessary_type_name_in_constructor`,
   `use_declaring_parameters`.
 - Three rules removed: `avoid_private_typedef_functions`, `one_member_abstracts`,
-  `unnecessary_await_in_return`.
+  `unnecessary_await_in_return`. The last one matters below: it is why `return await
+  <future>;` is a lint-clean fix in v11 (in v10 that pattern was flagged).
 - Inherited formatter default changed: `formatter.trailing_commas` `preserve` → `automate`.
   The repo's `analysis_options.yaml` uses `include: package:very_good_analysis/analysis_options.yaml`
   without overriding it, so it currently inherits `preserve` and would inherit `automate`.
 
-Measured impact on this repo (v11 installed in the worktree):
+Measured impact on this repo (v11 installed in a throwaway worktree). These are point-in-time
+spike measurements; each phase re-confirms its own gate rather than trusting the numbers:
 
 - `flutter analyze --fatal-infos` reports 109 findings. Only two of the new rules fire:
   - `unnecessary_type_name_in_constructor` — 95 findings (75 in `lib/`, 20 in `test/`),
-    spanning 57 files. All are auto-fixable. `dart fix` rewrites `ClassName(...)` to
-    Dart 3.13's `new(...)` unnamed-constructor shorthand.
+    spanning 57 files. All are auto-fixable: `dart fix` rewrites `ClassName(...)` to Dart
+    3.13's `new(...)` unnamed-constructor shorthand. This is real, standard Dart 3.13 syntax,
+    independently reproduced with `dart run` on a scratch file, and `unnecessary_new` remains
+    enabled without flagging the declaration form (so it is not a new lint violation).
   - `async_return_with_no_await` — 14 findings (7 in `lib/`, 7 in `test/`). No auto-fix;
     each needs a manual decision.
   - The other five new rules and the three removed rules produce zero findings.
@@ -113,19 +120,25 @@ dart fix --apply --code=unnecessary_type_name_in_constructor
 - `test/services/config_service_test.dart:661`
 - `test/services/fixture_test_root_save_restore_test.dart:337`, `:343`, `:349`, `:355`, `:380`
 
-Decision rule: where the body is a bare `return <futureExpr>;` with no other `await`, drop
-`async` and return the future directly (behaviour-preserving, and it avoids an extra
-microtask hop); otherwise add `await`. Each site is already covered by existing tests.
+Decision rule: prefer `return await <futureExpr>;` (keep `async`). That satisfies the lint,
+preserves the `async` error contract — a synchronous throw while evaluating the expression
+stays a failed `Future` instead of becoming a synchronous throw at the call site — and is no
+longer flagged in v11 because `unnecessary_await_in_return` was removed. Only drop `async`
+and return the future directly where the function has no other `await` **and** the timing
+change is deliberate; do not treat dropping `async` as universally behaviour-preserving.
+(`lib/utils/open_directory.dart:34` sits in `openDirectory`, which has other awaits, so it
+takes the `await` form, not the drop-`async` form.) Every site is covered by existing tests.
 
 ## Phases & checklist
 
 ### Phase 0: Baseline and rollback point
 
 - [ ] Confirm `main` is green: `flutter analyze --fatal-infos`, `dart format --output=none
-      --set-exit-if-changed .`, `flutter test` (548), `dart_code_linter:metrics analyze lib
-      --set-exit-on-violation-level=warning`.
+      --set-exit-if-changed .`, `flutter test` (548), and `flutter pub run
+      dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning`.
 - [ ] Record the rollback commit in this plan.
-- [ ] Supersede Dependabot PR #60 (close with a link to the replacement PR).
+- [ ] Leave Dependabot PR #60 open for now (it is currently open and `UNSTABLE`). Closing it
+      before `main` moves can make Dependabot re-open it; it is closed in Phase 4.
 
 ### Phase 1: Toolchain bump and formatter decision
 
@@ -139,6 +152,8 @@ microtask hop); otherwise add `await`. Each site is already covered by existing 
 
 - [ ] `dart fix --apply --code=unnecessary_type_name_in_constructor` (expect 95 fixes in
       57 files).
+- [ ] Inspect `git diff` to confirm only constructor rewrites were applied, with no unrelated
+      fixes.
 - [ ] `dart format .` to normalise the rewritten constructors.
 - [ ] Spot-check representative `lib/` and `test/` diffs to confirm the `new(...)` shorthand
       introduces no API or behaviour change.
@@ -153,14 +168,17 @@ microtask hop); otherwise add `await`. Each site is already covered by existing 
 - [ ] Run the full gate suite (see Verification).
 - [ ] Add the `CHANGELOG.dev.md` entry; set this plan's status; keep the `TO_DO.md` entry
       aligned.
-- [ ] Open the PR to `main` (this supersedes #60).
+- [ ] Run the local hooks as the final pre-push check (`pre-commit run --all-files`).
+- [ ] Open the PR to `main` (this supersedes #60), then close Dependabot PR #60 with a link
+      to it.
 
 ## Verification
 
 - [ ] `flutter pub get` — lock diff limited to `very_good_analysis`.
 - [ ] `dart format --output=none --set-exit-if-changed .` — 0 changed.
 - [ ] `flutter analyze --fatal-infos` — 0 issues.
-- [ ] `dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning` — no issues.
+- [ ] `flutter pub run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning` — no issues.
+- [ ] Local pre-commit and pre-push hooks pass (`pre-commit run --all-files`).
 - [ ] `flutter test --coverage` — 548/548 pass, line coverage ≥ 80%.
 - [ ] CI green across `Analyze & format`, `Tests`, and the three `Build` matrix jobs.
 - [ ] `dart format .` is idempotent (a second run reports no change).
@@ -177,7 +195,8 @@ microtask hop); otherwise add `await`. Each site is already covered by existing 
 | --- | --- | --- | --- |
 | `preserve` diverges from the upstream default | low | low | Documented override; revisit as a formatting-only PR |
 | `new(...)` shorthand unfamiliar to reviewers | med | low | Confined to 95 mechanical sites; analyze and tests stay green |
-| A manual async fix changes scheduling or error behaviour | low | med | Only drop `async` where the body is a bare return; existing tests cover every site |
+| A manual async fix changes error/scheduling behaviour | low | med | Prefer `return await` to preserve the async error contract; drop `async` only where verified safe; existing tests cover every site |
+| `very_good_analysis` 11 pulls a newer `analyzer` conflicting with `dart_code_linter` | low | med | Spike `flutter pub get` showed no transitive change; re-check in Phase 1 and stop if the lock grows beyond `very_good_analysis` |
 | Constructor rewrite spans many files, risking merge conflicts | med | low | Land promptly on a dedicated branch; the file list is explicit and re-derivable |
 | Dependabot re-opens #60 after the upgrade | low | low | Close #60 as superseded once this lands |
 
