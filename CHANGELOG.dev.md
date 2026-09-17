@@ -41,8 +41,9 @@ Internal / developer-facing changes that do not belong in the public
   57 files and added `await` to the 14 `return`ed futures flagged by
   `async_return_with_no_await`. Developer/tooling-only, no product-behavior
   change. Verified with `flutter analyze --fatal-infos` (0 issues),
-  `flutter test` (548 passing), and `dart format`. See the migration plan in
-  [`plans/active/very-good-analysis-11-migration.md`](plans/active/very-good-analysis-11-migration.md).
+  `flutter test` (548 passing), `dart format`, and the `dart_code_linter` metrics
+  gate. See the migration plan in
+  [`plans/archive/very-good-analysis-11-migration.md`](plans/archive/very-good-analysis-11-migration.md).
 
 ## [0.2.0] - 2026-09-10
 

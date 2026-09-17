@@ -42,11 +42,6 @@ its full entry, which remains the source of scope and completion detail.
       in a focused maintenance change with analysis and tests. Evaluate major tooling
       upgrades (such as `very_good_analysis`) separately; do not bulk-upgrade locked
       transitive dependencies without a reasoned compatibility review.
-- [ ] **very_good_analysis 11 migration:** adopt the v11 lint rules without the 62-file
-      formatter reflow (override `formatter.trailing_commas: preserve`); auto-fix 95
-      `unnecessary_type_name_in_constructor` findings via `dart fix`, hand-fix 14
-      `async_return_with_no_await` sites, and keep analyze / format / tests green. See the
-      [migration plan](plans/active/very-good-analysis-11-migration.md).
 
 ## Product follow-ups (prioritized)
 

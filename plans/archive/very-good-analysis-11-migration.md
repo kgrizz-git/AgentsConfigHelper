@@ -3,11 +3,12 @@
 Last reviewed: 2026-09-16
 Date: 2026-09-16
 Author: maintainers (research spike)
-Status: in progress (implemented; pending PR review)
-Linked issue/PR: Dependabot [#60](https://github.com/kgrizz-git/AgentsConfigHelper/pull/60)
-(to be superseded) · this plan is reviewed in docs-only PR
-[#62](https://github.com/kgrizz-git/AgentsConfigHelper/pull/62); the implementation opens its
-own PR in Phase 4
+Status: complete (implemented and reviewed in PR #62; pending maintainer sign-off on the
+formatter-override decision below)
+Linked issue/PR: Dependabot
+[#60](https://github.com/kgrizz-git/AgentsConfigHelper/pull/60) (superseded) · implemented in
+[#62](https://github.com/kgrizz-git/AgentsConfigHelper/pull/62), which carries the plan and the
+migration together
 Related: [TO_DO dependency maintenance](../../TO_DO.md#dependency-maintenance),
 [Dependency upgrades (archive)](../archive/dependency-upgrades.md),
 [changelog conventions](../../policies/changelog-conventions.md)
@@ -134,56 +135,50 @@ takes the `await` form, not the drop-`async` form.) Every site is covered by exi
 
 ### Phase 0: Baseline and rollback point
 
-- [ ] Confirm `main` is green: `flutter analyze --fatal-infos`, `dart format --output=none
-      --set-exit-if-changed .`, `flutter test` (548), and `flutter pub run
-      dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning`.
+- [x] Confirmed `main` green on the baseline gates (analyze / format / test / metrics).
 - [x] Rollback point recorded: branch head `7d4715b` before implementation (`main` =
       `cae5836`).
-- [ ] Leave Dependabot PR #60 open for now (it is currently open and `UNSTABLE`). Closing it
-      before `main` moves can make Dependabot re-open it; it is closed in Phase 4.
+- [x] Dependabot PR #60 left open (it is open and `UNSTABLE`); it is closed after this merges.
 
 ### Phase 1: Toolchain bump and formatter decision
 
-- [ ] `pubspec.yaml`: `very_good_analysis` `^10.3.0` → `^11.0.0`.
-- [ ] `flutter pub get`; confirm the `pubspec.lock` diff is limited to `very_good_analysis`.
-- [ ] `analysis_options.yaml`: add a `formatter:` block with `trailing_commas: preserve`
+- [x] `pubspec.yaml`: `very_good_analysis` `^10.3.0` → `^11.0.0`.
+- [x] `flutter pub get`; `pubspec.lock` diff limited to `very_good_analysis`.
+- [x] `analysis_options.yaml`: added a `formatter:` block with `trailing_commas: preserve`
       and a one-line comment explaining the deliberate override.
-- [ ] `dart format --output=none --set-exit-if-changed .` → 0 changed.
+- [x] `dart format --output=none --set-exit-if-changed .` → 0 changed.
 
 ### Phase 2: Auto-fix the constructor lint
 
-- [ ] `dart fix --apply --code=unnecessary_type_name_in_constructor` (expect 95 fixes in
-      57 files).
-- [ ] Inspect `git diff` to confirm only constructor rewrites were applied, with no unrelated
-      fixes.
-- [ ] `dart format .` to normalise the rewritten constructors.
-- [ ] Spot-check representative `lib/` and `test/` diffs to confirm the `new(...)` shorthand
-      introduces no API or behaviour change.
+- [x] `dart fix --apply --code=unnecessary_type_name_in_constructor` — 95 fixes in 57 files.
+- [x] Inspected `git diff`: only constructor rewrites, no unrelated fixes.
+- [x] `dart format .` normalised the rewritten constructors.
+- [x] Spot-checked `lib/` and `test/` diffs: the `new(...)` shorthand introduces no API or
+      behaviour change.
 
 ### Phase 3: Hand-fix the async lint
 
-- [ ] Apply the decision rule to each of the 14 sites listed above.
-- [ ] `flutter analyze --fatal-infos` → 0 issues.
+- [x] Applied the decision rule to each of the 14 sites (all `return await`).
+- [x] `flutter analyze --fatal-infos` → 0 issues.
 
 ### Phase 4: Verify and ship
 
-- [ ] Run the full gate suite (see Verification).
-- [ ] Add the `CHANGELOG.dev.md` entry; set this plan's status; keep the `TO_DO.md` entry
-      aligned.
-- [ ] Run the local hooks as the final pre-push check (`pre-commit run --all-files`).
-- [ ] Open the implementation PR to `main` (separate from the plan PR #62), then close
-      Dependabot PR #60 with a link to it.
+- [x] Full gate suite run (see Verification).
+- [x] `CHANGELOG.dev.md` entry added; this plan's status set; `TO_DO.md` entry tracked.
+- [x] Local pre-commit and pre-push hooks passed on every commit.
+- [x] Migration shipped on branch `chore/very-good-analysis-11-migration` (PR #62).
+- [ ] Close Dependabot PR #60 with a link to PR #62 once this merges.
 
 ## Verification
 
-- [ ] `flutter pub get` — lock diff limited to `very_good_analysis`.
-- [ ] `dart format --output=none --set-exit-if-changed .` — 0 changed.
-- [ ] `flutter analyze --fatal-infos` — 0 issues.
-- [ ] `flutter pub run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning` — no issues.
-- [ ] Local pre-commit and pre-push hooks pass (`pre-commit run --all-files`).
-- [ ] `flutter test --coverage` — 548/548 pass, line coverage ≥ 80%.
-- [ ] CI green across `Analyze & format`, `Tests`, and the three `Build` matrix jobs.
-- [ ] `dart format .` is idempotent (a second run reports no change).
+- [x] `flutter pub get` — lock diff limited to `very_good_analysis`.
+- [x] `dart format --output=none --set-exit-if-changed .` — 0 changed.
+- [x] `flutter analyze --fatal-infos` — 0 issues.
+- [x] `flutter pub run dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning` — no issues.
+- [x] Local pre-commit and pre-push hooks pass.
+- [x] `flutter test` — 548/548 pass; CI enforces the ≥80% line-coverage gate.
+- [x] CI green across `Analyze & format`, `Tests`, and the three `Build` matrix jobs.
+- [x] `dart format` is idempotent (a second run reports no change).
 
 ## Open questions
 
