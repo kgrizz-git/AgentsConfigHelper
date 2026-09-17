@@ -110,10 +110,17 @@ flutter build macos --release   # build release binary
   ownership disjoint as a second layer and merge via branches/PRs.
 - Before spawning a review/research subagent that shares the checkout, secure the
   working tree either with a commit or a diff-backup that preserves **both**
-  tracked and untracked files (`git diff > /tmp/backup.patch && git ls-files
-  --others --exclude-standard | xargs -I{} cp --parents {} /tmp/untracked/`),
+  tracked and untracked files (`git diff > tmp/backup.patch && git ls-files
+  --others --exclude-standard | xargs -I{} cp --parents {} tmp/untracked/`),
   and run the subagent read-only (no edit tools, no destructive shell/git). Verify
   `git status` after it finishes.
+- Use a gitignored in-repo scratch directory (`tmp/` or `temp/` — both are in
+  `.gitignore`) for temporary files, backups, and scratch git worktrees. Never write
+  scratch files outside the repository (`/tmp`, `/var/folders`, or any other external
+  temp path): every external write triggers a per-command permission prompt and slows
+  the workflow, and absolute `/var/folders` paths are flagged by
+  `hooks/scripts/check_absolute_paths.sh`. If the scratch dir is missing, create it and
+  add it to `.gitignore` first.
 - Keep credentials, generated indexes, and local agent state out of version control.
 
 ## macOS distribution note
