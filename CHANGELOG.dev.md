@@ -26,6 +26,14 @@ Internal / developer-facing changes that do not belong in the public
   recorded as a cache). Removed the incorrect
   `~/.config/kilo/models.json` catalog target after tracing it to a
   mis-forwarded OpenCode models.dev cache path (`~/.cache/kilo/models.json`).
+- **Riverpod family lockstep (Dependabot follow-up):** after the merged
+  `flutter_riverpod 3.4.3` update resolved the whole family in `pubspec.lock`,
+  tightened the direct constraints to match — `riverpod_annotation` to `^4.0.7`
+  and `riverpod_generator` to `^4.0.9` (Dependabot had closed the
+  annotation/generator PRs as already applied). Regenerated
+  `lib/state/providers.g.dart` with `riverpod_generator` 4.0.9: the provider
+  source-hash value changes, no behavior change. Verified with `flutter pub get`,
+  `dart format`, `flutter analyze --fatal-infos`, and `flutter test`.
 
 ## [0.2.0] - 2026-09-10
 
