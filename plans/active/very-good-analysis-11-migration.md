@@ -3,7 +3,7 @@
 Last reviewed: 2026-09-16
 Date: 2026-09-16
 Author: maintainers (research spike)
-Status: draft
+Status: in progress (implemented; pending PR review)
 Linked issue/PR: Dependabot [#60](https://github.com/kgrizz-git/AgentsConfigHelper/pull/60)
 (to be superseded) · this plan is reviewed in docs-only PR
 [#62](https://github.com/kgrizz-git/AgentsConfigHelper/pull/62); the implementation opens its
