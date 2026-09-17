@@ -17,7 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// files.
 class ConfigOverviewScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
-  const ConfigOverviewScreen({super.key});
+  const new({super.key});
 
   @override
   ConsumerState<ConfigOverviewScreen> createState() =>
@@ -213,7 +213,7 @@ class _ConfigOverviewScreenState extends ConsumerState<ConfigOverviewScreen> {
 }
 
 class _ToolFileGroup extends StatelessWidget {
-  const _ToolFileGroup({required this.entries});
+  const new({required this.entries});
 
   final List<ConfigOverviewEntry> entries;
 
@@ -234,7 +234,7 @@ class _ToolFileGroup extends StatelessWidget {
 }
 
 class _FileRow extends StatelessWidget {
-  const _FileRow({required this.entry});
+  const new({required this.entry});
 
   final ConfigOverviewEntry entry;
 
@@ -372,7 +372,7 @@ Widget _relevanceBadge(ConfigOverviewEntry entry) {
 }
 
 class _Badge extends StatelessWidget {
-  const _Badge({required this.text, this.tooltip, this.warning = false});
+  const new({required this.text, this.tooltip, this.warning = false});
 
   final String text;
   final String? tooltip;

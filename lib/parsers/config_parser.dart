@@ -4,7 +4,7 @@ import 'package:agents_config_helper/models/tool_config.dart';
 class ConfigParseException implements Exception {
   /// Creates a parsing exception with a user-facing [message] and optional
   /// 1-based [line]/[column] position in the source content.
-  const ConfigParseException(this.message, {this.line, this.column});
+  const new(this.message, {this.line, this.column});
 
   /// The reason parsing or serialization failed.
   final String message;
@@ -26,7 +26,7 @@ class ConfigParseException implements Exception {
 /// Thrown when a structured serializer cannot preserve the original source and
 /// the save path is blocked unless the caller explicitly opts into a rewrite.
 class SerializationFallbackException implements Exception {
-  const SerializationFallbackException({
+  const new({
     required this.format,
     required this.wouldBeLost,
   });
@@ -41,7 +41,7 @@ class SerializationFallbackException implements Exception {
 
 /// Result of a structured serialization attempt.
 class SerializeOutcome {
-  const SerializeOutcome({
+  const new({
     required this.content,
     required this.usedFallback,
   });

@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// under the 700-line file cap.
 class ShellSidebarHeader extends ConsumerWidget {
   /// Creates the header.
-  const ShellSidebarHeader({
+  const new({
     required this.onShowOverview,
     required this.onAddManualPath,
     required this.onAddProjectRoot,

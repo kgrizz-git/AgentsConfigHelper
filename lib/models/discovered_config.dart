@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 /// A configuration source discovered by the app.
 class DiscoveredConfig extends Equatable {
   /// Creates a discovered configuration with an explicit [id].
-  const DiscoveredConfig({
+  const new({
     required this.id,
     required this.filePath,
     required this.descriptor,
@@ -20,7 +20,7 @@ class DiscoveredConfig extends Equatable {
 
   /// Factory that automatically derives the [id] from the normalized
   /// absolute path and source kind.
-  factory DiscoveredConfig.fromPath({
+  factory fromPath({
     required String filePath,
     required ConfigLocationScope scope,
     required ConfigSourceKind kind,

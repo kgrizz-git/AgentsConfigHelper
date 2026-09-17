@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// Shows the before/after raw file content in the review dialog, truncating
 /// each side to a preview of 20 lines until the user expands it.
 class RawDiffView extends StatefulWidget {
-  const RawDiffView({required this.original, required this.updated, super.key});
+  const new({required this.original, required this.updated, super.key});
 
   final String original;
   final String updated;

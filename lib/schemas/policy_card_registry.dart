@@ -13,7 +13,7 @@ import 'package:agents_config_helper/schemas/policy_card.dart';
 /// `notApplicable` sentinel when no adapter matches.
 class PolicyCardRegistry {
   /// Creates a registry over the given adapters in priority order.
-  PolicyCardRegistry(List<PolicyCardAdapter> adapters)
+  new(List<PolicyCardAdapter> adapters)
     : _adapters = List.unmodifiable(adapters);
 
   final List<PolicyCardAdapter> _adapters;

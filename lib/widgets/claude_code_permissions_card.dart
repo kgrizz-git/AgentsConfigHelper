@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// Displays a validated Claude Code permission policy without editing it.
 class ClaudeCodePermissionsCard extends StatelessWidget {
   /// Creates a card for a recognized Claude Code permission policy.
-  const ClaudeCodePermissionsCard({
+  const new({
     required this.presentation,
     this.onOpenDocumentation,
     super.key,

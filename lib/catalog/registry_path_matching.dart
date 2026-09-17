@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 
 /// Result of matching a path against the tool descriptor registry.
 class RegistryMatchResult {
-  RegistryMatchResult({
+  new({
     required this.scope,
     required this.format,
     required this.sourceLabel,
@@ -32,7 +32,7 @@ class RegistryMatchResult {
 
 /// Exception thrown when a file extension is unsupported.
 class ValidationException implements Exception {
-  ValidationException(this.message);
+  new(this.message);
 
   /// The validation error message.
   final String message;

@@ -27,8 +27,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 class _FakeConfigService extends ConfigService {
-  _FakeConfigService(BackupService backupService)
-    : super(backupService: backupService);
+  new(BackupService backupService) : super(backupService: backupService);
 
   @override
   Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
@@ -42,8 +41,7 @@ class _FakeConfigService extends ConfigService {
 }
 
 class _EmptyConfigService extends ConfigService {
-  _EmptyConfigService(BackupService backupService)
-    : super(backupService: backupService);
+  new(BackupService backupService) : super(backupService: backupService);
 
   @override
   Future<ToolConfig> loadDiscoveredConfig(DiscoveredConfig config) async {
@@ -56,7 +54,7 @@ class _EmptyConfigService extends ConfigService {
 }
 
 class _FakeDiscoveryService extends DiscoveryService {
-  _FakeDiscoveryService({this.includeManualPaths = false});
+  new({this.includeManualPaths = false});
 
   final bool includeManualPaths;
 
@@ -156,7 +154,7 @@ class _FakePreferencesStore implements IDiscoveryPreferencesStore {
 }
 
 class _DelayedPreferencesStore implements IDiscoveryPreferencesStore {
-  _DelayedPreferencesStore(this._manualPaths);
+  new(this._manualPaths);
 
   final List<String> _manualPaths;
   Completer<void> removeCompleter = Completer<void>();

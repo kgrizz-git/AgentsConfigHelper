@@ -29,7 +29,7 @@ enum SaveKind {
 ///
 /// Produced by [FidelityAssessor]; the widget only renders its result.
 class FidelityAssessment {
-  const FidelityAssessment({
+  const new({
     required this.risk,
     required this.mechanism,
     required this.formatLabel,
@@ -83,7 +83,7 @@ class FidelityAssessment {
 /// opening assessment is a conservative capability statement for the file's
 /// format; the pending-save assessment distinguishes the three write paths.
 class FidelityAssessor {
-  const FidelityAssessor();
+  const new();
 
   /// Opening-assessment input: the discovered format plus whether the editor
   /// is raw-only (e.g. a corrupt-file recovery editor).

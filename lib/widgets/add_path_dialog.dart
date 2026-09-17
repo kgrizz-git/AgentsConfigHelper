@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 /// Pops with the trimmed path string on confirm, or null on cancel.
 class AddPathDialog extends StatefulWidget {
   /// Creates the dialog.
-  const AddPathDialog({required this.title, required this.hintText, super.key});
+  const new({required this.title, required this.hintText, super.key});
 
   /// The dialog title.
   final String title;

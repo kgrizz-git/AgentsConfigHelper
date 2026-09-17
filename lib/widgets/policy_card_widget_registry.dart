@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 /// means "no card here" and the caller falls back to the generic editor.
 class PolicyCardWidgetRegistry {
   /// Creates a registry over the given adapter-id to builder mapping.
-  PolicyCardWidgetRegistry(
+  new(
     Map<String, Widget? Function(PolicyCardSelection)> builders,
   ) : _builders = Map.unmodifiable(builders);
 

@@ -34,7 +34,7 @@ final saveFileDialogProvider = Provider<SaveFileDialog>((ref) {
 /// Service for saving config overview reports to disk.
 class ReportSaveService {
   /// Creates a report save service.
-  const ReportSaveService({required this.saveFileDialog});
+  const new({required this.saveFileDialog});
 
   /// The dialog used to ask the user where to save.
   final SaveFileDialog saveFileDialog;

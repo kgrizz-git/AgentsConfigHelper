@@ -17,7 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubDiscoveryService extends DiscoveryService {
-  _StubDiscoveryService(this._result);
+  new(this._result);
 
   final DiscoveryResult _result;
 
@@ -26,7 +26,7 @@ class _StubDiscoveryService extends DiscoveryService {
 }
 
 class _StubPrefsStore implements IDiscoveryPreferencesStore {
-  const _StubPrefsStore();
+  const new();
 
   @override
   Future<DiscoveryPreferencesResult> load() async =>

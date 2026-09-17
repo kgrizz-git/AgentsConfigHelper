@@ -29,7 +29,7 @@ enum ConfigFormat {
 /// A normalized representation of one tool's configuration file.
 class ToolConfig extends Equatable {
   /// Creates a normalized configuration with its original unedited settings.
-  ToolConfig({
+  new({
     required this.toolName,
     required this.filePath,
     required this.format,

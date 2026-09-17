@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 class _FakeDiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
-  _FakeDiscoveryPreferencesStore({this.loadResults = const []});
+  new({this.loadResults = const []});
 
   final List<String> addedManualPaths = [];
   final List<DiscoveryPreferencesResult> loadResults;

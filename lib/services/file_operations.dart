@@ -44,7 +44,7 @@ abstract interface class FileOperations {
 
 /// The ordinary production filesystem implementation.
 class LocalFileOperations implements FileOperations {
-  const LocalFileOperations();
+  const new();
 
   @override
   Future<void> validatePath(String absolutePath) async {

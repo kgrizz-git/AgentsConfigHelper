@@ -8,7 +8,7 @@ class TomlOptInController {
   /// [isMounted] must report the owner's live mounted state; it is consulted
   /// after each await so no `setState` runs on an unmounted widget.
   /// [setState] forwards to the owner's `State.setState`.
-  TomlOptInController({
+  new({
     required this.store,
     required this.isMounted,
     required this.setState,

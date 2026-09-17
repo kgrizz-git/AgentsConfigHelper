@@ -7,7 +7,7 @@ import 'package:equatable/equatable.dart';
 /// Reviewed, plain-language help for the fields shown on the Claude card.
 class ClaudeCodePermissionFieldHelp extends Equatable {
   /// Creates help for one displayed Claude Code permissions field.
-  const ClaudeCodePermissionFieldHelp({
+  const new({
     required this.label,
     required this.description,
   });
@@ -62,7 +62,7 @@ class ClaudeCodePermissionsHelp {
 /// A read-only, validated view of Claude Code permission settings.
 class ClaudeCodePermissionsPresentation extends PolicyCardPresentation {
   /// Creates a presentation from the recognized Claude permissions subtree.
-  ClaudeCodePermissionsPresentation({
+  new({
     required this.defaultMode,
     required List<String> allow,
     required List<String> ask,

@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// Displays a validated Cursor Agent permissions policy without editing it.
 class CursorPermissionsCard extends StatelessWidget {
   /// Creates a card for a recognized Cursor Agent permissions policy.
-  const CursorPermissionsCard({
+  const new({
     required this.presentation,
     this.onOpenDocumentation,
     super.key,

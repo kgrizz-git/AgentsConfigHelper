@@ -192,7 +192,7 @@ void main() {
 }
 
 class _FixtureHarness {
-  _FixtureHarness._({
+  new _({
     required this.root,
     required this.backupDirectory,
     required this.backupService,
@@ -313,7 +313,7 @@ class _FixtureHarness {
 /// Delegates allowed I/O to [LocalFileOperations] after the same `isWithin`
 /// check production test-root mode applies before the native bridge.
 class _RootBoundedLocalFileOperations implements FileOperations {
-  _RootBoundedLocalFileOperations({required this.rootPath});
+  new({required this.rootPath});
 
   final String rootPath;
   final LocalFileOperations _inner = const LocalFileOperations();

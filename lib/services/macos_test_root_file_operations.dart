@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 /// operation.
 class MacOSTestRootFileOperations implements FileOperations {
   /// Creates operations rooted at a canonical macOS test directory.
-  MacOSTestRootFileOperations({
+  new({
     required this.rootPath,
     MethodChannel? channel,
     bool? platformIsMacOS,

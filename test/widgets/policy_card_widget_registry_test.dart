@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _OtherPresentation extends PolicyCardPresentation {
-  const _OtherPresentation();
+  const new();
 
   @override
   List<Object?> get props => [];

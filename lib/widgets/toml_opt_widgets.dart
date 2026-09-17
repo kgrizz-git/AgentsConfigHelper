@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// owner. Extracted from `ConfigEditor` to hold the 700-line file cap.
 class TomlOptWidgets extends StatelessWidget {
   /// Creates the opt widgets.
-  const TomlOptWidgets({
+  const new({
     required this.isTomlStructured,
     required this.enabled,
     required this.onEnable,

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// A selectable tool entry in the application sidebar.
 class SidebarItem extends StatelessWidget {
   /// Creates a sidebar entry with its label, icon, and optional tap handler.
-  const SidebarItem({
+  const new({
     required this.title,
     required this.icon,
     super.key,

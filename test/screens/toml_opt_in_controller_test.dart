@@ -6,7 +6,7 @@ import 'package:agents_config_helper/services/discovery_preferences_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubStore implements IDiscoveryPreferencesStore {
-  _StubStore({required this.persisted});
+  new({required this.persisted});
 
   bool persisted;
   Completer<DiscoveryPreferencesResult>? loadGate;

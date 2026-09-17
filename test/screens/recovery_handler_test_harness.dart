@@ -1,7 +1,7 @@
 part of 'recovery_handler_test.dart';
 
 class _FakePreferencesStore implements IDiscoveryPreferencesStore {
-  _FakePreferencesStore({
+  new({
     this.manualFilePaths = const [],
     this.loadError,
     this.removeManualPathError,
@@ -54,7 +54,7 @@ class _EmptyDiscoveryService extends DiscoveryService {
 }
 
 class _ThrowingListBackupsBackupService extends BackupService {
-  _ThrowingListBackupsBackupService({required super.backupDirectory});
+  new({required super.backupDirectory});
 
   @override
   Future<List<File>> listBackups(String originalPath) async {
@@ -63,7 +63,7 @@ class _ThrowingListBackupsBackupService extends BackupService {
 }
 
 class _RecoveryHarness extends ConsumerStatefulWidget {
-  const _RecoveryHarness({
+  const new({
     required this.discoveredConfig,
     required this.errorValue,
     super.key,
