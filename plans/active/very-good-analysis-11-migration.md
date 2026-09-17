@@ -5,8 +5,9 @@ Date: 2026-09-16
 Author: maintainers (research spike)
 Status: draft
 Linked issue/PR: Dependabot [#60](https://github.com/kgrizz-git/AgentsConfigHelper/pull/60)
-(superseded by this work) · plan PR
-[#62](https://github.com/kgrizz-git/AgentsConfigHelper/pull/62)
+(to be superseded) · this plan is reviewed in docs-only PR
+[#62](https://github.com/kgrizz-git/AgentsConfigHelper/pull/62); the implementation opens its
+own PR in Phase 4
 Related: [TO_DO dependency maintenance](../../TO_DO.md#dependency-maintenance),
 [Dependency upgrades (archive)](../archive/dependency-upgrades.md),
 [changelog conventions](../../policies/changelog-conventions.md)
@@ -93,8 +94,8 @@ every PR — this is a formatting-convention choice, not a disabled check.
 ```text
 pubspec.yaml               — very_good_analysis ^10.3.0 -> ^11.0.0
 analysis_options.yaml      — add formatter.trailing_commas: preserve, with a rationale comment
-57 lib/ and test/ .dart    — 95 `dart fix` constructor rewrites (ClassName( -> new()
-7 lib/ + 7 test/ .dart     — 14 manual async_return_with_no_await fixes
+57 lib/ and test/ .dart    — 95 `dart fix` constructor rewrites (ClassName(...) -> new(...))
+4 lib/ + 3 test/ .dart     — 14 manual async_return_with_no_await fixes (7 files, 14 sites)
 CHANGELOG.dev.md           — Unreleased / Changed entry
 TO_DO.md                   — this plan's linked entry
 ```
@@ -169,8 +170,8 @@ takes the `await` form, not the drop-`async` form.) Every site is covered by exi
 - [ ] Add the `CHANGELOG.dev.md` entry; set this plan's status; keep the `TO_DO.md` entry
       aligned.
 - [ ] Run the local hooks as the final pre-push check (`pre-commit run --all-files`).
-- [ ] Open the PR to `main` (this supersedes #60), then close Dependabot PR #60 with a link
-      to it.
+- [ ] Open the implementation PR to `main` (separate from the plan PR #62), then close
+      Dependabot PR #60 with a link to it.
 
 ## Verification
 
