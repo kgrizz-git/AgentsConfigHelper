@@ -192,7 +192,7 @@ Future<ToolConfig> _load(
     path,
     normalizedHomePath: home ?? Directory.systemTemp.path,
   );
-  return service.loadDiscoveredConfig(
+  return await service.loadDiscoveredConfig(
     DiscoveredConfig.fromPath(
       filePath: path,
       sourceLabel: match.sourceLabel,

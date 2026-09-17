@@ -50,7 +50,7 @@ class ReportSaveService {
       view: view,
       hiddenCount: hiddenCount,
     );
-    return _writeWithDialog(
+    return await _writeWithDialog(
       suggestedName: _defaultMarkdownName,
       extension: 'md',
       bytes: utf8.encode(content),
@@ -68,7 +68,7 @@ class ReportSaveService {
       view: view,
       hiddenCount: hiddenCount,
     );
-    return _writeWithDialog(
+    return await _writeWithDialog(
       suggestedName: _defaultHtmlName,
       extension: 'html',
       bytes: utf8.encode(content),

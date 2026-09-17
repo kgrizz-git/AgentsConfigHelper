@@ -31,7 +31,7 @@ Future<bool> openDirectory(Directory directory) async {
     // Fall through to the platform-specific launcher.
   }
 
-  return _openWithPlatformLauncher(directory.path);
+  return await _openWithPlatformLauncher(directory.path);
 }
 
 /// Reveals an existing [file] in the platform file manager.

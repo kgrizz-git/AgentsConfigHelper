@@ -63,12 +63,12 @@ class LocalFileOperations implements FileOperations {
 
   @override
   Future<String> readText(String absolutePath) async {
-    return File(absolutePath).readAsString();
+    return await File(absolutePath).readAsString();
   }
 
   @override
   Future<List<int>> readBytes(String absolutePath) async {
-    return File(absolutePath).readAsBytes();
+    return await File(absolutePath).readAsBytes();
   }
 
   @override
