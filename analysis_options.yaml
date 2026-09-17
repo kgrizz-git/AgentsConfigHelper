@@ -27,6 +27,10 @@ analyzer:
 # packages, and plugins designed to encourage good coding practices.
 include: package:very_good_analysis/analysis_options.yaml
 
+# Deliberate override of the v11 default to avoid a repo-wide whitespace reflow.
+formatter:
+  trailing_commas: preserve
+
 dart_code_linter:
   metrics:
     cyclomatic-complexity: 50
