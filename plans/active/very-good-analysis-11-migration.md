@@ -137,7 +137,8 @@ takes the `await` form, not the drop-`async` form.) Every site is covered by exi
 - [ ] Confirm `main` is green: `flutter analyze --fatal-infos`, `dart format --output=none
       --set-exit-if-changed .`, `flutter test` (548), and `flutter pub run
       dart_code_linter:metrics analyze lib --set-exit-on-violation-level=warning`.
-- [ ] Record the rollback commit in this plan.
+- [x] Rollback point recorded: branch head `7d4715b` before implementation (`main` =
+      `cae5836`).
 - [ ] Leave Dependabot PR #60 open for now (it is currently open and `UNSTABLE`). Closing it
       before `main` moves can make Dependabot re-open it; it is closed in Phase 4.
 
