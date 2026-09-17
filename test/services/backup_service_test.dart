@@ -52,10 +52,10 @@ void main() {
       () async {
         // Security policy: ALL backups go to the global dir,
         // and NEVER alongside original file. This prevents secret-bearing
-        // files (like Kilo's models.json) from accidentally being committed
+        // files (like Cline's providers.json) from accidentally being committed
         // to git via a .bak file.
         final secretFile = File(
-          p.join(tempDir.path, 'project', 'models.json'),
+          p.join(tempDir.path, 'project', 'providers.json'),
         );
         await secretFile.create(recursive: true);
         await secretFile.writeAsString('{"api_key": "fixture-value"}');

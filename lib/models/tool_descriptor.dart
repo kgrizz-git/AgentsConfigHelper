@@ -79,6 +79,27 @@ enum ConfigSourceKind {
   instructionDocument,
 }
 
+/// The host operating systems a catalog target applies to.
+///
+/// This is a pure domain enum (not Flutter's `TargetPlatform`) so the catalog
+/// stays usable from Dart-only code and tests.
+enum ConfigPlatform {
+  /// Applies on every supported platform.
+  any,
+
+  /// Applies only on macOS.
+  macOS,
+
+  /// Applies only on Linux.
+  linux,
+
+  /// Applies only on Windows.
+  windows,
+
+  /// Applies on macOS and Linux, which share a POSIX-style config layout.
+  posix,
+}
+
 /// A specific target path and format associated with a tool.
 class ConfigTarget extends Equatable {
   /// Creates a config target.
@@ -87,6 +108,8 @@ class ConfigTarget extends Equatable {
     required this.format,
     required this.scope,
     required this.kind,
+    this.platform = ConfigPlatform.any,
+    this.optional = false,
   });
 
   /// The expected relative path, such as `.claude/settings.json`.
@@ -104,8 +127,23 @@ class ConfigTarget extends Equatable {
   /// The kind of configuration source.
   final ConfigSourceKind kind;
 
+  /// The host platforms this target applies to. Defaults to
+  /// [ConfigPlatform.any].
+  final ConfigPlatform platform;
+
+  /// Whether the target is a documented optional/alternate/legacy file that a
+  /// healthy install may legitimately lack. Defaults to `false`.
+  final bool optional;
+
   @override
-  List<Object?> get props => [relativePath, format, scope, kind];
+  List<Object?> get props => [
+    relativePath,
+    format,
+    scope,
+    kind,
+    platform,
+    optional,
+  ];
 }
 
 /// A pure domain descriptor for a supported tool and its known

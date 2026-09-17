@@ -69,6 +69,7 @@ Future<void> _pumpScreen(
   SaveFileDialog? saveFileDialog,
   String? Function()? homeDirectoryResolver,
   String? copilotHome,
+  ConfigPlatform hostPlatform = ConfigPlatform.macOS,
 }) async {
   final tempDir = Directory.systemTemp.createTempSync('ach_overview_test');
   addTearDown(() {
@@ -112,6 +113,7 @@ Future<void> _pumpScreen(
           homeDirectoryResolver ?? () => tempDir.path,
         ),
         copilotHomePathProvider.overrideWithValue(copilotHome),
+        hostConfigPlatformProvider.overrideWithValue(hostPlatform),
         if (saveFileDialog != null)
           saveFileDialogProvider.overrideWithValue(saveFileDialog),
       ],
@@ -339,5 +341,88 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Report saved as md.'), findsNothing);
+  });
+
+  testWidgets('default view hides other-OS and not-configured targets', (
+    tester,
+  ) async {
+    await _pumpScreen(tester);
+
+    // With the injected macOS host, the Linux Cursor settings target applies
+    // to another OS and is hidden by default.
+    expect(find.text('.config/Cursor/User/settings.json'), findsNothing);
+    // Codex has no discovered configuration in the stub discovery.
+    expect(find.text('.codex/config.toml'), findsNothing);
+    expect(find.textContaining('hidden'), findsOneWidget);
+    expect(find.text('other OS'), findsNothing);
+    expect(find.text('not configured'), findsNothing);
+  });
+
+  testWidgets('injected host platform drives relevance classification', (
+    tester,
+  ) async {
+    await _pumpScreen(tester, hostPlatform: ConfigPlatform.linux);
+
+    // The macOS Cursor settings target is other-platform on a Linux host.
+    const macCursorPath =
+        'Library/Application Support/Cursor/User/settings.json';
+    expect(find.text(macCursorPath), findsNothing);
+
+    await tester.tap(find.byType(FilterChip));
+    await tester.pumpAndSettle();
+
+    expect(find.text(macCursorPath), findsWidgets);
+  });
+
+  testWidgets('audit control reveals hidden targets with labels', (
+    tester,
+  ) async {
+    await _pumpScreen(tester);
+
+    await tester.tap(find.byType(FilterChip));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('.config/Cursor/User/settings.json'),
+      findsWidgets,
+    );
+    expect(find.text('other OS'), findsWidgets);
+    expect(find.text('not configured'), findsWidgets);
+    expect(find.text('Showing all catalog targets'), findsOneWidget);
+  });
+
+  testWidgets('default export states the relevant view and hidden count', (
+    tester,
+  ) async {
+    final saveDir = Directory.systemTemp.createTempSync('ach_overview_prov');
+    addTearDown(() {
+      if (saveDir.existsSync()) saveDir.deleteSync(recursive: true);
+    });
+    final savedPath = '${saveDir.path}/relevant.md';
+    await _pumpScreen(tester, saveFileDialog: (_, _) async => savedPath);
+
+    await _tapAndWaitForSnackBar(tester, find.text('Export Markdown'));
+
+    final content = File(savedPath).readAsStringSync();
+    expect(content, contains('Relevant view'));
+    expect(content, contains('catalog target(s)'));
+  });
+
+  testWidgets('audit export states the audit view', (tester) async {
+    final saveDir = Directory.systemTemp.createTempSync('ach_overview_audit');
+    addTearDown(() {
+      if (saveDir.existsSync()) saveDir.deleteSync(recursive: true);
+    });
+    final savedPath = '${saveDir.path}/audit.md';
+    await _pumpScreen(tester, saveFileDialog: (_, _) async => savedPath);
+
+    await tester.tap(find.byType(FilterChip));
+    await tester.pumpAndSettle();
+    await _tapAndWaitForSnackBar(tester, find.text('Export Markdown'));
+
+    final content = File(savedPath).readAsStringSync();
+    expect(content, contains('Audit view'));
+    expect(content, contains('.config/Cursor/User/settings.json'));
+    expect(content, contains('other OS'));
   });
 }

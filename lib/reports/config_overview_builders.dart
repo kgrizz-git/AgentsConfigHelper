@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:agents_config_helper/catalog/platform_applicability.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/reports/config_overview_report.dart';
 
@@ -42,12 +43,61 @@ String _escapeMarkdown(String text) {
       .replaceAll('\r', ' ');
 }
 
+/// A short suffix describing an entry's relevance for text exports.
+String _relevanceMarker(ConfigOverviewEntry entry) {
+  switch (entry.relevance) {
+    case OverviewRelevance.present:
+      return '';
+    case OverviewRelevance.expectedMissing:
+      return ' ⚠ missing';
+    case OverviewRelevance.optionalMissing:
+      return ' optional';
+    case OverviewRelevance.otherPlatform:
+      return ' other OS (${platformLabel(entry.platform)})';
+    case OverviewRelevance.notConfigured:
+      return ' not configured';
+  }
+}
+
+/// Provenance text describing which entries a report omitted, or null when
+/// nothing needs explaining.
+String? _provenance(ReportView view, int hiddenCount) {
+  if (view == ReportView.audit) {
+    return 'Audit view: every catalog target is included, including '
+        'other-OS and not-configured entries.';
+  }
+  if (hiddenCount <= 0) return null;
+  return 'Relevant view: $hiddenCount catalog target(s) for other operating '
+      'systems or tools without discovered configuration are hidden. Export '
+      'from audit view to include them.';
+}
+
+/// The muted relevance badge markup for an entry, or null for present files.
+String? _relevanceBadgeHtml(ConfigOverviewEntry entry) {
+  final platformText = platformLabel(entry.platform);
+  switch (entry.relevance) {
+    case OverviewRelevance.present:
+      return null;
+    case OverviewRelevance.expectedMissing:
+      return '<span class="badge badge-missing">missing</span>';
+    case OverviewRelevance.optionalMissing:
+      return '<span class="badge badge-optional">optional</span>';
+    case OverviewRelevance.otherPlatform:
+      return '<span class="badge badge-audit">other OS ($platformText)</span>';
+    case OverviewRelevance.notConfigured:
+      return '<span class="badge badge-audit">not configured</span>';
+  }
+}
+
 /// Builds a Markdown report from the overview model.
 String buildMarkdownReport(
   List<ConfigOverviewEntry> entries, {
   DateTime? generatedAt,
+  ReportView view = ReportView.relevant,
+  int hiddenCount = 0,
 }) {
   final stamp = _formatTimestamp(generatedAt ?? DateTime.now().toUtc());
+  final provenance = _provenance(view, hiddenCount);
 
   final groups = <ToolId?, List<ConfigOverviewEntry>>{};
   for (final entry in entries) {
@@ -63,7 +113,13 @@ String buildMarkdownReport(
       '> This report lists paths and metadata only — no file contents. '
       'Linked files may contain secrets.',
     )
-    ..writeln()
+    ..writeln();
+  if (provenance != null) {
+    sb
+      ..writeln('> $provenance')
+      ..writeln();
+  }
+  sb
     ..writeln('## Contents')
     ..writeln();
   for (final group in groups.keys) {
@@ -105,12 +161,13 @@ String buildMarkdownReport(
       final formatText = formatLabel(entry.format);
       final scopeText = scopeLabel(entry.scope);
       final secretMarker = entry.secretBearing ? ' ⚠ secrets' : '';
-      final missingMarker = entry.missing ? ' ⚠ missing' : '';
+      final relevanceMarker = _relevanceMarker(entry);
+      final linked = entry.isPresent && entry.filePath != null;
 
-      if (entry.missing || entry.filePath == null) {
+      if (!linked) {
         sb.writeln(
           '- **$kindText** $escapedPath — '
-          '$formatText, $scopeText$secretMarker$missingMarker',
+          '$formatText, $scopeText$secretMarker$relevanceMarker',
         );
       } else {
         final uri = Uri.file(entry.filePath!)
@@ -220,6 +277,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   border: 1px solid var(--border);
 }
 .file-item.missing { opacity: 0.7; }
+.file-item.muted { opacity: 0.7; }
 .file-path {
   font-family: ui-monospace, SF Mono, Cascadia Code, Consolas, monospace;
   font-size: 13px;
@@ -252,6 +310,8 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .badge-other { background: #2D2D2D; color: #E0E0E0; }
 .badge-warning { background: #3A2406; color: #FFA000; }
 .badge-missing { background: #2D2D2D; color: #A0A0A0; }
+.badge-optional { background: #2D2D2D; color: #A0A0A0; }
+.badge-audit { background: #2D2D2D; color: #A0A0A0; }
 
 @media (prefers-color-scheme: light) {
   .badge-config { background: #F4F4F5; color: #18181B; }
@@ -260,6 +320,8 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   .badge-other { background: #F4F4F5; color: #18181B; }
   .badge-warning { background: #FEF3C7; color: #B45309; }
   .badge-missing { background: #F4F4F5; color: #52525B; }
+  .badge-optional { background: #F4F4F5; color: #52525B; }
+  .badge-audit { background: #F4F4F5; color: #52525B; }
 }
 ''';
 
@@ -267,8 +329,11 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 String buildHtmlReport(
   List<ConfigOverviewEntry> entries, {
   DateTime? generatedAt,
+  ReportView view = ReportView.relevant,
+  int hiddenCount = 0,
 }) {
   final stamp = _formatTimestamp(generatedAt ?? DateTime.now().toUtc());
+  final provenance = _provenance(view, hiddenCount);
   const elementEscaper = HtmlEscape(HtmlEscapeMode.element);
   const attributeEscaper = HtmlEscape(HtmlEscapeMode.attribute);
 
@@ -312,6 +377,11 @@ String buildHtmlReport(
       '<p class="meta">This report lists paths and metadata only — '
       'no file contents. Linked files may contain secrets.</p>',
     );
+  if (provenance != null) {
+    sb.writeln(
+      '<p class="meta">${elementEscaper.convert(provenance)}</p>',
+    );
+  }
 
   for (final group in groups.keys) {
     final name = _groupName(entries, group);
@@ -327,8 +397,9 @@ String buildHtmlReport(
       final formatText = formatLabel(entry.format);
       final scopeText = scopeLabel(entry.scope);
 
+      final linked = entry.isPresent && entry.filePath != null;
       String pathHtml;
-      if (entry.missing || entry.filePath == null) {
+      if (!linked) {
         pathHtml = '<code>$escapedPath</code>';
       } else {
         final uri = attributeEscaper.convert(
@@ -337,10 +408,16 @@ String buildHtmlReport(
         pathHtml = '<a href="$uri"><code>$escapedPath</code></a>';
       }
 
+      final itemClass = switch (entry.relevance) {
+        OverviewRelevance.present => '',
+        OverviewRelevance.expectedMissing => ' missing',
+        OverviewRelevance.optionalMissing ||
+        OverviewRelevance.otherPlatform ||
+        OverviewRelevance.notConfigured => ' muted',
+      };
+
       sb
-        ..writeln(
-          '<li class="file-item${entry.missing ? ' missing' : ''}">',
-        )
+        ..writeln('<li class="file-item$itemClass">')
         ..writeln(
           '  <span class="badge $kindClass">$kindText</span>',
         )
@@ -348,8 +425,9 @@ String buildHtmlReport(
         ..writeln(
           '  <span class="file-meta">$formatText · $scopeText</span>',
         );
-      if (entry.missing) {
-        sb.writeln('  <span class="badge badge-missing">missing</span>');
+      final relevanceBadge = _relevanceBadgeHtml(entry);
+      if (relevanceBadge != null) {
+        sb.writeln('  $relevanceBadge');
       }
       if (entry.secretBearing) {
         sb.writeln('  <span class="badge badge-warning">⚠ secrets</span>');

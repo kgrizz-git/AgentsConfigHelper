@@ -156,13 +156,16 @@ The durable sequence and architecture decisions are in the
 
 ### Config reporting, export, and agent access
 
-- [ ] **Expected-file relevance in the overview:** reduce noisy “missing” rows
-      by suppressing or visibly labeling catalog targets that apply only to a
-      different OS, and by marking optional configuration files separately from
-      expected files for an installed/configured tool. Preserve a way to audit
-      absent catalog targets without making the default overview imply a broken
-      local setup. This needs per-target platform and optionality metadata with
-      catalog evidence, plus report-model and widget coverage.
+- [ ] **Catalog evidence follow-ups:** verify Copilot JetBrains paths against
+      current GitHub docs or the shipping extension before adding targets:
+      (a) `global-git-commit-instructions.md` (first-party Microsoft blog only);
+      (b) whether `global-copilot-instructions.md` also applies on Linux — the
+      registry classifies its `~/.config/...` path as macOS-only because Linux
+      is not vendor-documented. (The undocumented Kilo `models.json`
+      config target was removed on 2026-09-15; Kilo's model catalog is the
+      machine-generated `~/.cache/kilo/models.json` cache, not config.)
+      Archived context:
+      [expected-file relevance](plans/archive/expected-file-relevance.md).
 - [ ] **Config reports and copies:** make it easy to produce a consolidated report or
       snapshot/copy of discovered configs (for example, an export bundle) so a user can
       review, share, or back up their agent/IDE configuration as a whole. Reuse
@@ -251,4 +254,4 @@ The durable sequence and architecture decisions are in the
 
 ## AI Agent Integration
 
-- [ ] If we ever integrate AI agent calls directly into the app (e.g., for automated config fixes), ensure that any secret-bearing configuration files (like `models.json` or `kilo.jsonc`) have their API keys and sensitive environment variables redacted *before* the context is sent to the agents.
+- [ ] If we ever integrate AI agent calls directly into the app (e.g., for automated config fixes), ensure that any secret-bearing configuration files (like `kilo.jsonc` or Cline's `providers.json`) have their API keys and sensitive environment variables redacted *before* the context is sent to the agents.

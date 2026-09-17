@@ -55,7 +55,7 @@ void main() {
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           secretBearing: false,
-          missing: false,
+          relevance: OverviewRelevance.present,
         ),
       ];
 
@@ -84,7 +84,7 @@ void main() {
           format: ConfigFormat.json,
           scope: ConfigLocationScope.user,
           secretBearing: false,
-          missing: false,
+          relevance: OverviewRelevance.present,
         ),
       ];
 
