@@ -11,14 +11,14 @@ import 'package:agents_config_helper/schemas/policy_card_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakePresentation extends PolicyCardPresentation {
-  const _FakePresentation();
+  const new();
 
   @override
   List<Object?> get props => [];
 }
 
 class _AlwaysAvailableAdapter implements PolicyCardAdapter {
-  _AlwaysAvailableAdapter(this.adapterId);
+  new(this.adapterId);
 
   final String adapterId;
 

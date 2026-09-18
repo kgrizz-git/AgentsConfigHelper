@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 /// Reviewed, plain-language help for one Codex permission group.
 class CodexPermissionFieldHelp extends Equatable {
   /// Creates help for one displayed Codex permission group.
-  const CodexPermissionFieldHelp({
+  const new({
     required this.label,
     required this.description,
   });
@@ -98,7 +98,7 @@ class CodexPermissionsHelp {
 /// or both (the parser never produces both at once).
 class CodexFilesystemEntry extends Equatable {
   /// Creates a filesystem entry from its stored access and subpaths.
-  CodexFilesystemEntry({
+  new({
     required this.path,
     this.access,
     Map<String, String>? subpaths,
@@ -120,7 +120,7 @@ class CodexFilesystemEntry extends Equatable {
 /// The stored, policy-relevant network subset of one profile.
 class CodexNetworkPolicy extends Equatable {
   /// Creates a network policy from its stored entries.
-  CodexNetworkPolicy({
+  new({
     this.enabled,
     Map<String, String>? domains,
     Map<String, String>? unixSockets,
@@ -147,7 +147,7 @@ class CodexNetworkPolicy extends Equatable {
 /// One stored `[permissions.<name>]` profile, exactly as written in the file.
 class CodexPermissionProfile extends Equatable {
   /// Creates a profile from its stored entries.
-  CodexPermissionProfile({
+  new({
     required this.name,
     this.description,
     this.extendsProfile,
@@ -196,7 +196,7 @@ class CodexPermissionProfile extends Equatable {
 /// A read-only, validated view of a Codex `config.toml` permission block.
 class CodexPermissionsPresentation extends PolicyCardPresentation {
   /// Creates a presentation from the recognized stored entries.
-  CodexPermissionsPresentation({
+  new({
     required this.hasSandboxWorkspaceWriteTable,
     required this.hasConfiguredPermissions,
     this.sandboxMode,

@@ -192,7 +192,7 @@ void main() {
 }
 
 class _FixtureHarness {
-  _FixtureHarness._({
+  new _({
     required this.root,
     required this.backupDirectory,
     required this.backupService,
@@ -313,7 +313,7 @@ class _FixtureHarness {
 /// Delegates allowed I/O to [LocalFileOperations] after the same `isWithin`
 /// check production test-root mode applies before the native bridge.
 class _RootBoundedLocalFileOperations implements FileOperations {
-  _RootBoundedLocalFileOperations({required this.rootPath});
+  new({required this.rootPath});
 
   final String rootPath;
   final LocalFileOperations _inner = const LocalFileOperations();
@@ -334,25 +334,25 @@ class _RootBoundedLocalFileOperations implements FileOperations {
   @override
   Future<bool> fileExists(String absolutePath) async {
     _ensureWithinRoot(absolutePath);
-    return _inner.fileExists(absolutePath);
+    return await _inner.fileExists(absolutePath);
   }
 
   @override
   Future<bool> directoryExists(String absolutePath) async {
     _ensureWithinRoot(absolutePath);
-    return _inner.directoryExists(absolutePath);
+    return await _inner.directoryExists(absolutePath);
   }
 
   @override
   Future<String> readText(String absolutePath) async {
     _ensureWithinRoot(absolutePath);
-    return _inner.readText(absolutePath);
+    return await _inner.readText(absolutePath);
   }
 
   @override
   Future<List<int>> readBytes(String absolutePath) async {
     _ensureWithinRoot(absolutePath);
-    return _inner.readBytes(absolutePath);
+    return await _inner.readBytes(absolutePath);
   }
 
   @override
@@ -377,7 +377,7 @@ class _RootBoundedLocalFileOperations implements FileOperations {
   @override
   Future<List<String>> listFiles(String absoluteDirectoryPath) async {
     _ensureWithinRoot(absoluteDirectoryPath);
-    return _inner.listFiles(absoluteDirectoryPath);
+    return await _inner.listFiles(absoluteDirectoryPath);
   }
 
   @override

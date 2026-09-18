@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 /// Persistent, accessible disclosure for a potentially lossy structured save.
 class FormattingFidelityNotice extends StatelessWidget {
-  const FormattingFidelityNotice({
+  const new({
     required this.assessment,
     this.showOpeningStatement = true,
     super.key,

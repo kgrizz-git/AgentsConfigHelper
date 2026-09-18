@@ -5,7 +5,7 @@ import 'package:equatable/equatable.dart';
 /// discovery.
 class DiscoveryWarning extends Equatable {
   /// Creates a discovery warning.
-  const DiscoveryWarning({
+  const new({
     required this.path,
     required this.message,
   });
@@ -24,7 +24,7 @@ class DiscoveryWarning extends Equatable {
 /// discovered items and warnings.
 class DiscoveryResult extends Equatable {
   /// Creates a discovery result.
-  const DiscoveryResult({
+  const new({
     required this.items,
     this.warnings = const [],
     this.projectRoots = const [],

@@ -34,6 +34,16 @@ Internal / developer-facing changes that do not belong in the public
   `lib/state/providers.g.dart` with `riverpod_generator` 4.0.9: the provider
   source-hash value changes, no behavior change. Verified with `flutter pub get`,
   `dart format`, `flutter analyze --fatal-infos`, and `flutter test`.
+- **very_good_analysis 11 migration:** bumped the dev dependency from `^10.3.0`
+  to `^11.0.0` with a deliberate `formatter.trailing_commas: preserve` override
+  of the v11 `automate` default to avoid a repo-wide whitespace reflow; applied
+  95 `dart fix` constructor rewrites to Dart 3.13's `new(...)` shorthand across
+  57 files and added `await` to the 14 `return`ed futures flagged by
+  `async_return_with_no_await`. Developer/tooling-only, no product-behavior
+  change. Verified with `flutter analyze --fatal-infos` (0 issues),
+  `flutter test` (548 passing), `dart format`, and the `dart_code_linter` metrics
+  gate. See the migration plan in
+  [`plans/archive/very-good-analysis-11-migration.md`](plans/archive/very-good-analysis-11-migration.md).
 
 ## [0.2.0] - 2026-09-10
 

@@ -24,7 +24,7 @@ import 'package:multi_split_view/multi_split_view.dart';
 /// The split-pane shell for selecting and editing configurations.
 class MainShell extends ConsumerStatefulWidget {
   /// Creates the shell.
-  const MainShell({super.key});
+  const new({super.key});
 
   @override
   ConsumerState<MainShell> createState() => _MainShellState();
@@ -614,7 +614,7 @@ class _MainShellState extends ConsumerState<MainShell>
 }
 
 class _ManageProjectRootsDialog extends ConsumerWidget {
-  const _ManageProjectRootsDialog({required this.onRemove});
+  const new({required this.onRemove});
 
   final void Function(String path) onRemove;
 

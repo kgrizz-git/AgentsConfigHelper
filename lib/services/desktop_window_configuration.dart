@@ -5,14 +5,14 @@ import 'package:flutter/widgets.dart';
 /// Calculates initial desktop window dimensions from usable display space.
 class DesktopWindowConfiguration {
   /// Creates a desktop window configuration.
-  const DesktopWindowConfiguration({
+  const new({
     required this.size,
     required this.minimumSize,
   });
 
   /// Builds an adaptive layout from the display's usable, rather than full,
   /// size.
-  factory DesktopWindowConfiguration.forVisibleSize(Size? visibleSize) {
+  factory forVisibleSize(Size? visibleSize) {
     if (visibleSize == null ||
         !visibleSize.width.isFinite ||
         !visibleSize.height.isFinite ||

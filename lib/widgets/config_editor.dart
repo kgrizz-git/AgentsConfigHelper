@@ -21,7 +21,7 @@ import 'package:path/path.dart' as p;
 /// Edits the supported flat configuration fields and confirms saves.
 class ConfigEditor extends StatefulWidget {
   /// Creates an editor with callbacks supplied by its owner.
-  const ConfigEditor({
+  const new({
     required this.config,
     required this.onSave,
     required this.resolvePath,

@@ -17,7 +17,7 @@ enum PolicyCardStatus {
 /// No Flutter dependencies. Base class for a schema's display payload.
 /// Extends [Equatable] so concrete presentations keep value equality.
 abstract class PolicyCardPresentation extends Equatable {
-  const PolicyCardPresentation();
+  const new();
 }
 
 /// Outcome of asking a schema adapter to interpret the current config.
@@ -26,7 +26,7 @@ abstract class PolicyCardPresentation extends Equatable {
 /// a null [presentation] on `available` is a contract violation and is treated
 /// as "no card" by the widget registry.
 class PolicyCardSelection extends Equatable {
-  const PolicyCardSelection({
+  const new({
     required this.adapterId,
     required this.status,
     this.presentation,

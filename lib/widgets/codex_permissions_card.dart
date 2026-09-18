@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// Displays a validated Codex permission configuration without mutating it.
 class CodexPermissionsCard extends StatelessWidget {
   /// Creates a card for a recognized Codex `config.toml` permission block.
-  const CodexPermissionsCard({
+  const new({
     required this.presentation,
     this.onOpenDocumentation,
     super.key,

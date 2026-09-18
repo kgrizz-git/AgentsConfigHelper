@@ -44,7 +44,7 @@ abstract interface class FileOperations {
 
 /// The ordinary production filesystem implementation.
 class LocalFileOperations implements FileOperations {
-  const LocalFileOperations();
+  const new();
 
   @override
   Future<void> validatePath(String absolutePath) async {
@@ -63,12 +63,12 @@ class LocalFileOperations implements FileOperations {
 
   @override
   Future<String> readText(String absolutePath) async {
-    return File(absolutePath).readAsString();
+    return await File(absolutePath).readAsString();
   }
 
   @override
   Future<List<int>> readBytes(String absolutePath) async {
-    return File(absolutePath).readAsBytes();
+    return await File(absolutePath).readAsBytes();
   }
 
   @override

@@ -18,7 +18,7 @@ class DiscoveryService {
   /// [maxGlobMatches] caps matching files per glob target (sidebar bound).
   /// [maxGlobEntitiesVisited] caps filesystem entries visited per glob so
   /// large non-matching trees cannot hang discovery.
-  const DiscoveryService({
+  const new({
     this.maxGlobMatches = 100,
     this.maxGlobEntitiesVisited = 5000,
     this.fileOperations = const LocalFileOperations(),
@@ -417,5 +417,5 @@ class DiscoveryService {
 
 /// Thrown from glob `handleError` when error events exhaust the visit cap.
 class _GlobVisitCapExceeded implements Exception {
-  const _GlobVisitCapExceeded();
+  const new();
 }

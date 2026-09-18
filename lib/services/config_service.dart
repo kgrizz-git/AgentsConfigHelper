@@ -17,7 +17,7 @@ import 'package:path/path.dart' as p;
 /// backing them up, and safely serializing them back to disk.
 class ConfigService {
   /// Creates a configuration service that backs up files before writes.
-  ConfigService({
+  new({
     required this.backupService,
     String? Function()? homeDirectoryResolver,
     FileOperations? fileOperations,

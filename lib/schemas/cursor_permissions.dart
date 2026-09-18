@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 /// Reviewed, plain-language help for the fields shown on the Cursor card.
 class CursorPermissionFieldHelp extends Equatable {
   /// Creates help for one displayed Cursor permissions field.
-  const CursorPermissionFieldHelp({
+  const new({
     required this.label,
     required this.description,
   });
@@ -74,7 +74,7 @@ class CursorPermissionsHelp {
 /// present. The card distinguishes these so it faithfully shows what is stored.
 class CursorPermissionsPresentation extends PolicyCardPresentation {
   /// Creates a presentation from the recognized Cursor permissions object.
-  CursorPermissionsPresentation({
+  new({
     required List<String>? mcpAllowlist,
     required List<String>? terminalAllowlist,
     required List<String>? allowInstructions,

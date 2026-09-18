@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// Banner shown when a TOML file is opened but structured saves are disabled.
 class TomlOptInBanner extends StatelessWidget {
   /// Creates the banner.
-  const TomlOptInBanner({
+  const new({
     required this.onEnable,
     super.key,
   });
@@ -74,7 +74,7 @@ class TomlOptInBanner extends StatelessWidget {
 /// opt-in can always be reversed from the same surface that granted it.
 class TomlOptOutRow extends StatelessWidget {
   /// Creates the row.
-  const TomlOptOutRow({
+  const new({
     required this.onDisable,
     super.key,
   });

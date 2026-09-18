@@ -12,7 +12,7 @@ import 'package:path_provider/path_provider.dart';
 /// these preferences below its disposable root instead of normal app support.
 class DesktopWindowBoundsStore {
   /// Creates a store backed by [fileName] in the application support directory.
-  DesktopWindowBoundsStore({
+  new({
     Future<Directory> Function()? getDirectory,
     FileOperations? fileOperations,
     this.fileName = 'desktop_window_bounds.json',

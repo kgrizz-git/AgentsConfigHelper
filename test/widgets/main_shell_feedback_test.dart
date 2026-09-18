@@ -27,7 +27,7 @@ class _EmptyDiscoveryService extends DiscoveryService {
 }
 
 class _SingleFileDiscoveryService extends DiscoveryService {
-  _SingleFileDiscoveryService({required this.path, required this.home});
+  new({required this.path, required this.home});
 
   final String path;
   final String home;
@@ -56,7 +56,7 @@ class _SingleFileDiscoveryService extends DiscoveryService {
 }
 
 class _PrefsStore implements IDiscoveryPreferencesStore {
-  _PrefsStore({this.throwOnAdd = false});
+  new({this.throwOnAdd = false});
 
   final bool throwOnAdd;
 

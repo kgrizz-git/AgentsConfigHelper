@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 /// added files and project roots.
 class DiscoveryPreferences extends Equatable {
   /// Creates discovery preferences.
-  const DiscoveryPreferences({
+  const new({
     this.version = 1,
     this.manualFilePaths = const [],
     this.projectRoots = const [],
@@ -15,7 +15,7 @@ class DiscoveryPreferences extends Equatable {
   /// Parses preferences from a decoded JSON map, tolerating missing or
   /// malformed fields by falling back to defaults. Unknown keys are kept in
   /// [extraFields] so they survive a save/rewrite cycle.
-  factory DiscoveryPreferences.fromJson(Map<String, dynamic> json) {
+  factory fromJson(Map<String, dynamic> json) {
     const knownKeys = {
       'version',
       'manualFilePaths',
@@ -102,7 +102,7 @@ class DiscoveryPreferences extends Equatable {
 /// produced while parsing.
 class DiscoveryPreferencesResult extends Equatable {
   /// Creates a discovery preferences load result.
-  const DiscoveryPreferencesResult({
+  const new({
     required this.preferences,
     this.warnings = const [],
   });

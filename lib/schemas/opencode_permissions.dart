@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 /// Reviewed, plain-language help for one Opencode permission group.
 class OpencodePermissionFieldHelp extends Equatable {
   /// Creates help for one displayed Opencode permission group.
-  const OpencodePermissionFieldHelp({
+  const new({
     required this.label,
     required this.description,
   });
@@ -59,7 +59,7 @@ class OpencodePermissionsHelp {
 /// granular `pattern → action` rule map. Exactly one is set.
 class OpencodeToolPermission extends Equatable {
   /// Creates a per-tool permission from a scalar action or a granular map.
-  OpencodeToolPermission({
+  new({
     this.action,
     Map<String, String>? patterns,
   }) : patterns = patterns == null ? null : Map.unmodifiable(patterns),
@@ -81,7 +81,7 @@ class OpencodeToolPermission extends Equatable {
 /// A read-only, validated view of an Opencode `permission` block.
 class OpencodePermissionsPresentation extends PolicyCardPresentation {
   /// Creates a presentation from the recognized Opencode permission entries.
-  OpencodePermissionsPresentation({
+  new({
     required this.globalAction,
     required Map<String, OpencodeToolPermission> tools,
     required this.hasConfiguredPermission,

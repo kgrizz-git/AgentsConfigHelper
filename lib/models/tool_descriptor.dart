@@ -103,7 +103,7 @@ enum ConfigPlatform {
 /// A specific target path and format associated with a tool.
 class ConfigTarget extends Equatable {
   /// Creates a config target.
-  const ConfigTarget({
+  const new({
     required this.relativePath,
     required this.format,
     required this.scope,
@@ -150,7 +150,7 @@ class ConfigTarget extends Equatable {
 /// configuration targets.
 class ToolDescriptor extends Equatable {
   /// Creates a tool descriptor.
-  const ToolDescriptor({
+  const new({
     required this.id,
     required this.displayName,
     required this.targets,

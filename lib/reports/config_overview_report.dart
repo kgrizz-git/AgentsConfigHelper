@@ -55,7 +55,7 @@ enum ReportView {
 /// A single row in the config overview report.
 class ConfigOverviewEntry {
   /// Creates an overview entry.
-  const ConfigOverviewEntry({
+  const new({
     required this.toolId,
     required this.displayName,
     required this.displayPath,

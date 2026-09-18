@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// An editable list of text values.
 class StringListEditor extends StatefulWidget {
   /// Creates a list editor with current values and a change callback.
-  const StringListEditor({
+  const new({
     required this.values,
     required this.onChanged,
     required this.hintText,

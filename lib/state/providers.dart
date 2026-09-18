@@ -94,7 +94,7 @@ class DiscoveryController extends _$DiscoveryController {
   FutureOr<DiscoveryResult> build() async {
     ref.onDispose(() => _disposed = true);
     _generation++;
-    return _runDiscovery();
+    return await _runDiscovery();
   }
 
   Future<DiscoveryResult> _runDiscovery() async {
@@ -232,5 +232,5 @@ final FutureProviderFamily<List<File>, String> backupListProvider =
       // resolve `~` before listing so the filenames match those createBackup
       // writes from the resolved path in saveConfig/saveRawConfig.
       final resolvedPath = configService.resolvePath(filePath);
-      return configService.backupService.listBackups(resolvedPath);
+      return await configService.backupService.listBackups(resolvedPath);
     });

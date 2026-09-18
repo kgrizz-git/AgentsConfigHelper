@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// Displays a validated Opencode permission block without mutating it.
 class OpencodePermissionsCard extends StatelessWidget {
   /// Creates a card for a recognized Opencode permission block.
-  const OpencodePermissionsCard({
+  const new({
     required this.presentation,
     this.onOpenDocumentation,
     super.key,

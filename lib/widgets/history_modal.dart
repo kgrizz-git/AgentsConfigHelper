@@ -12,7 +12,7 @@ import 'package:path/path.dart' as p;
 /// ability to restore a selected backup over the live file.
 class HistoryModal extends ConsumerStatefulWidget {
   /// Creates the modal for the given configuration.
-  const HistoryModal({
+  const new({
     required this.config,
     required this.onRestore,
     super.key,

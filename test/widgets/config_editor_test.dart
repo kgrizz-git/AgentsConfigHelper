@@ -13,8 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class FakeConfigService extends ConfigService {
-  FakeConfigService(BackupService backupService)
-    : super(backupService: backupService);
+  new(BackupService backupService) : super(backupService: backupService);
 
   final savedConfigs = <ToolConfig>[];
 

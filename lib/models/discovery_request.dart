@@ -1,7 +1,7 @@
 /// The normalized inputs used to drive a single discovery scan.
 class DiscoveryRequest {
   /// Creates a discovery request.
-  const DiscoveryRequest({
+  const new({
     this.normalizedHomePath,
     this.normalizedProjectRoots = const [],
     this.manualPaths = const [],

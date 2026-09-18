@@ -10,7 +10,7 @@ const testRootMarkerContents = 'agents-config-helper staging root v1';
 
 /// Validated startup configuration for macOS test-root mode.
 class TestRootConfiguration {
-  const TestRootConfiguration._(this.rootPath);
+  const new _(this.rootPath);
 
   /// Canonical path of the staging root.
   final String rootPath;

@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 /// A service responsible for backing up and restoring configuration files.
 class BackupService {
   /// Creates backups in [backupDirectory].
-  const BackupService({
+  const new({
     required this.backupDirectory,
     FileOperations? fileOperations,
   }) : _fileOperations = fileOperations ?? const LocalFileOperations();

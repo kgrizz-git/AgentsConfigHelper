@@ -92,7 +92,7 @@ Future<_Invocation> _revealAndCapture(File file, String operatingSystem) async {
 }
 
 class _Invocation {
-  const _Invocation(this.command, this.arguments);
+  const new(this.command, this.arguments);
 
   final String command;
   final List<String> arguments;

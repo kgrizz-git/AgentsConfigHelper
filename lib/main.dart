@@ -35,7 +35,7 @@ Future<Directory> _getBackupDir(TestRootConfiguration? testRoot) async {
 /// Keeping this composition separate lets tests prove that optional test-root
 /// plumbing does not alter the ordinary application's service selection.
 class StartupServiceGraph {
-  const StartupServiceGraph({
+  const new({
     required this.testRoot,
     required this.fileOperations,
     required this.windowBoundsStore,
@@ -184,7 +184,7 @@ Future<void> _showConfiguredDesktopWindow(
 
 /// Persists bounds after a resize, move, or close without interrupting the UI.
 class _DesktopWindowBoundsListener with WindowListener {
-  _DesktopWindowBoundsListener(this._boundsStore);
+  new(this._boundsStore);
 
   static const _saveDelay = Duration(milliseconds: 400);
 
@@ -268,7 +268,7 @@ Future<void> main(List<String> arguments) async {
 /// The root application widget.
 class AgentsConfigHelperApp extends ConsumerWidget {
   /// Creates the application.
-  const AgentsConfigHelperApp({super.key});
+  const new({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -283,7 +283,7 @@ class AgentsConfigHelperApp extends ConsumerWidget {
 
 /// Displays startup failures instead of leaving a blank native window.
 class StartupErrorApp extends StatelessWidget {
-  const StartupErrorApp({required this.error, super.key});
+  const new({required this.error, super.key});
 
   /// The error that prevented normal app initialization.
   final Object error;

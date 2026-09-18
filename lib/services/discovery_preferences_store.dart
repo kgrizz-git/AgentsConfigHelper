@@ -38,7 +38,7 @@ abstract class IDiscoveryPreferencesStore {
 /// Thrown when a path passed to the preferences store is not usable
 /// (empty or not absolute).
 class InvalidPathException implements Exception {
-  const InvalidPathException(this.message);
+  const new(this.message);
 
   final String message;
 
@@ -56,7 +56,7 @@ class InvalidPathException implements Exception {
 class DiscoveryPreferencesStore implements IDiscoveryPreferencesStore {
   /// Creates a store backed by [fileName] inside the directory returned by
   /// [getDirectory] (defaults to the application support directory).
-  DiscoveryPreferencesStore({
+  new({
     Future<Directory> Function()? getDirectory,
     this.fileName = 'discovery_preferences.json',
     FileOperations? fileOperations,

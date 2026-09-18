@@ -6,7 +6,7 @@ import 'package:agents_config_helper/parsers/jsonc_cleaner.dart';
 import 'package:agents_config_helper/vendor/json_ast/json_ast.dart' as json_ast;
 
 class _Edit {
-  _Edit(this.start, this.end, this.replacement);
+  new(this.start, this.end, this.replacement);
   final int start;
   final int end;
   final String replacement;
