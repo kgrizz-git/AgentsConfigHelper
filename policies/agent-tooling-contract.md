@@ -27,8 +27,9 @@ contributor uses.
 - Prefer a CLI plus task-specific skill for batch work; use MCP when persistent,
   interactive state materially helps.
 - Handoffs are optional. Prefer durable trackers (`TO_DO.md`, `plans/active/`,
-  `.context/project-profile.md`); if you keep a handoff, date-stamp it, refresh it
-  whenever you pause, and treat a stale one as untrusted. Delete it once the work lands.
+  `.context/project-profile.md`); if you keep a handoff, commit-stamp it, refresh it
+  whenever you pause, and treat one whose recorded commit does not match `HEAD` as
+  untrusted. Delete it once the work lands.
 - Keep credentials, generated indexes, and local agent state out of version control.
 ```
 
