@@ -52,7 +52,9 @@ Branch: <branch>   Base: <base>
   chat, an issue, or another tool. Under a `regulated` classification, apply
   [`../prompts/sensitive-data-leak-prevention.md`](../prompts/sensitive-data-leak-prevention.md)
   to this file too.
-- Delete it once the work lands. A stale handoff is worse than none — see
+- **Keep `Date:` current.** Refresh the packet whenever you pause or hand off, and delete it once
+  the work lands — a stale handoff is worse than none. If you find one whose `Date:` predates the
+  current branch state, re-derive from `TO_DO.md` / `plans/active/` and update or delete it — see
   [`../policies/plans-and-todos.md`](../policies/plans-and-todos.md).
 
 Rationale and when a handoff MCP server is worth it:
