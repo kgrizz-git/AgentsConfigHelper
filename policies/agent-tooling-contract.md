@@ -26,8 +26,10 @@ contributor uses.
 - Use one primary code-intelligence/indexing tool per role or task.
 - Prefer a CLI plus task-specific skill for batch work; use MCP when persistent,
   interactive state materially helps.
-- Record decisions, changed files, verification, and next steps in a handoff before
-  changing agents or IDEs.
+- Handoffs are optional. Prefer durable trackers (`TO_DO.md`, `plans/active/`,
+  `.context/project-profile.md`); if you keep a handoff, commit-stamp it, refresh it
+  whenever you pause, and treat one whose recorded commit does not match `HEAD` as
+  untrusted. Delete it once the work lands.
 - Keep credentials, generated indexes, and local agent state out of version control.
 ```
 

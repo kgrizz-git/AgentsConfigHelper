@@ -32,8 +32,11 @@ or editing data-bearing files. Have a human own any approval inventory or gate c
 
 Read these if they exist — both are cheap and both prevent redoing finished work:
 
-- **`.context/handoff.md`** — a packet from the previous agent/IDE/session. Read its **Next
-  action** first, and note what it lists as verified vs assumed. Delete it once the work lands.
+- **`.context/handoff.md`** — an *optional* packet from the previous agent/IDE/session. Check its
+  **`Head:`** commit first: if it differs from `git rev-parse --short HEAD`, the packet may predate
+  the current state — re-derive from `TO_DO.md`, `plans/active/`, and the working tree, then update
+  or delete the file instead of trusting it. When `Head:` matches, read its **Next action** first
+  and note what it lists as verified vs assumed. Delete it once the work lands.
 - **`.context/bootstrap-state.md`** — an unfinished bootstrap. If any phase is `pending` or
   `in-progress`, tell the user which, and offer to resume from
   [`bootstrap-checklist.md`](bootstrap-checklist.md) at that phase ID rather than starting new work.

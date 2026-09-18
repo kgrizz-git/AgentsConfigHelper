@@ -23,7 +23,7 @@ Do not load everything. Start here, then open only what the task needs.
 | If you are… | Read |
 | --- | --- |
 | Starting a new session on this project | `.context/project-profile.md`, then [`prompts/new-agent-session.md`](prompts/new-agent-session.md) |
-| Moving work between agents or IDEs | [`templates/handoff.md`](templates/handoff.md) → `.context/handoff.md` |
+| Moving work between agents or IDEs | Optional — prefer `TO_DO.md`, `plans/active/`, and `.context/project-profile.md`; if you use [`templates/handoff.md`](templates/handoff.md), keep `.context/handoff.md` current and commit-stamped (a stale handoff is worse than none) |
 | Running periodic repo health checks | [`prompts/maintenance-loop.md`](prompts/maintenance-loop.md) |
 | Looking for a tool / library / service | [`inventory/README.md`](inventory/README.md) (a menu, not a checklist) |
 | Adding/enforcing repo rules | [`policies/README.md`](policies/README.md) |
@@ -102,8 +102,11 @@ flutter build macos --release   # build release binary
 - Use one primary code-intelligence/indexing tool per role or task.
 - Prefer a CLI plus task-specific skill for batch work; use MCP when persistent,
   interactive state materially helps.
-- Record decisions, changed files, verification, and next steps in a handoff before
-  changing agents or IDEs.
+- Handoffs are optional. Prefer durable trackers (`TO_DO.md`, `plans/active/`,
+  `.context/project-profile.md`); if you keep a handoff, commit-stamp it, refresh it
+  whenever you pause or switch agents/IDEs, and treat one whose recorded commit does not
+  match `HEAD` as stale — re-derive state instead of trusting it. Delete it once the work
+  lands.
 - Run parallel implementation subagents in isolated git worktrees (one worktree per
   writer), never two writers in the same checkout — observed failure: one agent's
   shell/git commands silently wiped another agent's uncommitted tests. Keep file

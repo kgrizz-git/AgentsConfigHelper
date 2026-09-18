@@ -42,6 +42,13 @@ its full entry, which remains the source of scope and completion detail.
       in a focused maintenance change with analysis and tests. Evaluate major tooling
       upgrades (such as `very_good_analysis`) separately; do not bulk-upgrade locked
       transitive dependencies without a reasoned compatibility review.
+- [ ] **Direct-dependency constraint hygiene:** keep declared constraints aligned with the
+      locked versions when reviewing `flutter pub outdated` (e.g. `cupertino_icons` was
+      `^1.0.8` while `1.0.9` was locked; fixed 2026-09-18).
+- [ ] **`very_good_analysis` `trailing_commas: automate` (deferred):** the v11 migration
+      pinned `formatter.trailing_commas: preserve` to avoid a 62-file whitespace reflow.
+      Adopt the upstream `automate` default only as a deliberate, formatting-only change;
+      see the archived [migration plan](plans/archive/very-good-analysis-11-migration.md).
 
 ## Product follow-ups (prioritized)
 
@@ -132,6 +139,12 @@ The durable sequence and architecture decisions are in the
       owning tool's authoritative documentation. Design a versioned metadata source,
       ensure links are tool-specific and reviewable, and keep unknown settings visibly
       unclassified rather than inventing explanations.
+
+### UI and design tokens
+
+- [ ] **Focus-ring token:** `docs/DESIGN_LANGUAGE.md` defers a dedicated focus-ring token
+      (the `InkWell` ripple is the interim focus mechanism). Introduce the token the next
+      time theming work touches `lib/theme/app_theme.dart`, and update the design-language doc.
 
 ### Tool catalog integrity acceptance follow-through
 

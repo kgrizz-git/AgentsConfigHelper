@@ -1,9 +1,11 @@
 # Template: Handoff Packet
 
-Last reviewed: 2026-08-11
+Last reviewed: 2026-09-18
 
-Write to `.context/handoff.md` (or paste as an issue/PR comment) before work moves between
-agents, IDEs, or sessions — Claude Code → Cursor → Codex → a human reviewer.
+A handoff is **optional** — prefer the durable trackers (`TO_DO.md`, `plans/active/`,
+`.context/project-profile.md`). When you do choose to write one, put it in
+`.context/handoff.md` (or paste it as an issue/PR comment) before work moves between agents,
+IDEs, or sessions — Claude Code → Cursor → Codex → a human reviewer.
 
 The point is **selective loading**: the next agent reads a compact factual packet instead of
 inheriting a large transcript or re-discovering the architecture. Keep it short enough that
@@ -14,9 +16,10 @@ reading it is obviously cheaper than rediscovery.
 ```markdown
 # Handoff: <task>
 
-Date: YYYY-MM-DD
+Date: YYYY-MM-DDThh:mm
 From: <agent/IDE>  →  To: <agent/IDE or human>
 Branch: <branch>   Base: <base>
+Head: <short SHA at time of writing>
 
 ## Goal and constraints
 
@@ -52,7 +55,10 @@ Branch: <branch>   Base: <base>
   chat, an issue, or another tool. Under a `regulated` classification, apply
   [`../prompts/sensitive-data-leak-prevention.md`](../prompts/sensitive-data-leak-prevention.md)
   to this file too.
-- Delete it once the work lands. A stale handoff is worse than none — see
+- **`Head:` is the freshness key.** Refresh the packet whenever you pause or hand off, and delete
+  it once the work lands — a stale handoff is worse than none. If a packet's `Head:` differs from
+  `git rev-parse --short HEAD`, it may predate the current state: re-derive from `TO_DO.md` /
+  `plans/active/` and update or delete it — see
   [`../policies/plans-and-todos.md`](../policies/plans-and-todos.md).
 
 Rationale and when a handoff MCP server is worth it:
