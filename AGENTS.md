@@ -109,10 +109,19 @@ flutter build macos --release   # build release binary
   shell/git commands silently wiped another agent's uncommitted tests. Keep file
   ownership disjoint as a second layer and merge via branches/PRs.
 - Before spawning a review/research subagent that shares the checkout, secure the
-  working tree either with a commit or a diff-backup that preserves **both**
-  tracked and untracked files (`git diff --binary HEAD > tmp/backup.patch && git
-  ls-files --others --exclude-standard | xargs -I{} cp --parents {} tmp/untracked/`),
-  and run the subagent read-only (no edit tools, no destructive shell/git). Verify
+  working tree — preferably with a commit; otherwise back it up with the commands
+  below, which capture tracked (staged, unstaged, binary) and untracked files and
+  are portable across macOS and Linux:
+
+  ```bash
+  mkdir -p tmp
+  git diff --binary HEAD > tmp/backup.patch
+  git ls-files -z --others --exclude-standard | tar --null -T - -cf tmp/untracked.tar
+  ```
+
+  Restore with `git apply tmp/backup.patch` and `tar -xf tmp/untracked.tar` (the
+  staged/unstaged split is not preserved — restored changes are unstaged). Then
+  run the subagent read-only (no edit tools, no destructive shell/git) and verify
   `git status` after it finishes.
 - Use a gitignored in-repo scratch directory (`tmp/` or `temp/` — both are in
   `.gitignore`) for temporary files, backups, and scratch git worktrees. Never write
