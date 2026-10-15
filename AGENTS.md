@@ -54,6 +54,8 @@ Do not load everything. Start here, then open only what the task needs.
 | `docs/supported-tools.md` | Config format reference for each supported agent/IDE |
 | `hooks/` | Pre-commit hooks (gitleaks, hygiene, markdownlint) |
 | `.github/workflows/ci.yml` | Build matrix + analyze + test + secret scan |
+| `.github/workflows/dependency-audit.yml` | Weekly OSV-Scanner lockfile audit + zizmor known-vulnerable-actions check |
+| `.github/workflows/catalog-advisory.yml` | Monthly advisory tool-catalog freshness check (no-write) |
 
 ## Commands
 

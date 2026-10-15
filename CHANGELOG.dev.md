@@ -21,6 +21,12 @@ Internal / developer-facing changes that do not belong in the public
   never SHA pins, so a vulnerable pinned action was otherwise unmonitored. Fails on any such
   finding or if zizmor itself errors; other zizmor audits are ignored. `contents: read`.
   Estimated cost: ~1 extra Linux minute per run (~4–6 minutes/month).
+- **CI: dependency-audit hardening:** the zizmor step now fails closed when `GH_TOKEN`
+  is empty (zizmor would otherwise silently skip its online audits and pass), and
+  per-finding location parsing tolerates findings without a local path instead of
+  raising `KeyError`. `osv-scan` gained `timeout-minutes: 10`. AGENTS.md's key-files
+  table now lists `dependency-audit.yml` and `catalog-advisory.yml`, and `ci/README.md`
+  notes that vendored `lib/vendor/json_ast` has no manifest so OSV cannot cover it.
 - **Overview relevance model:** `ConfigTarget` now carries `platform` and
   `optional` metadata with a pure platform-applicability helper, and
   `buildOverviewModel` classifies absent targets as expected, optional,

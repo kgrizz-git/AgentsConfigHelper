@@ -94,6 +94,9 @@ checks run on a schedule or on dispatch so they never block merges.
   on `workflow_dispatch`, and on PRs that change `pubspec.lock`/`pubspec.yaml`. Read-only
   (`permissions: contents: read`) but **failing** — any known advisory turns the run red.
   Reproduce locally with `osv-scanner scan -r ./`.
+  Coverage gap: the vendored `lib/vendor/json_ast` copy has no manifest or lockfile
+  entry, so OSV cannot see it; track its upstream advisories by hand when re-syncing
+  (see [`lib/vendor/README.md`](../lib/vendor/README.md)).
   A second job in the same workflow, `vulnerable-actions`, runs zizmor's
   `known-vulnerable-actions` audit: it resolves each SHA-pinned action to its tag and checks
   GitHub's advisory database (Dependabot alerts never cover SHA pins). It fails on any such
