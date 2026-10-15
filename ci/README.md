@@ -94,6 +94,11 @@ checks run on a schedule or on dispatch so they never block merges.
   on `workflow_dispatch`, and on PRs that change `pubspec.lock`/`pubspec.yaml`. Read-only
   (`permissions: contents: read`) but **failing** — any known advisory turns the run red.
   Reproduce locally with `osv-scanner scan -r ./`.
+  A second job in the same workflow, `vulnerable-actions`, runs zizmor's
+  `known-vulnerable-actions` audit: it resolves each SHA-pinned action to its tag and checks
+  GitHub's advisory database (Dependabot alerts never cover SHA pins). It fails on any such
+  finding or on a zizmor error; other zizmor audits are ignored. Reproduce locally with
+  `GH_TOKEN=$(gh auth token) zizmor .` (look for `known-vulnerable-actions`).
 
 ## Scripts in this directory
 

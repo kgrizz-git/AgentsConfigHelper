@@ -14,6 +14,13 @@ Internal / developer-facing changes that do not belong in the public
   advisory, closing the gap where Dependabot only opened monthly update PRs and CI
   never went red on a new advisory. Gitignored paths (`build/`, `.dart_tool/`,
   `tmp/`) are skipped. Estimated cost: ~4–6 runs/month × ~1 Linux minute.
+- **CI: known-vulnerable GitHub Actions check** (`vulnerable-actions` job in
+  `.github/workflows/dependency-audit.yml`, same triggers): pinned zizmor 1.31.0 runs its
+  `known-vulnerable-actions` audit, resolving each SHA-pinned action to its tag and checking
+  GitHub's advisory database. Dependabot alerts only cover actions referenced by semver tag,
+  never SHA pins, so a vulnerable pinned action was otherwise unmonitored. Fails on any such
+  finding or if zizmor itself errors; other zizmor audits are ignored. `contents: read`.
+  Estimated cost: ~1 extra Linux minute per run (~4–6 minutes/month).
 - **Overview relevance model:** `ConfigTarget` now carries `platform` and
   `optional` metadata with a pure platform-applicability helper, and
   `buildOverviewModel` classifies absent targets as expected, optional,

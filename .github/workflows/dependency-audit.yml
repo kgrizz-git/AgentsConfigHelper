@@ -1,3 +1,10 @@
+# Two read-only, failing checks:
+# - osv-scan: OSV-Scanner over every lockfile (today pubspec.lock).
+# - vulnerable-actions: zizmor's known-vulnerable-actions audit over the
+#   workflows. Actions here are pinned by commit SHA, and Dependabot alerts
+#   only cover semver-tag references, so pinned actions are checked here.
+# Cost: ~4-6 runs/month x ~1 Linux minute per job.
+
 name: Dependency vulnerability audit
 
 on:
@@ -35,3 +42,55 @@ jobs:
           scan-args: |-
             -r
             ./
+
+  # Dependabot alerts are never raised for actions pinned by commit SHA (only
+  # for semver tags), so check pinned actions against GitHub's advisory
+  # database here. zizmor resolves each SHA to its release tag. Only the
+  # known-vulnerable-actions audit fails the job; other zizmor findings are
+  # out of scope for this check.
+  vulnerable-actions:
+    name: Known-vulnerable actions (zizmor)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install zizmor
+        run: "pip install --only-binary=:all: zizmor==1.31.0"
+      - name: Check actions against GitHub security advisories
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          zizmor --format=json . > zizmor.json
+          rc=$?
+          set -e
+          # 0 = no findings, 10-14 = findings by severity; anything else
+          # (e.g. 1) means the audit itself failed, which must not pass.
+          if [ "$rc" -ne 0 ] && { [ "$rc" -lt 10 ] || [ "$rc" -gt 14 ]; }; then
+            echo "::error::zizmor failed (exit $rc)"
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          import sys
+
+          findings = [
+              f for f in json.load(open("zizmor.json"))
+              if f["ident"] == "known-vulnerable-actions" and not f.get("ignored")
+          ]
+          for f in findings:
+              loc = f["locations"][0]
+              path = loc["symbolic"]["key"]["Local"]["verbatim_path"]
+              line = loc["concrete"]["location"]["start_point"]["row"] + 1
+              note = loc["symbolic"].get("annotation", "")
+              print(f"::error file={path},line={line}::{f['desc']}: {note}")
+          print(f"{len(findings)} known-vulnerable action reference(s)")
+          sys.exit(1 if findings else 0)
+          PY
