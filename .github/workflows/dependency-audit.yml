@@ -14,12 +14,14 @@ on:
     - cron: '17 6 * * 1'
   # Manual rerun from the Actions tab.
   workflow_dispatch:
-  # Gate PRs that change the lockfile (or this workflow) only.
+  # Gate PRs that change the lockfile, or any workflow/composite action
+  # (action pins live there, so vulnerable-actions must see those PRs).
   pull_request:
     paths:
       - 'pubspec.lock'
       - 'pubspec.yaml'
-      - '.github/workflows/dependency-audit.yml'
+      - '.github/workflows/**'
+      - '.github/actions/**'
 
 permissions:
   contents: read
@@ -75,7 +77,7 @@ jobs:
             exit 1
           fi
           set +e
-          zizmor --format=json . > zizmor.json
+          zizmor --format=json . > "$RUNNER_TEMP/zizmor.json"
           rc=$?
           set -e
           # 0 = no findings, 10-14 = findings by severity; anything else
@@ -86,10 +88,11 @@ jobs:
           fi
           python3 - <<'PY'
           import json
+          import os
           import sys
 
           findings = [
-              f for f in json.load(open("zizmor.json"))
+              f for f in json.load(open(os.path.join(os.environ["RUNNER_TEMP"], "zizmor.json")))
               if f["ident"] == "known-vulnerable-actions" and not f.get("ignored")
           ]
           for f in findings:

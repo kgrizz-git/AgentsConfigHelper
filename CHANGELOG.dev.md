@@ -27,6 +27,12 @@ Internal / developer-facing changes that do not belong in the public
   raising `KeyError`. `osv-scan` gained `timeout-minutes: 10`. AGENTS.md's key-files
   table now lists `dependency-audit.yml` and `catalog-advisory.yml`, and `ci/README.md`
   notes that vendored `lib/vendor/json_ast` has no manifest so OSV cannot cover it.
+- **CI: dependency-audit PR coverage and report location:** the `pull_request` `paths`
+  filter now matches `.github/workflows/**` and `.github/actions/**` (replacing the explicit
+  `dependency-audit.yml` entry), so PRs that change action pins in any workflow or composite
+  action run `vulnerable-actions`. The zizmor JSON report is written to `$RUNNER_TEMP` instead
+  of the checkout, so a PR-committed `zizmor.json` symlink cannot make the redirect truncate a
+  workflow file before zizmor scans it.
 - **Overview relevance model:** `ConfigTarget` now carries `platform` and
   `optional` metadata with a pure platform-applicability helper, and
   `buildOverviewModel` classifies absent targets as expected, optional,
