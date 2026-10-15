@@ -6,6 +6,33 @@ Internal / developer-facing changes that do not belong in the public
 ## Unreleased
 
 ### Added
+- **CI: weekly dependency vulnerability audit** (`.github/workflows/dependency-audit.yml`):
+  runs `google/osv-scanner-action` (pinned v2.7.0 SHA) with `scan-args: -r ./` against
+  every lockfile in the repo (today only `pubspec.lock`) on a Monday 06:17 UTC cron,
+  on `workflow_dispatch`, and on PRs that touch `pubspec.lock`/`pubspec.yaml` or the
+  workflow itself. `permissions: contents: read`; the job fails on any known OSV
+  advisory, closing the gap where Dependabot only opened monthly update PRs and CI
+  never went red on a new advisory. Gitignored paths (`build/`, `.dart_tool/`,
+  `tmp/`) are skipped. Estimated cost: ~4–6 runs/month × ~1 Linux minute.
+- **CI: known-vulnerable GitHub Actions check** (`vulnerable-actions` job in
+  `.github/workflows/dependency-audit.yml`, same triggers): pinned zizmor 1.31.0 runs its
+  `known-vulnerable-actions` audit, resolving each SHA-pinned action to its tag and checking
+  GitHub's advisory database. Dependabot alerts only cover actions referenced by semver tag,
+  never SHA pins, so a vulnerable pinned action was otherwise unmonitored. Fails on any such
+  finding or if zizmor itself errors; other zizmor audits are ignored. `contents: read`.
+  Estimated cost: ~1 extra Linux minute per run (~4–6 minutes/month).
+- **CI: dependency-audit hardening:** the zizmor step now fails closed when `GH_TOKEN`
+  is empty (zizmor would otherwise silently skip its online audits and pass), and
+  per-finding location parsing tolerates findings without a local path instead of
+  raising `KeyError`. `osv-scan` gained `timeout-minutes: 10`. AGENTS.md's key-files
+  table now lists `dependency-audit.yml` and `catalog-advisory.yml`, and `ci/README.md`
+  notes that vendored `lib/vendor/json_ast` has no manifest so OSV cannot cover it.
+- **CI: dependency-audit PR coverage and report location:** the `pull_request` `paths`
+  filter now matches `.github/workflows/**` and `.github/actions/**` (replacing the explicit
+  `dependency-audit.yml` entry), so PRs that change action pins in any workflow or composite
+  action run `vulnerable-actions`. The zizmor JSON report is written to `$RUNNER_TEMP` instead
+  of the checkout, so a PR-committed `zizmor.json` symlink cannot make the redirect truncate a
+  workflow file before zizmor scans it.
 - **Overview relevance model:** `ConfigTarget` now carries `platform` and
   `optional` metadata with a pure platform-applicability helper, and
   `buildOverviewModel` classifies absent targets as expected, optional,
