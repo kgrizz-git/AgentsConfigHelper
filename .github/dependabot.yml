@@ -3,7 +3,9 @@ updates:
   - package-ecosystem: "pub"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "cron"
+      cronjob: "0 11 20 * *" # 11:00 Eastern on the 20th of each month
+      timezone: "America/New_York"
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
@@ -11,6 +13,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "cron"
+      cronjob: "0 11 20 * *" # 11:00 Eastern on the 20th of each month
+      timezone: "America/New_York"
     cooldown:
       default-days: 7
