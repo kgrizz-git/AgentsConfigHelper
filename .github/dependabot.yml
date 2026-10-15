@@ -8,7 +8,7 @@ updates:
       timezone: "America/New_York"
     open-pull-requests-limit: 5
     cooldown:
-      default-days: 3
+      default-days: 7
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -17,4 +17,4 @@ updates:
       cronjob: "0 11 20 * *" # 11:00 Eastern on the 20th of each month
       timezone: "America/New_York"
     cooldown:
-      default-days: 3
+      default-days: 7
