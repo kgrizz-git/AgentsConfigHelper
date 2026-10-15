@@ -89,6 +89,12 @@ checks run on a schedule or on dispatch so they never block merges.
   gate stays the Phase 2 `--catalog-strict` job in `ci.yml` (only an invalid marker or incomplete
   evidence-table row set fails a PR). See [`prompts/maintenance-loop.md`](../prompts/maintenance-loop.md) §6.
 
+- **Dependency vulnerability audit** (`.github/workflows/dependency-audit.yml`): runs
+  OSV-Scanner recursively over the repo's lockfiles (currently `pubspec.lock`) weekly,
+  on `workflow_dispatch`, and on PRs that change `pubspec.lock`/`pubspec.yaml`. Read-only
+  (`permissions: contents: read`) but **failing** — any known advisory turns the run red.
+  Reproduce locally with `osv-scanner scan -r ./`.
+
 ## Scripts in this directory
 
 | File | Description |

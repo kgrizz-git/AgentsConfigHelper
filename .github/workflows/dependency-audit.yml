@@ -1,0 +1,37 @@
+name: Dependency vulnerability audit
+
+on:
+  # Weekly on Monday at 06:17 UTC, so a newly published advisory against a
+  # locked dependency turns CI red without waiting for a PR or Dependabot.
+  schedule:
+    - cron: '17 6 * * 1'
+  # Manual rerun from the Actions tab.
+  workflow_dispatch:
+  # Gate PRs that change the lockfile (or this workflow) only.
+  pull_request:
+    paths:
+      - 'pubspec.lock'
+      - 'pubspec.yaml'
+      - '.github/workflows/dependency-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  osv-scan:
+    name: OSV-Scanner (lockfiles)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Recursively scans every lockfile in the checkout (today: pubspec.lock)
+      # against osv.dev. Paths matched by .gitignore (build/, .dart_tool/,
+      # node_modules/, ...) are skipped. Exits non-zero on any known
+      # vulnerability, failing the job.
+      - uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        with:
+          scan-args: |-
+            -r
+            ./

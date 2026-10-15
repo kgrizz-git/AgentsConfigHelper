@@ -6,6 +6,14 @@ Internal / developer-facing changes that do not belong in the public
 ## Unreleased
 
 ### Added
+- **CI: weekly dependency vulnerability audit** (`.github/workflows/dependency-audit.yml`):
+  runs `google/osv-scanner-action` (pinned v2.7.0 SHA) with `scan-args: -r ./` against
+  every lockfile in the repo (today only `pubspec.lock`) on a Monday 06:17 UTC cron,
+  on `workflow_dispatch`, and on PRs that touch `pubspec.lock`/`pubspec.yaml` or the
+  workflow itself. `permissions: contents: read`; the job fails on any known OSV
+  advisory, closing the gap where Dependabot only opened monthly update PRs and CI
+  never went red on a new advisory. Gitignored paths (`build/`, `.dart_tool/`,
+  `tmp/`) are skipped. Estimated cost: ~4–6 runs/month × ~1 Linux minute.
 - **Overview relevance model:** `ConfigTarget` now carries `platform` and
   `optional` metadata with a pure platform-applicability helper, and
   `buildOverviewModel` classifies absent targets as expected, optional,
