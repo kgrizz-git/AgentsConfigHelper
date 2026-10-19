@@ -108,6 +108,19 @@ flutter pub get
 flutter run -d macos  # or windows / linux
 ```
 
+### Linux taskbar icon (Wayland)
+
+On X11 the window sets its own icon. Wayland desktops (the default on recent
+GNOME and KDE) look the icon up from an installed `.desktop` entry instead, so
+after building, register the bundle once:
+
+```bash
+flutter build linux
+bash scripts/install_linux_desktop_entry.sh   # --uninstall to remove
+```
+
+It writes only to `~/.local/share` (no sudo). Rerun it if you move the checkout.
+
 ### macOS source-build scope
 
 macOS is currently supported through local source builds only. To discover and
