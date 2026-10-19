@@ -207,9 +207,6 @@ The durable sequence and architecture decisions are in the
       after the structured-configuration fidelity decisions; no cloud sync. Keep off
       `Next Up` until Phase 0.5 fidelity and test-root slices land.
 
-## Follow-ups from Phase 5.5 (docs accuracy)
-
-
 ## Deferred from PR #5 review (Qodo / SonarCloud)
 
 - [ ] Triage the SonarCloud backlog on a cadence (e.g. monthly, alongside the
