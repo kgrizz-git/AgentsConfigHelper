@@ -1,5 +1,9 @@
 # AgentsConfigHelper
 
+<p align="center">
+  <img src="assets/icon/app_icon.svg" width="128" height="128" alt="AgentsConfigHelper app icon">
+</p>
+
 Last reviewed: 2026-10-19
 
 [![CI](https://github.com/kgrizz-git/AgentsConfigHelper/actions/workflows/ci.yml/badge.svg)](https://github.com/kgrizz-git/AgentsConfigHelper/actions/workflows/ci.yml)
