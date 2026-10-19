@@ -29,30 +29,30 @@ refresh_caches() {
   fi
 }
 
-if [ "${1:-}" = "--uninstall" ]; then
+if [[ "${1:-}" = "--uninstall" ]]; then
   rm -f "$DESKTOP_FILE" "$ICON_FILE"
   refresh_caches
   echo "Removed $DESKTOP_FILE and $ICON_FILE"
   exit 0
 fi
 
-if [ "$(uname -s)" != "Linux" ]; then
+if [[ "$(uname -s)" != "Linux" ]]; then
   echo "This script is for Linux only." >&2
   exit 1
 fi
 
 BUNDLE_DIR="${1:-}"
-if [ -z "$BUNDLE_DIR" ]; then
+if [[ -z "$BUNDLE_DIR" ]]; then
   for mode in release debug profile; do
     candidate="$REPO_ROOT/build/linux/x64/$mode/bundle"
-    if [ -x "$candidate/agents_config_helper" ]; then
+    if [[ -x "$candidate/agents_config_helper" ]]; then
       BUNDLE_DIR="$candidate"
       break
     fi
   done
 fi
 
-if [ -z "$BUNDLE_DIR" ] || [ ! -x "$BUNDLE_DIR/agents_config_helper" ]; then
+if [[ -z "$BUNDLE_DIR" ]] || [[ ! -x "$BUNDLE_DIR/agents_config_helper" ]]; then
   echo "No built bundle found. Run 'flutter build linux' first, or pass the bundle directory." >&2
   exit 1
 fi
