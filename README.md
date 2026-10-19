@@ -83,9 +83,9 @@ get raw text editing. A `—` means the tool has no location of that kind.
 | Antigravity CLI | JSON + Markdown | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md`, `GEMINI.md`, `.agents/rules/*.md` |
 | Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — | — |
 | Kilo | JSONC + Markdown | `~/.config/kilo/kilo.jsonc` (or `kilo.json`) | `kilo.jsonc` / `.kilo/kilo.jsonc` | `~/.config/kilo/AGENTS.md`, `~/.config/kilo/agents/*.md`, `.kilo/agents/*.md` (+ shared `AGENTS.md`) |
-| Cline | JSON + Markdown | `~/.cline/data/settings/global-settings.json` (+ MCP and provider settings) | — | `~/Documents/Cline/Rules/`, `.clinerules/`, `.clinerules`, `.cline/rules/*.md` (+ shared `AGENTS.md`) |
+| Cline | JSON + Markdown | `~/.cline/data/settings/global-settings.json` (+ MCP and provider settings) | — | `~/Documents/Cline/Rules/` (or `~/Cline/Rules/`), `~/.cline/rules/*.md`, `.clinerules/`, `.clinerules`, `.cline/rules/*.md` (+ shared `AGENTS.md`) |
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets (weights not discovered) |
-| GitHub Copilot | JSONC + Markdown | `~/.copilot/settings.json` (+ managed `config.json`, `mcp-config.json`) | `.github/copilot/settings.json` (+ `settings.local.json`) | `~/.copilot/copilot-instructions.md`, `.github/copilot-instructions.md`, `**/*.instructions.md` (+ shared `AGENTS.md`) |
+| GitHub Copilot | JSONC + Markdown | `~/.copilot/settings.json` (+ managed `config.json`, `mcp-config.json`) | `.github/copilot/settings.json` (+ `settings.local.json`) | `~/.copilot/copilot-instructions.md`, `.github/copilot-instructions.md`, `~/.copilot/instructions/**/*.instructions.md`, `.github/instructions/**/*.instructions.md` (+ shared `AGENTS.md`) |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool [agents.md](https://agents.md/) convention |
 
 ## Getting Started

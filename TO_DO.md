@@ -209,7 +209,6 @@ The durable sequence and architecture decisions are in the
 
 ## Follow-ups from Phase 5.5 (docs accuracy)
 
-- [ ] Add a README screenshot or GIF to `assets/screenshots/` (blocked on user — an agent cannot capture a running Flutter desktop GUI). README currently shows a placeholder badge.
 
 ## Deferred from PR #5 review (Qodo / SonarCloud)
 
