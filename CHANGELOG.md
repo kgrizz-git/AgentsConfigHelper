@@ -10,6 +10,9 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
+- **App icon.** The app now has its own icon (a prompt with settings toggles) on
+  macOS, Windows, and Linux, replacing the default Flutter icon. On Linux the
+  window sets it directly, so the taskbar shows it even when run from source.
 - **Config Overview Report.** Generates a tool-grouped tree of every discovered and known config, permissions, and rules file with clickable links, a sticky table of contents, and secret-bearing row warnings. Review it in the app and export as Markdown or self-contained HTML.
 - **Reveal config file.** Overview rows can now reveal an existing configuration
   file in Finder, Explorer, or the platform file manager without opening or
