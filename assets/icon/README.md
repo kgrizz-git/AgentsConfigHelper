@@ -7,7 +7,7 @@ files are rendered from it:
 | --- | --- | --- |
 | macOS | `macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_*.png` | 16–1024 px, artwork inset to 824 px with a soft shadow (macOS icon grid) |
 | Windows | `windows/runner/resources/app_icon.ico` | 16–256 px, full bleed |
-| Linux | `linux/runner/resources/app_icon.png` | 256 px; installed to the bundle's `data/` and set as the window icon so the taskbar shows it when run from source |
+| Linux | `linux/runner/resources/app_icon.png` | 256 px; installed to the bundle's `data/` and set as the window icon so X11 taskbars show it when run from source (Wayland needs an installed `.desktop` entry) |
 
 `app_icon_1024.png` is the full-bleed 1024 px render.
 
