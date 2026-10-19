@@ -1,6 +1,6 @@
 # AgentsConfigHelper
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-10-19
 
 [![CI](https://github.com/kgrizz-git/AgentsConfigHelper/actions/workflows/ci.yml/badge.svg)](https://github.com/kgrizz-git/AgentsConfigHelper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -17,9 +17,9 @@ A cross-platform desktop application for visualizing, editing, and managing conf
 
 **Project status:** Early development (0.2.0)
 
-![Screenshot placeholder — add a screenshot or GIF to `assets/screenshots/`](https://img.shields.io/badge/screenshot-coming_soon-lightgrey)
+![Config Overview listing discovered files grouped by tool](assets/screenshots/overview.png)
 
-<!-- Run `flutter run -d macos` and capture a screenshot or GIF, then replace this placeholder. -->
+<!-- Screenshots are taken from the Linux build against synthetic demo configs based on `test/fixtures/`, never real configs. -->
 
 ## Why
 
@@ -29,21 +29,36 @@ Different AI tools scatter their configuration across `~/.claude/`, `~/.codex/`,
 
 ### Available now
 
-- **Config Discovery** — Automatically detects common configuration paths on first launch (e.g. `~/.claude/settings.json`, `.cursorrules`). Users can also add custom paths manually.
+- **Config Discovery** — Automatically detects common configuration paths on first launch (e.g. `~/.claude/settings.json`, `.cursorrules`). Users can also add custom paths and project roots manually.
 - **Structured config editing (JSON/JSONC, YAML, TOML)** — JSON/JSONC and YAML use
-  in-place edits where supported, but can fall back to document reserialization;
-  TOML structured saves are normalized and can discard comments and layout. Review
-  Changes before saving any structured config.
+  in-place edits where supported. If a save cannot preserve the file in place, it
+  stops before writing anything and asks before rewriting the whole document.
+  Structured TOML editing is opt-in (read-only by default) because TOML saves
+  rebuild the file and discard comments. Review Changes before saving any
+  structured config.
 - **Instruction document editing (Markdown/text)** — Raw text editing for `CLAUDE.md`, `AGENTS.md`, `.mdc` rules, and similar instruction files. Content is never reformatted or rewritten.
-- **Edit Safety** — Local-only file operations with a strict backup-before-write policy. Diff preview before every write, plus timestamped backups with one-click restore.
-- **Config Overview Report** — Generates a grouped tree of every discovered and known config, permissions, and rules file with clickable `file:` links and a sticky table of contents. Preview it in the app and export as Markdown or self-contained HTML.
+- **Permission cards (read-only)** — Plain-language views of the stored permission
+  rules for Claude Code (`allow` / `ask` / `deny` and default mode), Codex (sandbox,
+  approval policy, and `[permissions.*]` profiles), Opencode (`permission` block),
+  and Cursor Agent (`permissions.json` allowlists), each linking to the official
+  docs. Cards never write; anything they do not recognize stays editable in the raw editor.
+- **Edit Safety** — Local-only file operations with a strict backup-before-write policy. Diff preview before every write, plus timestamped backups with one-click restore. Files that fail to parse open a recovery dialog (raw edit, view backups, skip) with line/column error positions, and are never auto-overwritten.
+- **Config Overview Report** — A grouped, action-first tree of every discovered and known config, permissions, and rules file, with secret warnings on the affected rows and a reveal action that shows the file in Finder, Explorer, or your file manager without opening it. Targets for other operating systems or unused tools are hidden by default (**Show all** reveals them). Export as Markdown or self-contained HTML.
 - **Cross-Platform** — Built in Flutter/Dart, targeting macOS, Windows, and Linux from a single codebase.
 
 ### Planned
 
 - **CLI Integration Service** — Interfaces with agent CLIs (e.g. `claude config`, `opencode set`) when file-based edits are not sufficient.
-- **Config Validation** — Strict format verification and schema validation before saving.
+- **Config Validation** — Schema validation before saving (parse errors are already reported with line and column).
 - **Templates & Syncing** — Save, load, and merge configuration templates across tools. See Phase 7 of the [master plan](plans/active/initial_master_plan.md).
+
+## Screenshots
+
+| Permission cards | Review Changes before every save |
+| --- | --- |
+| ![Read-only Claude Code permissions card showing allow, ask, and deny rules](assets/screenshots/permissions-claude-code.png) | ![Review Changes dialog with before and after content](assets/screenshots/review-changes.png) |
+| **Opt-in TOML editing** | **Timestamped backups** |
+| ![Codex config with the structured TOML opt-in banner and permissions card](assets/screenshots/permissions-codex-toml.png) | ![History and Backups dialog with a restore button](assets/screenshots/history-backups.png) |
 
 ## Supported tools
 
@@ -56,18 +71,21 @@ get raw text editing. A `—` means the tool has no location of that kind.
 | Tool | Formats | User config | Project config | Rules / instruction docs |
 | --- | --- | --- | --- | --- |
 | Claude Code | JSON + Markdown | `~/.claude/settings.json` | `.claude/settings.json` | `~/.claude/CLAUDE.md`, `CLAUDE.md`, `.claude/CLAUDE.md` |
-| Codex | TOML + Markdown | `~/.codex/config.toml` | `.codex/config.toml` | `~/.codex/AGENTS.md` (+ shared `AGENTS.md`) |
+| Codex | TOML + Starlark rules + Markdown | `~/.codex/config.toml` | `.codex/config.toml` | `~/.codex/rules/default.rules`, `.codex/rules/*.rules`, `~/.codex/AGENTS.md` (+ shared `AGENTS.md`) |
 | Opencode | JSONC + Markdown | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared `AGENTS.md`) |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | — |
-| Cursor | JSON + text/Markdown | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc`, `.cursorrules`, `CLAUDE.md` (+ shared `AGENTS.md`) |
+| Cursor IDE | JSON | `Cursor/User/settings.json` (per-OS app-support path) | `.cursor/settings.json` | — |
+| Cursor Agent | JSON + text/Markdown | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc`, `.cursorrules`, `CLAUDE.md` (+ shared `AGENTS.md`) |
 | Kiro | YAML + Markdown | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` (+ shared `AGENTS.md`) |
-| Devin | JSON + Markdown | `~/.config/devin/config.json` | `.devin/config.json` | `~/.config/devin/AGENTS.md` (+ shared `AGENTS.md`) |
-| Antigravity | JSON + Markdown | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md`, `.agents/rules/*.md` |
+| Devin | JSON + Markdown | `~/.config/devin/config.json` | `.devin/config.json` | `~/.config/devin/AGENTS.md`, `.devin/rules/*.md` (+ shared `AGENTS.md`) |
+| Antigravity IDE | JSON | `~/.gemini/antigravity-ide/settings.json` | — | — |
+| Antigravity App | JSON | `~/.gemini/antigravity-app/settings.json` | — | — |
+| Antigravity CLI | JSON + Markdown | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md`, `GEMINI.md`, `.agents/rules/*.md` |
 | Agy-ACP | JSON | `~/.openab/agy-acp/sessions.json` | — | — |
-| Kilo | JSONC + Markdown | `~/.config/kilo/kilo.jsonc` | `kilo.jsonc` / `.kilo/kilo.jsonc` | `~/.config/kilo/AGENTS.md`, `.kilo/agents/*.md` (+ shared `AGENTS.md`) |
-| Cline | JSON + Markdown | `~/.cline/data/settings/global-settings.json` | — | `.clinerules/`, `.clinerules`, `.cline/rules/*.md` (+ shared `AGENTS.md`) |
+| Kilo | JSONC/JSON + Markdown | `~/.config/kilo/kilo.jsonc` (or `kilo.json`) | `kilo.jsonc` / `.kilo/kilo.jsonc` (or `.json` variants) | `~/.config/kilo/AGENTS.md`, `~/.config/kilo/agents/*.md`, `.kilo/agents/*.md` (+ shared `AGENTS.md`) |
+| Cline | JSON + Markdown | `~/.cline/data/settings/global-settings.json` (+ MCP and provider settings) | — | `~/Documents/Cline/Rules/` (or `~/Cline/Rules/`), `~/.cline/rules/*.md`, `.clinerules/`, `.clinerules`, `.cline/rules/*.md` (+ shared `AGENTS.md`) |
 | LM Studio | JSON + YAML | `~/.lmstudio/settings.json` | — | hub `model.yaml` / presets (weights not discovered) |
-| GitHub Copilot | JSONC + Markdown | `~/.copilot/settings.json` (+ managed `config.json`, `mcp-config.json`) | `.github/copilot/settings.json` (+ `settings.local.json`) | `.github/copilot-instructions.md` (+ shared `AGENTS.md`) |
+| GitHub Copilot | JSONC + Markdown | `~/.copilot/settings.json` (+ managed `config.json`, `mcp-config.json`) | `.github/copilot/settings.json` (+ `settings.local.json`) | `~/.copilot/copilot-instructions.md`, `.github/copilot-instructions.md`, `~/.copilot/instructions/**/*.instructions.md`, `.github/instructions/**/*.instructions.md` (+ shared `AGENTS.md`) |
 | AGENTS.md (shared) | Markdown | `~/.agents/AGENTS.md` | `AGENTS.md` | Cross-tool [agents.md](https://agents.md/) convention |
 
 ## Getting Started
@@ -89,6 +107,19 @@ get raw text editing. A `—` means the tool has no location of that kind.
 flutter pub get
 flutter run -d macos  # or windows / linux
 ```
+
+### Linux taskbar icon (Wayland)
+
+On X11 the window sets its own icon. Wayland desktops (the default on recent
+GNOME and KDE) look the icon up from an installed `.desktop` entry instead, so
+after building, register the bundle once:
+
+```bash
+flutter build linux
+bash scripts/install_linux_desktop_entry.sh   # --uninstall to remove
+```
+
+It writes only to `~/.local/share` (no sudo). Rerun it if you move the checkout.
 
 ### macOS source-build scope
 
@@ -153,7 +184,12 @@ The CI pipeline enforces:
 - **80% minimum line coverage** (vendor code excluded)
 - `gitleaks` full-history secret scan
 - `semgrep` SAST scan (non-blocking, results in Security tab)
+- Docs integrity check (internal links + supported-tools catalog vs. the tool registry)
+- macOS entitlements check (App Sandbox must stay off for source builds)
 - **3-OS release build matrix** (macOS, Linux, Windows)
+
+A separate weekly workflow audits `pubspec.lock` with OSV-Scanner and checks pinned
+GitHub Actions for known vulnerabilities with zizmor.
 
 ### Pre-commit hooks
 
