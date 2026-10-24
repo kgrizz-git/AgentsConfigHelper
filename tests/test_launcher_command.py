@@ -35,16 +35,18 @@ class LauncherCommandTests(unittest.TestCase):
     def test_launcher_is_executable(self) -> None:
         if os.name == "posix":
             self.assertTrue(os.access(LAUNCHER, os.X_OK))
-        out = subprocess.run(
+        result = subprocess.run(
             ["git", "ls-files", "-s", "Launch_AgentsConfigHelper.command"],
             cwd=ROOT,
             capture_output=True,
             text=True,
             check=False,
-        ).stdout
-        if not out.strip():
-            self.skipTest("launcher is not tracked yet")
-        self.assertTrue(out.startswith("100755"), out)
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(
+            result.stdout.startswith("100755"),
+            result.stdout or result.stderr,
+        )
 
     def test_launcher_calls_icon_helper(self) -> None:
         self.assertIn("scripts/ensure_launcher_icon.sh", launcher_text())
