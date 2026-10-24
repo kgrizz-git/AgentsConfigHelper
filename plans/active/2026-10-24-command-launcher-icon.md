@@ -129,7 +129,7 @@ README.md                          — "macOS double-click launcher" section (mi
                                      "Linux taskbar icon" section)
 CHANGELOG.md                       — user-visible launcher + Dock icon entries
 CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
-tests/                             — static launcher checks (SpotiBye-style pytest)
+tests/                             — static launcher checks (stdlib unittest)
 .gitignore                         — failed-attempt sentinel entry
 ```
 
@@ -204,7 +204,7 @@ tests/                             — static launcher checks (SpotiBye-style py
       dev.sh invocation including `--help`/`--check`, matching "associate
       when dev.sh runs"; the call is one cheap `xattr` read when already
       associated.
-- [ ] Static pytest checks under `tests/` mirroring SpotiBye's launcher
+- [ ] Static unittest checks under `tests/` mirroring SpotiBye's launcher
       test: launcher exists at the repo root, LF-only, git mode `100755`,
       the resource-fork guard is ordered before `setIconForFileOptions`,
       no `SetFile` anywhere, and the helper script contains no `exit 1`.
@@ -284,7 +284,8 @@ tests/                             — static launcher checks (SpotiBye-style py
       space (e.g. a `tmp/` copy of the repo named with a space).
 - [ ] `git status` stays clean before and after association.
 - [ ] Dock icon outcome recorded per Phase 3 (fixed, or limitation documented).
-- [ ] Static launcher checks pass (`pytest tests/`).
+- [ ] Static launcher checks pass
+      (`python3 -m unittest tests.test_launcher_command -v`).
 - [ ] `pre-commit run --all-files` (shellcheck, gitleaks, markdownlint,
       absolute-path check) and `./dev.sh --check` pass.
 
