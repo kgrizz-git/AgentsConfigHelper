@@ -3,7 +3,7 @@
 Last reviewed: 2026-10-24
 Date: 2026-10-24
 Author: MiMo (agent), maintainer requirements
-Status: draft (pending external review)
+Status: approved (cursor/grok-4.7 review 2026-10-24: APPROVE-WITH-CHANGES; corrections applied; implementation not started)
 Linked issue/PR: n/a
 Branch: `feat/command-launcher-icon`
 
@@ -45,7 +45,8 @@ first run associates; every later run is a cheap read-only check.
 
 ### Icon association mechanism (empirically verified 2026-10-24)
 
-A scratch probe in `tmp/` on this machine established the exact mechanism:
+A scratch probe in `tmp/` on this machine established the exact mechanism
+(re-run after review with the corrected invocation; same result):
 
 - `osascript -l JavaScript` with the AppKit bridge sets a custom icon in one
   call: `$.NSWorkspace.sharedWorkspace.setIconForFileOptions(icon, path, 0)`
@@ -55,14 +56,28 @@ A scratch probe in `tmp/` on this machine established the exact mechanism:
   created for a single file (`Icon?` is already in `.gitignore` regardless).
 - Detection of "already associated" is exact: `xattr -px com.apple.FinderInfo
   <file>` returned byte 8 = `04`, the `kHasCustomIcon` (0x0400) flag bit in
-  the big-endian finder flags. Probe was cleaned up afterwards; `git status`
-  stayed clean because git does not track xattrs.
+  the big-endian finder flags (32-byte blob). Probe was cleaned up
+  afterwards; `git status` stayed clean because git does not track xattrs.
 - Consequence: association is **machine-local state**. A fresh clone (or a
   copy that drops xattrs) shows the generic script icon until the helper runs
   once — which the launcher, `setup.sh`, and `dev.sh` all do automatically.
 
-Paths passed to the JXA script must go through `osascript ... -- "$icon"
-"$target"` and `run(argv)` so spaces and quoting cannot break the call.
+Invocation details (review corrections; `man osascript` plus measured
+behavior on this machine):
+
+- Pass paths **after `-` (stdin script), with no `--`**: `osascript -l
+  JavaScript - "$icon" "$target"` plus `run(argv)`. `osascript` has no
+  end-of-options marker — a `--` argument lands in `argv` as `argv[0]`
+  (measured: `osascript -l JavaScript - -- a b` → `["--","a","b"]`), which
+  would make `argv[0]`-as-icon-path load a file named `--`.
+- `NSImage` loaded from the icon path must be checked before calling
+  `setIcon`: the API treats a nil image as *remove the custom icon*
+  (`NSWorkspace.h`), so a failed icon load must not reach the call.
+- A missing `com.apple.FinderInfo` attribute makes `xattr -px` exit 1
+  (measured). The read must be explicitly non-failing; see Phase 1.
+- Known limitation: if the flag is set but the resource fork is gone, the
+  bit check treats the file as associated and skips repair. Reset with
+  `xattr -d com.apple.FinderInfo` to force re-association.
 
 ### Alternatives considered
 
@@ -94,34 +109,61 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
 ### Phase 1: shared icon-association helper
 
 - [ ] `scripts/ensure_launcher_icon.sh`:
-      resolve the repo root from `BASH_SOURCE`; exit 0 silently when not on
-      macOS or when `Launch_AgentsConfigHelper.command` is absent; when
-      `com.apple.FinderInfo` byte 8 already has the `0x04` bit, exit 0
-      silently; otherwise pick the icon source (built `AppIcon.icns` from the
-      Release bundle, then Debug, then the checked-in
-      `macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png`),
-      set it via the JXA `NSWorkspace` call with `run(argv)` path passing,
-      then re-read the flag and report success or a non-fatal warning.
-      `set -euo pipefail`, shellcheck-clean (pre-commit runs shellcheck).
-- [ ] Validate the helper manually: run twice against a scratch target (first
-      run associates, second is a no-op), and confirm detection survives an
-      `xattr -d com.apple.FinderInfo` reset.
+      resolve the repo root from `BASH_SOURCE` using the `cd --` / `pwd -P`
+      form used by `dev.sh`; accept an optional target path argument used
+      only by validation (default: repo-root
+      `Launch_AgentsConfigHelper.command`); exit 0 silently when not on
+      macOS or when the target is absent. Association check must be
+      non-failing under `set -euo pipefail`: read `com.apple.FinderInfo` with
+      `xattr -px ... || true`; a missing attribute or a blob shorter than 9
+      bytes counts as not associated; when byte 8 already has the `0x04` bit,
+      exit 0 silently. Otherwise pick the icon source in order —
+      `build/macos/Build/Products/Release/agents_config_helper.app/Contents/Resources/AppIcon.icns`,
+      the Debug equivalent, then the checked-in
+      `macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png` —
+      and set it via the JXA `NSWorkspace` call from the stdin script with
+      `run(argv)` path passing and the nil-image guard above; then re-read
+      the flag and report success or a warning. **The helper must exit 0 in
+      every outcome** (warning text on failure) so callers under `set -e`
+      can never be aborted and icon failure can never block the app launch.
+      Shell style matches `scripts/install_linux_desktop_entry.sh` (header
+      comment, `set -euo pipefail`, `uname` guard); shellcheck-clean
+      (pre-commit runs shellcheck over files `identify` tags as shell).
+- [ ] Validate the helper with its target override: run twice against a
+      scratch file in `tmp/` (first run associates, second is a no-op), then
+      `xattr -d com.apple.FinderInfo` and confirm the next run re-associates.
 
 ### Phase 2: launcher and wiring
 
-- [ ] `Launch_AgentsConfigHelper.command` (committed executable):
-      `#!/usr/bin/env bash`, `set -euo pipefail`; resolve repo root from
-      `BASH_SOURCE`; refuse non-macOS; run the Phase 1 helper; locate the
-      built app (Release first, then Debug); when neither exists, require
-      `flutter` on PATH, run `flutter build macos --release`, then open the
-      Release bundle with `open`; print what was opened. On any failure print
-      the reason and pause with "Press Return to close" so double-click
-      errors are readable before Terminal exits.
+- [ ] `Launch_AgentsConfigHelper.command` (committed with executable bit —
+      `git ls-files -s` must show `100755`, which is also what makes
+      `identify` tag it as shell so shellcheck covers it, and what makes
+      Finder run it at all): `#!/usr/bin/env bash`, `set -euo pipefail`;
+      resolve the repo root from `BASH_SOURCE` (`cd --` / `pwd -P`); refuse
+      non-macOS; run the Phase 1 helper defensively (helper exits 0 by
+      design, but a helper failure must still be downgraded to a warning so
+      it can never block the launch). Locate the built app by its real
+      product name `agents_config_helper.app` under
+      `build/macos/Build/Products/Release/` first, then `Debug/` (the same
+      paths `scripts/run_macos_staging_smoke.sh` uses). When neither exists,
+      require `flutter` on PATH and run `flutter build macos --release` with
+      the repo root as cwd, then `open` the Release bundle. Print what was
+      opened. Because `set -e` exits before a trailing pause, install an
+      `ERR`/`EXIT` trap (or explicit error returns) so any failure —
+      missing `flutter`, failed build, failed `open` — still reaches
+      "Press Return to close" with the reason printed. The `flutter` error
+      text should note the double-click PATH caveat: a Finder-launched
+      `.command` sees the login PATH (this machine's
+      `/usr/libexec/path_helper` already exposes Homebrew `flutter`), so an
+      SDK added only in `~/.zshrc` will not be found.
 - [ ] `scripts/setup.sh`: add a numbered, non-fatal macOS step invoking
       `scripts/ensure_launcher_icon.sh` (setup.sh may run on Linux; the
       helper no-ops there).
 - [ ] `dev.sh`: invoke the helper once at startup (macOS-only, non-fatal,
-      silent when already associated).
+      silent when already associated). This intentionally runs for every
+      dev.sh invocation including `--help`/`--check`, matching "associate
+      when dev.sh runs"; the call is one cheap `xattr` read when already
+      associated.
 
 ### Phase 3: Dock icon when run from source (spike-gated, "if possible")
 
@@ -144,10 +186,19 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
 ### Phase 4: docs, changelog, validation
 
 - [ ] README "macOS double-click launcher" section next to the Linux taskbar
-      section: double-click usage, build-if-missing behavior, and that icon
-      association is machine-local and repaired automatically.
-- [ ] `CHANGELOG.md`: user-visible launcher and Dock icon entries;
-      `CHANGELOG.dev.md`: helper wiring in `setup.sh`/`dev.sh`.
+      section: double-click usage, build-if-missing behavior, that icon
+      association is machine-local and repaired automatically on the next
+      run of the launcher/`setup.sh`/`dev.sh` (including after a checkout
+      that rewrites the file and drops xattrs), the Finder icon-cache
+      fallback (`killall Finder` or re-login if the icon looks stale), that
+      Release is preferred even when a newer Debug build exists, and the
+      double-click PATH caveat for `flutter`.
+- [ ] Changelog split per `policies/changelog-conventions.md` (decision, not
+      an open question): `CHANGELOG.md` gets the user-visible launcher entry
+      and — only if Phase 3 actually ships the fix — the Dock icon entry
+      (otherwise record the limitation instead); `CHANGELOG.dev.md` gets the
+      `setup.sh`/`dev.sh` helper wiring. Entries go under `Unreleased`;
+      leave `VERSION` at `0.2.0` for the release step to bump.
 - [ ] `pre-commit run --all-files` and `./dev.sh --check` pass.
 - [ ] Manual macOS double-click checklist under Verification completed.
 
@@ -155,13 +206,27 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
 
 - [ ] Double-clicking `Launch_AgentsConfigHelper.command` in Finder opens the
       built app (Release preferred, Debug fallback).
-- [ ] With no build present, the launcher builds Release then opens it.
+- [ ] With no build present, a Finder double-click builds Release then opens
+      it (verify with `flutter` visible under the login PATH, and confirm the
+      failure path prints the PATH caveat when `flutter` is unreachable).
+- [ ] `git ls-files -s Launch_AgentsConfigHelper.command` shows `100755`
+      (executable; required for double-click and for shellcheck coverage).
 - [ ] Finder shows the app icon on the `.command` file after the first
       association; `xattr -px com.apple.FinderInfo` shows byte 8 with the
-      `0x04` bit.
+      `0x04` bit (the xattr bit is the pass signal; Finder may lag — see the
+      icon-cache fallback in README).
 - [ ] Second runs of the launcher, `setup.sh`, and `dev.sh` are silent
       no-ops; after `xattr -d com.apple.FinderInfo`, the next `dev.sh` run
-      re-associates.
+      re-associates; a short/missing `FinderInfo` blob counts as not
+      associated.
+- [ ] Helper failure path is non-fatal end to end: with the icon source
+      removed, the helper warns and exits 0 and the launcher still reaches
+      `open`.
+- [ ] The failure pause is reachable under `set -e` (e.g. temporarily hide
+      the bundles and `flutter`; "Press Return to close" appears with the
+      reason).
+- [ ] Repeat the launcher and helper once from a checkout path containing a
+      space (e.g. a `tmp/` copy of the repo named with a space).
 - [ ] `git status` stays clean before and after association.
 - [ ] Dock icon outcome recorded per Phase 3 (fixed, or limitation documented).
 - [ ] `pre-commit run --all-files` (shellcheck, gitleaks, markdownlint,
@@ -171,19 +236,17 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
 
 - [ ] Phase 3 spike outcome: confirm whether a direct-exec source run shows a
       generic Dock tile before choosing the `applicationIconImage` fix.
-- [ ] Changelog split confirmation: launcher + Dock icon in `CHANGELOG.md`,
-      helper wiring in `CHANGELOG.dev.md`.
 
 ## Risks
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| osascript/AppKit bridge unavailable or TCC-restricted on some machines | low | med | Helper is non-fatal; the launcher still opens the app without the icon |
-| Finder shows a stale icon cache after association | low | low | Note `killall Finder`/re-login fallback in README |
+| osascript/AppKit bridge unavailable or TCC-restricted on some machines | low | med | Helper exits 0 after a warning by design; the launcher still opens the app without the icon |
+| Finder shows a stale icon cache after association | low | low | Xattr bit is the pass signal; `killall Finder`/re-login fallback documented in README |
 | Direct-exec Dock tile is unfixable on some macOS versions | med | low | Phase 3 is "if possible"; document the residual limitation |
-| Path quoting breaks JXA with spaces in the checkout path | med | med | Pass paths via `run(argv)`; test once from a spaced path |
-| `flutter` missing when no build exists | low | low | Clear error plus pause in the launcher |
-| Detection bit parsing drifts across macOS versions | low | med | Parsing is a plain byte read of a documented Finder flag; re-probe on failure and fall back to unconditional association |
+| Path quoting breaks JXA with spaces in the checkout path | med | med | Paths pass via `run(argv)` (no `--`); tested once from a spaced path |
+| `flutter` unreachable from a double-clicked login PATH | med | low | Clear error plus reachable pause; README documents the PATH caveat |
+| Detection bit parsing drifts across macOS versions | low | med | Parsing is a plain byte read of a documented Finder flag; short/missing blob counts as not associated; re-probe on failure |
 
 ## Completion steps (when status = complete)
 
