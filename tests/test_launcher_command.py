@@ -49,6 +49,11 @@ class LauncherCommandTests(unittest.TestCase):
     def test_launcher_calls_icon_helper(self) -> None:
         self.assertIn("scripts/ensure_launcher_icon.sh", launcher_text())
 
+    def test_dev_sh_resolves_root_without_cdpath_noise(self) -> None:
+        text = (ROOT / "dev.sh").read_text(encoding="utf-8")
+        root_cd = "script_dir=\"$(CDPATH='' cd --"
+        self.assertLess(text.index(root_cd), text.index("ensure_launcher_icon"))
+
     def test_launcher_opens_the_product_bundle(self) -> None:
         self.assertIn("agents_config_helper.app", launcher_text())
 
