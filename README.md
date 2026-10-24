@@ -134,8 +134,9 @@ Debug) and builds Release first when neither exists.
 
 - Icon branding is per-machine and self-repairing: the launcher,
   `scripts/setup.sh`, and `dev.sh` re-associate whenever the icon is missing
-  (for example after a fresh clone). If branding fails once, a sentinel file
-  suppresses later attempts — delete
+  (for example after a fresh clone, or a checkout that rewrites the file and
+  drops xattrs). If branding fails once, a sentinel file suppresses later
+  attempts — delete
   `.agents-config-helper-launcher-icon-failed` to retry. If Finder shows a
   stale icon, run `killall Finder` or log out and back in.
 - Release is preferred even when a newer Debug build exists.
