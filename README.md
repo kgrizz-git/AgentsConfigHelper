@@ -125,6 +125,24 @@ bash scripts/install_linux_desktop_entry.sh   # --uninstall to remove
 
 It writes only to `~/.local/share` (no sudo). Rerun it if you move the checkout.
 
+### macOS double-click launcher
+
+On macOS you can double-click `Launch_AgentsConfigHelper.command` at the repo
+root instead of using a terminal — the first run brands the file with the app
+icon in Finder. It opens the built app (Release preferred, falling back to
+Debug) and builds Release first when neither exists.
+
+- Icon branding is per-machine and self-repairing: the launcher,
+  `scripts/setup.sh`, and `dev.sh` re-associate whenever the icon is missing
+  (for example after a fresh clone). If branding fails once, a sentinel file
+  suppresses later attempts — delete
+  `.agents-config-helper-launcher-icon-failed` to retry. If Finder shows a
+  stale icon, run `killall Finder` or log out and back in.
+- Release is preferred even when a newer Debug build exists.
+- The build fallback needs `flutter` on the login PATH: a Finder-launched
+  script sees only what `/usr/libexec/path_helper` assembles, so an SDK added
+  only in `~/.zshrc` will not be found.
+
 ### macOS source-build scope
 
 macOS is currently supported through local source builds only. To discover and
