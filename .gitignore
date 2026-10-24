@@ -3,6 +3,9 @@ scratch/
 .context/
 backups/
 
+# Failed macOS launcher-icon attempt. Delete this file to retry.
+.agents-config-helper-launcher-icon-failed
+
 # ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

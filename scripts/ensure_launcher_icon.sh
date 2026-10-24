@@ -5,15 +5,21 @@
 #
 # Gives Launch_AgentsConfigHelper.command the app icon in Finder by writing a
 # custom icon (NSWorkspace via JXA). Idempotent and non-fatal: exits 0 when
-# already associated, when not on macOS, when the target is absent, or when a
-# previous attempt failed (sentinel file .agents-config-helper-launcher-icon-
-# failed; delete it to retry). The optional target argument exists for
-# validation only; the default is the repo-root launcher.
+# already associated, when not on macOS, when the target is absent, when a
+# previous attempt failed (sentinel .agents-config-helper-launcher-icon-failed;
+# delete it to retry), and on unexpected errors. The optional target argument
+# exists for validation only; the default is the repo-root launcher.
 
 set -euo pipefail
 
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-repo_root="$(cd -- "$script_dir/.." && pwd -P)"
+# Callers run under set -e. Status stays 0 even when set -u or a command
+# outside main aborts the script, so icon setup can never block a launch.
+trap 'exit 0' EXIT
+
+# A set CDPATH makes cd print the resolved directory, which the command
+# substitution would capture and then fail the following cd under set -e.
+script_dir="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)" || exit 0
+repo_root="$(CDPATH='' cd -- "$script_dir/.." && pwd -P)" || exit 0
 
 SENTINEL_NAME=".agents-config-helper-launcher-icon-failed"
 

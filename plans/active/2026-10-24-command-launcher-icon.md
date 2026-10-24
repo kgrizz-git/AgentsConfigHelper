@@ -139,8 +139,10 @@ tests/                             — static launcher checks (SpotiBye-style py
 
 - [ ] `scripts/ensure_launcher_icon.sh`:
       resolve the repo root from `BASH_SOURCE` using the `cd --` / `pwd -P`
-      form used by `dev.sh`; accept an optional target path argument used
-      only by validation (default: repo-root
+      form used by `dev.sh`, with `CDPATH` cleared on that `cd` (a set
+      `CDPATH` makes `cd` print the path, which corrupts the captured root
+      and aborts the helper under `set -e`); accept an optional target path
+      argument used only by validation (default: repo-root
       `Launch_AgentsConfigHelper.command`); exit 0 silently when not on
       macOS, when the target is absent, or when the gitignored sentinel
       `.agents-config-helper-launcher-icon-failed` is present (a previous
@@ -159,8 +161,10 @@ tests/                             — static launcher checks (SpotiBye-style py
       report success or a warning. On failure, write the gitignored
       sentinel `.agents-config-helper-launcher-icon-failed` (add the name to
       `.gitignore` with a one-line comment) so later runs skip silently.
-      **The helper must exit 0 in every outcome** (warning text on failure)
-      so callers under `set -e` can never be aborted and icon failure can
+      **The helper must exit 0 in every outcome** (warning text on failure),
+      including unexpected errors: an `EXIT` trap forces status 0 when
+      `set -e` or `set -u` aborts the script before `main` returns, so
+      callers under `set -e` can never be aborted and icon failure can
       never block the app launch.
       Shell style matches `scripts/install_linux_desktop_entry.sh` (header
       comment, `set -euo pipefail`, `uname` guard); shellcheck-clean
