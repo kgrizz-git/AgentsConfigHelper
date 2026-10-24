@@ -211,30 +211,48 @@ tests/                             — static launcher checks (stdlib unittest)
 
 ### Phase 3: Dock icon when run from source (spike-gated, "if possible")
 
-- [x] Spike (2026-10-24). Programmatic half done: direct-exec of the Debug
-      bundle binary (exactly what the Flutter tool does per
-      `desktop_device.dart`) shows `lsappinfo` resolving
-      `LSBundlePath` to the `.app` with `CFBundleIdentifier`
-      `com.example.agentsConfigHelper` registered. The suspected cause —
-      direct exec "bypassing LaunchServices registration" — is **refuted**:
-      the bundle and its `AppIcon` metadata are recognized, so the tile
-      should resolve the app icon. The realistic residual failure mode is
-      LaunchServices icon-cache staleness across `flutter run` rebuilds.
-      Visual half (humans-only): confirm the tile during a debug
-      `flutter run`, a `--smoke` run, and a Release `open` — see
-      Verification.
-- [x] Defensive fix applied (no-op when the tile is already correct, and
-      the stale/generic-cache case is exactly what it repairs):
-      `NSApp.applicationIconImage` set in
-      `AppDelegate.applicationDidFinishLaunching` from `NSImage(named:
-      "AppIcon")`, falling back to `AppIcon.icns` from bundle resources.
-      Compiles (`flutter build macos --debug`); the app runs clean.
+- [x] Spike (2026-10-24). Programmatic half: direct-exec of the Debug
+      bundle binary (what `desktop_device.dart` does — `Process.start` on
+      the bundle executable) shows `lsappinfo` resolving `LSBundlePath` to
+      the `.app` with `CFBundleIdentifier` `com.example.agentsConfigHelper`
+      registered. That **refutes** "direct exec bypasses LaunchServices
+      registration." `lsappinfo` did not show icon pixels, so a generic or
+      stale tile is still possible. Visual half (humans-only) is open —
+      see Verification.
+- [x] Bundle inspection (built Debug and Release products; app not
+      launched). Both `Info.plist` files set `CFBundleIconFile` and
+      `CFBundleIconName` to `AppIcon`. Debug `Assets.car` lists AppIcon
+      renditions from 16 through 1024. `AppIcon.icns` is actool's partial
+      file for this macOS 12 deployment target (16pt and 128pt only;
+      `NSImage(contentsOf:)` stops at 256px). `URLForImageResource("AppIcon")`
+      is that icns. `Bundle.image(forResource: "AppIcon")` on the same
+      bundles returns representations through 1024, while point `size`
+      stays 128. `LSBundlePath` is reasonable evidence the Dock looks up
+      this bundle's declared icon: on macOS 10.13+ `CFBundleIconName`
+      (the catalog) takes precedence over `CFBundleIconFile`. It is not
+      evidence for assigning the partial icns. Residual failure mode:
+      LaunchServices icon-cache staleness. Dock appearance is not
+      confirmed.
+- [x] Defensive fix, adjusted after that inspection. In
+      `applicationDidFinishLaunching`, after test-root channel registration
+      and before `super` (main thread; `FlutterAppDelegate` does not set
+      the icon, and `MainFlutterWindow` is the window, not the Dock tile):
+      set `NSApp.applicationIconImage` only from
+      `Bundle.main.image(forResource: "AppIcon")` when the image `isValid`
+      and has a representation at least 512px on a side. Otherwise assign
+      nothing — a nil or partial image must not replace the catalog icon.
+      The `AppIcon.icns` fallback is gone. The block does not read
+      arguments or perform test-root I/O; Debug and Release share it.
+      Compiles (`flutter build macos --debug`). The Dock tile is not
+      visually confirmed, and this does not prove a stale cache was
+      repaired.
 - [ ] Verify the tile visually after the fix for a debug `flutter run`, a
       `--smoke` run, and a Release `open` (human eye; Dock is not
       inspectable programmatically on this machine).
-- [x] No residual limitation claimed: the icon source is the same
-      `AppIcon` the bundle declares, so the fix cannot make the tile worse
-      than stock LaunchServices behavior.
+- [x] Residual limitation recorded: icon-cache staleness can still show
+      the wrong tile, and the running Dock has not been checked. If no
+      full-size rendition loads, the code leaves Launch Services alone
+      rather than painting the partial icns.
 
 ### Phase 4: docs, changelog, validation
 
@@ -298,10 +316,11 @@ tests/                             — static launcher checks (stdlib unittest)
 
 ## Open questions
 
-- [ ] Phase 3 visual confirmation (humans-only): the programmatic spike
-      refuted the generic-tile hypothesis for direct exec; confirm with an
-      eye on the Dock that a debug `flutter run` shows the app icon (and
-      after a rebuild, that the stale-cache case is repaired).
+- [ ] Phase 3 visual confirmation (humans-only): registration bypass is
+      refuted, and the built bundle declares a full catalog icon. Confirm
+      by eye that a debug `flutter run`, a `--smoke` run, and a Release
+      `open` show the app icon, including after a rebuild (stale-cache
+      case). Not done.
 
 ## Risks
 
@@ -309,7 +328,7 @@ tests/                             — static launcher checks (stdlib unittest)
 |---|---|---|---|
 | osascript/AppKit bridge unavailable or TCC-restricted on some machines | low | med | Helper exits 0 after a warning by design; the launcher still opens the app without the icon |
 | Finder shows a stale icon cache after association | low | low | Xattr bit is the pass signal; `killall Finder`/re-login fallback documented in README |
-| Direct-exec Dock tile is unfixable on some macOS versions | med | low | Phase 3 is "if possible"; document the residual limitation |
+| Stale LaunchServices icon cache, or a partial `AppIcon.icns` override | med | low | Assign `applicationIconImage` only when `image(forResource:)` has a ≥512px rendition; otherwise leave the `CFBundleIconName` icon alone. Visual check stays humans-only |
 | Path quoting breaks JXA with spaces in the checkout path | med | med | Paths pass via `run(argv)` (no `--`); tested once from a spaced path |
 | `flutter` unreachable from a double-clicked login PATH | med | low | Clear error plus reachable pause; README documents the PATH caveat |
 | Detection bit parsing drifts across macOS versions | low | med | Parsing is a plain byte read of a documented Finder flag; short/missing blob counts as not associated; re-probe on failure |
