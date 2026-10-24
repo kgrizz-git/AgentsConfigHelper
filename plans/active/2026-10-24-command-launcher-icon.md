@@ -278,8 +278,11 @@ tests/                             — static launcher checks (stdlib unittest)
 
 ## Verification
 
-- [x] Double-clicking `Launch_AgentsConfigHelper.command` in Finder opens the
+- [ ] Double-clicking `Launch_AgentsConfigHelper.command` in Finder opens the
       built app (Release preferred, Debug fallback).
+      Not verified in Finder. A stand-in `open` that does not launch the app
+      shows the script selects the Release bundle when both Release and Debug
+      exist.
 - [ ] With no build present, a Finder double-click builds Release then opens
       it (verify with `flutter` visible under the login PATH, and confirm the
       failure path prints the PATH caveat when `flutter` is unreachable).
@@ -289,19 +292,28 @@ tests/                             — static launcher checks (stdlib unittest)
       association; `xattr -p com.apple.ResourceFork` succeeds and
       `xattr -px com.apple.FinderInfo` shows byte 8 with the `0x04` bit
       (both xattr signals are the pass criteria; Finder may lag — see the
-      icon-cache fallback in README).
-- [x] Second runs of the launcher, `setup.sh`, and `dev.sh` are silent
-      no-ops; after `xattr -d com.apple.ResourceFork` or
-      `xattr -d com.apple.FinderInfo`, the next `dev.sh` run re-associates;
-      partial states (flag without payload or payload without flag) count
-      as not associated; a short/missing `FinderInfo` blob counts as not
-      associated.
+      icon-cache fallback in README). Re-checked 2026-10-24: both xattrs
+      were present on the repo-root launcher (byte 8 was `04`). The Finder
+      window itself was not inspected.
+- [x] When the icon is already associated, the helper prints nothing and does
+      not rewrite it. A second `dev.sh` run adds no icon output. `setup.sh`
+      still prints its step line, like its other steps, and the helper does
+      not re-apply the icon. The launcher still calls `open` (observed with a
+      stand-in that does not launch the app) and does not repeat the icon
+      message. After `xattr -d com.apple.ResourceFork` or
+      `xattr -d com.apple.FinderInfo`, the next `dev.sh` run re-associates.
+      Partial states (flag without payload, or payload without the flag)
+      count as not associated. A missing `FinderInfo` attribute counts as
+      not associated. The helper also treats a blob shorter than 9 bytes as
+      not associated; this macOS rejects a short `com.apple.FinderInfo` write
+      (`xattr` returns ERANGE), so that branch was reviewed in the script
+      rather than executed.
 - [x] A forced icon failure (e.g. temporarily rename the icon sources)
       prints one warning, writes the sentinel, and later runs skip silently;
       deleting `.agents-config-helper-launcher-icon-failed` retries.
 - [x] Helper failure path is non-fatal end to end: with the icon source
       removed, the helper warns and exits 0 and the launcher still reaches
-      `open`.
+      `open` (observed with a stand-in `open` that does not launch the app).
 - [x] The failure pause is reachable under `set -e` (e.g. temporarily hide
       the bundles and `flutter`; "Press Return to close" appears with the
       reason).
