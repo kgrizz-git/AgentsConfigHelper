@@ -168,8 +168,8 @@ The durable sequence and architecture decisions are in the
       repo-root `Launch_AgentsConfigHelper.command` opens the built macOS app on double-click;
       first-run icon association shared by the launcher, `scripts/setup.sh`, and `dev.sh`;
       Dock icon for source runs when possible. Plan approved 2026-10-24
-      (cursor/grok-4.7 review corrections applied); implementation pending on
-      `feat/command-launcher-icon`.
+      (cursor/grok-4.7 review corrections applied); Phases 1-4 implemented on
+      `feat/command-launcher-icon`, human visual checks open.
 
 ### Agent-config discovery follow-through
 

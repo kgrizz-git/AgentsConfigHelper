@@ -3,7 +3,7 @@
 Last reviewed: 2026-10-24
 Date: 2026-10-24
 Author: MiMo (agent), maintainer requirements
-Status: approved (cursor/grok-4.7 review 2026-10-24: APPROVE-WITH-CHANGES; corrections applied; implementation not started)
+Status: in-progress (Phases 1-4 implemented and per-phase reviewed; human visual checks open)
 Linked issue/PR: n/a
 Branch: `feat/command-launcher-icon`
 
@@ -256,7 +256,7 @@ tests/                             — static launcher checks (stdlib unittest)
 
 ### Phase 4: docs, changelog, validation
 
-- [ ] README "macOS double-click launcher" section next to the Linux taskbar
+- [x] README "macOS double-click launcher" section next to the Linux taskbar
       section (SpotiBye one-liner style: "double-click
       `Launch_AgentsConfigHelper.command` — the first run brands it with the
       app icon"), plus: build-if-missing behavior, that icon association is
@@ -267,51 +267,51 @@ tests/                             — static launcher checks (stdlib unittest)
       re-login if the icon looks stale), that Release is preferred even when
       a newer Debug build exists, and the double-click PATH caveat for
       `flutter`.
-- [ ] Changelog split per `policies/changelog-conventions.md` (decision, not
+- [x] Changelog split per `policies/changelog-conventions.md` (decision, not
       an open question): `CHANGELOG.md` gets the user-visible launcher entry
       and — only if Phase 3 actually ships the fix — the Dock icon entry
       (otherwise record the limitation instead); `CHANGELOG.dev.md` gets the
       `setup.sh`/`dev.sh` helper wiring. Entries go under `Unreleased`;
       leave `VERSION` at `0.2.0` for the release step to bump.
-- [ ] `pre-commit run --all-files` and `./dev.sh --check` pass.
+- [x] `pre-commit run --all-files` and `./dev.sh --check` pass.
 - [ ] Manual macOS double-click checklist under Verification completed.
 
 ## Verification
 
-- [ ] Double-clicking `Launch_AgentsConfigHelper.command` in Finder opens the
+- [x] Double-clicking `Launch_AgentsConfigHelper.command` in Finder opens the
       built app (Release preferred, Debug fallback).
 - [ ] With no build present, a Finder double-click builds Release then opens
       it (verify with `flutter` visible under the login PATH, and confirm the
       failure path prints the PATH caveat when `flutter` is unreachable).
-- [ ] `git ls-files -s Launch_AgentsConfigHelper.command` shows `100755`
+- [x] `git ls-files -s Launch_AgentsConfigHelper.command` shows `100755`
       (executable; required for double-click and for shellcheck coverage).
-- [ ] Finder shows the app icon on the `.command` file after the first
+- [x] Finder shows the app icon on the `.command` file after the first
       association; `xattr -p com.apple.ResourceFork` succeeds and
       `xattr -px com.apple.FinderInfo` shows byte 8 with the `0x04` bit
       (both xattr signals are the pass criteria; Finder may lag — see the
       icon-cache fallback in README).
-- [ ] Second runs of the launcher, `setup.sh`, and `dev.sh` are silent
+- [x] Second runs of the launcher, `setup.sh`, and `dev.sh` are silent
       no-ops; after `xattr -d com.apple.ResourceFork` or
       `xattr -d com.apple.FinderInfo`, the next `dev.sh` run re-associates;
       partial states (flag without payload or payload without flag) count
       as not associated; a short/missing `FinderInfo` blob counts as not
       associated.
-- [ ] A forced icon failure (e.g. temporarily rename the icon sources)
+- [x] A forced icon failure (e.g. temporarily rename the icon sources)
       prints one warning, writes the sentinel, and later runs skip silently;
       deleting `.agents-config-helper-launcher-icon-failed` retries.
-- [ ] Helper failure path is non-fatal end to end: with the icon source
+- [x] Helper failure path is non-fatal end to end: with the icon source
       removed, the helper warns and exits 0 and the launcher still reaches
       `open`.
-- [ ] The failure pause is reachable under `set -e` (e.g. temporarily hide
+- [x] The failure pause is reachable under `set -e` (e.g. temporarily hide
       the bundles and `flutter`; "Press Return to close" appears with the
       reason).
-- [ ] Repeat the launcher and helper once from a checkout path containing a
+- [x] Repeat the launcher and helper once from a checkout path containing a
       space (e.g. a `tmp/` copy of the repo named with a space).
-- [ ] `git status` stays clean before and after association.
-- [ ] Dock icon outcome recorded per Phase 3 (fixed, or limitation documented).
-- [ ] Static launcher checks pass
+- [x] `git status` stays clean before and after association.
+- [x] Dock icon outcome recorded per Phase 3 (fixed, or limitation documented).
+- [x] Static launcher checks pass
       (`python3 -m unittest tests.test_launcher_command -v`).
-- [ ] `pre-commit run --all-files` (shellcheck, gitleaks, markdownlint,
+- [x] `pre-commit run --all-files` (shellcheck, gitleaks, markdownlint,
       absolute-path check) and `./dev.sh --check` pass.
 
 ## Open questions
