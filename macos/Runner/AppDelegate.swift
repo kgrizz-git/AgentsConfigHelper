@@ -8,6 +8,15 @@ class AppDelegate: FlutterAppDelegate {
     if let controller = mainFlutterWindow?.contentViewController as? FlutterViewController {
       TestRootFileChannel.register(with: controller)
     }
+    // A source run execs the bundle binary directly (flutter run), which can
+    // leave the Dock tile on a stale or generic LaunchServices icon. Assert
+    // the bundled one; a no-op when the tile is already correct.
+    if let icon = NSImage(named: "AppIcon") {
+      NSApp.applicationIconImage = icon
+    } else if let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+              let icon = NSImage(contentsOf: iconURL) {
+      NSApp.applicationIconImage = icon
+    }
     super.applicationDidFinishLaunching(notification)
   }
 

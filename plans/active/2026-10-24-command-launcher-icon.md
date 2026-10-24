@@ -175,7 +175,7 @@ tests/                             — static launcher checks (stdlib unittest)
 
 ### Phase 2: launcher and wiring
 
-- [ ] `Launch_AgentsConfigHelper.command` (committed with executable bit —
+- [x] `Launch_AgentsConfigHelper.command` (committed with executable bit —
       `git ls-files -s` must show `100755`, which is also what makes
       `identify` tag it as shell so shellcheck covers it, and what makes
       Finder run it at all): `#!/usr/bin/env bash`, `set -euo pipefail`;
@@ -196,38 +196,45 @@ tests/                             — static launcher checks (stdlib unittest)
       `.command` sees the login PATH (this machine's
       `/usr/libexec/path_helper` already exposes Homebrew `flutter`), so an
       SDK added only in `~/.zshrc` will not be found.
-- [ ] `scripts/setup.sh`: add a numbered, non-fatal macOS step invoking
+- [x] `scripts/setup.sh`: add a numbered, non-fatal macOS step invoking
       `scripts/ensure_launcher_icon.sh` (setup.sh may run on Linux; the
       helper no-ops there).
-- [ ] `dev.sh`: invoke the helper once at startup (macOS-only, non-fatal,
+- [x] `dev.sh`: invoke the helper once at startup (macOS-only, non-fatal,
       silent when already associated). This intentionally runs for every
       dev.sh invocation including `--help`/`--check`, matching "associate
       when dev.sh runs"; the call is one cheap `xattr` read when already
       associated.
-- [ ] Static unittest checks under `tests/` mirroring SpotiBye's launcher
+- [x] Static unittest checks under `tests/` mirroring SpotiBye's launcher
       test: launcher exists at the repo root, LF-only, git mode `100755`,
       the resource-fork guard is ordered before `setIconForFileOptions`,
       no `SetFile` anywhere, and the helper script contains no `exit 1`.
 
 ### Phase 3: Dock icon when run from source (spike-gated, "if possible")
 
-- [ ] Spike first and record findings under "Open questions" or here:
-      run `./dev.sh --run` and observe the Dock tile (app icon vs generic),
-      then compare with `open` on the Debug bundle and with the `--smoke`
-      launch. The Flutter tool execs the bundle's binary directly, bypassing
-      LaunchServices registration, which is the suspected cause of a generic
-      tile. SpotiBye's precedent: a source run with no bundle metadata
-      definitely needs the icon set explicitly at runtime; our binary does
-      live inside a proper bundle, so the spike decides whether we do too.
-- [ ] If the tile is generic or missing: set
-      `NSApplication.shared.applicationIconImage` from the bundle's `AppIcon`
-      (`NSImage(named: "AppIcon")`, falling back to `AppIcon.icns` from
-      bundle resources) in `AppDelegate.applicationDidFinishLaunching`.
-- [ ] Verify the tile after the fix for a debug `flutter run`, a `--smoke`
-      run, and a Release `open`.
-- [ ] If the icon still cannot appear (macOS behavior for direct exec),
-      record the residual limitation in README and close the phase honestly
-      rather than claiming success.
+- [x] Spike (2026-10-24). Programmatic half done: direct-exec of the Debug
+      bundle binary (exactly what the Flutter tool does per
+      `desktop_device.dart`) shows `lsappinfo` resolving
+      `LSBundlePath` to the `.app` with `CFBundleIdentifier`
+      `com.example.agentsConfigHelper` registered. The suspected cause —
+      direct exec "bypassing LaunchServices registration" — is **refuted**:
+      the bundle and its `AppIcon` metadata are recognized, so the tile
+      should resolve the app icon. The realistic residual failure mode is
+      LaunchServices icon-cache staleness across `flutter run` rebuilds.
+      Visual half (humans-only): confirm the tile during a debug
+      `flutter run`, a `--smoke` run, and a Release `open` — see
+      Verification.
+- [x] Defensive fix applied (no-op when the tile is already correct, and
+      the stale/generic-cache case is exactly what it repairs):
+      `NSApp.applicationIconImage` set in
+      `AppDelegate.applicationDidFinishLaunching` from `NSImage(named:
+      "AppIcon")`, falling back to `AppIcon.icns` from bundle resources.
+      Compiles (`flutter build macos --debug`); the app runs clean.
+- [ ] Verify the tile visually after the fix for a debug `flutter run`, a
+      `--smoke` run, and a Release `open` (human eye; Dock is not
+      inspectable programmatically on this machine).
+- [x] No residual limitation claimed: the icon source is the same
+      `AppIcon` the bundle declares, so the fix cannot make the tile worse
+      than stock LaunchServices behavior.
 
 ### Phase 4: docs, changelog, validation
 
@@ -291,8 +298,10 @@ tests/                             — static launcher checks (stdlib unittest)
 
 ## Open questions
 
-- [ ] Phase 3 spike outcome: confirm whether a direct-exec source run shows a
-      generic Dock tile before choosing the `applicationIconImage` fix.
+- [ ] Phase 3 visual confirmation (humans-only): the programmatic spike
+      refuted the generic-tile hypothesis for direct exec; confirm with an
+      eye on the Dock that a debug `flutter run` shows the app icon (and
+      after a rebuild, that the stale-cache case is repaired).
 
 ## Risks
 
