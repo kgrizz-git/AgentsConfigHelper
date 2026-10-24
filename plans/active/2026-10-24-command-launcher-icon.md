@@ -137,7 +137,7 @@ tests/                             — static launcher checks (SpotiBye-style py
 
 ### Phase 1: shared icon-association helper
 
-- [ ] `scripts/ensure_launcher_icon.sh`:
+- [x] `scripts/ensure_launcher_icon.sh`:
       resolve the repo root from `BASH_SOURCE` using the `cd --` / `pwd -P`
       form used by `dev.sh`, with `CDPATH` cleared on that `cd` (a set
       `CDPATH` makes `cd` print the path, which corrupts the captured root
@@ -169,7 +169,7 @@ tests/                             — static launcher checks (SpotiBye-style py
       Shell style matches `scripts/install_linux_desktop_entry.sh` (header
       comment, `set -euo pipefail`, `uname` guard); shellcheck-clean
       (pre-commit runs shellcheck over files `identify` tags as shell).
-- [ ] Validate the helper with its target override: run twice against a
+- [x] Validate the helper with its target override: run twice against a
       scratch file in `tmp/` (first run associates, second is a no-op), then
       `xattr -d com.apple.FinderInfo` and confirm the next run re-associates.
 

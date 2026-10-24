@@ -7,6 +7,16 @@ set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 cd "$script_dir"
 
+# Brand Launch_AgentsConfigHelper.command with the app icon if it is not
+# already associated. Non-fatal; one cheap xattr read when associated.
+ensure_launcher_icon() {
+  [[ "$(uname -s)" == "Darwin" ]] || return 0
+  bash scripts/ensure_launcher_icon.sh || printf '%s\n' \
+    'Warning: launcher icon association failed (non-fatal).' >&2
+}
+
+ensure_launcher_icon
+
 usage() {
   cat <<'EOF'
 Usage: ./dev.sh [command]
