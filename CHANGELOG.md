@@ -13,11 +13,12 @@ uses [Semantic Versioning](https://semver.org/).
 - **macOS double-click launcher.** Double-click
   `Launch_AgentsConfigHelper.command` at the repo root to open the built app
   from Finder (Release preferred, Debug fallback, builds Release when neither
-  exists). The first run brands the file with the app icon; the launcher,
-  `scripts/setup.sh`, and `dev.sh` re-associate it when that association is
-  missing. One failed attempt writes
+  exists). An incomplete Release bundle is skipped. The first run brands the
+  file with the app icon; the launcher, `scripts/setup.sh`, and `dev.sh`
+  re-associate it when that association is missing or the custom icon is not
+  the one last applied. One failed attempt writes
   `.agents-config-helper-launcher-icon-failed` and later runs skip until that
-  file is deleted.
+  file is deleted or a custom icon is present to replace.
 - **App icon.** The app now has its own icon (a prompt with settings toggles) on
   macOS, Windows, and Linux, replacing the default Flutter icon. On Linux the
   window sets it directly, so X11 taskbars show it even when run from source.

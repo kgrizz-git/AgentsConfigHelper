@@ -129,13 +129,16 @@ It writes only to `~/.local/share` (no sudo). Rerun it if you move the checkout.
 
 On macOS you can double-click `Launch_AgentsConfigHelper.command` at the repo
 root instead of using a terminal — the first run brands the file with the app
-icon in Finder. It opens the built app (Release preferred, falling back to
-Debug) and builds Release first when neither exists.
+icon in Finder. It opens the built app (a usable Release bundle preferred,
+falling back to a usable Debug bundle) and builds Release first when neither
+exists. An incomplete Release directory does not block the Debug app. Two
+launchers share one build so they do not write the Release bundle at once.
 
 - Icon branding is per-machine and self-repairing: the launcher,
   `scripts/setup.sh`, and `dev.sh` re-associate whenever the icon is missing
   (for example after a fresh clone, or a checkout that rewrites the file and
-  drops xattrs). If branding fails once, a sentinel file suppresses later
+  drops xattrs) or the file has a different custom icon. If branding
+  fails once and no custom icon is present, a sentinel file suppresses later
   attempts — delete
   `.agents-config-helper-launcher-icon-failed` to retry. If Finder shows a
   stale icon, run `killall Finder` or log out and back in.

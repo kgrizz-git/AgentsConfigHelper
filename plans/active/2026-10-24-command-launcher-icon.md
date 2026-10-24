@@ -208,6 +208,11 @@ tests/                             — static launcher checks (stdlib unittest)
       test: launcher exists at the repo root, LF-only, git mode `100755`,
       the resource-fork guard is ordered before `setIconForFileOptions`,
       no `SetFile` anywhere, and the helper script contains no `exit 1`.
+- [x] Review follow-up (PR 77): a bundle counts only when its product
+      executable exists; one build lock covers the shared Release build;
+      icon candidates are tried in order and the failure sentinel is skipped
+      when the target is already associated; the repo launcher stores a
+      resource-fork hash so an unrelated custom icon is replaced.
 
 ### Phase 3: Dock icon when run from source (spike-gated, "if possible")
 

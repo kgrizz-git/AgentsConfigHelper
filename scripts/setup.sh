@@ -104,7 +104,7 @@ main() {
 
     # 6. macOS launcher icon association
     info "Checking macOS launcher icon association..."
-    if [ "$(uname -s)" = "Darwin" ]; then
+    if [[ "$(uname -s)" == "Darwin" ]]; then
         bash scripts/ensure_launcher_icon.sh || warn "Launcher icon association failed (non-fatal)"
     else
         info "Not macOS, skipping launcher icon association"
