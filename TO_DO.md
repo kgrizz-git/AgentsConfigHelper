@@ -162,6 +162,13 @@ The durable sequence and architecture decisions are in the
       source-build-only and unsandboxed for this cycle; do not broaden distribution scope
       before its ADR-directed review is complete.
 
+### macOS double-click launcher and icon association
+
+- [ ] Active plan: [command launcher and icon](plans/active/2026-10-24-command-launcher-icon.md) —
+      repo-root `Launch_AgentsConfigHelper.command` opens the built macOS app on double-click;
+      first-run icon association shared by the launcher, `scripts/setup.sh`, and `dev.sh`;
+      Dock icon for source runs when possible. In progress on `feat/command-launcher-icon`.
+
 ### Agent-config discovery follow-through
 
 - [ ] Review the deferred work in the [agent-config discovery plan](plans/active/agent-config-discovery.md)
