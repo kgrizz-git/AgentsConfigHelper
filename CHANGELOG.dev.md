@@ -6,6 +6,15 @@ Internal / developer-facing changes that do not belong in the public
 ## Unreleased
 
 ### Added
+- **macOS launcher icon plumbing.** New `scripts/ensure_launcher_icon.sh`:
+  idempotent, always-exit-0 association of the app icon with
+  `Launch_AgentsConfigHelper.command` via JXA `NSWorkspace.setIcon`;
+  "already associated" requires both the `com.apple.ResourceFork` payload and
+  the Finder `kHasCustomIcon` flag (partial states re-associate), and a failed
+  attempt writes the gitignored sentinel
+  `.agents-config-helper-launcher-icon-failed` (delete to retry). Wired into
+  `scripts/setup.sh` (step 6) and `dev.sh` startup; static checks live in
+  `tests/test_launcher_command.py`.
 - **CI: weekly dependency vulnerability audit** (`.github/workflows/dependency-audit.yml`):
   runs `google/osv-scanner-action` (pinned v2.7.0 SHA) with `scan-args: -r ./` against
   every lockfile in the repo (today only `pubspec.lock`) on a Monday 06:17 UTC cron,

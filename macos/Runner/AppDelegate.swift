@@ -8,7 +8,30 @@ class AppDelegate: FlutterAppDelegate {
     if let controller = mainFlutterWindow?.contentViewController as? FlutterViewController {
       TestRootFileChannel.register(with: controller)
     }
+    // Direct exec still registers the bundle. Only pin the Dock tile when the
+    // catalog lookup actually has a full-size rendition; the partial icns must
+    // not replace CFBundleIconName.
+    if let icon = fullBundleApplicationIcon() {
+      NSApp.applicationIconImage = icon
+    }
     super.applicationDidFinishLaunching(notification)
+  }
+
+  /// Returns the bundle app icon when a rendition is at least 512px, else nil.
+  ///
+  /// Reads `Bundle.main`'s `AppIcon` via `image(forResource:)`. Returns nil when
+  /// that image is missing, invalid, or only actool's partial `AppIcon.icns`
+  /// (16pt and 128pt). Callers must not assign nil: `applicationIconImage`
+  /// would replace the sharper catalog icon `CFBundleIconName` already points
+  /// at. Point size is not the signal — it stays 128 even with a 1024px rep.
+  private func fullBundleApplicationIcon() -> NSImage? {
+    guard let icon = Bundle.main.image(forResource: "AppIcon"), icon.isValid else {
+      return nil
+    }
+    let hasFullRendition = icon.representations.contains { representation in
+      representation.pixelsWide >= 512 && representation.pixelsHigh >= 512
+    }
+    return hasFullRendition ? icon : nil
   }
 
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

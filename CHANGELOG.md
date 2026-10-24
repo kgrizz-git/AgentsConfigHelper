@@ -10,6 +10,14 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
+- **macOS double-click launcher.** Double-click
+  `Launch_AgentsConfigHelper.command` at the repo root to open the built app
+  from Finder (Release preferred, Debug fallback, builds Release when neither
+  exists). The first run brands the file with the app icon; the launcher,
+  `scripts/setup.sh`, and `dev.sh` re-associate it when that association is
+  missing. One failed attempt writes
+  `.agents-config-helper-launcher-icon-failed` and later runs skip until that
+  file is deleted.
 - **App icon.** The app now has its own icon (a prompt with settings toggles) on
   macOS, Windows, and Linux, replacing the default Flutter icon. On Linux the
   window sets it directly, so X11 taskbars show it even when run from source.
@@ -31,6 +39,11 @@ uses [Semantic Versioning](https://semver.org/).
   file overview instead of repeating a Markdown preview and a separate file list.
   Secret warnings appear only on the affected file rows.
 - UI typeface is now Manrope (code and paths stay JetBrains Mono).
+
+### Fixed
+- **Dock icon on macOS source runs.** At launch the app pins its Dock tile to
+  the bundled app icon when a full-size rendition (at least 512px) is available,
+  and leaves the catalog icon unchanged when it is not.
 
 ## [0.2.0] - 2026-09-10
 
