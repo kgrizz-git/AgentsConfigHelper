@@ -54,10 +54,13 @@ A scratch probe in `tmp/` on this machine established the exact mechanism
 - macOS stores the icon in the target file's own `com.apple.ResourceFork`
   xattr and flags the file in `com.apple.FinderInfo`. No `Icon\r` sidecar is
   created for a single file (`Icon?` is already in `.gitignore` regardless).
-- Detection of "already associated" is exact: `xattr -px com.apple.FinderInfo
-  <file>` returned byte 8 = `04`, the `kHasCustomIcon` (0x0400) flag bit in
-  the big-endian finder flags (32-byte blob). Probe was cleaned up
-  afterwards; `git status` stayed clean because git does not track xattrs.
+- Detection of "already associated" requires **both** signals: the icon
+  payload (`xattr -p com.apple.ResourceFork` succeeds) and the Finder flag
+  (`com.apple.FinderInfo` byte 8 = `04`, the `kHasCustomIcon` (0x0400) bit
+  in the big-endian finder flags; probe: 32-byte blob). Any partial state —
+  flag without payload (exactly what `SetFile -a C` produces) or payload
+  without flag — re-associates, so a failed or half-applied attempt can
+  never look done and the earlier "flag set, fork gone" limitation is gone.
 - Consequence: association is **machine-local state**. A fresh clone (or a
   copy that drops xattrs) shows the generic script icon until the helper runs
   once — which the launcher, `setup.sh`, and `dev.sh` all do automatically.
@@ -65,25 +68,49 @@ A scratch probe in `tmp/` on this machine established the exact mechanism
 Invocation details (review corrections; `man osascript` plus measured
 behavior on this machine):
 
-- Pass paths **after `-` (stdin script), with no `--`**: `osascript -l
-  JavaScript - "$icon" "$target"` plus `run(argv)`. `osascript` has no
-  end-of-options marker — a `--` argument lands in `argv` as `argv[0]`
-  (measured: `osascript -l JavaScript - -- a b` → `["--","a","b"]`), which
-  would make `argv[0]`-as-icon-path load a file named `--`.
+- Proven call form (the SpotiBye production launcher, owner-confirmed
+  visible in Finder): `osascript -l JavaScript -e '<script>' "$icon"
+  "$target"` with `run(argv)` reading `argv[0]`/`argv[1]`, result captured
+  as `RESULT=$(...) || true`, success iff `RESULT` is `true`. Paths passed
+  after the script become `run`'s argv; `osascript` has no end-of-options
+  marker — a `--` argument lands in `argv` as `argv[0]` (measured:
+  `osascript -l JavaScript - -- a b` → `["--","a","b"]`), which would make
+  `argv[0]`-as-icon-path load a file named `--`. (The stdin form
+  `osascript -l JavaScript - "$icon" "$target"` passes paths identically.)
 - `NSImage` loaded from the icon path must be checked before calling
   `setIcon`: the API treats a nil image as *remove the custom icon*
   (`NSWorkspace.h`), so a failed icon load must not reach the call.
 - A missing `com.apple.FinderInfo` attribute makes `xattr -px` exit 1
   (measured). The read must be explicitly non-failing; see Phase 1.
-- Known limitation: if the flag is set but the resource fork is gone, the
-  bit check treats the file as associated and skips repair. Reset with
-  `xattr -d com.apple.FinderInfo` to force re-association.
+
+### Prior art: the SpotiBye launcher
+
+The sibling project ships this exact pattern (repo-root `SpotiBye.command`;
+completed plan `2026-10-18-app-icon-and-source-launcher.md`), so its lessons
+are imported rather than re-derived:
+
+- `SetFile -a C` is a confirmed dead end: it sets the Finder flag but
+  attaches no icon data (measured there), which is why detection above keys
+  on the resource fork as well as the flag. It is never a mechanism rung.
+- The JXA `NSWorkspace` rung brands a `.command` with the app icon; the
+  owner confirmed the icon visibly appears in Finder (2026-10-20).
+- A failed attempt writes a **gitignored sentinel** (there:
+  `.spotibye-launcher-icon-failed`) so later runs warn once instead of
+  nagging; deleting the sentinel retries. Adopted here as
+  `.agents-config-helper-launcher-icon-failed`.
+- Static pytest checks pin launcher invariants (there:
+  `scripts/tests/test_spotibye_command.py` — LF-only, git mode `100755`,
+  guard ordered before `setIconForFileOptions`, no `SetFile`). Mirrored
+  here as a `tests/` check (Phase 2).
+- Running from source must set the icon explicitly at runtime because no
+  bundle metadata applies (there: `App.icon` from the rounded PNG); the
+  Flutter analog is Phase 3's `applicationIconImage`.
 
 ### Alternatives considered
 
 | Option | Why not chosen |
 |---|---|
-| `Rez`/`SetFile -a C` (Classic tools) | Not shipped with modern Xcode CLT; deprecated |
+| `Rez`/`SetFile -a C` (Classic tools) | Deprecated and CLT-only; SpotiBye testing confirmed `SetFile -a C` sets the flag with no icon data — never a rung |
 | `fileicon` (Homebrew) | Adds an external dependency for one xattr write |
 | Finder AppleScript (`set icon of`) | Needs Finder automation (TCC prompts), slow |
 | Re-set the icon on every run unconditionally | Touches xattrs needlessly; contradicts the requested one-time semantics |
@@ -102,6 +129,8 @@ README.md                          — "macOS double-click launcher" section (mi
                                      "Linux taskbar icon" section)
 CHANGELOG.md                       — user-visible launcher + Dock icon entries
 CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
+tests/                             — static launcher checks (SpotiBye-style pytest)
+.gitignore                         — failed-attempt sentinel entry
 ```
 
 ## Phases & checklist
@@ -113,19 +142,26 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
       form used by `dev.sh`; accept an optional target path argument used
       only by validation (default: repo-root
       `Launch_AgentsConfigHelper.command`); exit 0 silently when not on
-      macOS or when the target is absent. Association check must be
-      non-failing under `set -euo pipefail`: read `com.apple.FinderInfo` with
-      `xattr -px ... || true`; a missing attribute or a blob shorter than 9
-      bytes counts as not associated; when byte 8 already has the `0x04` bit,
-      exit 0 silently. Otherwise pick the icon source in order —
+      macOS, when the target is absent, or when the gitignored sentinel
+      `.agents-config-helper-launcher-icon-failed` is present (a previous
+      attempt failed; delete the sentinel to retry). Association check must
+      be non-failing under `set -euo pipefail`: read `com.apple.ResourceFork`
+      presence and `com.apple.FinderInfo` with `xattr ... || true`; a
+      missing attribute or a FinderInfo blob shorter than 9 bytes counts as
+      not associated; exit 0 silently only when the payload exists **and**
+      byte 8 has the `0x04` bit. Otherwise pick the icon source in order —
       `build/macos/Build/Products/Release/agents_config_helper.app/Contents/Resources/AppIcon.icns`,
       the Debug equivalent, then the checked-in
       `macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png` —
-      and set it via the JXA `NSWorkspace` call from the stdin script with
-      `run(argv)` path passing and the nil-image guard above; then re-read
-      the flag and report success or a warning. **The helper must exit 0 in
-      every outcome** (warning text on failure) so callers under `set -e`
-      can never be aborted and icon failure can never block the app launch.
+      and set it via the JXA `NSWorkspace` call in the proven `-e` form with
+      `run(argv)` path passing, the nil-image guard above, and
+      `RESULT=$(...) || true` captured against `true`; then re-check and
+      report success or a warning. On failure, write the gitignored
+      sentinel `.agents-config-helper-launcher-icon-failed` (add the name to
+      `.gitignore` with a one-line comment) so later runs skip silently.
+      **The helper must exit 0 in every outcome** (warning text on failure)
+      so callers under `set -e` can never be aborted and icon failure can
+      never block the app launch.
       Shell style matches `scripts/install_linux_desktop_entry.sh` (header
       comment, `set -euo pipefail`, `uname` guard); shellcheck-clean
       (pre-commit runs shellcheck over files `identify` tags as shell).
@@ -164,6 +200,10 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
       dev.sh invocation including `--help`/`--check`, matching "associate
       when dev.sh runs"; the call is one cheap `xattr` read when already
       associated.
+- [ ] Static pytest checks under `tests/` mirroring SpotiBye's launcher
+      test: launcher exists at the repo root, LF-only, git mode `100755`,
+      the resource-fork guard is ordered before `setIconForFileOptions`,
+      no `SetFile` anywhere, and the helper script contains no `exit 1`.
 
 ### Phase 3: Dock icon when run from source (spike-gated, "if possible")
 
@@ -172,7 +212,9 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
       then compare with `open` on the Debug bundle and with the `--smoke`
       launch. The Flutter tool execs the bundle's binary directly, bypassing
       LaunchServices registration, which is the suspected cause of a generic
-      tile.
+      tile. SpotiBye's precedent: a source run with no bundle metadata
+      definitely needs the icon set explicitly at runtime; our binary does
+      live inside a proper bundle, so the spike decides whether we do too.
 - [ ] If the tile is generic or missing: set
       `NSApplication.shared.applicationIconImage` from the bundle's `AppIcon`
       (`NSImage(named: "AppIcon")`, falling back to `AppIcon.icns` from
@@ -186,13 +228,16 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
 ### Phase 4: docs, changelog, validation
 
 - [ ] README "macOS double-click launcher" section next to the Linux taskbar
-      section: double-click usage, build-if-missing behavior, that icon
-      association is machine-local and repaired automatically on the next
-      run of the launcher/`setup.sh`/`dev.sh` (including after a checkout
-      that rewrites the file and drops xattrs), the Finder icon-cache
-      fallback (`killall Finder` or re-login if the icon looks stale), that
-      Release is preferred even when a newer Debug build exists, and the
-      double-click PATH caveat for `flutter`.
+      section (SpotiBye one-liner style: "double-click
+      `Launch_AgentsConfigHelper.command` — the first run brands it with the
+      app icon"), plus: build-if-missing behavior, that icon association is
+      machine-local and repaired automatically on the next run of the
+      launcher/`setup.sh`/`dev.sh` (including after a checkout that
+      rewrites the file and drops xattrs), the failed-attempt sentinel
+      (delete to retry), the Finder icon-cache fallback (`killall Finder` or
+      re-login if the icon looks stale), that Release is preferred even when
+      a newer Debug build exists, and the double-click PATH caveat for
+      `flutter`.
 - [ ] Changelog split per `policies/changelog-conventions.md` (decision, not
       an open question): `CHANGELOG.md` gets the user-visible launcher entry
       and — only if Phase 3 actually ships the fix — the Dock icon entry
@@ -212,13 +257,19 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
 - [ ] `git ls-files -s Launch_AgentsConfigHelper.command` shows `100755`
       (executable; required for double-click and for shellcheck coverage).
 - [ ] Finder shows the app icon on the `.command` file after the first
-      association; `xattr -px com.apple.FinderInfo` shows byte 8 with the
-      `0x04` bit (the xattr bit is the pass signal; Finder may lag — see the
+      association; `xattr -p com.apple.ResourceFork` succeeds and
+      `xattr -px com.apple.FinderInfo` shows byte 8 with the `0x04` bit
+      (both xattr signals are the pass criteria; Finder may lag — see the
       icon-cache fallback in README).
 - [ ] Second runs of the launcher, `setup.sh`, and `dev.sh` are silent
-      no-ops; after `xattr -d com.apple.FinderInfo`, the next `dev.sh` run
-      re-associates; a short/missing `FinderInfo` blob counts as not
+      no-ops; after `xattr -d com.apple.ResourceFork` or
+      `xattr -d com.apple.FinderInfo`, the next `dev.sh` run re-associates;
+      partial states (flag without payload or payload without flag) count
+      as not associated; a short/missing `FinderInfo` blob counts as not
       associated.
+- [ ] A forced icon failure (e.g. temporarily rename the icon sources)
+      prints one warning, writes the sentinel, and later runs skip silently;
+      deleting `.agents-config-helper-launcher-icon-failed` retries.
 - [ ] Helper failure path is non-fatal end to end: with the icon source
       removed, the helper warns and exits 0 and the launcher still reaches
       `open`.
@@ -229,6 +280,7 @@ CHANGELOG.dev.md                   — helper wiring in setup.sh/dev.sh
       space (e.g. a `tmp/` copy of the repo named with a space).
 - [ ] `git status` stays clean before and after association.
 - [ ] Dock icon outcome recorded per Phase 3 (fixed, or limitation documented).
+- [ ] Static launcher checks pass (`pytest tests/`).
 - [ ] `pre-commit run --all-files` (shellcheck, gitleaks, markdownlint,
       absolute-path check) and `./dev.sh --check` pass.
 
