@@ -102,7 +102,15 @@ main() {
     mkdir -p .context backups logs temp
     success "Created .context, backups, logs, temp directories"
 
-    # 6. Cleanup suggestions
+    # 6. macOS launcher icon association
+    info "Checking macOS launcher icon association..."
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        bash scripts/ensure_launcher_icon.sh || warn "Launcher icon association failed (non-fatal)"
+    else
+        info "Not macOS, skipping launcher icon association"
+    fi
+
+    # 7. Cleanup suggestions
     echo ""
     section "Cleanup Suggestions"
     info "Based on your project type, you may want to remove irrelevant content:"

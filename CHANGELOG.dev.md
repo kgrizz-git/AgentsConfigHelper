@@ -6,6 +6,22 @@ Internal / developer-facing changes that do not belong in the public
 ## Unreleased
 
 ### Added
+- **Relative launcher invocation:** guarded child shells source the launcher by
+  its absolute repository path, allowing first-time builds from another directory.
+- **Launcher lock review follow-through:** serialize stale-lock claiming and
+  publication with a kernel-managed guard; cover the paused-claim race and close
+  stdin for shell probes so failure traps cannot wait for interactive input.
+- **macOS launcher icon plumbing.** New `scripts/ensure_launcher_icon.sh`:
+  idempotent, always-exit-0 association of the app icon with
+  `Launch_AgentsConfigHelper.command` via JXA `NSWorkspace.setIcon`;
+  "already associated" requires both the `com.apple.ResourceFork` payload and
+  the Finder `kHasCustomIcon` flag, plus a gitignored stamp of that payload
+  for the repo launcher (a different custom icon is replaced; partial states
+  re-associate). Each icon source is tried before a failed attempt writes
+  `.agents-config-helper-launcher-icon-failed` (delete to retry). The sentinel
+  is not written when the icon is already associated. Wired into
+  `scripts/setup.sh` (step 6) and `dev.sh` startup; static and stubbed
+  launcher checks live in `tests/test_launcher_command.py`.
 - **CI: weekly dependency vulnerability audit** (`.github/workflows/dependency-audit.yml`):
   runs `google/osv-scanner-action` (pinned v2.7.0 SHA) with `scan-args: -r ./` against
   every lockfile in the repo (today only `pubspec.lock`) on a Monday 06:17 UTC cron,
@@ -71,6 +87,22 @@ Internal / developer-facing changes that do not belong in the public
   `flutter test` (548 passing), `dart format`, and the `dart_code_linter` metrics
   gate. See the migration plan in
   [`plans/archive/very-good-analysis-11-migration.md`](plans/archive/very-good-analysis-11-migration.md).
+
+### Fixed
+- **macOS launcher review follow-up.** The double-click launcher treats a
+  bundle as present only when `Contents/MacOS/agents_config_helper` is an
+  executable file and `Contents/Info.plist` parses as that app's property
+  list, so an incomplete Release directory falls through to Debug
+  or a Release rebuild. Concurrent launches take a gitignored build lock and
+  re-check for a finished bundle before running `flutter build`. The lock's
+  owner is published by linking a private directory into place, a stale lock
+  is claimed by renaming it aside before deletion, and a live lock taken by
+  that claim is linked back only when the public name is still free. Cleanup
+  removes the public lock only when that link still points at this process. The exit trap
+  ignores command-substitution subshells so a bundle check cannot drop a lock
+  another launcher still holds. Stubbed
+  unittest coverage runs those paths without starting the app.
+  `scripts/setup.sh` uses `[[ ]]` for the macOS icon step (Sonar S7688).
 
 ## [0.2.0] - 2026-09-10
 

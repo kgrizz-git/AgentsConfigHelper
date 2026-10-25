@@ -3,6 +3,13 @@ scratch/
 .context/
 backups/
 
+# Failed macOS launcher-icon attempt. Delete this file to retry.
+.agents-config-helper-launcher-icon-failed
+# Hash of the resource fork the helper last applied to the launcher.
+.agents-config-helper-launcher-icon-stamp
+# Held while a double-click launcher builds the shared Release bundle.
+.agents-config-helper-launcher-build.lock
+
 # ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
