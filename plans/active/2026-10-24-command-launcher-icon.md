@@ -359,3 +359,17 @@ tests/                             — static launcher checks (stdlib unittest)
 3. Log completion in `CHANGELOG.md` / `CHANGELOG.dev.md` per the split above.
 4. Remove the linked `TO_DO.md` entry.
 5. Reference the completing PR/commits here before archiving.
+
+### PR 77 review follow-through (2026-10-25)
+
+- Stale-lock inspection/rename/removal and publication share a persistent-file
+  `flock` guard held by Perl; the post-move owner check remains defensive.
+- Guarded child shells preserve the parent launcher's owner PID and leave cleanup
+  to the parent. Kernel locking avoids an abandoned claim-directory guard.
+- Added a forced-interleaving regression test that pauses after the stale rename
+  and verifies publication waits, then publishes the correct parent PID.
+- Bash probes use closed stdin so failure traps cannot wait for terminal input.
+- Verification: all 26 launcher tests, Bash syntax, and changed-file pre-commit
+  checks passed. Cursor Grok 4.7 low reviewed the complete diff with no concrete
+  bugs. Residual test limitation: a heavily delayed publisher could miss the
+  overlap assertion window; the test also checks progress and the final owner PID.

@@ -459,6 +459,58 @@ class LauncherBehaviorTests(unittest.TestCase):
             owner.kill()
             owner.wait(timeout=5)
 
+    def test_publication_waits_for_stale_claim_to_finish(self) -> None:
+        self._plant_symlink_lock("launcher-build-lock.planted", None)
+        moved = self.root / "moved"
+        resume = self.root / "resume"
+        published = self.root / "published"
+        real_mv = shutil.which("mv")
+        _write_executable(
+            self.bindir / "mv",
+            '#!/bin/sh\n'
+            f'"{real_mv}" "$@" || exit $?\n'
+            'case "$2" in *launcher-build-lock.stale.*)\n'
+            f'  touch "{moved}"\n'
+            f'  while [ ! -e "{resume}" ]; do sleep 0.05; done ;;\n'
+            'esac\n',
+        )
+        script = self.root / "Launch_AgentsConfigHelper.command"
+        processes = []
+        try:
+            for operation in (
+                'claim_stale_build_lock',
+                f'publish_build_lock; touch "{published}"; '
+                f'while [ ! -e "{resume}.publisher" ]; do sleep 0.05; done',
+            ):
+                if processes:
+                    deadline = time.monotonic() + 5
+                    while not moved.exists() and time.monotonic() < deadline:
+                        time.sleep(0.05)
+                    self.assertTrue(moved.exists(), "claimant did not move the stale lock")
+                processes.append(subprocess.Popen(
+                    ["bash", "-c", f'source "{script}"; {operation}'],
+                    cwd=self.root, env=self.env, stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                ))
+            time.sleep(0.5)
+            self.assertFalse(published.exists(), "published during stale-lock claiming")
+            self.assertIsNone(processes[1].poll())
+            resume.touch()
+            stdout, stderr = processes[0].communicate(timeout=5)
+            self.assertEqual(processes[0].returncode, 0, stdout + stderr)
+            deadline = time.monotonic() + 5
+            while not published.exists() and time.monotonic() < deadline:
+                time.sleep(0.05)
+            self.assertTrue(published.exists(), "publisher did not resume")
+            lock = self.root / ".agents-config-helper-launcher-build.lock"
+            self.assertEqual((lock / "pid").read_text().strip(), str(processes[1].pid))
+        finally:
+            resume.touch()
+            Path(f"{resume}.publisher").touch()
+            for process in processes:
+                stdout, stderr = process.communicate(timeout=5)
+                self.assertEqual(process.returncode, 0, stdout + stderr)
+
     def test_restore_does_not_replace_a_newer_lock(self) -> None:
         owner_dir = self.root / "tmp" / "launcher-build-lock.owner"
         owner_dir.mkdir(parents=True)
@@ -505,6 +557,7 @@ exit 0
             ["bash", "-c", probe],
             cwd=self.root,
             env=self.env,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
             check=False,

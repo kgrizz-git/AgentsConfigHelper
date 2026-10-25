@@ -6,6 +6,9 @@ Internal / developer-facing changes that do not belong in the public
 ## Unreleased
 
 ### Added
+- **Launcher lock review follow-through:** serialize stale-lock claiming and
+  publication with a kernel-managed guard; cover the paused-claim race and close
+  stdin for shell probes so failure traps cannot wait for interactive input.
 - **macOS launcher icon plumbing.** New `scripts/ensure_launcher_icon.sh`:
   idempotent, always-exit-0 association of the app icon with
   `Launch_AgentsConfigHelper.command` via JXA `NSWorkspace.setIcon`;

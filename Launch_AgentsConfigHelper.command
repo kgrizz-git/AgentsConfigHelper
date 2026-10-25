@@ -150,11 +150,38 @@ link_lock() {
   ln -h -s "$source" "$dest"
 }
 
+# Keep the guard file in place: unlinking it would let waiters lock different
+# inodes. The kernel releases flock even if the guarded launcher is killed.
+with_build_lock_guard() {
+  mkdir -p "$script_dir/tmp" || return 1
+  /usr/bin/perl -e '
+    use Fcntl qw(:flock);
+    open(my $guard, ">>", shift @ARGV) or exit 1;
+    flock($guard, LOCK_EX) or exit 1;
+    system @ARGV;
+    exit($? == -1 ? 1 : ($? & 127) ? 1 : $? >> 8);
+  ' "$script_dir/tmp/launcher-build-lock.guard" \
+    bash -c 'source "$1"; trap - EXIT; launcher_pid="$3"; "$2"' bash "${BASH_SOURCE[0]}" "$1" "$$"
+}
+
+publish_build_lock() {
+  if with_build_lock_guard publish_build_lock_guarded; then
+    build_lock_private="$script_dir/tmp/launcher-build-lock.preparing.$$"
+    build_lock_held=1
+    return 0
+  fi
+  return 1
+}
+
+claim_stale_build_lock() {
+  with_build_lock_guard claim_stale_build_lock_guarded
+}
+
 # The pid file is written in a private directory, then a symlink to that
 # directory becomes the public lock. A crash before the link does not publish
 # an ownerless lock.
-publish_build_lock() {
-  local private="$script_dir/tmp/launcher-build-lock.preparing.$$"
+publish_build_lock_guarded() {
+  local private="$script_dir/tmp/launcher-build-lock.preparing.${launcher_pid:-$$}"
   local current
   current="$(readlink "$BUILD_LOCK" 2>/dev/null || true)"
   if [ "$current" = "$private" ]; then
@@ -165,7 +192,7 @@ publish_build_lock() {
   mkdir -p "$script_dir/tmp" || return 1
   rm -rf "$private"
   mkdir "$private" || return 1
-  printf '%s\n' "$$" > "$private/pid" || {
+  printf '%s\n' "${launcher_pid:-$$}" > "$private/pid" || {
     rm -rf "$private"
     return 1
   }
@@ -179,10 +206,10 @@ publish_build_lock() {
 }
 
 # One waiter renames a dead or ownerless lock aside and deletes that copy.
-# The renamed copy is not a lock someone else just published. A live copy is
-# linked back only while the public name is still free.
-claim_stale_build_lock() {
-  local holder target private="$script_dir/tmp/launcher-build-lock.stale.$$"
+# The shared guard excludes publication throughout inspection and rename.
+# Keep the post-move live-owner check as a defensive fallback.
+claim_stale_build_lock_guarded() {
+  local holder target private="$script_dir/tmp/launcher-build-lock.stale.${launcher_pid:-$$}"
   if [ ! -e "$BUILD_LOCK" ] && [ ! -L "$BUILD_LOCK" ]; then
     return 1
   fi
@@ -193,7 +220,7 @@ claim_stale_build_lock() {
   mkdir -p "$script_dir/tmp" || return 1
   if [ -e "$private" ] || [ -L "$private" ]; then
     holder="$(cat "$private/pid" 2>/dev/null || true)"
-    if [ -n "$holder" ] && [ "$holder" != "$$" ] && kill -0 "$holder" 2>/dev/null; then
+    if [ -n "$holder" ] && [ "$holder" != "${launcher_pid:-$$}" ] && kill -0 "$holder" 2>/dev/null; then
       restore_claimed_lock "$private" || true
       if [ -e "$private" ] || [ -L "$private" ]; then
         return 1
