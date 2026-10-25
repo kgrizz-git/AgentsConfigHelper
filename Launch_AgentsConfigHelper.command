@@ -17,6 +17,7 @@ CDPATH='' cd -- "$script_dir"
 
 BUILD_LOCK="$script_dir/.agents-config-helper-launcher-build.lock"
 build_lock_held=0
+build_lock_private=""
 
 # set -e exits before a trailing pause, so pause from the EXIT trap instead:
 # a double-clicked failure must stay readable in its Terminal window.
@@ -27,16 +28,41 @@ pause_on_failure() {
   fi
 }
 
+# Drop the public lock only when it still points at this process's private
+# directory. A waiter that replaced the symlink is left alone.
 release_build_lock() {
-  if [ "$build_lock_held" -eq 1 ]; then
-    rm -rf "$BUILD_LOCK"
-    build_lock_held=0
+  local current held
+  if [ "$build_lock_held" -ne 1 ]; then
+    return 0
   fi
+  build_lock_held=0
+  current="$(readlink "$BUILD_LOCK" 2>/dev/null || true)"
+  if [ "$current" != "$build_lock_private" ]; then
+    return 0
+  fi
+  held="$script_dir/tmp/launcher-build-lock.releasing.$$"
+  rm -rf "$held"
+  if mv "$BUILD_LOCK" "$held" 2>/dev/null; then
+    current="$(readlink "$held" 2>/dev/null || true)"
+    if [ "$current" = "$build_lock_private" ]; then
+      rm -f "$held"
+      rm -rf "$build_lock_private"
+    else
+      mv "$held" "$BUILD_LOCK" 2>/dev/null || true
+    fi
+  fi
+  build_lock_private=""
 }
 
 on_exit() {
   local status="$1"
+  # find_app runs in a command substitution. That subshell inherits this trap,
+  # and exiting it must not release the lock the parent still holds.
+  [ "${BASH_SUBSHELL:-0}" -eq 0 ] || return 0
   release_build_lock
+  rm -rf "$script_dir/tmp/launcher-build-lock.preparing.$$" \
+    "$script_dir/tmp/launcher-build-lock.stale.$$" \
+    "$script_dir/tmp/launcher-build-lock.releasing.$$"
   pause_on_failure "$status"
 }
 trap 'on_exit "$?"' EXIT
@@ -92,20 +118,78 @@ find_app() {
   return 1
 }
 
+# The pid file is written in a private directory, then a symlink to that
+# directory becomes the public lock. ln fails when the public name exists, so
+# a crash before the link does not publish an ownerless lock. mv onto an
+# existing directory would succeed by nesting the new lock inside it.
+publish_build_lock() {
+  local private="$script_dir/tmp/launcher-build-lock.preparing.$$"
+  mkdir -p "$script_dir/tmp" || return 1
+  rm -rf "$private"
+  mkdir "$private" || return 1
+  printf '%s\n' "$$" > "$private/pid" || {
+    rm -rf "$private"
+    return 1
+  }
+  # ln follows an existing directory and reports success by nesting the new
+  # link inside it. An occupied name is not ours; -h then keeps a symlink
+  # that won the race from being followed.
+  if [ -e "$BUILD_LOCK" ] || [ -L "$BUILD_LOCK" ]; then
+    rm -rf "$private"
+    return 1
+  fi
+  if ln -h -s "$private" "$BUILD_LOCK" 2>/dev/null; then
+    build_lock_private="$private"
+    build_lock_held=1
+    return 0
+  fi
+  rm -rf "$private"
+  return 1
+}
+
+# One waiter renames a dead or ownerless lock aside and deletes that copy.
+# The public name is then free. The renamed copy is not a lock someone else
+# just published, including a symlink that replaced the stale one.
+claim_stale_build_lock() {
+  local holder target private="$script_dir/tmp/launcher-build-lock.stale.$$"
+  if [ ! -e "$BUILD_LOCK" ] && [ ! -L "$BUILD_LOCK" ]; then
+    return 1
+  fi
+  holder="$(cat "$BUILD_LOCK/pid" 2>/dev/null || true)"
+  if [ -n "$holder" ] && kill -0 "$holder" 2>/dev/null; then
+    return 1
+  fi
+  mkdir -p "$script_dir/tmp" || return 1
+  rm -rf "$private"
+  if ! mv "$BUILD_LOCK" "$private" 2>/dev/null; then
+    return 1
+  fi
+  holder="$(cat "$private/pid" 2>/dev/null || true)"
+  if [ -n "$holder" ] && kill -0 "$holder" 2>/dev/null; then
+    mv "$private" "$BUILD_LOCK" 2>/dev/null || true
+    return 1
+  fi
+  if [ -L "$private" ]; then
+    target="$(readlink "$private" 2>/dev/null || true)"
+    rm -f "$private"
+    if [ -n "$target" ]; then
+      rm -rf "$target"
+    fi
+  else
+    rm -rf "$private"
+  fi
+  return 0
+}
+
 # One launcher builds the shared product directory. Waiters re-check after
 # the lock so they open the finished bundle instead of starting a second build.
-# A lock whose owner is gone is removed so a crashed build cannot stick.
 acquire_build_lock() {
-  local i=0 holder
+  local i=0
   while [ "$i" -lt 900 ]; do
-    if mkdir "$BUILD_LOCK" 2>/dev/null; then
-      printf '%s\n' "$$" > "$BUILD_LOCK/pid"
-      build_lock_held=1
+    if publish_build_lock; then
       return 0
     fi
-    holder="$(cat "$BUILD_LOCK/pid" 2>/dev/null || true)"
-    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
-      rm -rf "$BUILD_LOCK"
+    if claim_stale_build_lock; then
       continue
     fi
     i=$((i + 1))

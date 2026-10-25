@@ -89,7 +89,12 @@ Internal / developer-facing changes that do not belong in the public
   executable file and `Contents/Info.plist` parses as that app's property
   list, so an incomplete Release directory falls through to Debug
   or a Release rebuild. Concurrent launches take a gitignored build lock and
-  re-check for a finished bundle before running `flutter build`. Stubbed
+  re-check for a finished bundle before running `flutter build`. The lock's
+  owner is published by linking a private directory into place, a stale lock
+  is claimed by renaming it aside before deletion, and cleanup removes the
+  public lock only when that link still points at this process. The exit trap
+  ignores command-substitution subshells so a bundle check cannot drop a lock
+  another launcher still holds. Stubbed
   unittest coverage runs those paths without starting the app.
   `scripts/setup.sh` uses `[[ ]]` for the macOS icon step (Sonar S7688).
 

@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import time
 import unittest
 from pathlib import Path
 
@@ -307,11 +308,12 @@ class LauncherBehaviorTests(unittest.TestCase):
         self.assertIn("Could not open", result.stderr)
         self.assertIn("Press Return to close", result.stderr)
 
-    def test_second_launcher_waits_instead_of_building_twice(self) -> None:
-        bundle = _product_executable(self.root, "Release")
+    def _start_pair(self, extra_env: dict[str, str] | None = None) -> tuple[subprocess.Popen[str], subprocess.Popen[str]]:
         env = dict(self.env)
         env["FLUTTER_SLEEP"] = "1"
-        env["FLUTTER_MAKE_BUNDLE"] = str(bundle)
+        env["FLUTTER_MAKE_BUNDLE"] = str(_product_executable(self.root, "Release"))
+        if extra_env:
+            env.update(extra_env)
         command = ["bash", str(self.root / "Launch_AgentsConfigHelper.command")]
         first = subprocess.Popen(
             command,
@@ -331,6 +333,9 @@ class LauncherBehaviorTests(unittest.TestCase):
             stderr=subprocess.PIPE,
             text=True,
         )
+        return first, second
+
+    def _assert_one_release_build(self, first: subprocess.Popen[str], second: subprocess.Popen[str]) -> None:
         first_out, first_err = first.communicate(timeout=30)
         second_out, second_err = second.communicate(timeout=30)
         self.assertEqual(first.returncode, 0, first_err)
@@ -343,6 +348,61 @@ class LauncherBehaviorTests(unittest.TestCase):
         self.assertEqual(builds, ["build macos --release"])
         self.assertEqual(self._opened().count("Release/agents_config_helper.app"), 2)
         self.assertIn("Opened", first_out + second_out)
+
+    def test_second_launcher_waits_instead_of_building_twice(self) -> None:
+        first, second = self._start_pair()
+        self._assert_one_release_build(first, second)
+
+    def test_two_waiters_recover_a_dead_lock_once(self) -> None:
+        dead = subprocess.Popen(["sleep", "30"])
+        dead.kill()
+        dead.wait(timeout=5)
+        lock = self.root / ".agents-config-helper-launcher-build.lock"
+        lock.mkdir()
+        (lock / "pid").write_text(f"{dead.pid}\n", encoding="utf-8")
+        first, second = self._start_pair()
+        self._assert_one_release_build(first, second)
+        self.assertFalse(lock.exists())
+
+    def test_two_waiters_recover_an_ownerless_lock_once(self) -> None:
+        lock = self.root / ".agents-config-helper-launcher-build.lock"
+        lock.mkdir()
+        first, second = self._start_pair()
+        self._assert_one_release_build(first, second)
+        self.assertFalse(lock.exists())
+
+    def test_waiter_does_not_remove_a_live_lock(self) -> None:
+        owner = subprocess.Popen(["sleep", "30"])
+        lock = self.root / ".agents-config-helper-launcher-build.lock"
+        lock.mkdir()
+        (lock / "pid").write_text(f"{owner.pid}\n", encoding="utf-8")
+        waiter = subprocess.Popen(
+            ["bash", str(self.root / "Launch_AgentsConfigHelper.command")],
+            cwd=self.root,
+            env=self.env,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            time.sleep(2)
+            self.assertTrue(lock.is_dir())
+            self.assertEqual((lock / "pid").read_text(encoding="utf-8").strip(), str(owner.pid))
+            waiter.terminate()
+            waiter.wait(timeout=5)
+            if waiter.stdout:
+                waiter.stdout.close()
+            if waiter.stderr:
+                waiter.stderr.close()
+            self.assertTrue(lock.is_dir())
+            self.assertEqual((lock / "pid").read_text(encoding="utf-8").strip(), str(owner.pid))
+        finally:
+            if waiter.poll() is None:
+                waiter.kill()
+                waiter.wait(timeout=5)
+            owner.kill()
+            owner.wait(timeout=5)
 
 
 if __name__ == "__main__":
