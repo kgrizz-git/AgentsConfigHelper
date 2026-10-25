@@ -131,7 +131,8 @@ On macOS you can double-click `Launch_AgentsConfigHelper.command` at the repo
 root instead of using a terminal — the first run brands the file with the app
 icon in Finder. It opens the built app (a usable Release bundle preferred,
 falling back to a usable Debug bundle) and builds Release first when neither
-exists. An incomplete Release directory does not block the Debug app. Two
+exists. An incomplete Release directory, including one that has an executable
+but no valid `Contents/Info.plist`, does not block the Debug app. Two
 launchers share one build so they do not write the Release bundle at once.
 
 - Icon branding is per-machine and self-repairing: the launcher,

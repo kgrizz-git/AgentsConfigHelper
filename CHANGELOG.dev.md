@@ -86,7 +86,8 @@ Internal / developer-facing changes that do not belong in the public
 ### Fixed
 - **macOS launcher review follow-up.** The double-click launcher treats a
   bundle as present only when `Contents/MacOS/agents_config_helper` is an
-  executable file, so an incomplete Release directory falls through to Debug
+  executable file and `Contents/Info.plist` parses as that app's property
+  list, so an incomplete Release directory falls through to Debug
   or a Release rebuild. Concurrent launches take a gitignored build lock and
   re-check for a finished bundle before running `flutter build`. Stubbed
   unittest coverage runs those paths without starting the app.

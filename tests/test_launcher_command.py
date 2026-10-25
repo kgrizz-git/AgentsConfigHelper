@@ -109,6 +109,32 @@ def _product_executable(root: Path, configuration: str) -> Path:
     )
 
 
+_INFO_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>agents_config_helper</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.example.agentsConfigHelper</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+</dict>
+</plist>
+"""
+
+
+def _write_info_plist(root: Path, configuration: str) -> None:
+    plist = (
+        root
+        / "build/macos/Build/Products"
+        / configuration
+        / "agents_config_helper.app/Contents/Info.plist"
+    )
+    plist.parent.mkdir(parents=True, exist_ok=True)
+    plist.write_text(_INFO_PLIST, encoding="utf-8")
+
+
 class LauncherBehaviorTests(unittest.TestCase):
     """Run the launcher with stubbed commands. Nothing here starts the app."""
 
@@ -150,6 +176,10 @@ class LauncherBehaviorTests(unittest.TestCase):
             '  mkdir -p "$(dirname "$FLUTTER_MAKE_BUNDLE")"\n'
             '  printf "%s\\n" "#!/bin/sh" "exit 0" > "$FLUTTER_MAKE_BUNDLE"\n'
             '  chmod +x "$FLUTTER_MAKE_BUNDLE"\n'
+            '  contents="$(CDPATH=\'\' cd -- "$(dirname "$FLUTTER_MAKE_BUNDLE")/.." && pwd)"\n'
+            '  cat > "$contents/Info.plist" << \'EOF\'\n'
+            f"{_INFO_PLIST}"
+            "EOF\n"
             "fi\n"
             "exit 0\n",
         )
@@ -186,6 +216,7 @@ class LauncherBehaviorTests(unittest.TestCase):
 
     def _make_bundle(self, configuration: str) -> None:
         _write_executable(_product_executable(self.root, configuration), "#!/bin/sh\nexit 0\n")
+        _write_info_plist(self.root, configuration)
 
     def test_prefers_release_when_both_bundles_are_launchable(self) -> None:
         self._make_bundle("Release")
@@ -216,6 +247,31 @@ class LauncherBehaviorTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Debug/agents_config_helper.app", self._opened())
         self.assertNotIn("Release/agents_config_helper.app", self._opened())
+        self.assertFalse(self.flutter_log.exists())
+
+        # Executable without Contents/Info.plist is still incomplete.
+        _write_executable(
+            _product_executable(self.root, "Release"),
+            "#!/bin/sh\nexit 0\n",
+        )
+        self.open_log.unlink(missing_ok=True)
+        result = self._run()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Debug/agents_config_helper.app", self._opened())
+        self.assertNotIn("Release/agents_config_helper.app", self._opened())
+        self.assertFalse(self.flutter_log.exists())
+
+        # With no usable Debug bundle either, rebuild Release.
+        shutil.rmtree(self.root / "build/macos/Build/Products/Debug")
+        self.open_log.unlink(missing_ok=True)
+        result = self._run(
+            extra_env={
+                "FLUTTER_MAKE_BUNDLE": str(_product_executable(self.root, "Release")),
+            }
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("build macos --release", self.flutter_log.read_text(encoding="utf-8"))
+        self.assertIn("Release/agents_config_helper.app", self._opened())
 
     def test_builds_release_when_no_usable_bundle_exists(self) -> None:
         result = self._run(

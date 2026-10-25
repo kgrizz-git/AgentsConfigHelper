@@ -3,10 +3,11 @@
 # Finder starts Terminal in $HOME, so move to the repo root first.
 #
 # Opens build/macos/Build/Products/Release/agents_config_helper.app when that
-# bundle has an executable, otherwise Debug, and builds Release when neither
-# usable bundle exists. A directory left behind by an interrupted build does
-# not count. On the first run it asks scripts/ensure_launcher_icon.sh to brand
-# this file with the app icon; that step is non-fatal and never blocks the launch.
+# bundle has its executable and a valid Contents/Info.plist, otherwise Debug,
+# and builds Release when neither usable bundle exists. A directory left
+# behind by an interrupted build does not count. On the first run it asks
+# scripts/ensure_launcher_icon.sh to brand this file with the app icon; that
+# step is non-fatal and never blocks the launch.
 
 set -euo pipefail
 
@@ -50,11 +51,32 @@ ensure_icon() {
     'Launch_AgentsConfigHelper: icon association failed (continuing).' >&2
 }
 
-# A finished bundle has the product executable. An empty .app directory,
-# such as one left by a failed Release build, is not launchable.
+# Info.plist is a required part of a macOS app bundle. Accept it only when it
+# parses and names this product's executable. Without plutil (test hosts),
+# require the same keys in an XML plist.
+valid_info_plist() {
+  local plist="$1" exe pkg
+  [ -f "$plist" ] && [ -s "$plist" ] || return 1
+  if [ -x /usr/bin/plutil ]; then
+    /usr/bin/plutil -lint -s "$plist" >/dev/null 2>&1 || return 1
+    exe="$(/usr/bin/plutil -extract CFBundleExecutable raw -o - "$plist" 2>/dev/null || true)"
+    pkg="$(/usr/bin/plutil -extract CFBundlePackageType raw -o - "$plist" 2>/dev/null || true)"
+    [ "$exe" = "agents_config_helper" ] || return 1
+    [ "$pkg" = "APPL" ] || return 1
+    return 0
+  fi
+  grep -q '<key>CFBundleExecutable</key>' "$plist" || return 1
+  grep -q '<string>agents_config_helper</string>' "$plist" || return 1
+  grep -q '<key>CFBundlePackageType</key>' "$plist" || return 1
+  grep -q '<string>APPL</string>' "$plist" || return 1
+}
+
+# A finished bundle has the product executable and a valid Contents/Info.plist.
+# An empty directory, or an executable left without that plist, is not launchable.
 launchable_bundle() {
   local exe="$1/Contents/MacOS/agents_config_helper"
-  [ -f "$exe" ] && [ -x "$exe" ]
+  [ -f "$exe" ] && [ -x "$exe" ] || return 1
+  valid_info_plist "$1/Contents/Info.plist"
 }
 
 find_app() {

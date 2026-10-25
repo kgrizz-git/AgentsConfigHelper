@@ -209,7 +209,8 @@ tests/                             — static launcher checks (stdlib unittest)
       the resource-fork guard is ordered before `setIconForFileOptions`,
       no `SetFile` anywhere, and the helper script contains no `exit 1`.
 - [x] Review follow-up (PR 77): a bundle counts only when its product
-      executable exists; one build lock covers the shared Release build;
+      executable exists and `Contents/Info.plist` is a valid plist for that
+      executable; one build lock covers the shared Release build;
       icon candidates are tried in order and the failure sentinel is skipped
       when the target is already associated; the repo launcher stores a
       resource-fork hash so an unrelated custom icon is replaced.

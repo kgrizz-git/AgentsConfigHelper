@@ -13,8 +13,10 @@ uses [Semantic Versioning](https://semver.org/).
 - **macOS double-click launcher.** Double-click
   `Launch_AgentsConfigHelper.command` at the repo root to open the built app
   from Finder (Release preferred, Debug fallback, builds Release when neither
-  exists). An incomplete Release bundle is skipped. The first run brands the
-  file with the app icon; the launcher, `scripts/setup.sh`, and `dev.sh`
+  exists). An incomplete Release bundle is skipped, including one whose
+  executable is present but whose `Contents/Info.plist` is missing or invalid.
+  The first run brands the file with the app icon; the launcher,
+  `scripts/setup.sh`, and `dev.sh`
   re-associate it when that association is missing or the custom icon is not
   the one last applied. One failed attempt writes
   `.agents-config-helper-launcher-icon-failed` and later runs skip until that
