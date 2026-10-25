@@ -274,6 +274,25 @@ class LauncherBehaviorTests(unittest.TestCase):
         self.assertIn("build macos --release", self.flutter_log.read_text(encoding="utf-8"))
         self.assertIn("Release/agents_config_helper.app", self._opened())
 
+    def test_builds_when_invoked_by_relative_path_from_parent(self) -> None:
+        env = dict(self.env)
+        env["FLUTTER_MAKE_BUNDLE"] = str(_product_executable(self.root, "Release"))
+        result = subprocess.run(
+            ["bash", f"{self.root.name}/Launch_AgentsConfigHelper.command"],
+            cwd=self.root.parent,
+            env=env,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=15,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.flutter_log.read_text().splitlines(), ["build macos --release"])
+        self.assertIn("Release/agents_config_helper.app", self._opened())
+        lock = self.root / ".agents-config-helper-launcher-build.lock"
+        self.assertFalse(lock.exists() or lock.is_symlink())
+
     def test_builds_release_when_no_usable_bundle_exists(self) -> None:
         result = self._run(
             extra_env={

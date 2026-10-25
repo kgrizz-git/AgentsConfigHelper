@@ -6,6 +6,8 @@ Internal / developer-facing changes that do not belong in the public
 ## Unreleased
 
 ### Added
+- **Relative launcher invocation:** guarded child shells source the launcher by
+  its absolute repository path, allowing first-time builds from another directory.
 - **Launcher lock review follow-through:** serialize stale-lock claiming and
   publication with a kernel-managed guard; cover the paused-claim race and close
   stdin for shell probes so failure traps cannot wait for interactive input.

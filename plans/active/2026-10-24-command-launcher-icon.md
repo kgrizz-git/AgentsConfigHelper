@@ -373,3 +373,11 @@ tests/                             — static launcher checks (stdlib unittest)
   checks passed. Cursor Grok 4.7 low reviewed the complete diff with no concrete
   bugs. Residual test limitation: a heavily delayed publisher could miss the
   overlap assertion window; the test also checks progress and the final owner PID.
+
+- Follow-up: guarded child shells source the absolute launcher path derived from
+  `script_dir`, preserving function and parent PID arguments. A behavior regression
+  invokes the launcher by relative path from its parent and verifies build/open
+  success plus lock cleanup.
+- Verification: all 27 launcher tests, Bash syntax, and changed-file hooks passed.
+  Antigravity Sonnet 5.5 medium reviewed the diff with no findings and independently
+  passed all 27 tests. The post-review diff matched the pre-review backup.

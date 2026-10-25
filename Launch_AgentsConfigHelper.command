@@ -161,7 +161,7 @@ with_build_lock_guard() {
     system @ARGV;
     exit($? == -1 ? 1 : ($? & 127) ? 1 : $? >> 8);
   ' "$script_dir/tmp/launcher-build-lock.guard" \
-    bash -c 'source "$1"; trap - EXIT; launcher_pid="$3"; "$2"' bash "${BASH_SOURCE[0]}" "$1" "$$"
+    bash -c 'source "$1"; trap - EXIT; launcher_pid="$3"; "$2"' bash "$script_dir/Launch_AgentsConfigHelper.command" "$1" "$$"
 }
 
 publish_build_lock() {
