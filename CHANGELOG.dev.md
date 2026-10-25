@@ -91,8 +91,9 @@ Internal / developer-facing changes that do not belong in the public
   or a Release rebuild. Concurrent launches take a gitignored build lock and
   re-check for a finished bundle before running `flutter build`. The lock's
   owner is published by linking a private directory into place, a stale lock
-  is claimed by renaming it aside before deletion, and cleanup removes the
-  public lock only when that link still points at this process. The exit trap
+  is claimed by renaming it aside before deletion, and a live lock taken by
+  that claim is linked back only when the public name is still free. Cleanup
+  removes the public lock only when that link still points at this process. The exit trap
   ignores command-substitution subshells so a bundle check cannot drop a lock
   another launcher still holds. Stubbed
   unittest coverage runs those paths without starting the app.

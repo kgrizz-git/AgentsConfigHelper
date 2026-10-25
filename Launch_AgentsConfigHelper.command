@@ -28,6 +28,24 @@ pause_on_failure() {
   fi
 }
 
+# Put a lock we renamed aside back on the public name only when that name is
+# free. mv onto an existing symlink replaces it, and mv onto a directory nests
+# the restored lock inside the directory.
+restore_claimed_lock() {
+  local from="$1" target
+  if [ -e "$BUILD_LOCK" ] || [ -L "$BUILD_LOCK" ]; then
+    return 1
+  fi
+  if [ -L "$from" ]; then
+    target="$(readlink "$from" 2>/dev/null || true)"
+    [ -n "$target" ] || return 1
+    link_lock "$target" "$BUILD_LOCK" || return 1
+    rm -f "$from"
+    return 0
+  fi
+  mv "$from" "$BUILD_LOCK" 2>/dev/null || return 1
+}
+
 # Drop the public lock only when it still points at this process's private
 # directory. A waiter that replaced the symlink is left alone.
 release_build_lock() {
@@ -48,7 +66,7 @@ release_build_lock() {
       rm -f "$held"
       rm -rf "$build_lock_private"
     else
-      mv "$held" "$BUILD_LOCK" 2>/dev/null || true
+      restore_claimed_lock "$held" || true
     fi
   fi
   build_lock_private=""
@@ -60,9 +78,9 @@ on_exit() {
   # and exiting it must not release the lock the parent still holds.
   [ "${BASH_SUBSHELL:-0}" -eq 0 ] || return 0
   release_build_lock
-  rm -rf "$script_dir/tmp/launcher-build-lock.preparing.$$" \
-    "$script_dir/tmp/launcher-build-lock.stale.$$" \
-    "$script_dir/tmp/launcher-build-lock.releasing.$$"
+  discard_lock_aside "$script_dir/tmp/launcher-build-lock.preparing.$$"
+  discard_lock_aside "$script_dir/tmp/launcher-build-lock.stale.$$"
+  discard_lock_aside "$script_dir/tmp/launcher-build-lock.releasing.$$"
   pause_on_failure "$status"
 }
 trap 'on_exit "$?"' EXIT
@@ -118,12 +136,32 @@ find_app() {
   return 1
 }
 
+# symlink(2) fails when the name exists, including when it is a directory.
+# ln follows a directory and would report success by nesting the new link.
+link_lock() {
+  local source="$1" dest="$2"
+  if [ -x /usr/bin/perl ]; then
+    /usr/bin/perl -e 'symlink($ARGV[0], $ARGV[1]) or exit 1' "$source" "$dest"
+    return $?
+  fi
+  if [ -e "$dest" ] || [ -L "$dest" ]; then
+    return 1
+  fi
+  ln -h -s "$source" "$dest"
+}
+
 # The pid file is written in a private directory, then a symlink to that
-# directory becomes the public lock. ln fails when the public name exists, so
-# a crash before the link does not publish an ownerless lock. mv onto an
-# existing directory would succeed by nesting the new lock inside it.
+# directory becomes the public lock. A crash before the link does not publish
+# an ownerless lock.
 publish_build_lock() {
   local private="$script_dir/tmp/launcher-build-lock.preparing.$$"
+  local current
+  current="$(readlink "$BUILD_LOCK" 2>/dev/null || true)"
+  if [ "$current" = "$private" ]; then
+    build_lock_private="$private"
+    build_lock_held=1
+    return 0
+  fi
   mkdir -p "$script_dir/tmp" || return 1
   rm -rf "$private"
   mkdir "$private" || return 1
@@ -131,14 +169,7 @@ publish_build_lock() {
     rm -rf "$private"
     return 1
   }
-  # ln follows an existing directory and reports success by nesting the new
-  # link inside it. An occupied name is not ours; -h then keeps a symlink
-  # that won the race from being followed.
-  if [ -e "$BUILD_LOCK" ] || [ -L "$BUILD_LOCK" ]; then
-    rm -rf "$private"
-    return 1
-  fi
-  if ln -h -s "$private" "$BUILD_LOCK" 2>/dev/null; then
+  if link_lock "$private" "$BUILD_LOCK"; then
     build_lock_private="$private"
     build_lock_held=1
     return 0
@@ -148,8 +179,8 @@ publish_build_lock() {
 }
 
 # One waiter renames a dead or ownerless lock aside and deletes that copy.
-# The public name is then free. The renamed copy is not a lock someone else
-# just published, including a symlink that replaced the stale one.
+# The renamed copy is not a lock someone else just published. A live copy is
+# linked back only while the public name is still free.
 claim_stale_build_lock() {
   local holder target private="$script_dir/tmp/launcher-build-lock.stale.$$"
   if [ ! -e "$BUILD_LOCK" ] && [ ! -L "$BUILD_LOCK" ]; then
@@ -160,32 +191,83 @@ claim_stale_build_lock() {
     return 1
   fi
   mkdir -p "$script_dir/tmp" || return 1
-  rm -rf "$private"
+  if [ -e "$private" ] || [ -L "$private" ]; then
+    holder="$(cat "$private/pid" 2>/dev/null || true)"
+    if [ -n "$holder" ] && [ "$holder" != "$$" ] && kill -0 "$holder" 2>/dev/null; then
+      restore_claimed_lock "$private" || true
+      if [ -e "$private" ] || [ -L "$private" ]; then
+        return 1
+      fi
+    fi
+    rm -rf "$private"
+  fi
   if ! mv "$BUILD_LOCK" "$private" 2>/dev/null; then
     return 1
   fi
   holder="$(cat "$private/pid" 2>/dev/null || true)"
   if [ -n "$holder" ] && kill -0 "$holder" 2>/dev/null; then
-    mv "$private" "$BUILD_LOCK" 2>/dev/null || true
+    restore_claimed_lock "$private" || true
     return 1
   fi
   if [ -L "$private" ]; then
     target="$(readlink "$private" 2>/dev/null || true)"
     rm -f "$private"
-    if [ -n "$target" ]; then
-      rm -rf "$target"
-    fi
+    remove_lock_target "$target"
   else
     rm -rf "$private"
   fi
   return 0
 }
 
+# Only delete lock directories this launcher created under tmp/.
+remove_lock_target() {
+  local target="$1"
+  case "$target" in
+    "$script_dir"/tmp/launcher-build-lock.*)
+      rm -rf "$target"
+      ;;
+  esac
+}
+
+# Remove a private or aside path. A live lock we could not put back stays.
+discard_lock_aside() {
+  local path="$1" holder target
+  if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+    return 0
+  fi
+  if [ "$path" = "$(readlink "$BUILD_LOCK" 2>/dev/null || true)" ]; then
+    return 0
+  fi
+  holder="$(cat "$path/pid" 2>/dev/null || true)"
+  if [ -n "$holder" ] && [ "$holder" != "$$" ] && kill -0 "$holder" 2>/dev/null; then
+    restore_claimed_lock "$path" || true
+    if [ -e "$path" ] || [ -L "$path" ]; then
+      return 0
+    fi
+  fi
+  if [ -L "$path" ]; then
+    target="$(readlink "$path" 2>/dev/null || true)"
+    rm -f "$path"
+    if [ "$target" != "$(readlink "$BUILD_LOCK" 2>/dev/null || true)" ]; then
+      remove_lock_target "$target"
+    fi
+    return 0
+  fi
+  rm -rf "$path"
+}
+
 # One launcher builds the shared product directory. Waiters re-check after
 # the lock so they open the finished bundle instead of starting a second build.
 acquire_build_lock() {
-  local i=0
+  local i=0 current prep
+  prep="$script_dir/tmp/launcher-build-lock.preparing.$$"
   while [ "$i" -lt 900 ]; do
+    current="$(readlink "$BUILD_LOCK" 2>/dev/null || true)"
+    if [ "$current" = "$prep" ]; then
+      build_lock_private="$prep"
+      build_lock_held=1
+      return 0
+    fi
     if publish_build_lock; then
       return 0
     fi
@@ -224,4 +306,6 @@ main() {
   printf 'Opened %s\n' "$app"
 }
 
-main "$@"
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  main "$@"
+fi

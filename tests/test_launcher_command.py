@@ -404,6 +404,114 @@ class LauncherBehaviorTests(unittest.TestCase):
             owner.kill()
             owner.wait(timeout=5)
 
+    def _plant_symlink_lock(self, private_name: str, pid: str | None) -> Path:
+        private = self.root / "tmp" / private_name
+        private.mkdir(parents=True)
+        if pid is not None:
+            (private / "pid").write_text(f"{pid}\n", encoding="utf-8")
+        lock = self.root / ".agents-config-helper-launcher-build.lock"
+        if lock.is_symlink() or lock.exists():
+            lock.unlink()
+        lock.symlink_to(private)
+        return private
+
+    def test_two_waiters_recover_a_dead_symlink_lock_once(self) -> None:
+        dead = subprocess.Popen(["sleep", "30"])
+        dead.kill()
+        dead.wait(timeout=5)
+        private = self._plant_symlink_lock("launcher-build-lock.planted", str(dead.pid))
+        first, second = self._start_pair()
+        self._assert_one_release_build(first, second)
+        lock = self.root / ".agents-config-helper-launcher-build.lock"
+        self.assertFalse(lock.exists())
+        self.assertFalse(private.exists())
+
+    def test_waiter_does_not_remove_a_live_symlink_lock(self) -> None:
+        owner = subprocess.Popen(["sleep", "30"])
+        private = self._plant_symlink_lock("launcher-build-lock.planted", str(owner.pid))
+        lock = self.root / ".agents-config-helper-launcher-build.lock"
+        waiter = subprocess.Popen(
+            ["bash", str(self.root / "Launch_AgentsConfigHelper.command")],
+            cwd=self.root,
+            env=self.env,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            time.sleep(2)
+            self.assertTrue(lock.is_symlink())
+            self.assertEqual(lock.resolve(), private.resolve())
+            self.assertEqual((private / "pid").read_text(encoding="utf-8").strip(), str(owner.pid))
+            waiter.terminate()
+            waiter.wait(timeout=5)
+            if waiter.stdout:
+                waiter.stdout.close()
+            if waiter.stderr:
+                waiter.stderr.close()
+            self.assertTrue(lock.is_symlink())
+            self.assertEqual((private / "pid").read_text(encoding="utf-8").strip(), str(owner.pid))
+        finally:
+            if waiter.poll() is None:
+                waiter.kill()
+                waiter.wait(timeout=5)
+            owner.kill()
+            owner.wait(timeout=5)
+
+    def test_restore_does_not_replace_a_newer_lock(self) -> None:
+        owner_dir = self.root / "tmp" / "launcher-build-lock.owner"
+        owner_dir.mkdir(parents=True)
+        (owner_dir / "pid").write_text("4242\n", encoding="utf-8")
+        stolen = self.root / "tmp" / "launcher-build-lock.stolen"
+        stolen.symlink_to(owner_dir)
+        replacement = self.root / "tmp" / "launcher-build-lock.replacement"
+        replacement.mkdir()
+        (replacement / "pid").write_text(f"{os.getpid()}\n", encoding="utf-8")
+        public = self.root / ".agents-config-helper-launcher-build.lock"
+        public.symlink_to(replacement)
+        directory_lock = self.root / "tmp" / "directory-lock"
+        directory_lock.mkdir()
+        nested_source = self.root / "tmp" / "launcher-build-lock.nested"
+        nested_source.mkdir()
+        (nested_source / "pid").write_text("7\n", encoding="utf-8")
+        script = self.root / "Launch_AgentsConfigHelper.command"
+        probe = f"""
+set -euo pipefail
+source "{script}"
+restore_claimed_lock "{stolen}" || true
+if [ "$(readlink "{public}")" != "{replacement}" ]; then
+  printf 'replaced the newer lock\\n' >&2
+  exit 1
+fi
+if [ ! -d "{owner_dir}" ] || [ ! -L "{stolen}" ]; then
+  printf 'dropped the stolen live lock\\n' >&2
+  exit 1
+fi
+rm "{public}"
+mkdir "{public}"
+restore_claimed_lock "{nested_source}" || true
+if [ -e "{public}/launcher-build-lock.nested" ] || [ -L "{public}/launcher-build-lock.nested" ]; then
+  printf 'nested the restored lock into the directory\\n' >&2
+  exit 1
+fi
+if [ ! -d "{nested_source}" ]; then
+  printf 'deleted the unrestored directory lock\\n' >&2
+  exit 1
+fi
+exit 0
+"""
+        result = subprocess.run(
+            ["bash", "-c", probe],
+            cwd=self.root,
+            env=self.env,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=15,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
