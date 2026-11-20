@@ -5,6 +5,13 @@ Internal / developer-facing changes that do not belong in the public
 
 ## Unreleased
 
+### Changed
+
+- **Dependabot:** grouped patch/minor pub updates into `pub-minor-patch` and
+  GitHub Actions patch/minor updates into `actions-bumps` (`.github/dependabot.yml`)
+  so monthly bumps produce fewer PRs/emails. Major version updates remain one PR per
+  dependency (pub and Actions).
+
 ### Added
 - **Relative launcher invocation:** guarded child shells source the launcher by
   its absolute repository path, allowing first-time builds from another directory.
