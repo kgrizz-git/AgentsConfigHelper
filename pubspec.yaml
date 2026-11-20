@@ -38,7 +38,7 @@ dependencies:
   multi_split_view: ^3.6.2
   path: ^1.9.1
   path_provider: ^2.1.6
-  riverpod_annotation: ^4.0.7
+  riverpod_annotation: ^4.0.8
   screen_retriever: ^0.2.2
   toml: ^0.18.0
   url_launcher: ^6.3.3
@@ -51,7 +51,7 @@ dev_dependencies:
   dart_code_linter: ^4.4.5
   flutter_test:
     sdk: flutter
-  riverpod_generator: ^4.0.9
+  riverpod_generator: ^4.0.10
   very_good_analysis: ^11.0.0
 
 # For information on the generic Dart part of this file, see the
