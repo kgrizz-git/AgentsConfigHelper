@@ -232,8 +232,10 @@ Phase 2 regression unambiguously attributable to the windowing migration.
     drop the `await`s and route a null primary through the existing fallback in
     `lib/services/desktop_window_configuration.dart:15-23`. Do not force-unwrap.
   - Map the work area via `Display.workArea` and the exported `RectangleToRect`
-    conversion. Copy the geometry into plain Dart values rather than retaining `Display`
-    objects: their native handles are finalizer-managed and there is no public `dispose()`.
+    conversion. `getPrimary()` and `getAll()` return owned native handles
+    (`Display.fromHandle`), and `Display` exposes a public `dispose()`. Copy the geometry
+    into plain Dart values, then dispose those handles deterministically — preferably in a
+    `finally` — rather than relying on the finalizer.
   - Reproduce the full startup sequence, not just "minimum size, bounds, show, focus".
     Today `WindowOptions` and `waitUntilReadyToShow` also supply the initial `size`, the
     title, centering when nothing was restored, and normalization of
@@ -297,7 +299,8 @@ Phase 2 regression unambiguously attributable to the windowing migration.
 
 ### Manual smoke matrix
 
-Required, because no test covers this layer. Run on real or CI-provisioned builds.
+Required, because no test covers the native adapter, the startup orchestration, or the
+event/listener wiring. Run on real or CI-provisioned builds.
 
 | # | Scenario | Expected |
 | --- | --- | --- |
