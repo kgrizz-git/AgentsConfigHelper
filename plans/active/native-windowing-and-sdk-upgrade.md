@@ -247,8 +247,12 @@ Phase 2 regression unambiguously attributable to the windowing migration.
     order — state reset, size, minimum size, bounds when restored (otherwise center), title,
     listener registration, show, focus — and keep the window hidden until the final geometry
     is applied so there is no flash at the runner's default size. Register the listener
-    *before* `show()` so a move or close during startup is not missed, and ignore events
-    until the window is shown so intermediate geometry is never persisted.
+    *before* `show()` so a move or close during startup is not missed.
+  - Gate only *geometry* persistence during startup, never lifecycle events. Ignore
+    move/resize until a startup-complete flag is set by our own `show()` call completing —
+    not by polling an OS `isVisible` — and always process close requests from registration
+    onward, even while the window is hidden. If the window never becomes visible, a bounded
+    timeout must begin processing geometry so the listener cannot stay inert forever.
   - Resolve the window through nativeapi's `WindowManager.getCurrent()` (the nativeapi
     0.6.2 fix this plan depends on), never through the `legacy.dart` bridge. A transient
     null must have a defined recovery: wait for `WindowCreatedEvent` or retry on a
@@ -258,12 +262,18 @@ Phase 2 regression unambiguously attributable to the windowing migration.
   - Replace the `WindowListener` mixin with the window-scoped native listener
     (`window.addListener(...)`). Keep the debounced bounds save, and handle close as a
     close *request* with durability:
-    - serialize bounds writes: keep at most one save in flight (queue them or chain them)
-      so a debounce save and a close save can never write concurrently;
-    - on close, cancel the debounce timer, **await any in-flight save**, then write the
-      final bounds and await that write before returning. A save that already started
-      cannot be cancelled, so without this ordering an older snapshot can land after the
-      final one and the next launch restores stale geometry;
+    - serialize bounds writes through a single FIFO chain, and state which request wins:
+      the close save is appended to the chain and the handler awaits the **whole chain to
+      drain**, not only the currently executing write. Awaiting just the in-flight save is
+      insufficient, because a debounce save that already fired but is still queued would
+      land after the final write and restore stale geometry;
+    - set a `closing` latch before enqueuing the final save. The latch rejects any new
+      move/resize save, so no older snapshot can be queued behind it. (Equivalently, stamp
+      each save with a monotonically increasing generation and have the store discard
+      obsolete writes; pick one invariant and state it. The latch plus a full chain drain
+      needs no sequence number.)
+    - on close: set the latch, cancel the debounce timer, capture the current bounds, append
+      the final save, and await the chain before returning;
     - never reject the close — return normally. Do not call `EventDecision.cancel()`;
     - catch persistence failures and log them, so a failed save cannot accidentally veto
       the close through an escaping exception.
@@ -326,8 +336,10 @@ event/listener wiring. Run on real or CI-provisioned builds.
 | 10 | Linux X11 | Move, resize, and close persistence all work |
 | 11 | Linux Wayland | No crash; document any move-reporting limitation |
 | 12 | App icon and taskbar | Unchanged from the previous release |
-| 13 | Move or close immediately after launch | Event observed during startup; final bounds saved |
-| 14 | Resize, then close before the debounce fires | Final bounds win; no stale overwrite from the pending save |
+| 13 | Close immediately after launch, before the window is visible | Close processed; final bounds saved |
+| 14 | Move during startup, before the window is shown | Geometry ignored until startup completes, then tracked |
+| 15 | Close while a debounce save is already in flight | Final bounds win; the older write does not land last |
+| 16 | Close with a debounce save queued behind an in-flight one | Chain drains in order; final bounds are the last write |
 
 ### Phase 2 acceptance
 
@@ -353,10 +365,11 @@ re-extract or restructure the same code a second time.
   restored-bounds clamping, and `test/services/desktop_window_bounds_store_test.dart`
   covers persistence.
 - Cover the behaviour that has no tests today: the bounds write completing before the close
-  proceeds and no veto on save failure, debounce cancellation on close, serialization of a
-  pre-existing in-flight save against the final close save (newest snapshot must win),
-  suppression while maximized/minimized/full screen, and native event routing to the bounds
-  save.
+  proceeds and no veto on save failure, debounce cancellation on close, the closing latch and
+  a full chain drain covering both an in-flight save and one queued behind it (newest
+  snapshot must win), suppression of post-close geometry events, a close request arriving
+  before the window is visible, suppression while maximized/minimized/full screen, and
+  native event routing to the bounds save.
 - Record any residual platform behaviour that stays manual (Wayland move reporting).
 
 ### Phase 3 checks
