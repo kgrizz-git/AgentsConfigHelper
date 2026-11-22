@@ -14,6 +14,19 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+        exclude-patterns:
+          # Kept out of the broad group: their minor bumps are breaking and the
+          # pair must move together (see plans/active/native-windowing-and-sdk-upgrade.md).
+          - "window_manager"
+          - "screen_retriever"
+        update-types:
+          - "minor"
+          - "patch"
+      pub-windowing-nativeapi:
+        applies-to: version-updates
+        patterns:
+          - "window_manager"
+          - "screen_retriever"
         update-types:
           - "minor"
           - "patch"
