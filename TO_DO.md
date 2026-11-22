@@ -50,6 +50,17 @@ its full entry, which remains the source of scope and completion detail.
       Adopt the upstream `automate` default only as a deliberate, formatting-only change;
       see the archived [migration plan](plans/archive/very-good-analysis-11-migration.md).
 
+### Windowing and toolchain upgrade
+
+- [ ] **Native windowing migration + Flutter 3.50 (active):** move `window_manager` /
+      `screen_retriever` off the deprecated federated plugins onto the nativeapi releases
+      (`0.7.1` / `0.4.1`), which requires raising the pinned toolchain to Flutter 3.50 /
+      Dart 3.14. Delivered as separate PRs for the Dependabot carve-out, the toolchain
+      bump, the windowing rewrite, and window-layer test coverage. The `0.6.0`/`0.3.1`
+      interim is rejected because its Windows startup window cannot be resolved while
+      hidden, silently discarding restored bounds. See
+      [plans/active/native-windowing-and-sdk-upgrade.md](plans/active/native-windowing-and-sdk-upgrade.md).
+
 ## Product follow-ups (prioritized)
 
 ### Recommended delivery order

@@ -60,6 +60,17 @@ Internal / developer-facing changes that do not belong in the public
   fixed platform instead of depending on the test runner OS.
 
 ### Changed
+- **Dependabot windowing carve-out:** `window_manager` and `screen_retriever` are excluded
+  from `pub-minor-patch` and grouped separately as `pub-windowing-nativeapi`
+  (`.github/dependabot.yml`). Their 0.x minor bumps are breaking and the pair must move
+  together, so an unresolvable bump must not drag unrelated patch updates into the broad
+  grouped PR. The upgrade itself is tracked in
+  `plans/active/native-windowing-and-sdk-upgrade.md` and `TO_DO.md`.
+- **Stale lockfile corrected for the 3.47.1 pin:** the committed `pubspec.lock` was
+  resolved under Flutter 3.44, so `flutter pub get` on the pinned toolchain rewrote
+  `sdks.flutter` from `>=3.44.0` to `>=3.47.0` and `test_api` from 0.7.14 to 0.7.12. The
+  pre-commit metrics hook runs `flutter pub get` on every commit, so the stale entry made
+  every commit on the pinned SDK fail the hook. No direct dependency changed.
 - **Dependabot:** grouped patch/minor pub updates into `pub-minor-patch` and
   GitHub Actions patch/minor updates into `actions-bumps` (`.github/dependabot.yml`)
   so monthly bumps produce fewer PRs/emails. Major version updates remain one PR per
