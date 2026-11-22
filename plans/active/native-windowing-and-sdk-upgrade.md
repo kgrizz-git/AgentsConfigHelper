@@ -128,14 +128,16 @@ final adapter architecture; Phase 3 then adds tests rather than re-extracting th
 - Correct the stale `pubspec.lock` entry: the committed lock was resolved under
   Flutter 3.44 (`sdks.flutter: >=3.44.0`, `test_api 0.7.14`), while Flutter 3.47.1's
   `flutter_test` pins `test_api 0.7.12` exactly, so any resolution on the pinned toolchain
-  rewrites those fields. This is a pre-existing inconsistency, not an SDK incompatibility or
-  a direct dependency change. The pre-commit `dart-code-linter` hook runs
-  `flutter pub run dart_code_linter:metrics`; that implicit package resolution rewrites the
-  stale lock, and pre-commit then fails because a hook modified a tracked file — so leaving
-  it out blocks every commit on the pinned SDK. Phase 1 regenerates the lock again on the
-  3.50.x toolchain.
-- Close Dependabot PR #87 as superseded: it targets 0.7.0/0.4.0, which cannot resolve on the
-  pinned SDK, and current releases are 0.7.1/0.4.1.
+  rewrites the version, its checksum, and the SDK floor. This is a pre-existing
+  inconsistency, not an SDK incompatibility or a direct dependency change. The pre-commit
+  `dart-code-linter` hook runs `flutter pub run dart_code_linter:metrics`; that implicit
+  package resolution rewrites the stale lock, and pre-commit then fails because a hook
+  modified a tracked file — so leaving it out blocks every commit on the pinned SDK.
+  Phase 1 regenerates the lock again on the 3.50.x toolchain.
+- Close Dependabot PR #87 as superseded when this PR lands: it targets 0.7.0/0.4.0, which
+  cannot resolve on the pinned SDK, and current releases are 0.7.1/0.4.1. Dependabot may
+  re-propose the pair on its next scheduled run; once this carve-out is on `main` that
+  becomes a single `pub-windowing-nativeapi` PR instead of a poisoned broad group.
 
 ### Why this mechanism
 
@@ -157,7 +159,8 @@ entirely, including after Phase 2 when the pair should become mergeable again.
 - Generated-drift gate: `git diff --exit-code` after the Dart checks, so nothing produced
   during verification is accidentally left out of the PR.
 - Confirm no direct dependency change: `git diff --stat` touches only docs,
-  `.github/dependabot.yml`, and the two SDK-pinned lockfile fields.
+  `.github/dependabot.yml`, and the three SDK-pinned lockfile fields (the `test_api`
+  version, its regenerated checksum, and the `sdks.flutter` floor).
 
 ### Phase 0 acceptance
 
@@ -165,8 +168,9 @@ entirely, including after Phase 2 when the pair should become mergeable again.
 - [ ] The dedicated group matches exactly those two packages.
 - [ ] This plan has one open `TO_DO.md` entry that links back to it.
 - [ ] Docs integrity and markdownlint pass.
-- [ ] The only `pubspec.lock` change is the SDK-pinned `test_api` version and the
-      `sdks.flutter` floor.
+- [ ] The only `pubspec.lock` change is the SDK-pinned `test_api` version, its regenerated
+      checksum, and the `sdks.flutter` floor.
+- [ ] Dependabot PR #87 is closed as superseded as part of landing this PR.
 
 ### Follow-up check after merge
 
@@ -240,9 +244,11 @@ Phase 2 regression unambiguously attributable to the windowing migration.
     Today `WindowOptions` and `waitUntilReadyToShow` also supply the initial `size`, the
     title, centering when nothing was restored, and normalization of
     fullscreen/maximized/minimized state (`lib/main.dart:151-183`). Specify the complete
-    order — state reset, size, minimum size, bounds when restored (otherwise center),
-    title, show, focus, then listener registration — and keep the window hidden until the
-    final geometry is applied so there is no flash at the runner's default size.
+    order — state reset, size, minimum size, bounds when restored (otherwise center), title,
+    listener registration, show, focus — and keep the window hidden until the final geometry
+    is applied so there is no flash at the runner's default size. Register the listener
+    *before* `show()` so a move or close during startup is not missed, and ignore events
+    until the window is shown so intermediate geometry is never persisted.
   - Resolve the window through nativeapi's `WindowManager.getCurrent()` (the nativeapi
     0.6.2 fix this plan depends on), never through the `legacy.dart` bridge. A transient
     null must have a defined recovery: wait for `WindowCreatedEvent` or retry on a
@@ -252,8 +258,12 @@ Phase 2 regression unambiguously attributable to the windowing migration.
   - Replace the `WindowListener` mixin with the window-scoped native listener
     (`window.addListener(...)`). Keep the debounced bounds save, and handle close as a
     close *request* with durability:
-    - cancel the debounce timer and `await` the bounds-store write before the callback
-      returns, so the save completes before the window can be destroyed;
+    - serialize bounds writes: keep at most one save in flight (queue them or chain them)
+      so a debounce save and a close save can never write concurrently;
+    - on close, cancel the debounce timer, **await any in-flight save**, then write the
+      final bounds and await that write before returning. A save that already started
+      cannot be cancelled, so without this ordering an older snapshot can land after the
+      final one and the next launch restores stale geometry;
     - never reject the close — return normally. Do not call `EventDecision.cancel()`;
     - catch persistence failures and log them, so a failed save cannot accidentally veto
       the close through an escaping exception.
@@ -316,6 +326,8 @@ event/listener wiring. Run on real or CI-provisioned builds.
 | 10 | Linux X11 | Move, resize, and close persistence all work |
 | 11 | Linux Wayland | No crash; document any move-reporting limitation |
 | 12 | App icon and taskbar | Unchanged from the previous release |
+| 13 | Move or close immediately after launch | Event observed during startup; final bounds saved |
+| 14 | Resize, then close before the debounce fires | Final bounds win; no stale overwrite from the pending save |
 
 ### Phase 2 acceptance
 
@@ -341,8 +353,10 @@ re-extract or restructure the same code a second time.
   restored-bounds clamping, and `test/services/desktop_window_bounds_store_test.dart`
   covers persistence.
 - Cover the behaviour that has no tests today: the bounds write completing before the close
-  proceeds and no veto on save failure, debounce cancellation on close, suppression while
-  maximized/minimized/full screen, and native event routing to the bounds save.
+  proceeds and no veto on save failure, debounce cancellation on close, serialization of a
+  pre-existing in-flight save against the final close save (newest snapshot must win),
+  suppression while maximized/minimized/full screen, and native event routing to the bounds
+  save.
 - Record any residual platform behaviour that stays manual (Wayland move reporting).
 
 ### Phase 3 checks
