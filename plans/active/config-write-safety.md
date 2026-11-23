@@ -291,7 +291,10 @@ that PR is unmerged and will be rebased onto `main` before review.
   existence it was computed from, the parsed result, and the fallback flag.
 - `previewSaveConfig`/`previewSaveRaw` compute it without writing; `commitSavePreview`
   consumes that result and never re-serializes. The commit sink is the atomic text/byte
-  write, encoding once.
+  write, encoding once. The editor hands the displayed preview to the shell's
+  `commitSavePreview` sink, so the writer does not recompute after the review dialog; a
+  changed source still raises the conflict path, and a fallback preview still requires its
+  separate rewrite consent before commit.
 - Before replacement, verify the current source still matches the captured content and
   existence. A preview also refuses when the source no longer matches
   `config.originalContent`, so an edit between load and Review Changes is surfaced instead

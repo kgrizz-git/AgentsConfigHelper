@@ -40,6 +40,8 @@ extension _ConfigEditorSaveFlow on _ConfigEditorState {
       }
     }
     _updateUi(() => _saving = true);
+    final previewToCommit = shown;
+    final commitPreview = widget.commitPreview;
     return await StructuredSaveFlow.run(
       context: context,
       isMounted: () => mounted,
@@ -49,7 +51,21 @@ extension _ConfigEditorSaveFlow on _ConfigEditorState {
         rules: _rules,
         permissions: _permissions,
       ),
-      onSave: widget.onSave,
+      onSave: (config, {rawContent, allowRewrite, overwriteConfirmed}) {
+        // Commit the displayed preview verbatim. A fallback preview still
+        // needs the separate rewrite consent before it may be committed.
+        if (previewToCommit != null && commitPreview != null) {
+          if ((allowRewrite ?? false) || !previewToCommit.usedFallback) {
+            return commitPreview(previewToCommit);
+          }
+        }
+        return widget.onSave(
+          config,
+          rawContent: rawContent,
+          allowRewrite: allowRewrite,
+          overwriteConfirmed: overwriteConfirmed,
+        );
+      },
       overwriteConfirmed: overwrite,
       onSuccess: (savedConfig) {
         _updateUi(() {

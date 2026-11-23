@@ -67,9 +67,10 @@ Internal / developer-facing changes that do not belong in the public
   post-preview conflicts, deliberate overwrite, fallback-rewrite previews,
   and the review/confirm UI. Existence tracking covers empty-file deletion and
   external empty-file creation; preview-unavailable and failed overwrite
-  re-preview tests assert zero writes. The macOS test-root bridge refuses
-  symlink destinations and preserves modes. Test fixtures no longer write into
-  the real home directory.
+  re-preview tests assert zero writes. The editor commits the displayed
+  `SavePreview` verbatim instead of recomputing it. The macOS test-root bridge
+  refuses symlink destinations and preserves modes. Test fixtures no longer
+  write into the real home directory.
 
 ### Changed
 - **Config editor save orchestration:** the save/preview callback signatures

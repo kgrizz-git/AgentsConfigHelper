@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:agents_config_helper/models/tool_config.dart';
+import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -131,7 +132,8 @@ void main() {
     tester,
   ) async {
     final config = _config();
-    final overwriteValues = <bool?>[];
+    final committed = <SavePreview>[];
+    var onSaveCalls = 0;
     final initialPreview = SavePreview(
       config: config,
       content: '{"rules": ["mine"]}',
@@ -155,11 +157,15 @@ void main() {
           body: ConfigEditor(
             config: config,
             onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) async {
-              overwriteValues.add(overwriteConfirmed);
-              if (overwriteValues.length == 1) {
+              onSaveCalls++;
+              return c;
+            },
+            commitPreview: (preview) async {
+              committed.add(preview);
+              if (committed.length == 1) {
                 throw SaveConflictException.stale(config.filePath, 'external');
               }
-              return c;
+              return preview.parsed;
             },
             resolvePath: (path) => path,
             onShowHistory: () {},
@@ -188,10 +194,124 @@ void main() {
     await tester.tap(find.text('Confirm & Save'));
     await tester.pumpAndSettle();
 
-    expect(overwriteValues, [false, true]);
+    expect(committed, [same(initialPreview), same(refreshedPreview)]);
+    expect(onSaveCalls, isZero);
     expect(
       find.textContaining('Settings saved successfully.'),
       findsOneWidget,
     );
   });
+
+  testWidgets('commits the exact displayed preview', (tester) async {
+    final config = _config();
+    final preview = SavePreview(
+      config: config,
+      content: '{"rules": ["shown"]}',
+      sourceContent: '{"rules": ["disk"]}',
+      sourceExists: true,
+      parsed: config,
+      usedFallback: false,
+    );
+    SavePreview? committed;
+    var onSaveCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ConfigEditor(
+            config: config,
+            onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) async {
+              onSaveCalls++;
+              return c;
+            },
+            commitPreview: (preview) async {
+              committed = preview;
+              return preview.parsed;
+            },
+            resolvePath: (path) => path,
+            onShowHistory: () {},
+            previewSaveContent: (
+              c, {
+              rawContent,
+              overwriteConfirmed = false,
+            }) async => preview,
+          ),
+        ),
+      ),
+    );
+
+    await _makeDirty(tester);
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirm & Save'));
+    await tester.pumpAndSettle();
+
+    expect(committed, same(preview));
+    expect(onSaveCalls, isZero);
+  });
+
+  testWidgets(
+    'a fallback preview still requires consent and commits shown bytes',
+    (
+      tester,
+    ) async {
+      final config = _config();
+      final preview = SavePreview(
+        config: config,
+        content: "rules = ['new']",
+        sourceContent: "rules = ['old']",
+        sourceExists: true,
+        parsed: config,
+        usedFallback: true,
+      );
+      SavePreview? committed;
+      var onSaveCalls = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ConfigEditor(
+              config: config,
+              onSave:
+                  (c, {rawContent, allowRewrite, overwriteConfirmed}) async {
+                    onSaveCalls++;
+                    throw const SerializationFallbackException(
+                      format: 'TOML',
+                      wouldBeLost: 'comments',
+                    );
+                  },
+              commitPreview: (preview) async {
+                committed = preview;
+                return preview.parsed;
+              },
+              resolvePath: (path) => path,
+              onShowHistory: () {},
+              previewSaveContent: (
+                c, {
+                rawContent,
+                overwriteConfirmed = false,
+              }) async => preview,
+            ),
+          ),
+        ),
+      );
+
+      await _makeDirty(tester);
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirm & Save'));
+      await tester.pumpAndSettle();
+      expect(find.text('Save would change formatting'), findsOneWidget);
+
+      await tester.tap(find.text('Rewrite document'));
+      await tester.pumpAndSettle();
+
+      expect(committed, same(preview));
+      expect(onSaveCalls, 1);
+      expect(
+        find.textContaining('Settings saved successfully.'),
+        findsOneWidget,
+      );
+    },
+  );
 }

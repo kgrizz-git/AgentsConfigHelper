@@ -35,6 +35,7 @@ class ConfigEditor extends StatefulWidget {
     this.rawContentParsedAsJsonc,
     this.currentSourceParsedAsJsonc,
     this.previewSaveContent,
+    this.commitPreview,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
     this.tomlStructuredSaveEnabled = false,
@@ -53,6 +54,10 @@ class ConfigEditor extends StatefulWidget {
 
   /// Persists a confirmed edited configuration.
   final SaveConfigCallback onSave;
+
+  /// Commits the preview the user reviewed without re-serializing it.
+  /// Optional; without it saves go through [onSave].
+  final Future<ToolConfig> Function(SavePreview preview)? commitPreview;
 
   /// Resolves the configuration path before opening its directory.
   final String Function(String path) resolvePath;

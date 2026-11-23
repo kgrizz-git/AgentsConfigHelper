@@ -565,6 +565,7 @@ class _MainShellState extends ConsumerState<MainShell>
                   }
                   return updated;
                 },
+            commitPreview: configService.commitSavePreview,
             resolvePath: configService.resolvePath,
             hasUsableBaseline: configService.hasUsableBaseline,
             rawContentParsedAsJsonc: configService.rawContentParsedAsJsonc,
