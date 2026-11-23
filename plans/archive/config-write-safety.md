@@ -359,8 +359,9 @@ before the full-branch review.
 
 - **No `fchmod` in `dart:io`.** The POSIX mode is applied by path with `chmod` while the
   exclusive, PID-and-timestamp-named temporary descriptor is open, and before content is
-  written.
-  A native/FFI `fchmod` would remove the remaining path-based window and is recorded as a
+  written. The native macOS test-root bridge applies the mode with `fchmod` on the open
+  descriptor, so its saves are not narrowed by the process umask. A native/FFI `fchmod` in
+  the Dart path would remove the remaining path-based window and is recorded as a
   follow-up rather than claimed here.
 - **No directory `fsync` in `dart:io`.** File content is flushed before the rename, but the
   rename itself is not durably synced, so a power loss can still lose the update. The macOS

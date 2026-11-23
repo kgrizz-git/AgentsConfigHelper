@@ -68,7 +68,9 @@ Internal / developer-facing changes that do not belong in the public
   and the review/confirm UI. Existence tracking covers empty-file deletion and
   external empty-file creation; preview-unavailable and failed overwrite
   re-preview tests assert zero writes. The editor commits the displayed
-  `SavePreview` verbatim instead of recomputing it. The macOS test-root bridge
+  `SavePreview` verbatim and blocks editing before the freshness recheck. The
+  macOS test-root bridge applies the exact destination mode with `fchmod` on
+  the open descriptor, so umask cannot narrow it. The macOS test-root bridge
   refuses symlink destinations and preserves modes. Test fixtures no longer
   write into the real home directory. The exact-preview commit path shares the
   shell's post-save active-config, recovery-mode, and backup-list bookkeeping.

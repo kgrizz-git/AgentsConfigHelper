@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:agents_config_helper/models/tool_config.dart';
@@ -86,6 +87,67 @@ void main() {
 
     expect(saveCalls, isZero);
     expect(find.textContaining('Could not compute a preview'), findsOneWidget);
+  });
+
+  testWidgets('blocks editing while the fresh preview runs', (tester) async {
+    final config = _config();
+    final preview = SavePreview(
+      config: config,
+      content: '{"rules": ["shown"]}',
+      sourceContent: '{"rules": ["disk"]}',
+      sourceExists: true,
+      parsed: config,
+      usedFallback: false,
+    );
+    var previewCalls = 0;
+    var commits = 0;
+    final fresh = Completer<SavePreview?>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ConfigEditor(
+            config: config,
+            onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) async {
+              return c;
+            },
+            commitPreview: (preview) async {
+              commits++;
+              return preview.parsed;
+            },
+            resolvePath: (path) => path,
+            onShowHistory: () {},
+            previewSaveContent: (c, {rawContent, overwriteConfirmed = false}) {
+              previewCalls++;
+              return previewCalls == 1 ? Future.value(preview) : fresh.future;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await _makeDirty(tester);
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirm & Save'));
+    await tester.pump();
+
+    expect(previewCalls, 2);
+    expect(
+      tester
+          .widgetList<AbsorbPointer>(find.byType(AbsorbPointer))
+          .any((widget) => widget.absorbing),
+      isTrue,
+    );
+
+    fresh.complete(preview);
+    await tester.pumpAndSettle();
+
+    expect(commits, 1);
+    expect(
+      find.textContaining('Settings saved successfully.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a failed overwrite re-preview blocks the save', (tester) async {

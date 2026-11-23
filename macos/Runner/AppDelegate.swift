@@ -266,6 +266,15 @@ final class TestRootFileOperations {
           }
         }
 
+        // The mode passed to openat is filtered by the process umask. Apply the
+        // exact destination mode on the open descriptor before writing.
+        guard fchmod(descriptor, existingMode) == 0 else {
+          throw TestRootFileOperationError.posix(
+            operation: "fchmod temporary file",
+            code: errno
+          )
+        }
+
         try writeAll(data, to: descriptor)
         guard fsync(descriptor) == 0 else {
           throw TestRootFileOperationError.posix(operation: "fsync", code: errno)

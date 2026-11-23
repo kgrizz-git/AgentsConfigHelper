@@ -28,18 +28,23 @@ extension _ConfigEditorSaveFlow on _ConfigEditorState {
       _showPreviewUnavailable(_previewError);
       return;
     }
+    final startRevision = _editRevision;
+    // Block editing before the fresh-preview await; otherwise edits made while
+    // it runs would be dropped by the saved-preview reset.
+    _updateUi(() => _saving = true);
     if (shown != null && widget.previewSaveContent != null) {
       final fresh = await _pendingSavePreview(overwrite: overwrite);
       if (!mounted) return;
-      if (fresh == null ||
+      if (_editRevision != startRevision ||
+          fresh == null ||
           fresh.content != shown.content ||
           fresh.sourceContent != shown.sourceContent ||
           fresh.sourceExists != shown.sourceExists) {
+        _updateUi(() => _saving = false);
         await _showDiffModal(overwrite: overwrite);
         return;
       }
     }
-    _updateUi(() => _saving = true);
     final previewToCommit = shown;
     final commitPreview = widget.commitPreview;
     return await StructuredSaveFlow.run(
