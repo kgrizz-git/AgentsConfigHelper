@@ -393,6 +393,22 @@ void main() {
       expect(await file.readAsString(), contains('mine'));
     });
 
+    test('deleting a loaded whitespace-only source conflicts', () async {
+      final file = File(p.join(tempDir.path, 'whitespace.json'));
+      await file.writeAsString('  \n');
+      final config = await _load(configService, file.path);
+      await file.delete();
+
+      await expectLater(
+        configService.previewSaveConfig(config.copyWith(rules: ['mine'])),
+        throwsA(isA<SaveConflictException>()),
+      );
+      await expectLater(
+        configService.previewSaveRaw(config, '{"rules": ["raw"]}'),
+        throwsA(isA<SaveConflictException>()),
+      );
+    });
+
     test('a new file still saves when the source is absent', () async {
       final file = File(p.join(tempDir.path, 'brand-new.json'));
       final config = ToolConfig(

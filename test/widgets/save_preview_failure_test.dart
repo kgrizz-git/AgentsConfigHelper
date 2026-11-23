@@ -58,6 +58,41 @@ void main() {
     expect(find.textContaining('Could not compute a preview'), findsOneWidget);
   });
 
+  testWidgets('a null preview blocks the save', (tester) async {
+    final config = _config();
+    var saveCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ConfigEditor(
+            config: config,
+            onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) async {
+              saveCalls++;
+              return c;
+            },
+            resolvePath: (path) => path,
+            onShowHistory: () {},
+            previewSaveContent: (
+              c, {
+              rawContent,
+              overwriteConfirmed = false,
+            }) async => null,
+          ),
+        ),
+      ),
+    );
+
+    await _makeDirty(tester);
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirm & Save'));
+    await tester.pumpAndSettle();
+
+    expect(saveCalls, isZero);
+    expect(find.textContaining('Could not compute a preview'), findsOneWidget);
+  });
+
   testWidgets('a failed overwrite re-preview blocks the save', (tester) async {
     final config = _config();
     final overwriteValues = <bool?>[];
