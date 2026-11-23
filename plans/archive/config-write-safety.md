@@ -3,8 +3,8 @@
 Last reviewed: 2026-11-23
 Date: 2026-11-23
 Author: maintainers
-Status: active
-Tracking: `TO_DO.md` → Config write safety
+Status: archived
+Tracking: completed
 
 ## Goal
 
@@ -113,19 +113,20 @@ validation only afterwards.
 - **Preview is write.** A save consumes an immutable preview result; it never recomputes
   the output behind the user's back.
 
-## Pull-request map
+## Delivery map
 
-Each row is an independent PR. The branch is stacked on the Flutter 3.50.1 upgrade while
-that PR is unmerged and will be rebased onto `main` before review.
+All four phases ship in `fix/config-write-safety`, based on the merged Flutter 3.50.1
+upgrade (`f8ebae3`). Each phase was implemented, gated, and reviewed as a separate chunk
+before the full-branch review.
 
-| PR | Branch | Contents |
+| Phase | Chunk | Contents |
 | --- | --- | --- |
-| 1 | `fix/config-atomic-writes` | Atomic text/byte writes, mode preservation, symlink resolution, atomic backups, restore path, home-directory test isolation |
-| 2 | `fix/config-lossless-fields` | Per-field dirty state, source-aware serialization, duplicate/shape refusal, combined-merge fix |
-| 3 | `fix/config-strict-json` | Catalog-driven strictness, pre-write validation of final bytes, raw recovery for nonconforming files |
-| 4 | `fix/config-save-preview` | Immutable preview carried into the writer, conflict detection at load/preview/replace |
+| 1 | Atomic writes | Atomic text/byte writes, mode preservation, symlink resolution, atomic backups, restore path, home-directory test isolation |
+| 2 | Lossless fields | Per-field dirty state, source-aware serialization, duplicate/shape refusal, combined-merge fix |
+| 3 | Strict JSON | Catalog-driven strictness, pre-write validation of final bytes, raw recovery for nonconforming files |
+| 4 | Save preview | Immutable preview carried into the writer, conflict detection at load/preview/replace |
 
-## Phase 1 — Atomic writes (PR 1)
+## Phase 1 — Atomic writes (chunk 1)
 
 ### Phase 1 changes
 
@@ -177,7 +178,7 @@ that PR is unmerged and will be rebased onto `main` before review.
 - Standard gates: format, `flutter analyze --fatal-infos`, metrics, tests, coverage gate,
   macOS release build.
 
-## Phase 2 — Per-field lossless editing (PR 2)
+## Phase 2 — Per-field lossless editing (chunk 2)
 
 ### Phase 2 changes
 
@@ -233,7 +234,7 @@ that PR is unmerged and will be rebased onto `main` before review.
 - YAML duplicate keys fail to load with a parse error (regression test).
 - Standard gates.
 
-## Phase 3 — Format-accurate strictness (PR 3)
+## Phase 3 — Format-accurate strictness (chunk 3)
 
 ### Phase 3 changes
 
@@ -283,7 +284,7 @@ that PR is unmerged and will be rebased onto `main` before review.
 - Catalog tests cover every reclassified target.
 - Standard gates.
 
-## Phase 4 — Immutable preview and conflict detection (PR 4)
+## Phase 4 — Immutable preview and conflict detection (chunk 4)
 
 ### Phase 4 changes
 
@@ -407,24 +408,24 @@ that PR is unmerged and will be rebased onto `main` before review.
 
 ## Acceptance criteria
 
-- [ ] No config save, restore, or backup publishes a partially written file.
-- [ ] If atomic replacement or mode preservation fails, the original is unchanged.
-- [ ] File modes are preserved on POSIX; the temporary file is never wider than the target.
-- [ ] A symlinked config is updated through the link, not replaced by a regular file.
-- [ ] Only fields the user changed are rewritten; untouched fields are byte-identical, and a
+- [x] No config save, restore, or backup publishes a partially written file.
+- [x] If atomic replacement or mode preservation fails, the original is unchanged.
+- [x] File modes are preserved on POSIX; the temporary file is never wider than the target.
+- [x] A symlinked config is updated through the link, not replaced by a regular file.
+- [x] Only fields the user changed are rewritten; untouched fields are byte-identical, and a
       structured save with an unparseable baseline is refused.
-- [ ] Clearing a duplicated key never deletes only one duplicate.
-- [ ] Non-list and mixed-list values are preserved or refused, never silently deleted.
-- [ ] A combined raw+structured save preserves both edits.
-- [ ] Final serialized bytes are validated for the target format before any backup or write.
-- [ ] Strict targets reject comments; JSONC targets accept them; nonconforming files have a
+- [x] Clearing a duplicated key never deletes only one duplicate.
+- [x] Non-list and mixed-list values are preserved or refused, never silently deleted.
+- [x] A combined raw+structured save preserves both edits.
+- [x] Final serialized bytes are validated for the target format before any backup or write.
+- [x] Strict targets reject comments; JSONC targets accept them; nonconforming files have a
       raw recovery path.
-- [ ] The review dialog shows the exact bytes that will be written, and the writer commits
+- [x] The review dialog shows the exact bytes that will be written, and the writer commits
       those bytes without re-encoding.
-- [ ] External edits are checked for at load, at preview, and immediately before
+- [x] External edits are checked for at load, at preview, and immediately before
       replacement, with reload and deliberate overwrite both supported and re-previewed.
-- [ ] Config-service tests write only inside their temporary root.
-- [ ] All CI jobs green.
+- [x] Config-service tests write only inside their temporary root.
+- [ ] All CI jobs green (PR merge gate).
 
 ## Completion steps
 

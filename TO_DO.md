@@ -61,16 +61,6 @@ its full entry, which remains the source of scope and completion detail.
       hidden, silently discarding restored bounds. See
       [plans/active/native-windowing-and-sdk-upgrade.md](plans/active/native-windowing-and-sdk-upgrade.md).
 
-### Config write safety
-
-- [ ] **Config write safety (active):** make every config write fail closed. Covers atomic
-      mode-preserving saves and restores, lossless handling of non-list and mixed-list
-      `rules`/`permissions`, duplicate-key detection, catalog-driven JSON/JSONC strictness,
-      a Review Changes preview that shows the real serialized output, external-edit
-      conflict detection, and test isolation from the real home directory. Origin: a static
-      data-safety audit of `lib/parsers/`, `lib/services/`, and the save flow. See
-      [plans/active/config-write-safety.md](plans/active/config-write-safety.md).
-
 ## Product follow-ups (prioritized)
 
 ### Recommended delivery order

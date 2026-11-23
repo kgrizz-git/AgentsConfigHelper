@@ -58,7 +58,7 @@ Internal / developer-facing changes that do not belong in the public
   `test/reports/config_overview_relevance_test.dart`. The host platform is read
   from an overridable `hostConfigPlatformProvider` so widget tests inject a
   fixed platform instead of depending on the test runner OS.
-- **Config write-safety coverage ([plan](plans/active/config-write-safety.md)):**
+- **Config write-safety coverage ([plan](plans/archive/config-write-safety.md)):**
   new `test/services/file_operations_atomic_test.dart`,
   `test/services/config_service_write_safety_test.dart`,
   `test/widgets/save_conflict_flow_test.dart`, and
@@ -70,7 +70,8 @@ Internal / developer-facing changes that do not belong in the public
   re-preview tests assert zero writes. The editor commits the displayed
   `SavePreview` verbatim instead of recomputing it. The macOS test-root bridge
   refuses symlink destinations and preserves modes. Test fixtures no longer
-  write into the real home directory.
+  write into the real home directory. The exact-preview commit path shares the
+  shell's post-save active-config, recovery-mode, and backup-list bookkeeping.
 
 ### Changed
 - **Config editor save orchestration:** the save/preview callback signatures
