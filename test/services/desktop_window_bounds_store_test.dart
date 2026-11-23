@@ -102,4 +102,18 @@ class _RecordingFileOperations implements FileOperations {
   Future<void> writeTextAtomically(String absolutePath, String text) async {
     writtenPath = absolutePath;
   }
+
+  @override
+  Future<void> writeBytesAtomically(
+    String absolutePath,
+    List<int> bytes,
+  ) async {
+    writtenPath = absolutePath;
+  }
+
+  @override
+  Future<void> copyFileAtomically(
+    String sourcePath,
+    String destinationPath,
+  ) => throw UnimplementedError();
 }

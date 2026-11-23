@@ -452,14 +452,13 @@ void main() {
     });
 
     test('saveConfig expands bare ~ and saves correctly', () async {
-      final homeStr =
-          Platform.environment['HOME'] ??
-          Platform.environment['USERPROFILE'] ??
-          tempDir.path;
-      final fileName =
-          'config_service_expand_${DateTime.now().microsecondsSinceEpoch}.json';
-      final configPath = '~/$fileName';
-      final file = File(p.join(homeStr, fileName));
+      final serviceWithHome = ConfigService(
+        backupService: backupService,
+        homeDirectoryResolver: () => tempDir.path,
+      );
+      const fileName = 'config_service_expand.json';
+      const configPath = '~/$fileName';
+      final file = File(p.join(tempDir.path, fileName));
       addTearDown(() async {
         // Synchronous existence checks keep this cleanup concise.
         // ignore: avoid_slow_async_io
@@ -475,7 +474,7 @@ void main() {
         rawSettings: const <String, dynamic>{},
       );
 
-      await configService.saveConfig(config);
+      await serviceWithHome.saveConfig(config);
       expect(file.existsSync(), isTrue);
     });
 

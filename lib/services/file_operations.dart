@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -40,6 +41,18 @@ abstract interface class FileOperations {
 
   /// Writes [text] atomically to [absolutePath].
   Future<void> writeTextAtomically(String absolutePath, String text);
+
+  /// Writes [bytes] atomically to [absolutePath].
+  ///
+  /// The temporary file is created in the destination's directory so the
+  /// final rename stays on one filesystem. A symlinked destination is resolved
+  /// first; a dangling link is refused rather than replaced.
+  Future<void> writeBytesAtomically(String absolutePath, List<int> bytes);
+
+  /// Copies [sourcePath] to [destinationPath] atomically.
+  ///
+  /// The source file's mode is preserved where the platform exposes it.
+  Future<void> copyFileAtomically(String sourcePath, String destinationPath);
 }
 
 /// The ordinary production filesystem implementation.
@@ -104,14 +117,142 @@ class LocalFileOperations implements FileOperations {
   Future<void> deleteFile(String absolutePath) => File(absolutePath).delete();
 
   @override
-  Future<void> writeTextAtomically(String absolutePath, String text) async {
-    final file = File(absolutePath);
-    final parent = file.parent;
-    await parent.create(recursive: true);
-    final temporary = File(
-      '${file.path}.${pid}_${DateTime.now().microsecondsSinceEpoch}.tmp',
+  Future<void> writeTextAtomically(String absolutePath, String text) =>
+      writeBytesAtomically(absolutePath, utf8.encode(text));
+
+  @override
+  Future<void> writeBytesAtomically(
+    String absolutePath,
+    List<int> bytes,
+  ) async {
+    await validatePath(absolutePath);
+    final targetPath = _resolveWriteTarget(absolutePath);
+    final destination = File(targetPath);
+    await destination.parent.create(recursive: true);
+    await _writeAtomically(destination, bytes, _modeOf(targetPath));
+  }
+
+  @override
+  Future<void> copyFileAtomically(
+    String sourcePath,
+    String destinationPath,
+  ) async {
+    await validatePath(sourcePath);
+    await validatePath(destinationPath);
+    final bytes = await File(sourcePath).readAsBytes();
+    final sourceMode = _modeOf(sourcePath);
+    final targetPath = _resolveWriteTarget(destinationPath);
+    final destination = File(targetPath);
+    await destination.parent.create(recursive: true);
+    await _writeAtomically(
+      destination,
+      bytes,
+      sourceMode ?? _modeOf(targetPath),
     );
-    await temporary.writeAsString(text, flush: true);
-    await temporary.rename(file.path);
+  }
+
+  /// Resolves a symlinked destination to its target so the link survives the
+  /// rename. A dangling link is refused: the app never creates a file through
+  /// a link whose target does not exist.
+  String _resolveWriteTarget(String absolutePath) {
+    if (FileSystemEntity.typeSync(absolutePath, followLinks: false) !=
+        FileSystemEntityType.link) {
+      return absolutePath;
+    }
+    try {
+      return File(absolutePath).resolveSymbolicLinksSync();
+    } on FileSystemException {
+      throw FileSystemException(
+        'Refusing to write through a symlink whose target does not exist; '
+        'create the target first',
+        absolutePath,
+      );
+    }
+  }
+
+  /// Returns the destination's permission bits, or null when it does not exist
+  /// or the platform has no POSIX mode.
+  int? _modeOf(String path) {
+    if (Platform.isWindows) return null;
+    try {
+      final stat = FileStat.statSync(path);
+      if (stat.type != FileSystemEntityType.file) return null;
+      return stat.mode & 0x1FF;
+    } on FileSystemException {
+      return null;
+    }
+  }
+
+  Future<void> _writeAtomically(
+    File destination,
+    List<int> bytes,
+    int? mode,
+  ) async {
+    final temporary = File(
+      '${destination.path}.${pid}_${DateTime.now().microsecondsSinceEpoch}.tmp',
+    );
+    var published = false;
+    RandomAccessFile? handle;
+    try {
+      temporary.createSync(exclusive: true);
+      if (FileSystemEntity.isLinkSync(temporary.path)) {
+        throw FileSystemException(
+          'Refusing to write through a symlink',
+          temporary.path,
+        );
+      }
+      // Open the descriptor before applying the destination mode. Opening a
+      // file whose preserved mode lacks owner-write (for example 0400) would
+      // fail, so the mode is applied while the writable descriptor is already
+      // open; writes through that descriptor are not re-checked.
+      handle = temporary.openSync(mode: FileMode.writeOnly);
+      try {
+        // Dart has no public fchmod. The mode is therefore applied by path
+        // while the exclusive, randomly named temporary descriptor is open.
+        // New files default to owner-only so a first save never widens access.
+        final effectiveMode = mode ?? (Platform.isWindows ? null : 0x180);
+        if (effectiveMode != null && !Platform.isWindows) {
+          final ProcessResult result;
+          try {
+            result = await Process.run('chmod', [
+              effectiveMode.toRadixString(8),
+              temporary.path,
+            ]);
+          } on ProcessException catch (error) {
+            throw FileSystemException(
+              'Could not apply the destination file mode: ${error.message}',
+              destination.path,
+            );
+          }
+          if (result.exitCode != 0) {
+            throw FileSystemException(
+              'Could not preserve the destination file mode',
+              destination.path,
+            );
+          }
+        }
+        handle
+          ..writeFromSync(bytes)
+          ..flushSync();
+      } finally {
+        handle.closeSync();
+        handle = null;
+      }
+      temporary.renameSync(destination.path);
+      published = true;
+    } finally {
+      try {
+        handle?.closeSync();
+      } on FileSystemException {
+        // The handle is already closed.
+      }
+      if (!published && temporary.existsSync()) {
+        try {
+          temporary.deleteSync();
+        } on FileSystemException {
+          // Cleanup is best effort; the destination is untouched.
+        }
+      }
+    }
   }
 }

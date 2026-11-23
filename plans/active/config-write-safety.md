@@ -137,9 +137,11 @@ that PR is unmerged and will be rebased onto `main` before review.
   leave the original untouched.
 - Secure temporary file: exclusively created, never following a symlink, in the resolved
   target's directory, removed on every failure path.
-- **Apply the destination mode immediately after creation and before writing content**
-  (descriptor-based `fchmod` on POSIX). Compare masked permission bits (`st_mode & 0o777`):
-  a result with fewer bits than the destination is acceptable, any additional bit is not.
+- **Apply the destination mode before writing content.** On POSIX, open the temporary
+  descriptor first, then apply the mode while it is open, then write: opening *after*
+  applying a mode without owner-write (for example `0400`) would fail, and writing through
+  an already-open descriptor is not re-checked. New files default to `0600` so a first save
+  never widens access. See "Deviations and limitations" for the `fchmod` caveat.
 - **Resolve symlink targets first**: write the temporary file in the target's directory and
   rename onto the resolved target so the link survives. Cover a link, a relative link, and
   a link to a missing target. A **dangling link is refused** with a clear error telling the
@@ -163,12 +165,14 @@ that PR is unmerged and will be rebased onto `main` before review.
 
 ### Phase 1 checks
 
-- Injected failure after the temporary file is written leaves the original bytes intact.
+- A failed write leaves the original bytes intact.
+- A destination with mode `0400` is updated successfully and keeps `0400`.
+- A newly created config defaults to `0600`.
 - A successful save through a symlink updates the target; the link still exists.
 - `0600` remains `0600` after a save; the temporary file is never wider than the
   destination.
-- A failed `chmod`/`fchmod` aborts the save with no change to the original.
-- Backup creation interrupted mid-copy leaves no `.bak` in `listBackups`.
+- A failed mode application aborts the save with no change to the original.
+- Backup creation that cannot complete leaves no `.bak` in `listBackups`.
 - Test-root workflow contract tests still pass; the native bridge is exercised.
 - Standard gates: format, `flutter analyze --fatal-infos`, metrics, tests, coverage gate,
   macOS release build.
@@ -300,6 +304,26 @@ that PR is unmerged and will be rebased onto `main` before review.
 | macOS release build | yes | yes | yes | yes |
 | Linux + Windows CI builds | CI | CI | CI | CI |
 | Docs updated (`docs/supported-tools.md`) | — | — | yes | — |
+
+## Deviations and limitations
+
+- **No `fchmod` in `dart:io`.** The POSIX mode is applied by path with `chmod` while the
+  exclusive, randomly named temporary descriptor is open, and before content is written.
+  A native/FFI `fchmod` would remove the remaining path-based window and is recorded as a
+  follow-up rather than claimed here.
+- **No directory `fsync` in `dart:io`.** File content is flushed before the rename, but the
+  rename itself is not durably synced, so a power loss can still lose the update. The macOS
+  test-root bridge does fsync the parent directory.
+- **Test-root symlink policy.** The production path resolves a symlink and updates its
+  target. The macOS test-root bridge refuses any symlink leaf as a containment measure.
+  This divergence is deliberate: the disposable test root never follows links, so symlink
+  saves are verified only against the production implementation.
+- **Windows replacement.** Dart's `File.rename` is the platform replace primitive; there is
+  no retry and no delete-then-rename. A locked destination aborts the save and leaves the
+  original untouched. Windows is build-only in CI, so this is verified by build, not by a
+  runtime test.
+- **New files default to `0600`.** Config content can carry secrets; a first save is never
+  wider than owner-only.
 
 ## Risks and open questions
 

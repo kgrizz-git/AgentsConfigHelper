@@ -46,7 +46,7 @@ class BackupService {
         '${safeOriginalPath}_${timestamp}_$randomId.bak';
     final backupPath = p.join(backupDirectory.path, backupNameWithContext);
 
-    await _fileOperations.copyFile(originalPath, backupPath);
+    await _fileOperations.copyFileAtomically(originalPath, backupPath);
 
     await _pruneOldBackups(originalPath);
 
@@ -84,14 +84,14 @@ class BackupService {
       );
     }
 
-    await _fileOperations.copyFile(backupPath, targetPath);
+    await _fileOperations.copyFileAtomically(backupPath, targetPath);
   }
 
   /// Writes restored [bytes] to [targetPath], creating missing parent
   /// directories first. Used when the caller already read the backup into
   /// memory (so retention pruning cannot delete the selected snapshot).
   Future<void> writeRestoredFile(String targetPath, List<int> bytes) async {
-    await _fileOperations.writeBytes(targetPath, bytes);
+    await _fileOperations.writeBytesAtomically(targetPath, bytes);
   }
 
   /// Reads bytes from a backup using the configured file operation boundary.

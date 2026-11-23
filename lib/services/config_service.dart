@@ -113,7 +113,7 @@ class ConfigService {
       await backupService.createBackup(expandedPath);
     }
 
-    await _fileOperations.writeText(expandedPath, outcome.content);
+    await _fileOperations.writeTextAtomically(expandedPath, outcome.content);
 
     return parser.parse(
       outcome.content,
@@ -270,7 +270,7 @@ class ConfigService {
       await backupService.createBackup(expandedPath);
     }
 
-    await _fileOperations.writeText(expandedPath, contentToWrite);
+    await _fileOperations.writeTextAtomically(expandedPath, contentToWrite);
 
     return parsedConfig;
   }

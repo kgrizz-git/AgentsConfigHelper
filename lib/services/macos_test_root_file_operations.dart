@@ -135,6 +135,19 @@ class MacOSTestRootFileOperations implements FileOperations {
     return writeText(absolutePath, text);
   }
 
+  @override
+  Future<void> writeBytesAtomically(String absolutePath, List<int> bytes) {
+    return writeBytes(absolutePath, bytes);
+  }
+
+  @override
+  Future<void> copyFileAtomically(
+    String sourcePath,
+    String destinationPath,
+  ) {
+    return copyFile(sourcePath, destinationPath);
+  }
+
   String _relativePath(String absolutePath) {
     // Reject before the native bridge sees an untrusted, outside-root path.
     final normalized = p.normalize(p.absolute(absolutePath));

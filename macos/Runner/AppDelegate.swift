@@ -227,11 +227,29 @@ final class TestRootFileOperations {
         createParents: true
       ) { parentDescriptor, leaf in
         let temporaryName = ".agents-config-helper-\(UUID().uuidString).tmp"
+
+        // Preserve the destination's permission bits, and never replace a
+        // symlink in the test root. Applied when the temporary file is created,
+        // before any content is written.
+        var existingMode: mode_t = S_IRUSR | S_IWUSR
+        var existingStatus = stat()
+        if fstatat(parentDescriptor, leaf, &existingStatus, AT_SYMLINK_NOFOLLOW) == 0 {
+          if (existingStatus.st_mode & S_IFMT) == S_IFLNK {
+            throw TestRootFileOperationError.posix(
+              operation: "refuse symlink destination",
+              code: ELOOP
+            )
+          }
+          if (existingStatus.st_mode & S_IFMT) == S_IFREG {
+            existingMode = existingStatus.st_mode & 0o777
+          }
+        }
+
         let descriptor = openat(
           parentDescriptor,
           temporaryName,
           O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC,
-          mode_t(S_IRUSR | S_IWUSR)
+          existingMode
         )
         guard descriptor >= 0 else {
           throw TestRootFileOperationError.posix(
