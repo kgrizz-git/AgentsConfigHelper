@@ -87,6 +87,18 @@ class _MainShellState extends ConsumerState<MainShell>
     super.dispose();
   }
 
+  void _afterSave(ToolConfig updated) {
+    ref.invalidate(backupListProvider(updated.filePath));
+    if (mounted) {
+      setState(() {
+        _activeConfig = updated;
+        // A successful save re-parses the content, so the full editor can
+        // take over again.
+        _rawRecoveryMode = false;
+      });
+    }
+  }
+
   void _showErrorSnackBar(ScaffoldMessengerState messenger, String message) {
     messenger.showSnackBar(
       SnackBar(content: Text(message), backgroundColor: AppColors.error),
@@ -554,18 +566,14 @@ class _MainShellState extends ConsumerState<MainShell>
                           allowRewrite: allowRewrite ?? false,
                           overwriteConfirmed: overwriteConfirmed ?? false,
                         );
-                  ref.invalidate(backupListProvider(config.filePath));
-                  if (mounted) {
-                    setState(() {
-                      _activeConfig = updated;
-                      // A successful save re-parses the content, so the full
-                      // editor can take over again.
-                      _rawRecoveryMode = false;
-                    });
-                  }
+                  _afterSave(updated);
                   return updated;
                 },
-            commitPreview: configService.commitSavePreview,
+            commitPreview: (preview) async {
+              final updated = await configService.commitSavePreview(preview);
+              _afterSave(updated);
+              return updated;
+            },
             resolvePath: configService.resolvePath,
             hasUsableBaseline: configService.hasUsableBaseline,
             rawContentParsedAsJsonc: configService.rawContentParsedAsJsonc,
