@@ -117,49 +117,58 @@ extension _ConfigEditorSaveFlow on _ConfigEditorState {
   }
 
   Future<void> _showDiffModal({bool overwrite = false}) async {
-    _overwriteApproved = overwrite;
-    _shownPreview = await _pendingSavePreview(overwrite: overwrite);
-    if (!mounted) return;
-    if (widget.previewSaveContent != null && _shownPreview == null) {
-      final error = _previewError;
-      if (!overwrite && error is SaveConflictException) {
-        final confirmed = await StructuredSaveFlow.showConflictDialog(
-          context,
-          error,
-        );
-        if (confirmed != true || !mounted) return;
-        _overwriteApproved = true;
-        _shownPreview = await _pendingSavePreview(overwrite: true);
-        if (!mounted) return;
-        if (_shownPreview == null) {
-          _showPreviewUnavailable(_previewError);
+    if (_reviewing) return;
+    _reviewing = true;
+    try {
+      _overwriteApproved = overwrite;
+      _shownPreview = await _pendingSavePreview(overwrite: overwrite);
+      if (!mounted) return;
+      if (widget.previewSaveContent != null && _shownPreview == null) {
+        final error = _previewError;
+        if (!overwrite && error is SaveConflictException) {
+          final confirmed = await StructuredSaveFlow.showConflictDialog(
+            context,
+            error,
+          );
+          if (confirmed != true || !mounted) return;
+          _overwriteApproved = true;
+          _shownPreview = await _pendingSavePreview(overwrite: true);
+          if (!mounted) return;
+          if (_shownPreview == null) {
+            _showPreviewUnavailable(_previewError);
+            return;
+          }
+        } else {
+          _showPreviewUnavailable(error);
           return;
         }
-      } else {
-        _showPreviewUnavailable(error);
-        return;
       }
+      final editRevision = _editRevision;
+      final confirmed = await StructuredSaveFlow.showDiffModal(
+        context: context,
+        isMounted: () => mounted,
+        isCurrentRevision: () => _editRevision == editRevision,
+        pendingFidelityAssessment: _pendingFidelityAssessment,
+        pendingSavePreview: () async => _shownPreview?.content,
+        supportsStructuredFields: _supportsStructuredFields,
+        rawOnly: widget.rawOnly,
+        currentRules: _currentConfig.rules,
+        currentPermissions: _currentConfig.permissions,
+        rules: _rules,
+        permissions: _permissions,
+        originalContent: _currentConfig.originalContent,
+        rawContent: _rawContent,
+        buildDiffSection: StructuredSaveFlow.buildDiffSection,
+        buildRawDiffSection: StructuredSaveFlow.buildRawDiffSection,
+        saving: _saving,
+        onSaveChanges: () {
+          _reviewing = false;
+          return _saveChanges();
+        },
+      );
+      if (!confirmed && mounted) _overwriteApproved = false;
+    } finally {
+      _reviewing = false;
     }
-    final editRevision = _editRevision;
-    final confirmed = await StructuredSaveFlow.showDiffModal(
-      context: context,
-      isMounted: () => mounted,
-      isCurrentRevision: () => _editRevision == editRevision,
-      pendingFidelityAssessment: _pendingFidelityAssessment,
-      pendingSavePreview: () async => _shownPreview?.content,
-      supportsStructuredFields: _supportsStructuredFields,
-      rawOnly: widget.rawOnly,
-      currentRules: _currentConfig.rules,
-      currentPermissions: _currentConfig.permissions,
-      rules: _rules,
-      permissions: _permissions,
-      originalContent: _currentConfig.originalContent,
-      rawContent: _rawContent,
-      buildDiffSection: StructuredSaveFlow.buildDiffSection,
-      buildRawDiffSection: StructuredSaveFlow.buildRawDiffSection,
-      saving: _saving,
-      onSaveChanges: _saveChanges,
-    );
-    if (!confirmed && mounted) _overwriteApproved = false;
   }
 }

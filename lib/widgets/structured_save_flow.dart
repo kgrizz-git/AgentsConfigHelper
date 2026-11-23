@@ -140,6 +140,11 @@ class StructuredSaveFlow {
         );
         if (!isMounted()) return;
         onSuccess(savedConfig);
+      } on SaveConflictException catch (conflict) {
+        if (!context.mounted) return;
+        final overwrite = await showConflictDialog(context, conflict);
+        if (overwrite != true || !context.mounted) return;
+        onRepreview();
       } on Object catch (error) {
         if (!isMounted()) return;
         onError(error);

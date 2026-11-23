@@ -170,9 +170,17 @@ class YamlConfigParser with ConfigParserMixin implements ConfigParser {
       }
     }
 
-    final sourceFields =
-        originalContent != null && originalContent.trim().isNotEmpty
-        ? _sourceOwnedFields(originalContent)
+    // When the caller has no source (for example, a deleted file), use the
+    // loaded content for owned-field validation and untouched-field retention
+    // instead of silently rebuilding from the collapsed rawSettings map.
+    final retainedSource =
+        (originalContent != null && originalContent.trim().isNotEmpty)
+        ? originalContent
+        : (config.originalContent.trim().isNotEmpty
+              ? config.originalContent
+              : null);
+    final sourceFields = retainedSource != null
+        ? _sourceOwnedFields(retainedSource)
         : null;
 
     // Fallback to building from scratch

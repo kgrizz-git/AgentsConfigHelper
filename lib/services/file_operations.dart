@@ -189,7 +189,11 @@ class LocalFileOperations implements FileOperations {
     int? mode,
   ) async {
     final temporary = File(
-      '${destination.path}.${pid}_${DateTime.now().microsecondsSinceEpoch}.tmp',
+      p.join(
+        destination.parent.path,
+        '.agents-config-helper-'
+        '${pid}_${DateTime.now().microsecondsSinceEpoch}.tmp',
+      ),
     );
     var published = false;
     RandomAccessFile? handle;
@@ -208,8 +212,9 @@ class LocalFileOperations implements FileOperations {
       handle = temporary.openSync(mode: FileMode.writeOnly);
       try {
         // Dart has no public fchmod. The mode is therefore applied by path
-        // while the exclusive, randomly named temporary descriptor is open.
-        // New files default to owner-only so a first save never widens access.
+        // while the exclusive, PID-and-timestamp-named temporary descriptor is
+        // open. New files default to owner-only so a first save never widens
+        // access.
         final effectiveMode = mode ?? (Platform.isWindows ? null : 0x180);
         if (effectiveMode != null && !Platform.isWindows) {
           final ProcessResult result;

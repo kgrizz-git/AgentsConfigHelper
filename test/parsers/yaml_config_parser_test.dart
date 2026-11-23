@@ -246,5 +246,37 @@ override:
         returnsNormally,
       );
     });
+
+    test('refuses a rewrite when the loaded source has an unrepresentable '
+        'owned field', () {
+      final config = parser.parse(
+        'rules:\n  nested: true\npermissions: []\n',
+        filePath: testPath,
+        toolName: testTool,
+      );
+
+      expect(
+        () => parser.serializeWithOutcome(config),
+        throwsA(isA<StructuredEditRefusedException>()),
+      );
+    });
+
+    test(
+      'retains the loaded source for a rewrite without a source argument',
+      () {
+        final config = parser.parse(
+          'rules:\n  - old\npermissions: []\nmodel: x\n',
+          filePath: testPath,
+          toolName: testTool,
+        );
+
+        final outcome = parser.serializeWithOutcome(
+          config.copyWith(rules: ['new']),
+        );
+
+        expect(outcome.content, contains('model: x'));
+        expect(outcome.content, contains('new'));
+      },
+    );
   });
 }

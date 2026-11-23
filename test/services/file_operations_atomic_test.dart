@@ -138,6 +138,17 @@ void main() {
       expect((await FileStat.stat(target)).mode & 0x1FF, 0x180);
     });
 
+    test('uses a short temporary basename for a long destination', () async {
+      if (Platform.isWindows) return;
+      final longName = '${'a' * 240}.json';
+      final target = path(longName);
+
+      await operations.writeTextAtomically(target, 'new');
+
+      expect(await File(target).readAsString(), 'new');
+      expect(await entries(), [longName]);
+    });
+
     test('leaves the original untouched when the write cannot start', () async {
       if (Platform.isWindows || _isRoot()) return;
       final directory = Directory(path('locked'));

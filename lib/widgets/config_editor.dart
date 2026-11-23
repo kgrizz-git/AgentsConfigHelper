@@ -124,6 +124,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late TextEditingController _rawContentController;
   late String _rawContent;
   bool _saving = false;
+  bool _reviewing = false;
   bool _overwriteApproved = false;
   Object? _previewError;
 

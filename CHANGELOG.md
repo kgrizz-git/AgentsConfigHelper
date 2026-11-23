@@ -50,8 +50,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - **Lossless structured saves.** Saving rules or permissions preserves
-  untouched document content for JSON, JSONC, YAML, and TOML, and refuses
-  shapes it cannot represent instead of dropping them.
+  untouched setting values for JSON, JSONC, YAML, and TOML, and refuses
+  shapes it cannot represent instead of dropping them. Formatting, comments,
+  and layout may still change when a format requires a rebuild.
 - **Cursor IDE settings are JSONC.** Cursor `settings.json` files may contain
   comments and trailing commas, matching VS Code's settings format.
 - **Strict JSON stays strict.** Tools that require strict JSON reject comments

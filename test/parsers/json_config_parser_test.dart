@@ -438,5 +438,57 @@ void main() {
       expect(outcome.content, contains('"rules"'));
       expect(outcome.content, contains('"new"'));
     });
+
+    test('refuses a rewrite when the loaded source has an unrepresentable '
+        'owned field', () {
+      final config = parser.parse(
+        '{"rules": {"nested": true}, "permissions": ["p"], "model": "x"}',
+        filePath: testPath,
+        toolName: testTool,
+      );
+
+      expect(
+        () => parser.serializeWithOutcome(config),
+        throwsA(isA<StructuredEditRefusedException>()),
+      );
+    });
+
+    test(
+      'refuses a rewrite when the loaded source duplicates an owned key',
+      () {
+        final config = ToolConfig(
+          toolName: testTool,
+          filePath: testPath,
+          format: ConfigFormat.json,
+          originalContent: '{"rules": ["a"], "rules": ["b"]}',
+          rawSettings: const {
+            'rules': ['a'],
+          },
+        );
+
+        expect(
+          () => parser.serializeWithOutcome(config),
+          throwsA(isA<StructuredEditRefusedException>()),
+        );
+      },
+    );
+
+    test(
+      'retains the loaded source for a rewrite without a source argument',
+      () {
+        final config = parser.parse(
+          '{"rules": ["old"], "permissions": [], "model": "x"}',
+          filePath: testPath,
+          toolName: testTool,
+        );
+
+        final outcome = parser.serializeWithOutcome(
+          config.copyWith(rules: ['new']),
+        );
+
+        expect(outcome.content, contains('"model": "x"'));
+        expect(outcome.content, contains('"new"'));
+      },
+    );
   });
 }

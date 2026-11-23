@@ -399,11 +399,18 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
     FieldEditMask edits,
   ) {
     // A full rewrite starts from the collapsed rawSettings map, so untouched
-    // owned fields are restored from the source and any shape that cannot
-    // survive the collapse is refused.
-    final sourceFields =
-        originalContent != null && originalContent.trim().isNotEmpty
-        ? _sourceOwnedFields(originalContent, config.format)
+    // owned fields are restored from the retained source and any shape that
+    // cannot survive the collapse is refused. When the caller has no source
+    // (for example, a deleted file), fall back to the loaded content instead
+    // of skipping the owned-field checks.
+    final retainedSource =
+        (originalContent != null && originalContent.trim().isNotEmpty)
+        ? originalContent
+        : (config.originalContent.trim().isNotEmpty
+              ? config.originalContent
+              : null);
+    final sourceFields = retainedSource != null
+        ? _sourceOwnedFields(retainedSource, config.format)
         : null;
 
     final outputMap = Map<String, Object?>.from(config.rawSettings);

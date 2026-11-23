@@ -218,7 +218,12 @@ final class TestRootFileOperations {
     }
   }
 
-  func writeFile(rootPath: String, relativePath: String, data: Data) throws {
+  func writeFile(
+    rootPath: String,
+    relativePath: String,
+    data: Data,
+    mode: mode_t? = nil
+  ) throws {
     let components = try pathComponents(relativePath)
     try withRootDescriptor(rootPath) { rootDescriptor in
       try withParentDescriptor(
@@ -228,21 +233,27 @@ final class TestRootFileOperations {
       ) { parentDescriptor, leaf in
         let temporaryName = ".agents-config-helper-\(UUID().uuidString).tmp"
 
-        // Preserve the destination's permission bits, and never replace a
-        // symlink in the test root. Applied when the temporary file is created,
-        // before any content is written.
-        var existingMode: mode_t = S_IRUSR | S_IWUSR
+        // Preserve the destination's permission bits for ordinary writes, and
+        // never replace a symlink in the test root. A copy supplies the source
+        // mode explicitly so the destination's absence does not narrow it.
         var existingStatus = stat()
-        if fstatat(parentDescriptor, leaf, &existingStatus, AT_SYMLINK_NOFOLLOW) == 0 {
-          if (existingStatus.st_mode & S_IFMT) == S_IFLNK {
-            throw TestRootFileOperationError.posix(
-              operation: "refuse symlink destination",
-              code: ELOOP
-            )
-          }
-          if (existingStatus.st_mode & S_IFMT) == S_IFREG {
-            existingMode = existingStatus.st_mode & 0o777
-          }
+        let destinationExists =
+          fstatat(parentDescriptor, leaf, &existingStatus, AT_SYMLINK_NOFOLLOW) == 0
+        if destinationExists,
+           (existingStatus.st_mode & S_IFMT) == S_IFLNK {
+          throw TestRootFileOperationError.posix(
+            operation: "refuse symlink destination",
+            code: ELOOP
+          )
+        }
+        var existingMode: mode_t
+        if let mode = mode {
+          existingMode = mode
+        } else if destinationExists,
+                  (existingStatus.st_mode & S_IFMT) == S_IFREG {
+          existingMode = existingStatus.st_mode & 0o777
+        } else {
+          existingMode = S_IRUSR | S_IWUSR
         }
 
         let descriptor = openat(
@@ -299,11 +310,40 @@ final class TestRootFileOperations {
     destinationRelativePath: String
   ) throws {
     let source = try readFile(rootPath: rootPath, relativePath: sourceRelativePath)
+    let sourceMode = try fileMode(
+      rootPath: rootPath,
+      relativePath: sourceRelativePath
+    )
     try writeFile(
       rootPath: rootPath,
       relativePath: destinationRelativePath,
-      data: source
+      data: source,
+      mode: sourceMode
     )
+  }
+
+  /// Returns the source file's permission bits, following a symlink to its
+  /// target like the Dart implementation. Nil keeps the destination behavior.
+  private func fileMode(
+    rootPath: String,
+    relativePath: String
+  ) throws -> mode_t? {
+    let components = try pathComponents(relativePath)
+    var mode: mode_t?
+    try withRootDescriptor(rootPath) { rootDescriptor in
+      try withParentDescriptor(
+        rootDescriptor: rootDescriptor,
+        components: components,
+        createParents: false
+      ) { parentDescriptor, leaf in
+        var status = stat()
+        guard fstatat(parentDescriptor, leaf, &status, 0) == 0 else { return }
+        if (status.st_mode & S_IFMT) == S_IFREG {
+          mode = status.st_mode & 0o777
+        }
+      }
+    }
+    return mode
   }
 
   func deleteFile(rootPath: String, relativePath: String) throws {
