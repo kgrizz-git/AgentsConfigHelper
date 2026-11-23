@@ -368,6 +368,81 @@ void main() {
       await configService.commitSavePreview(preview);
       expect(await file.readAsString(), contains('mine'));
     });
+
+    test('deleting a loaded empty source still produces a conflict', () async {
+      final file = File(p.join(tempDir.path, 'empty.json'));
+      await file.writeAsString('');
+      final config = await _load(configService, file.path);
+      await file.delete();
+
+      await expectLater(
+        configService.previewSaveConfig(config.copyWith(rules: ['mine'])),
+        throwsA(isA<SaveConflictException>()),
+      );
+      await expectLater(
+        configService.previewSaveRaw(config, '{"rules": ["raw"]}'),
+        throwsA(isA<SaveConflictException>()),
+      );
+
+      final preview = await configService.previewSaveConfig(
+        config.copyWith(rules: ['mine']),
+        overwriteConfirmed: true,
+      );
+      expect(preview.sourceExists, isFalse);
+      await configService.commitSavePreview(preview);
+      expect(await file.readAsString(), contains('mine'));
+    });
+
+    test('a new file still saves when the source is absent', () async {
+      final file = File(p.join(tempDir.path, 'brand-new.json'));
+      final config = ToolConfig(
+        toolName: 'Test',
+        filePath: file.path,
+        format: ConfigFormat.json,
+        originalFileExisted: false,
+      );
+
+      final preview = await configService.previewSaveRaw(
+        config,
+        '{"rules": ["new"]}',
+      );
+      expect(preview.sourceExists, isFalse);
+      await configService.commitSavePreview(preview);
+      expect(await file.readAsString(), '{"rules": ["new"]}');
+    });
+
+    test(
+      'external creation of an empty source conflicts for a new file',
+      () async {
+        final file = File(p.join(tempDir.path, 'created-externally.json'));
+        final config = ToolConfig(
+          toolName: 'Test',
+          filePath: file.path,
+          format: ConfigFormat.json,
+          originalFileExisted: false,
+        );
+        await file.writeAsString('');
+
+        await expectLater(
+          configService.previewSaveRaw(config, '{"rules": ["mine"]}'),
+          throwsA(isA<SaveConflictException>()),
+        );
+      },
+    );
+
+    test('a saved empty file records that the source now exists', () async {
+      final file = File(p.join(tempDir.path, 'saved-empty.json'));
+      await file.writeAsString('');
+      final config = await _load(configService, file.path);
+      final saved = await configService.saveRawConfig(config, '');
+      expect(saved.originalFileExisted, isTrue);
+
+      await file.delete();
+      await expectLater(
+        configService.previewSaveRaw(saved, ''),
+        throwsA(isA<SaveConflictException>()),
+      );
+    });
   });
 }
 

@@ -132,12 +132,14 @@ class ConfigService {
     }
     final content = await _fileOperations.readText(resolvedPath);
     final parser = _getParserForFormat(config.format);
-    return parser.parse(
-      content,
-      filePath: resolvedPath,
-      toolName: config.sourceLabel,
-      format: config.format,
-    );
+    return parser
+        .parse(
+          content,
+          filePath: resolvedPath,
+          toolName: config.sourceLabel,
+          format: config.format,
+        )
+        .copyWith(originalFileExisted: true);
   }
 
   /// Safely saves [config] to disk and returns the freshly-parsed result.
@@ -179,11 +181,8 @@ class ConfigService {
         ? await _fileOperations.readText(expandedPath)
         : null;
 
-    final loadedContent = config.originalContent;
-    final sourceMatchesLoad = sourceExists
-        ? originalContent == loadedContent
-        : loadedContent.trim().isEmpty;
-    if (!sourceMatchesLoad && !overwriteConfirmed) {
+    if (!_sourceMatchesLoad(config, sourceExists, originalContent ?? '') &&
+        !overwriteConfirmed) {
       throw SaveConflictException.stale(
         config.filePath,
         sourceExists ? originalContent : null,
@@ -250,7 +249,7 @@ class ConfigService {
       await backupService.createBackup(expandedPath);
     }
     await _fileOperations.writeTextAtomically(expandedPath, preview.content);
-    return preview.parsed;
+    return preview.parsed.copyWith(originalFileExisted: true);
   }
 
   /// Whether `config.originalContent` is a usable baseline for a structured
@@ -348,11 +347,8 @@ class ConfigService {
         ? await _fileOperations.readText(expandedPath)
         : '';
 
-    final loadedContent = config.originalContent;
-    final sourceMatchesLoad = sourceExists
-        ? sourceContent == loadedContent
-        : loadedContent.trim().isEmpty;
-    if (!sourceMatchesLoad && !overwriteConfirmed) {
+    if (!_sourceMatchesLoad(config, sourceExists, sourceContent) &&
+        !overwriteConfirmed) {
       throw SaveConflictException.stale(
         config.filePath,
         sourceExists ? sourceContent : null,
@@ -437,6 +433,21 @@ class ConfigService {
       parsed: parsedConfig,
       usedFallback: usedFallback,
     );
+  }
+
+  /// Whether the current source still matches the state this config was
+  /// loaded from, including whether the file existed at all.
+  bool _sourceMatchesLoad(
+    ToolConfig config,
+    bool sourceExists,
+    String sourceContent,
+  ) {
+    final loadedContent = config.originalContent;
+    final existedAtLoad =
+        config.originalFileExisted ??
+        (sourceExists || loadedContent.isNotEmpty);
+    return sourceExists == existedAtLoad &&
+        (!sourceExists || sourceContent == loadedContent);
   }
 
   ConfigParser _getParserForFormat(ConfigFormat format) {

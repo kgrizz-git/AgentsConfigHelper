@@ -44,7 +44,9 @@ uses [Semantic Versioning](https://semver.org/).
 - **External-change protection.** A config file that changed on disk after it
   was loaded, previewed, or confirmed produces a conflict instead of being
   silently overwritten. Deliberate overwrite re-opens Review Changes with a
-  fresh preview and requires a second confirmation.
+  fresh preview and requires a second confirmation. A missing preview or a
+  failed overwrite re-preview blocks the save, and deleting a loaded empty
+  file is also a conflict.
 
 ### Changed
 - **Lossless structured saves.** Saving rules or permissions preserves

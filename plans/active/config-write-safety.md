@@ -297,9 +297,16 @@ that PR is unmerged and will be rebased onto `main` before review.
   `config.originalContent`, so an edit between load and Review Changes is surfaced instead
   of being absorbed as the new baseline. On mismatch, throw `SaveConflictException` with
   the current content. Reload recomputes from the new source. Deliberate overwrite
-  re-renders the preview computed from the user's loaded baseline (discarding the external
-  edits) while capturing the new source as the commit guard; neither path reuses stale
+  re-renders the preview against the current source and displays the exact merged result
+  (untouched external fields follow the format's serializer) before a second confirmation;
+  the current source is still captured as the commit guard. Neither path reuses stale
   bytes.
+- The preview compares source existence as well as content. Load paths record
+  `originalFileExisted`, so deleting a loaded empty or whitespace-only file — or
+  externally creating an empty file where a new file was expected — is a conflict.
+- Review Changes fails closed when it cannot obtain a preview: Confirm & Save writes
+  nothing. A stale-load conflict is the only missing-preview case that proceeds, so the
+  conflict dialog can still offer an explicit overwrite.
 - Render the preview in Review Changes as a real diff against the loaded content, under
   "Serialized result", in addition to the structured list diffs. The shell supplies a
   `previewSaveContent` callback; recovery/raw-only paths use the same preview object. The
@@ -322,6 +329,9 @@ that PR is unmerged and will be rebased onto `main` before review.
 - A load-to-preview external edit produces a conflict instead of becoming the new
   baseline, and both the fallback rewrite and conflict-overwrite outputs are displayed
   before their writes.
+- Deleting a loaded empty file and external creation of an empty file both conflict; an
+  explicit new-file save still succeeds. A failed preview or failed overwrite re-preview
+  writes no bytes.
 - External file creation and deletion are handled, not only modification.
 - The structured-save preview test uses an allowed edit; a lossy/refused save asserts zero
   bytes written (Phase 2 policy).

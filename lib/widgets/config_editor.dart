@@ -19,6 +19,8 @@ import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
+part 'config_editor_save_flow.dart';
+
 /// Edits the supported flat configuration fields and confirms saves.
 class ConfigEditor extends StatefulWidget {
   /// Creates an editor with callbacks supplied by its owner.
@@ -118,6 +120,9 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late String _rawContent;
   bool _saving = false;
   bool _overwriteApproved = false;
+  Object? _previewError;
+
+  void _updateUi(VoidCallback update) => setState(update);
   SavePreview? _shownPreview;
   int _editRevision = 0;
   late final PolicyCardRegistry _registry;
@@ -222,23 +227,6 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
-  Future<SavePreview?> _pendingSavePreview({bool overwrite = false}) async {
-    final callback = widget.previewSaveContent;
-    if (callback == null) return null;
-    try {
-      return await callback(
-        _currentConfig.copyWith(rules: _rules, permissions: _permissions),
-        rawContent: _rawContent != _currentConfig.originalContent
-            ? _rawContent
-            : null,
-        overwriteConfirmed: overwrite,
-      );
-    } on Object catch (error) {
-      debugPrint('Save preview unavailable: $error');
-      return null;
-    }
-  }
-
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 12),
@@ -325,90 +313,6 @@ class _ConfigEditorState extends State<ConfigEditor> {
         ],
       ],
     );
-  }
-
-  Future<void> _saveChanges() async {
-    final overwrite = _overwriteApproved;
-    _overwriteApproved = false;
-    final shown = _shownPreview;
-    if (shown != null && widget.previewSaveContent != null) {
-      final fresh = await _pendingSavePreview(overwrite: overwrite);
-      if (!mounted) return;
-      if (fresh == null ||
-          fresh.content != shown.content ||
-          fresh.sourceContent != shown.sourceContent ||
-          fresh.sourceExists != shown.sourceExists) {
-        await _showDiffModal(overwrite: overwrite);
-        return;
-      }
-    }
-    setState(() => _saving = true);
-    return await StructuredSaveFlow.run(
-      context: context,
-      isMounted: () => mounted,
-      rawContent: () =>
-          _rawContent != _currentConfig.originalContent ? _rawContent : null,
-      buildUpdatedConfig: () => _currentConfig.copyWith(
-        rules: _rules,
-        permissions: _permissions,
-      ),
-      onSave: widget.onSave,
-      overwriteConfirmed: overwrite,
-      onSuccess: (savedConfig) {
-        setState(() {
-          _currentConfig = savedConfig;
-          _shownPreview = null;
-          _initLocalState(_currentConfig);
-        });
-        _notifyDirtyChanged();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settings saved successfully.')),
-        );
-      },
-      onError: (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving: $error'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      },
-      setSavingFalse: () {
-        if (mounted) {
-          setState(() {
-            _saving = false;
-          });
-        }
-      },
-      onRepreview: () => unawaited(_showDiffModal(overwrite: true)),
-    );
-  }
-
-  Future<void> _showDiffModal({bool overwrite = false}) async {
-    _overwriteApproved = overwrite;
-    _shownPreview = await _pendingSavePreview(overwrite: overwrite);
-    if (!mounted) return;
-    final editRevision = _editRevision;
-    final confirmed = await StructuredSaveFlow.showDiffModal(
-      context: context,
-      isMounted: () => mounted,
-      isCurrentRevision: () => _editRevision == editRevision,
-      pendingFidelityAssessment: _pendingFidelityAssessment,
-      pendingSavePreview: () async => _shownPreview?.content,
-      supportsStructuredFields: _supportsStructuredFields,
-      rawOnly: widget.rawOnly,
-      currentRules: _currentConfig.rules,
-      currentPermissions: _currentConfig.permissions,
-      rules: _rules,
-      permissions: _permissions,
-      originalContent: _currentConfig.originalContent,
-      rawContent: _rawContent,
-      buildDiffSection: StructuredSaveFlow.buildDiffSection,
-      buildRawDiffSection: StructuredSaveFlow.buildRawDiffSection,
-      saving: _saving,
-      onSaveChanges: _saveChanges,
-    );
-    if (!confirmed && mounted) _overwriteApproved = false;
   }
 
   @override
