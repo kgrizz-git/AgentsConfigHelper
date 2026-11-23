@@ -287,21 +287,17 @@ that PR is unmerged and will be rebased onto `main` before review.
 
 ### Phase 4 changes
 
-- Introduce a `SavePreview` carrying: the exact bytes to write, the source content or
-  digest they were computed from, the parsed result, and fallback/refusal metadata.
-  `SavePreview.source` records existence plus a digest of the raw bytes, so "absent" and
-  "empty" are distinguishable.
-- `previewSave` computes it without **writing** to disk (it still reads the source). The
-  writer **consumes that result** and does not recompute serialization.
-- The single commit sink is `writeBytesAtomically(path, preview.bytes)`. Any text
-  convenience method encodes once and delegates; no path may decode and re-encode the
-  preview, or the byte guarantee becomes unprovable.
-- Before replacement, verify the current source still matches the captured source. On
-  mismatch, surface a conflict with reload or deliberate overwrite; both flows generate a
-  **fresh** preview against the new source before confirming.
-- Render the preview bytes in Review Changes as a real diff against the loaded content, in
-  addition to structured list diffs.
-- Recovery/raw-only paths use the same preview object.
+- Introduce a `SavePreview` carrying: the exact content to write, the source content and
+  existence it was computed from, the parsed result, and the fallback flag.
+- `previewSaveConfig`/`previewSaveRaw` compute it without writing; `commitSavePreview`
+  consumes that result and never re-serializes. The commit sink is the atomic text/byte
+  write, encoding once.
+- Before replacement, verify the current source still matches the captured content and
+  existence. On mismatch, throw `SaveConflictException` with the current content; reload
+  and deliberate-overwrite flows regenerate a **fresh** preview against the new source.
+- Render the preview in Review Changes as a real diff against the loaded content, under
+  "Serialized result", in addition to the structured list diffs. The shell supplies a
+  `previewSaveContent` callback; recovery/raw-only paths use the same preview object.
 - Document the residual race: compare-then-replace cannot be a hard guarantee against a
   non-cooperating external writer with portable Dart. Perform a final source check
   immediately before replacement to narrow the window, and state that the guarantee is

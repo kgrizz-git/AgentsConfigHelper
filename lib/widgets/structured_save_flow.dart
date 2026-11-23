@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
+import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -14,6 +15,33 @@ import 'package:material_ui/material_ui.dart';
 /// thin entrypoint.
 class StructuredSaveFlow {
   /// Shows the fallback-rewrite confirmation dialog.
+  /// Asks whether to overwrite a file that changed after the preview.
+  static Future<bool?> showConflictDialog(
+    BuildContext context,
+    SaveConflictException conflict,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('File changed on disk'),
+        content: const Text(
+          'This file changed after you opened it. Overwrite those changes? '
+          'Cancel and reopen the file to reload instead.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Overwrite'),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Future<bool?> showFallbackRewriteDialog(
     BuildContext context,
     SerializationFallbackException e,
@@ -65,6 +93,7 @@ class StructuredSaveFlow {
       ToolConfig config, {
       String? rawContent,
       bool? allowRewrite,
+      bool? overwriteConfirmed,
     })
     onSave,
     required void Function(ToolConfig savedConfig) onSuccess,
@@ -79,6 +108,39 @@ class StructuredSaveFlow {
       );
       if (!isMounted()) return;
       onSuccess(savedConfig);
+    } on SaveConflictException catch (conflict) {
+      if (!context.mounted) return;
+      final overwrite = await showConflictDialog(context, conflict);
+      if (overwrite != true || !context.mounted) return;
+      try {
+        // A conflict is not a serialization fallback. Retry with the fallback
+        // gate closed and require its own consent if the changed source needs
+        // a whole-document rewrite.
+        late final ToolConfig savedConfig;
+        try {
+          savedConfig = await onSave(
+            buildUpdatedConfig(),
+            rawContent: rawContent(),
+            allowRewrite: false,
+            overwriteConfirmed: true,
+          );
+        } on SerializationFallbackException catch (fallback) {
+          if (!context.mounted) return;
+          final proceed = await showFallbackRewriteDialog(context, fallback);
+          if (proceed != true || !context.mounted) return;
+          savedConfig = await onSave(
+            buildUpdatedConfig(),
+            rawContent: rawContent(),
+            allowRewrite: true,
+            overwriteConfirmed: true,
+          );
+        }
+        if (!isMounted()) return;
+        onSuccess(savedConfig);
+      } on Object catch (error) {
+        if (!isMounted()) return;
+        onError(error);
+      }
     } on SerializationFallbackException catch (e) {
       if (!context.mounted) return;
       final proceed = await showFallbackRewriteDialog(context, e);
@@ -160,6 +222,7 @@ class StructuredSaveFlow {
     required bool Function() isMounted,
     required bool Function() isCurrentRevision,
     required Future<FidelityAssessment?> Function() pendingFidelityAssessment,
+    required Future<String?> Function() pendingSavePreview,
     required bool supportsStructuredFields,
     required bool rawOnly,
     required List<String> currentRules,
@@ -175,6 +238,7 @@ class StructuredSaveFlow {
     required Future<void> Function() onSaveChanges,
   }) async {
     final assessment = await pendingFidelityAssessment();
+    final preview = await pendingSavePreview();
     if (!context.mounted || !isCurrentRevision()) return;
 
     await showDialog<void>(
@@ -203,6 +267,17 @@ class StructuredSaveFlow {
                       showOpeningStatement: false,
                     ),
                   ],
+                ],
+                if (preview != null &&
+                    supportsStructuredFields &&
+                    !rawOnly) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Serialized result',
+                    style: AppTextStyles.uiSubheader,
+                  ),
+                  const SizedBox(height: 8),
+                  buildRawDiffSection(originalContent, preview),
                 ],
                 if (rawContent != originalContent) ...[
                   const SizedBox(height: 16),

@@ -195,6 +195,76 @@ void main() {
         expect(await backupService.listBackups(file.path), isEmpty);
       },
     );
+    test('previewSaveConfig commits exactly the previewed bytes', () async {
+      final file = File(p.join(tempDir.path, 'preview.json'));
+      await file.writeAsString('{"rules": ["old"], "permissions": ["a"]}');
+      final config = await _load(configService, file.path);
+      final updated = config.copyWith(rules: ['new']);
+
+      final preview = await configService.previewSaveConfig(updated);
+
+      expect(preview.content, contains('"new"'));
+      await configService.commitSavePreview(preview);
+      expect(await file.readAsString(), preview.content);
+    });
+
+    test(
+      'commitSavePreview refuses a source changed after preview',
+      () async {
+        final file = File(p.join(tempDir.path, 'conflict.json'));
+        await file.writeAsString('{"rules": ["old"]}');
+        final config = await _load(configService, file.path);
+        final preview = await configService.previewSaveConfig(
+          config.copyWith(rules: ['new']),
+        );
+
+        await file.writeAsString('{"rules": ["external"]}');
+
+        await expectLater(
+          configService.commitSavePreview(preview),
+          throwsA(isA<SaveConflictException>()),
+        );
+        expect(await file.readAsString(), '{"rules": ["external"]}');
+        expect(await backupService.listBackups(file.path), isEmpty);
+
+        // A fresh preview against the new source commits.
+        final fresh = await configService.previewSaveConfig(
+          config.copyWith(rules: ['new']),
+        );
+        await configService.commitSavePreview(fresh);
+        expect(await file.readAsString(), contains('"new"'));
+      },
+    );
+
+    test('commitSavePreview refuses a created or deleted source', () async {
+      final created = File(p.join(tempDir.path, 'created.json'));
+      final createdConfig = ToolConfig(
+        toolName: 'Test',
+        filePath: created.path,
+        format: ConfigFormat.json,
+      );
+      final createPreview = await configService.previewSaveConfig(
+        createdConfig.copyWith(rules: ['a']),
+      );
+      await created.writeAsString('{"rules": ["external"]}');
+      await expectLater(
+        configService.commitSavePreview(createPreview),
+        throwsA(isA<SaveConflictException>()),
+      );
+
+      final deleted = File(p.join(tempDir.path, 'deleted.json'));
+      await deleted.writeAsString('{"rules": ["old"]}');
+      final deletedConfig = await _load(configService, deleted.path);
+      final deletePreview = await configService.previewSaveConfig(
+        deletedConfig.copyWith(rules: ['new']),
+      );
+      await deleted.delete();
+      await expectLater(
+        configService.commitSavePreview(deletePreview),
+        throwsA(isA<SaveConflictException>()),
+      );
+      expect(deleted.existsSync(), isFalse);
+    });
   });
 }
 

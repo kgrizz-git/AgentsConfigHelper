@@ -49,7 +49,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) =>
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) =>
                   configService.saveConfig(
                     c,
                     allowRewrite: allowRewrite ?? false,
@@ -103,7 +103,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) {
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) {
                 sawRawArg = true;
                 capturedRaw = rawContent;
                 return configService.saveConfig(
@@ -152,7 +152,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) {
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) {
                 capturedRaw = rawContent;
                 return configService.saveConfig(
                   c,
@@ -199,7 +199,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) =>
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) =>
                   configService.saveConfig(
                     c,
                     allowRewrite: allowRewrite ?? false,
@@ -250,7 +250,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) =>
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) =>
                   configService.saveConfig(
                     c,
                     allowRewrite: allowRewrite ?? false,
@@ -289,7 +289,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) =>
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) =>
                   configService.saveConfig(
                     c,
                     allowRewrite: allowRewrite ?? false,
@@ -342,7 +342,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -391,7 +396,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -450,7 +460,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -504,10 +519,16 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async {
-                  capturedRawContent = rawContent;
-                  return config;
-                },
+                onSave:
+                    (
+                      config, {
+                      rawContent,
+                      allowRewrite,
+                      overwriteConfirmed,
+                    }) async {
+                      capturedRawContent = rawContent;
+                      return config;
+                    },
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),

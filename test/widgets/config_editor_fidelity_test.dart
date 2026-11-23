@@ -20,6 +20,7 @@ Widget _editor(
     ToolConfig, {
     String? rawContent,
     bool? allowRewrite,
+    bool? overwriteConfirmed,
   })?
   onSave,
   bool tomlStructuredSaveEnabled = false,
@@ -32,7 +33,12 @@ Widget _editor(
         rawOnly: rawOnly,
         onSave:
             onSave ??
-            (updatedConfig, {rawContent, allowRewrite}) async => updatedConfig,
+            (
+              updatedConfig, {
+              rawContent,
+              allowRewrite,
+              overwriteConfirmed,
+            }) async => updatedConfig,
         resolvePath: (path) => path,
         hasUsableBaseline: hasUsableBaseline,
         rawContentParsedAsJsonc: rawContentParsedAsJsonc,
@@ -364,7 +370,6 @@ void main() {
 
       expect(find.byType(FormattingFidelityNotice), findsNothing);
       expect(find.byType(StringListEditor), findsNothing);
-
       final jsonConfig = ToolConfig(
         toolName: 'Test Tool',
         filePath: '${Directory.systemTemp.path}/broken.json',
@@ -396,7 +401,6 @@ void main() {
 
         await tester.drag(find.byType(ListView), const Offset(0, -600));
         await tester.pumpAndSettle();
-
         final fidelityNotice = find.byType(FormattingFidelityNotice);
         final rawEditor = find.byWidgetPredicate(
           (widget) =>
@@ -406,7 +410,6 @@ void main() {
 
         expect(fidelityNotice, findsOneWidget);
         expect(rawEditor, findsOneWidget);
-
         final noticeTopLeft = tester.getTopLeft(fidelityNotice);
         final rawEditorTopLeft = tester.getTopLeft(rawEditor);
         expect(noticeTopLeft.dy, lessThan(rawEditorTopLeft.dy));
@@ -437,7 +440,6 @@ void main() {
 
         await tester.drag(find.byType(ListView), const Offset(0, -600));
         await tester.pumpAndSettle();
-
         final rawEditor = find.byWidgetPredicate(
           (widget) =>
               widget is TextField &&
@@ -472,7 +474,7 @@ void main() {
         await tester.pumpWidget(
           _editor(
             config,
-            onSave: (c, {rawContent, allowRewrite}) {
+            onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) {
               saveCalled = true;
               return Future.value(c);
             },
@@ -482,7 +484,6 @@ void main() {
 
         await tester.drag(find.byType(ListView), const Offset(0, -600));
         await tester.pumpAndSettle();
-
         final rawEditor = find.byWidgetPredicate(
           (widget) =>
               widget is TextField &&
@@ -562,7 +563,7 @@ void main() {
         await tester.pumpWidget(
           _editor(
             config,
-            onSave: (c, {rawContent, allowRewrite}) {
+            onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) {
               if (allowRewrite == true) {
                 return Future.value(c.copyWith(rules: ['new']));
               }
@@ -610,7 +611,7 @@ void main() {
       await tester.pumpWidget(
         _editor(
           config,
-          onSave: (c, {rawContent, allowRewrite}) {
+          onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) {
             if (allowRewrite != true) {
               throw const SerializationFallbackException(
                 format: 'YAML',

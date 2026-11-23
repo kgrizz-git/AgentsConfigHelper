@@ -13,6 +13,55 @@ import 'package:agents_config_helper/services/home_directory_resolver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+/// An immutable preview of a save.
+///
+/// Carries the exact content that will be written and the source it was
+/// computed from, so the writer can verify the source still matches and commit
+/// those bytes without re-serializing.
+class SavePreview {
+  const new({
+    required this.config,
+    required this.content,
+    required this.sourceContent,
+    required this.sourceExists,
+    required this.parsed,
+    required this.usedFallback,
+  });
+
+  /// The config that produced this preview.
+  final ToolConfig config;
+
+  /// The exact content to write.
+  final String content;
+
+  /// The source content the preview was computed from.
+  final String sourceContent;
+
+  /// Whether the source file existed when the preview was computed.
+  final bool sourceExists;
+
+  /// The parsed result of [content].
+  final ToolConfig parsed;
+
+  /// Whether the serializer used its whole-document fallback.
+  final bool usedFallback;
+}
+
+/// Thrown when the source changed between preview and commit.
+class SaveConflictException implements Exception {
+  const new(this.preview, this.currentContent);
+
+  /// The preview that can no longer be committed as-is.
+  final SavePreview preview;
+
+  /// The current source content, or null when the file was deleted.
+  final String? currentContent;
+
+  @override
+  String toString() =>
+      'SaveConflictException: ${preview.config.filePath} changed after preview';
+}
+
 /// A facade service that orchestrates reading configs, parsing them,
 /// backing them up, and safely serializing them back to disk.
 class ConfigService {
@@ -88,12 +137,24 @@ class ConfigService {
     ToolConfig config, {
     bool allowRewrite = false,
   }) async {
-    final expandedPath = resolvePath(config.filePath);
-    String? originalContent;
+    final preview = await previewSaveConfig(
+      config,
+      allowRewrite: allowRewrite,
+    );
+    return await commitSavePreview(preview);
+  }
 
-    if (await _fileOperations.fileExists(expandedPath)) {
-      originalContent = await _fileOperations.readText(expandedPath);
-    }
+  /// Computes the exact content a structured save will write without touching
+  /// disk, capturing the source it was computed from.
+  Future<SavePreview> previewSaveConfig(
+    ToolConfig config, {
+    bool allowRewrite = false,
+  }) async {
+    final expandedPath = resolvePath(config.filePath);
+    final sourceExists = await _fileOperations.fileExists(expandedPath);
+    final originalContent = sourceExists
+        ? await _fileOperations.readText(expandedPath)
+        : null;
 
     final parser = _getParserForFormat(config.format);
     final baseline = _parseUsableBaseline(parser, config);
@@ -123,13 +184,39 @@ class ConfigService {
     // afterwards.
     final parsed = _validateSerialized(parser, outcome.content, config);
 
-    if (await _fileOperations.fileExists(expandedPath)) {
+    return SavePreview(
+      config: config,
+      content: outcome.content,
+      sourceContent: originalContent ?? '',
+      sourceExists: sourceExists,
+      parsed: parsed,
+      usedFallback: outcome.usedFallback,
+    );
+  }
+
+  /// Commits a preview after verifying the source has not changed.
+  ///
+  /// The preview's exact bytes are written; serialization is never recomputed.
+  /// The compare-then-replace check narrows but cannot eliminate a race with a
+  /// non-cooperating external writer (see the plan's Risks).
+  Future<ToolConfig> commitSavePreview(SavePreview preview) async {
+    final expandedPath = resolvePath(preview.config.filePath);
+    final existsNow = await _fileOperations.fileExists(expandedPath);
+    if (existsNow != preview.sourceExists) {
+      throw SaveConflictException(
+        preview,
+        existsNow ? await _fileOperations.readText(expandedPath) : null,
+      );
+    }
+    if (existsNow) {
+      final current = await _fileOperations.readText(expandedPath);
+      if (current != preview.sourceContent) {
+        throw SaveConflictException(preview, current);
+      }
       await backupService.createBackup(expandedPath);
     }
-
-    await _fileOperations.writeTextAtomically(expandedPath, outcome.content);
-
-    return parsed;
+    await _fileOperations.writeTextAtomically(expandedPath, preview.content);
+    return preview.parsed;
   }
 
   /// Whether `config.originalContent` is a usable baseline for a structured
@@ -189,20 +276,37 @@ class ConfigService {
 
   /// Safely saves raw [rawContent] to disk and returns the updated
   /// [ToolConfig].
-  ///
-  /// Automatically creates a backup of the existing file using [BackupService],
-  /// then overwrites the file with the raw content and re-parses it.
-  ///
-  /// [config] carries the rules/permissions from the structured editor,
-  /// which may have been edited independently of [rawContent]. If they
-  /// diverge from `config.originalContent` (the pre-edit baseline), both
-  /// edits are reconciled by re-serializing on top of the raw text rather
-  /// than silently discarding one or the other.
   Future<ToolConfig> saveRawConfig(
     ToolConfig config,
     String rawContent, {
     bool allowRewrite = false,
   }) async {
+    final preview = await previewSaveRaw(
+      config,
+      rawContent,
+      allowRewrite: allowRewrite,
+    );
+    return await commitSavePreview(preview);
+  }
+
+  /// Computes the exact content a raw save will write without touching disk.
+  ///
+  /// [config] carries the rules/permissions from the structured editor, which
+  /// may have been edited independently of [rawContent]. If they diverge from
+  /// `config.originalContent` (the pre-edit baseline), both edits are
+  /// reconciled by re-serializing on top of the raw text rather than silently
+  /// discarding one or the other.
+  Future<SavePreview> previewSaveRaw(
+    ToolConfig config,
+    String rawContent, {
+    bool allowRewrite = false,
+  }) async {
+    final expandedPath = resolvePath(config.filePath);
+    final sourceExists = await _fileOperations.fileExists(expandedPath);
+    final sourceContent = sourceExists
+        ? await _fileOperations.readText(expandedPath)
+        : '';
+
     final parser = _getParserForFormat(config.format);
 
     // Validate the raw content by attempting to parse it before writing.
@@ -230,6 +334,7 @@ class ConfigService {
 
     String contentToWrite;
     ToolConfig parsedConfig;
+    var usedFallback = false;
     if (baseline != null &&
         (!listEquals(config.rules, baseline.rules) ||
             !listEquals(config.permissions, baseline.permissions))) {
@@ -265,21 +370,21 @@ class ConfigService {
         );
       }
       contentToWrite = mergeOutcome.content;
+      usedFallback = mergeOutcome.usedFallback;
       parsedConfig = _validateSerialized(parser, contentToWrite, config);
     } else {
       contentToWrite = rawContent;
       parsedConfig = parsedFromRaw;
     }
 
-    final expandedPath = resolvePath(config.filePath);
-
-    if (await _fileOperations.fileExists(expandedPath)) {
-      await backupService.createBackup(expandedPath);
-    }
-
-    await _fileOperations.writeTextAtomically(expandedPath, contentToWrite);
-
-    return parsedConfig;
+    return SavePreview(
+      config: config,
+      content: contentToWrite,
+      sourceContent: sourceContent,
+      sourceExists: sourceExists,
+      parsed: parsedConfig,
+      usedFallback: usedFallback,
+    );
   }
 
   ConfigParser _getParserForFormat(ConfigFormat format) {

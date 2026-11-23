@@ -5,6 +5,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/schemas/policy_card_registry.dart';
+import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -31,6 +32,7 @@ class ConfigEditor extends StatefulWidget {
     this.hasUsableBaseline,
     this.rawContentParsedAsJsonc,
     this.currentSourceParsedAsJsonc,
+    this.previewSaveContent,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
     this.tomlStructuredSaveEnabled = false,
@@ -52,6 +54,7 @@ class ConfigEditor extends StatefulWidget {
     ToolConfig config, {
     String? rawContent,
     bool? allowRewrite,
+    bool? overwriteConfirmed,
   })
   onSave;
 
@@ -74,6 +77,11 @@ class ConfigEditor extends StatefulWidget {
   /// Reports whether the current on-disk JSON source needs JSONC parsing, so
   /// a structured-save disclosure reflects the source `saveConfig` will use.
   final Future<bool> Function(ToolConfig config)? currentSourceParsedAsJsonc;
+
+  /// Computes the exact serialized content a save will write, for the review
+  /// dialog. Optional; without it the dialog shows only list diffs.
+  final Future<SavePreview?> Function(ToolConfig config, {String? rawContent})?
+  previewSaveContent;
 
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
@@ -104,24 +112,22 @@ class ConfigEditor extends StatefulWidget {
 
   /// Widget mapping registry. Defaults to [PolicyCardWidgetRegistry.shared].
   final PolicyCardWidgetRegistry? widgetRegistry;
-
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
 }
 
 class _ConfigEditorState extends State<ConfigEditor> {
   static const _fidelityAssessor = FidelityAssessor();
-
   late ToolConfig _currentConfig;
   late List<String> _rules;
   late List<String> _permissions;
   late TextEditingController _rawContentController;
   late String _rawContent;
   bool _saving = false;
+  SavePreview? _shownPreview;
   int _editRevision = 0;
   late final PolicyCardRegistry _registry;
   late final PolicyCardWidgetRegistry _widgetRegistry;
-
   @override
   void initState() {
     super.initState();
@@ -222,6 +228,22 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
+  Future<SavePreview?> _pendingSavePreview() async {
+    final callback = widget.previewSaveContent;
+    if (callback == null) return null;
+    try {
+      return await callback(
+        _currentConfig.copyWith(rules: _rules, permissions: _permissions),
+        rawContent: _rawContent != _currentConfig.originalContent
+            ? _rawContent
+            : null,
+      );
+    } on Object catch (error) {
+      debugPrint('Save preview unavailable: $error');
+      return null;
+    }
+  }
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 12),
@@ -310,9 +332,21 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
-  Future<void> _saveChanges() {
+  Future<void> _saveChanges() async {
+    final shown = _shownPreview;
+    if (shown != null && widget.previewSaveContent != null) {
+      final fresh = await _pendingSavePreview();
+      if (!mounted) return;
+      if (fresh == null ||
+          fresh.content != shown.content ||
+          fresh.sourceContent != shown.sourceContent ||
+          fresh.sourceExists != shown.sourceExists) {
+        await _showDiffModal();
+        return;
+      }
+    }
     setState(() => _saving = true);
-    return StructuredSaveFlow.run(
+    return await StructuredSaveFlow.run(
       context: context,
       isMounted: () => mounted,
       rawContent: () =>
@@ -325,6 +359,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
       onSuccess: (savedConfig) {
         setState(() {
           _currentConfig = savedConfig;
+          _shownPreview = null;
           _initLocalState(_currentConfig);
         });
         _notifyDirtyChanged();
@@ -350,13 +385,17 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
-  Future<void> _showDiffModal() {
+  Future<void> _showDiffModal() async {
+    final preview = await _pendingSavePreview();
+    if (!mounted) return;
+    _shownPreview = preview;
     final editRevision = _editRevision;
-    return StructuredSaveFlow.showDiffModal(
+    return await StructuredSaveFlow.showDiffModal(
       context: context,
       isMounted: () => mounted,
       isCurrentRevision: () => _editRevision == editRevision,
       pendingFidelityAssessment: _pendingFidelityAssessment,
+      pendingSavePreview: () async => _shownPreview?.content,
       supportsStructuredFields: _supportsStructuredFields,
       rawOnly: widget.rawOnly,
       currentRules: _currentConfig.rules,
