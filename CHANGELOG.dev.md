@@ -60,6 +60,22 @@ Internal / developer-facing changes that do not belong in the public
   fixed platform instead of depending on the test runner OS.
 
 ### Changed
+- **Flutter 3.50.1 / Dart 3.14.0 toolchain ([windowing plan Phase 1](plans/active/native-windowing-and-sdk-upgrade.md)):** all three CI jobs
+  pin Flutter 3.50.1 and `pubspec.yaml` declares `sdk: ^3.14.0`. The lockfile is
+  regenerated on the new pin: `test_api` returns to 0.7.14 because 3.50.1's `flutter_test`
+  pins it (superseding Phase 0's temporary 0.7.12 for the 3.47.1 pin) and `sdks.dart`
+  moves to `>=3.14.0`; `sdks.flutter` stays `>=3.47.0` because it tracks the highest
+  dependency floor, not the CI pin. README badge and prerequisites updated.
+- **Material import migration:** the `package:flutter/material.dart` import has been
+  deprecated since Flutter 3.47 and is now a fatal info under `--fatal-infos`, so 42 files
+  move to `package:material_ui/material_ui.dart` and `material_ui` becomes a direct
+  dependency (already transitive through `flutter_riverpod`); `lib/state/providers.g.dart`
+  is regenerated hash-only. `dart_code_linter` also moves from the deprecated
+  `analyzer: plugins:` list to the top-level `plugins:` map; no `dart_code_linter.rules`
+  were configured in either form, so no check is disabled and the CI metrics gate is
+  unchanged. Dart 3.14's analyzer additionally reports the already-configured
+  `unnecessary_unawaited` and `avoid_types_on_closure_parameters` lints; those findings are
+  cleared.
 - **Dependabot windowing carve-out:** `window_manager` and `screen_retriever` are excluded
   from `pub-minor-patch` and grouped separately as `pub-windowing-nativeapi`
   (`.github/dependabot.yml`). Their 0.x minor bumps are breaking and the pair must move
