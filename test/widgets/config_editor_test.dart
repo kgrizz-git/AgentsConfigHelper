@@ -9,8 +9,8 @@ import 'package:agents_config_helper/services/backup_service.dart';
 import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 class FakeConfigService extends ConfigService {
   new(BackupService backupService) : super(backupService: backupService);

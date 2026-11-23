@@ -1,7 +1,7 @@
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Reusable header row for the main shell sidebar, keeping the shell file
 /// under the 700-line file cap.

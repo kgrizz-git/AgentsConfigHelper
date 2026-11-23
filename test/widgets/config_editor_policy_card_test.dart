@@ -11,8 +11,8 @@ import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/policy_card_widget_registry.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('ConfigEditor policy-card integration', () {

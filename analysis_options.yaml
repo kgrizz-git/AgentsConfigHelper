@@ -9,7 +9,7 @@ analyzer:
   exclude:
     - "lib/vendor/**"
     - "tmp/**"
-    # Maintainer-approved in plans/active/flutter-sdk-upgrade.md: Flutter-generated
+    # Maintainer-approved in plans/archive/flutter-sdk-upgrade.md: Flutter-generated
     # platform scaffolding and build outputs are not application Dart to lint.
     - build/**
     - android/**
@@ -20,8 +20,15 @@ analyzer:
     - linux/**
   language:
     strict-casts: true
-  plugins:
-    - dart_code_linter
+
+# Analyzer plugin declaration, in the Dart >= 3.10 top-level format. The version
+# constraint lets the analysis server resolve and load the plugin; without a version or
+# path the declaration is inert. A rule must be listed under
+# `plugins.dart_code_linter.diagnostics` to run in the IDE, and under
+# `dart_code_linter.rules` to run in the CI metrics CLI. This project configures neither,
+# so no rules run in either place and the metrics gate is unaffected.
+plugins:
+  dart_code_linter: ^4.4.5
 
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.

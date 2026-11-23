@@ -5,7 +5,7 @@
 library;
 
 import 'package:agents_config_helper/models/tool_descriptor.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Returns the Material icon used for [toolId] in the sidebar.
 IconData iconForToolId(ToolId toolId) {

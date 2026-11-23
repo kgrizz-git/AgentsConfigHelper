@@ -4,12 +4,12 @@
   <img src="assets/icon/app_icon.svg" width="128" height="128" alt="AgentsConfigHelper app icon">
 </p>
 
-Last reviewed: 2026-10-19
+Last reviewed: 2026-11-22
 
 [![CI](https://github.com/kgrizz-git/AgentsConfigHelper/actions/workflows/ci.yml/badge.svg)](https://github.com/kgrizz-git/AgentsConfigHelper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-blue)
-![Flutter](https://img.shields.io/badge/Flutter-%3E%3D3.47.1-02569B?logo=flutter)
+![Flutter](https://img.shields.io/badge/Flutter-%3E%3D3.50.1-02569B?logo=flutter)
 
 A cross-platform desktop application for visualizing, editing, and managing configuration settings, rules, and permissions for AI agents and IDEs.
 
@@ -96,8 +96,8 @@ get raw text editing. A `—` means the tool has no location of that kind.
 
 ### Prerequisites
 
-- **Flutter SDK** >= 3.47.1 ([install guide](https://docs.flutter.dev/get-started/install))
-- **Dart SDK** >= 3.13.1 (bundled with Flutter)
+- **Flutter SDK** >= 3.50.1 ([install guide](https://docs.flutter.dev/get-started/install))
+- **Dart SDK** >= 3.14.0 (bundled with Flutter)
 - **macOS source builds:** macOS 12 (Monterey) or later
 - **Linux only:** `ninja-build` and `libgtk-3-dev` (required for building the native shell)
 

@@ -19,9 +19,9 @@ import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/discovery_preferences_store.dart';
 import 'package:agents_config_helper/services/discovery_service.dart';
 import 'package:agents_config_helper/state/providers.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 part 'recovery_handler_test_harness.dart';

@@ -8,7 +8,7 @@ import 'package:agents_config_helper/theme/app_text_styles.dart';
 import 'package:agents_config_helper/widgets/formatting_fidelity_notice.dart';
 import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Encapsulates the fallback-rewrite save flow so the editor only needs a
 /// thin entrypoint.

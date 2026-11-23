@@ -1,7 +1,7 @@
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/widgets/structured_save_flow.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('StructuredSaveFlow.buildDiffSection', () {

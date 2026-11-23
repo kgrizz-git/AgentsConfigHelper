@@ -1,7 +1,7 @@
 import 'package:agents_config_helper/schemas/codex_permissions.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Displays a validated Codex permission configuration without mutating it.
