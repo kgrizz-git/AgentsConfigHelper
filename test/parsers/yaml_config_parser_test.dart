@@ -13,6 +13,48 @@ void main() {
       parser = YamlConfigParser();
     });
 
+    test('rejects duplicate mapping keys', () {
+      expect(
+        () => parser.parse(
+          'rules: [a]\nrules: [b]\n',
+          filePath: testPath,
+          toolName: testTool,
+        ),
+        throwsA(isA<ConfigParseException>()),
+      );
+    });
+
+    test('refuses a rewrite that would collapse an untouched rules table', () {
+      const original = '''
+base: &base
+  timeout: 30
+override:
+  <<: *base
+rules:
+  custom:
+    - keep
+permissions:
+  - a
+''';
+      final config = parser.parse(
+        original,
+        filePath: testPath,
+        toolName: testTool,
+      );
+      final updated = config.copyWith(
+        permissions: ['a', 'b'],
+        rawSettings: {
+          'base': {'timeout': 45},
+          'override': {'timeout': 90},
+        },
+      );
+
+      expect(
+        () => parser.serialize(updated, originalContent: original),
+        throwsA(isA<StructuredEditRefusedException>()),
+      );
+    });
+
     test('parses empty string to default config', () {
       final config = parser.parse('', filePath: testPath, toolName: testTool);
       expect(config.rules, isEmpty);

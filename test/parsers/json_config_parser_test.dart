@@ -258,9 +258,9 @@ void main() {
     test('deletes JSONC properties with comments before their commas', () {
       const originals = <String>[
         '''
-{"rules": [] /* note */, "other": true}''',
+{"rules": ["old"] /* note */, "other": true}''',
         '''
-{"rules": [] // note
+{"rules": ["old"] // note
 , "other": true}''',
       ];
 
@@ -271,7 +271,7 @@ void main() {
           toolName: 'Test',
         );
         final serialized = parser.serialize(
-          config,
+          config.copyWith(rules: const []),
           originalContent: original,
         );
         final reparsed = parser.parse(

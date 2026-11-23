@@ -96,9 +96,18 @@ class ConfigService {
     }
 
     final parser = _getParserForFormat(config.format);
+    final baseline = _parseUsableBaseline(parser, config);
+    if (baseline == null) {
+      throw const ConfigParseException(
+        'Cannot save structured changes: the loaded baseline could not be '
+        'parsed. Reload the file or edit it as raw text.',
+      );
+    }
+    final edits = _editsFor(config, baseline);
     final outcome = parser.serializeWithOutcome(
       config,
       originalContent: originalContent,
+      edits: edits,
     );
 
     if (outcome.usedFallback && !allowRewrite) {
@@ -237,6 +246,8 @@ class ConfigService {
           'format.',
         );
       }
+      final edits = _editsFor(config, baseline);
+      _refuseSameFieldContention(config, baseline, parsedFromRaw, edits);
       final mergedConfig = parsedFromRaw.copyWith(
         rules: config.rules,
         permissions: config.permissions,
@@ -244,6 +255,7 @@ class ConfigService {
       final mergeOutcome = parser.serializeWithOutcome(
         mergedConfig,
         originalContent: rawContent,
+        edits: edits,
       );
       if (mergeOutcome.usedFallback && !allowRewrite) {
         final loss = _fallbackLossDescription(config.format);
@@ -305,6 +317,45 @@ class ConfigService {
       // FormatException) means the baseline is unusable; let Errors —
       // programming bugs — propagate rather than silently skipping the merge.
       return null;
+    }
+  }
+
+  /// The structured fields whose editor value differs from the loaded
+  /// baseline. Source comparison cannot be used because a mixed-list source
+  /// projects to its strings.
+  static FieldEditMask _editsFor(ToolConfig config, ToolConfig baseline) {
+    return FieldEditMask(
+      rules: !listEquals(config.rules, baseline.rules),
+      permissions: !listEquals(config.permissions, baseline.permissions),
+    );
+  }
+
+  /// Refuses a combined save when the raw buffer and the structured editor
+  /// both changed the same field to different values: per-field ownership
+  /// cannot decide which edit the user meant.
+  static void _refuseSameFieldContention(
+    ToolConfig config,
+    ToolConfig baseline,
+    ToolConfig rawParsed,
+    FieldEditMask edits,
+  ) {
+    if (edits.rules &&
+        !listEquals(rawParsed.rules, baseline.rules) &&
+        !listEquals(config.rules, rawParsed.rules)) {
+      throw const StructuredEditRefusedException(
+        'Rules changed in both the raw editor and the structured editor. '
+        'Edit this field in one place, then save.',
+        field: StructuredField.rules,
+      );
+    }
+    if (edits.permissions &&
+        !listEquals(rawParsed.permissions, baseline.permissions) &&
+        !listEquals(config.permissions, rawParsed.permissions)) {
+      throw const StructuredEditRefusedException(
+        'Permissions changed in both the raw editor and the structured editor. '
+        'Edit this field in one place, then save.',
+        field: StructuredField.permissions,
+      );
     }
   }
 

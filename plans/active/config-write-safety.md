@@ -191,6 +191,10 @@ that PR is unmerged and will be rebased onto `main` before review.
   needs no new fields, but the current serializer signature (`ToolConfig` +
   `originalContent`) cannot express ownership. If a structured save cannot obtain a
   parseable baseline, it refuses rather than guessing which fields are dirty.
+- Derive the mask when a caller omits it: `ConfigParser.resolveEdits` parses the baseline
+  source and compares the projection, so direct serializer callers are safe too. A
+  whole-document rewrite restores untouched owned fields from the source and refuses
+  unsupported shapes; a non-object root has no owned fields to lose.
 - Serialize against the **actual source being written**: current disk content for
   `saveConfig`, the raw buffer for a combined save.
 - Overlay **only dirty fields**. Every untouched field keeps its exact source node.
@@ -201,6 +205,12 @@ that PR is unmerged and will be rebased onto `main` before review.
   verbatim.
 - Fix Finding 8: a combined save must overlay only the structured field that is actually
   dirty, so a raw edit to the other field survives.
+- Refuse a combined save when the raw buffer and the structured editor both changed the
+  **same** field to different values. Per-field ownership cannot choose between them, and
+  silently preferring either one drops the user's other edit.
+- TOML has no in-place path: it validates and rebuilds from the loaded `rawSettings`, not
+  from the current disk content. A disk shape that changed externally is Phase 4's
+  responsibility; TOML's refusal does not cover it.
 - Raw-only saves remain allowed: they write the user's exact bytes and never invoke a
   serializer.
 - `allowRewrite` must **not** bypass these protections. The whole-document fallback starts
@@ -324,6 +334,16 @@ that PR is unmerged and will be rebased onto `main` before review.
   runtime test.
 - **New files default to `0600`.** Config content can carry secrets; a first save is never
   wider than owner-only.
+- **Raw-only fallback with an unparseable baseline.** `saveRawConfig` writes the raw buffer
+  verbatim when `config.originalContent` cannot be parsed. The structured editor is
+  unavailable for such files (`hasUsableBaseline` is false), so this is a raw save by
+  construction; a caller that supplies structured values anyway must not expect them to be
+  merged.
+- **YAML alias structure.** A whole-document rewrite resolves anchors and aliases into plain
+  values: the values survive, the alias structure does not. In-place updates are used
+  whenever `YamlEditor` can handle the shape.
+- **TOML is not source-aware.** It always rebuilds from the loaded `rawSettings`; external
+  disk shapes are Phase 4's responsibility.
 
 ## Risks and open questions
 

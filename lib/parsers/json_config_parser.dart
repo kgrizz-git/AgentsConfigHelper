@@ -128,15 +128,20 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
   /// Serializes a [ToolConfig] back into JSON/JSONC content.
   ///
   /// When [originalContent] is provided, this attempts a surgical in-place
-  /// patch of just the `rules` and `permissions` fields via AST offsets, so
-  /// existing comments, formatting, and unrelated keys are preserved. If the
-  /// patch cannot be applied safely, it falls back to re-encoding the full
-  /// settings map from scratch (which discards comments).
+  /// patch of only the dirty structured fields via AST offsets, so existing
+  /// comments, formatting, unrelated keys, and untouched fields are preserved.
+  /// If the patch cannot be applied safely, it falls back to re-encoding the
+  /// full settings map from scratch (which discards comments).
   @override
-  String serialize(ToolConfig config, {String? originalContent}) {
+  String serialize(
+    ToolConfig config, {
+    String? originalContent,
+    FieldEditMask? edits,
+  }) {
     return serializeWithOutcome(
       config,
       originalContent: originalContent,
+      edits: edits,
     ).content;
   }
 
@@ -144,17 +149,59 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
   SerializeOutcome serializeWithOutcome(
     ToolConfig config, {
     String? originalContent,
+    FieldEditMask? edits,
   }) {
+    final effectiveEdits = resolveEdits(config, originalContent, edits);
     if (originalContent != null && originalContent.trim().isNotEmpty) {
-      final outcome = _tryInPlaceOutcome(config, originalContent);
+      final outcome = _tryInPlaceOutcome(
+        config,
+        originalContent,
+        effectiveEdits,
+      );
       if (outcome != null) return outcome;
     }
-    return _rewriteOutcome(config, originalContent);
+    return _rewriteOutcome(config, originalContent, effectiveEdits);
+  }
+
+  /// Refuses a dirty field whose source shape cannot be rewritten safely.
+  static void _assertDirtyFieldsSafe(
+    Iterable<String> dirtyKeys,
+    Map<String, List<json_ast.PropertyNode>> nodesByKey,
+  ) {
+    for (final key in dirtyKeys) {
+      final nodes = nodesByKey[key] ?? const <json_ast.PropertyNode>[];
+      if (nodes.length > 1) {
+        throw StructuredEditRefusedException(
+          'Cannot safely update "$key": the file contains more than one '
+          '"$key" key. Resolve the duplicates or edit the raw file.',
+          field: _fieldFor(key),
+        );
+      }
+      if (nodes.length == 1 && !_isPlainStringArray(nodes.single.value)) {
+        throw StructuredEditRefusedException(
+          'Cannot safely update "$key": its current value is not a list '
+          'of strings. Use the raw editor to change it.',
+          field: _fieldFor(key),
+        );
+      }
+    }
+  }
+
+  static StructuredField _fieldFor(String key) =>
+      key == 'rules' ? StructuredField.rules : StructuredField.permissions;
+
+  /// Whether [node] is a JSON array containing only strings.
+  static bool _isPlainStringArray(json_ast.Node? node) {
+    if (node is! json_ast.ArrayNode) return false;
+    return node.children.every(
+      (child) => child is json_ast.LiteralNode && child.value is String,
+    );
   }
 
   static SerializeOutcome? _tryInPlaceOutcome(
     ToolConfig config,
     String originalContent,
+    FieldEditMask edits,
   ) {
     try {
       final cleanContent = JsoncCleaner.clean(originalContent);
@@ -163,23 +210,27 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       if (ast is json_ast.ObjectNode) {
         var result = originalContent;
 
-        final newFields = <String, dynamic>{};
-        if (config.rules.isNotEmpty) newFields['rules'] = config.rules;
-        final originalPermissions = config.rawSettings['permissions'];
-        final preservesNestedPermissions =
-            originalPermissions != null && originalPermissions is! List;
-        if (config.permissions.isNotEmpty) {
-          newFields['permissions'] = config.permissions;
-        }
+        final dirtyValues = <String, List<String>>{
+          if (edits.rules) 'rules': config.rules,
+          if (edits.permissions) 'permissions': config.permissions,
+        };
 
-        json_ast.PropertyNode? rulesNode;
-        json_ast.PropertyNode? permissionsNode;
+        final nodesByKey = <String, List<json_ast.PropertyNode>>{};
         for (final prop in ast.children) {
-          if (prop.key!.value == 'rules') rulesNode = prop;
-          if (prop.key!.value == 'permissions') permissionsNode = prop;
+          final key = prop.key?.value;
+          if (key == 'rules' || key == 'permissions') {
+            nodesByKey
+                .putIfAbsent(key!, () => <json_ast.PropertyNode>[])
+                .add(prop);
+          }
         }
 
-        final edits = <_Edit>[];
+        // Only a dirty field may be rewritten, and only when its source shape
+        // can be updated without losing data. Untouched fields are not read or
+        // modified here at all.
+        _assertDirtyFieldsSafe(dirtyValues.keys, nodesByKey);
+
+        final astEdits = <_Edit>[];
         const encoder = JsonEncoder();
 
         void deleteNode(json_ast.PropertyNode node) {
@@ -224,16 +275,19 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
               break;
             }
           }
-          edits.add(_Edit(start, end, ''));
+          astEdits.add(_Edit(start, end, ''));
         }
 
-        if (rulesNode != null) {
-          if (newFields.containsKey('rules')) {
-            edits.add(
+        final rulesNode = nodesByKey['rules']?.firstOrNull;
+        final permissionsNode = nodesByKey['permissions']?.firstOrNull;
+
+        if (edits.rules && rulesNode != null) {
+          if (config.rules.isNotEmpty) {
+            astEdits.add(
               _Edit(
                 rulesNode.value!.loc!.start.offset,
                 rulesNode.value!.loc!.end.offset,
-                encoder.convert(newFields['rules']),
+                encoder.convert(config.rules),
               ),
             );
           } else {
@@ -241,13 +295,13 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
           }
         }
 
-        if (permissionsNode != null && !preservesNestedPermissions) {
-          if (newFields.containsKey('permissions')) {
-            edits.add(
+        if (edits.permissions && permissionsNode != null) {
+          if (config.permissions.isNotEmpty) {
+            astEdits.add(
               _Edit(
                 permissionsNode.value!.loc!.start.offset,
                 permissionsNode.value!.loc!.end.offset,
-                encoder.convert(newFields['permissions']),
+                encoder.convert(config.permissions),
               ),
             );
           } else {
@@ -255,14 +309,16 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
           }
         }
 
-        // Handle additions (keys that did not exist)
+        // Handle additions for dirty keys that did not exist.
         final additions = <String>[];
-        if (rulesNode == null && newFields.containsKey('rules')) {
-          additions.add('"rules": ${encoder.convert(newFields['rules'])}');
+        if (edits.rules && rulesNode == null && config.rules.isNotEmpty) {
+          additions.add('"rules": ${encoder.convert(config.rules)}');
         }
-        if (permissionsNode == null && newFields.containsKey('permissions')) {
+        if (edits.permissions &&
+            permissionsNode == null &&
+            config.permissions.isNotEmpty) {
           additions.add(
-            '"permissions": ${encoder.convert(newFields['permissions'])}',
+            '"permissions": ${encoder.convert(config.permissions)}',
           );
         }
 
@@ -284,12 +340,12 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
           final prefix = needsComma ? ',\n  ' : '\n  ';
           const suffix = '\n';
           final insertion = prefix + additions.join(',\n  ') + suffix;
-          edits.add(_Edit(insertPos, insertPos, insertion));
+          astEdits.add(_Edit(insertPos, insertPos, insertion));
         }
 
         // Descending offsets preserve edit locations in the original string.
-        edits.sort((a, b) => b.start.compareTo(a.start));
-        for (final edit in edits) {
+        astEdits.sort((a, b) => b.start.compareTo(a.start));
+        for (final edit in astEdits) {
           result = result.replaceRange(
             edit.start,
             edit.end,
@@ -300,6 +356,8 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
         jsonDecode(JsoncCleaner.clean(result));
         return SerializeOutcome(content: result, usedFallback: false);
       }
+    } on StructuredEditRefusedException {
+      rethrow;
     } on Object catch (_) {
       // A failed in-place patch uses the full serialization fallback below.
     }
@@ -309,22 +367,46 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
   static SerializeOutcome _rewriteOutcome(
     ToolConfig config,
     String? originalContent,
+    FieldEditMask edits,
   ) {
+    // A full rewrite starts from the collapsed rawSettings map, so untouched
+    // owned fields are restored from the source and any shape that cannot
+    // survive the collapse is refused.
+    final sourceFields =
+        originalContent != null && originalContent.trim().isNotEmpty
+        ? _sourceOwnedFields(originalContent)
+        : null;
+
     final outputMap = Map<String, Object?>.from(config.rawSettings);
 
-    if (config.rules.isNotEmpty) {
-      outputMap['rules'] = config.rules;
-    } else {
-      outputMap.remove('rules');
+    if (edits.rules) {
+      if (config.rules.isNotEmpty) {
+        outputMap['rules'] = config.rules;
+      } else {
+        outputMap.remove('rules');
+      }
+    } else if (sourceFields != null) {
+      final rules = sourceFields['rules'];
+      if (rules != null) {
+        outputMap['rules'] = rules;
+      } else {
+        outputMap.remove('rules');
+      }
     }
 
-    final originalPermissions = config.rawSettings['permissions'];
-    final preservesNestedPermissions =
-        originalPermissions != null && originalPermissions is! List;
-    if (config.permissions.isNotEmpty) {
-      outputMap['permissions'] = config.permissions;
-    } else if (!preservesNestedPermissions) {
-      outputMap.remove('permissions');
+    if (edits.permissions) {
+      if (config.permissions.isNotEmpty) {
+        outputMap['permissions'] = config.permissions;
+      } else {
+        outputMap.remove('permissions');
+      }
+    } else if (sourceFields != null) {
+      final permissions = sourceFields['permissions'];
+      if (permissions != null) {
+        outputMap['permissions'] = permissions;
+      } else {
+        outputMap.remove('permissions');
+      }
     }
 
     const encoder = JsonEncoder.withIndent('  ');
@@ -333,5 +415,52 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       usedFallback:
           originalContent != null && originalContent.trim().isNotEmpty,
     );
+  }
+
+  /// Returns the owned fields present in the source, with their string-list
+  /// values. Refuses a rewrite when an owned field cannot be represented.
+  static Map<String, List<String>?> _sourceOwnedFields(
+    String originalContent,
+  ) {
+    final json_ast.Node ast;
+    try {
+      ast = json_ast.parse(
+        JsoncCleaner.clean(originalContent),
+        json_ast.Settings(),
+      );
+    } on Object {
+      throw const StructuredEditRefusedException(
+        'Cannot rewrite the file: its current content is not valid JSON.',
+      );
+    }
+    if (ast is! json_ast.ObjectNode) {
+      // A non-object root has no owned fields to preserve.
+      return const <String, List<String>?>{};
+    }
+    final fields = <String, List<String>?>{};
+    for (final key in const ['rules', 'permissions']) {
+      final nodes = ast.children
+          .where((prop) => prop.key?.value == key)
+          .toList();
+      if (nodes.length > 1) {
+        throw StructuredEditRefusedException(
+          'Cannot rewrite the file: it contains more than one "$key" key.',
+          field: _fieldFor(key),
+        );
+      }
+      if (nodes.isEmpty) continue;
+      final value = nodes.single.value;
+      if (!_isPlainStringArray(value)) {
+        throw StructuredEditRefusedException(
+          'Cannot rewrite the file: "$key" is not a list of strings and would '
+          'be lost.',
+          field: _fieldFor(key),
+        );
+      }
+      fields[key] = (value! as json_ast.ArrayNode).children
+          .map((child) => (child as json_ast.LiteralNode).value! as String)
+          .toList();
+    }
+    return fields;
   }
 }

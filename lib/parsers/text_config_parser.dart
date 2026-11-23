@@ -34,10 +34,15 @@ class TextConfigParser implements ConfigParser {
   /// changed on disk while the editor was open, the save writes the current
   /// disk state instead of a stale in-memory copy.
   @override
-  String serialize(ToolConfig config, {String? originalContent}) {
+  String serialize(
+    ToolConfig config, {
+    String? originalContent,
+    FieldEditMask? edits,
+  }) {
     return serializeWithOutcome(
       config,
       originalContent: originalContent,
+      edits: edits,
     ).content;
   }
 
@@ -45,6 +50,7 @@ class TextConfigParser implements ConfigParser {
   SerializeOutcome serializeWithOutcome(
     ToolConfig config, {
     String? originalContent,
+    FieldEditMask? edits,
   }) {
     return SerializeOutcome(
       content: originalContent ?? config.originalContent,
