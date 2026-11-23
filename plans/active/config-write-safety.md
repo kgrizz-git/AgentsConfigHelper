@@ -261,7 +261,7 @@ that PR is unmerged and will be rebased onto `main` before review.
   | --- | --- | --- |
   | Claude `settings.json` | strict | Claude documents strict JSON |
   | Cursor `permissions.json` | JSONC | Cursor documents comments there |
-  | Cursor IDE `settings.json` | strict | Catalog docs classify it JSON; Cursor publishes no schema for the inherited VS Code format |
+  | Cursor IDE `settings.json` | JSONC | VS Code documents comments and trailing commas in `settings.json`, which Cursor inherits |
   | Antigravity CLI/IDE/App `settings.json` | strict | Catalog docs classify them JSON; the IDE/App paths are not vendor-documented |
   | Devin `config.json` | JSONC | Devin documents JSON-with-comments |
   | Opencode, Copilot CLI/repo settings, Kilo `.jsonc` | JSONC | Documented comments |
@@ -332,7 +332,8 @@ that PR is unmerged and will be rebased onto `main` before review.
 ## Deviations and limitations
 
 - **No `fchmod` in `dart:io`.** The POSIX mode is applied by path with `chmod` while the
-  exclusive, randomly named temporary descriptor is open, and before content is written.
+  exclusive, PID-and-timestamp-named temporary descriptor is open, and before content is
+  written.
   A native/FFI `fchmod` would remove the remaining path-based window and is recorded as a
   follow-up rather than claimed here.
 - **No directory `fsync` in `dart:io`.** File content is flushed before the rename, but the

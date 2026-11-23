@@ -47,19 +47,31 @@ class SavePreview {
   final bool usedFallback;
 }
 
-/// Thrown when the source changed between preview and commit.
+/// Thrown when the source changed between load, preview, and commit.
 class SaveConflictException implements Exception {
-  const new(this.preview, this.currentContent);
+  const new(this.preview, this.currentContent, {this.filePath = ''});
 
-  /// The preview that can no longer be committed as-is.
-  final SavePreview preview;
+  /// The source changed after the config was loaded but before a preview could
+  /// be computed, so there is no preview to attach.
+  factory stale(
+    String filePath,
+    String? currentContent,
+  ) => SaveConflictException(null, currentContent, filePath: filePath);
+
+  /// The preview that can no longer be committed as-is, when one exists.
+  final SavePreview? preview;
+
+  /// The path whose source changed.
+  final String filePath;
 
   /// The current source content, or null when the file was deleted.
   final String? currentContent;
 
+  /// The changed file's path.
+  String get path => preview?.config.filePath ?? filePath;
+
   @override
-  String toString() =>
-      'SaveConflictException: ${preview.config.filePath} changed after preview';
+  String toString() => 'SaveConflictException: $path changed after preview';
 }
 
 /// A facade service that orchestrates reading configs, parsing them,
@@ -155,6 +167,15 @@ class ConfigService {
     final originalContent = sourceExists
         ? await _fileOperations.readText(expandedPath)
         : null;
+
+    final loadedContent = config.originalContent;
+    if (sourceExists) {
+      if (originalContent != loadedContent) {
+        throw SaveConflictException.stale(config.filePath, originalContent);
+      }
+    } else if (loadedContent.trim().isNotEmpty) {
+      throw SaveConflictException.stale(config.filePath, null);
+    }
 
     final parser = _getParserForFormat(config.format);
     final baseline = _parseUsableBaseline(parser, config);
@@ -306,6 +327,15 @@ class ConfigService {
     final sourceContent = sourceExists
         ? await _fileOperations.readText(expandedPath)
         : '';
+
+    final loadedContent = config.originalContent;
+    if (sourceExists) {
+      if (sourceContent != loadedContent) {
+        throw SaveConflictException.stale(config.filePath, sourceContent);
+      }
+    } else if (loadedContent.trim().isNotEmpty) {
+      throw SaveConflictException.stale(config.filePath, null);
+    }
 
     final parser = _getParserForFormat(config.format);
 

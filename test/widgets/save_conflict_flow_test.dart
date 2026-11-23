@@ -27,7 +27,7 @@ void main() {
     );
 
     var calls = 0;
-    var succeeded = false;
+    var repreviewed = false;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -50,16 +50,12 @@ void main() {
                             overwriteConfirmed,
                           }) async {
                             calls++;
-                            if (calls == 1) {
-                              throw SaveConflictException(preview, 'external');
-                            }
-                            expect(allowRewrite, isFalse);
-                            expect(overwriteConfirmed, isTrue);
-                            return config;
+                            throw SaveConflictException(preview, 'external');
                           },
-                      onSuccess: (_) => succeeded = true,
+                      onSuccess: (_) {},
                       onError: (_) {},
                       setSavingFalse: () {},
+                      onRepreview: () => repreviewed = true,
                     ),
                   );
                 },
@@ -79,7 +75,7 @@ void main() {
     await tester.tap(find.text('Overwrite'));
     await tester.pumpAndSettle();
 
-    expect(calls, 2);
-    expect(succeeded, isTrue);
+    expect(calls, 1);
+    expect(repreviewed, isTrue);
   });
 }

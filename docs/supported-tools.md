@@ -24,7 +24,7 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Opencode | JSONC | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared) | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
 | Cursor Agent | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `CLAUDE.md` (+ shared) | allowlist + classifier (read-only card) |
-| Cursor IDE | JSON | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
+| Cursor IDE | JSONC | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
 | Kiro | YAML | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` (+ shared) | capability-based |
 | Devin | JSONC | `~/.config/devin/config.json` | `.devin/config.json` | `~/.config/devin/AGENTS.md` (+ shared) | scope-based allow/deny |
 | Antigravity CLI | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` + `GEMINI.md` | action(target) + presets |

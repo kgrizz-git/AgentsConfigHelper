@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
@@ -203,9 +204,9 @@ void main() {
 
       final preview = await configService.previewSaveConfig(updated);
 
-      expect(preview.content, contains('"new"'));
+      expect(preview.content, contains('new'));
       await configService.commitSavePreview(preview);
-      expect(await file.readAsString(), preview.content);
+      expect(await file.readAsBytes(), utf8.encode(preview.content));
     });
 
     test(
@@ -227,9 +228,10 @@ void main() {
         expect(await file.readAsString(), '{"rules": ["external"]}');
         expect(await backupService.listBackups(file.path), isEmpty);
 
-        // A fresh preview against the new source commits.
+        // Reloading and previewing against the new source commits.
+        final reloaded = await _load(configService, file.path);
         final fresh = await configService.previewSaveConfig(
-          config.copyWith(rules: ['new']),
+          reloaded.copyWith(rules: ['new']),
         );
         await configService.commitSavePreview(fresh);
         expect(await file.readAsString(), contains('"new"'));
@@ -264,6 +266,40 @@ void main() {
         throwsA(isA<SaveConflictException>()),
       );
       expect(deleted.existsSync(), isFalse);
+    });
+    test('preview refuses a source changed after load', () async {
+      final file = File(p.join(tempDir.path, 'stale.json'));
+      await file.writeAsString('{"rules": ["old"]}');
+      final config = await _load(configService, file.path);
+      await file.writeAsString('{"rules": ["external"]}');
+
+      await expectLater(
+        configService.previewSaveConfig(config.copyWith(rules: ['new'])),
+        throwsA(isA<SaveConflictException>()),
+      );
+      await expectLater(
+        configService.previewSaveRaw(config, '{"rules": ["raw"]}'),
+        throwsA(isA<SaveConflictException>()),
+      );
+      expect(await file.readAsString(), '{"rules": ["external"]}');
+    });
+
+    test('preview with allowRewrite renders a TOML rewrite', () async {
+      final file = File(p.join(tempDir.path, 'commented.toml'));
+      await file.writeAsString('# keep this comment\nrules = ["old"]\n');
+      final config = await _load(configService, file.path);
+      final updated = config.copyWith(rules: ['new']);
+
+      await expectLater(
+        configService.previewSaveConfig(updated),
+        throwsA(isA<SerializationFallbackException>()),
+      );
+      final preview = await configService.previewSaveConfig(
+        updated,
+        allowRewrite: true,
+      );
+      expect(preview.usedFallback, isTrue);
+      expect(preview.content, contains('new'));
     });
   });
 }

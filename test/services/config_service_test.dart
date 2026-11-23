@@ -232,16 +232,16 @@ void main() {
       () async {
         final jsonFile = File(p.join(tempDir.path, 'raw_config_stale.json'));
         await jsonFile.create(recursive: true);
-        await jsonFile.writeAsString('{"rules": ["disk"]}');
+        // The unparseable baseline is also the current disk content, so this
+        // exercises raw repair rather than a stale-snapshot conflict.
+        const staleContent = '{ not valid json';
+        await jsonFile.writeAsString(staleContent);
 
-        // A stale in-memory snapshot whose originalContent no longer parses.
-        // The internal baseline reparse must not turn a valid raw save into
-        // an "invalid raw content" failure.
         final config = ToolConfig(
           toolName: 'Test',
           filePath: jsonFile.path,
           format: ConfigFormat.json,
-          originalContent: '{ not valid json',
+          originalContent: staleContent,
         );
 
         const validRaw = '{"rules": ["new"]}';
@@ -258,14 +258,14 @@ void main() {
       () async {
         final tomlFile = File(p.join(tempDir.path, 'raw_config_stale.toml'));
         await tomlFile.create(recursive: true);
-        const diskContent = '# disk comment\nrules = ["disk"]\n';
-        await tomlFile.writeAsString(diskContent);
+        const staleContent = 'rules = [';
+        await tomlFile.writeAsString(staleContent);
 
         final config = ToolConfig(
           toolName: 'Test',
           filePath: tomlFile.path,
           format: ConfigFormat.toml,
-          originalContent: 'rules = [',
+          originalContent: staleContent,
           rules: const ['structured-change'],
         );
         const rawEdit = '# raw comment\nrules = ["raw"]\n';

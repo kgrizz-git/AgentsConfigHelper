@@ -93,12 +93,12 @@ class StructuredSaveFlow {
       ToolConfig config, {
       String? rawContent,
       bool? allowRewrite,
-      bool? overwriteConfirmed,
     })
     onSave,
     required void Function(ToolConfig savedConfig) onSuccess,
     required void Function(Object error) onError,
     required void Function() setSavingFalse,
+    required VoidCallback onRepreview,
   }) async {
     try {
       final savedConfig = await onSave(
@@ -112,35 +112,9 @@ class StructuredSaveFlow {
       if (!context.mounted) return;
       final overwrite = await showConflictDialog(context, conflict);
       if (overwrite != true || !context.mounted) return;
-      try {
-        // A conflict is not a serialization fallback. Retry with the fallback
-        // gate closed and require its own consent if the changed source needs
-        // a whole-document rewrite.
-        late final ToolConfig savedConfig;
-        try {
-          savedConfig = await onSave(
-            buildUpdatedConfig(),
-            rawContent: rawContent(),
-            allowRewrite: false,
-            overwriteConfirmed: true,
-          );
-        } on SerializationFallbackException catch (fallback) {
-          if (!context.mounted) return;
-          final proceed = await showFallbackRewriteDialog(context, fallback);
-          if (proceed != true || !context.mounted) return;
-          savedConfig = await onSave(
-            buildUpdatedConfig(),
-            rawContent: rawContent(),
-            allowRewrite: true,
-            overwriteConfirmed: true,
-          );
-        }
-        if (!isMounted()) return;
-        onSuccess(savedConfig);
-      } on Object catch (error) {
-        if (!isMounted()) return;
-        onError(error);
-      }
+      // Re-open Review Changes so the freshly computed output is displayed
+      // before anything is written.
+      onRepreview();
     } on SerializationFallbackException catch (e) {
       if (!context.mounted) return;
       final proceed = await showFallbackRewriteDialog(context, e);

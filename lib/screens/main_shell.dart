@@ -9,7 +9,6 @@ import 'package:agents_config_helper/screens/recovery_handler.dart';
 import 'package:agents_config_helper/screens/shell_sidebar_header.dart';
 import 'package:agents_config_helper/screens/toml_opt_in_controller.dart';
 import 'package:agents_config_helper/screens/tool_id_icons.dart';
-import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -541,50 +540,28 @@ class _MainShellState extends ConsumerState<MainShell>
             // ConfigEditor itself; this callback only persists the change
             // and updates the active config. Errors propagate to
             // ConfigEditor's own try/catch.
-            onSave:
-                (config, {rawContent, allowRewrite, overwriteConfirmed}) async {
-                  late final ToolConfig updated;
-                  try {
-                    if (rawContent != null) {
-                      updated = await configService.saveRawConfig(
-                        config,
-                        rawContent,
-                        allowRewrite: allowRewrite ?? false,
-                      );
-                    } else {
-                      updated = await configService.saveConfig(
-                        config,
-                        allowRewrite: allowRewrite ?? false,
-                      );
-                    }
-                  } on SaveConflictException {
-                    if (overwriteConfirmed != true) rethrow;
-                    // The user confirmed an overwrite after the source changed.
-                    // Regenerate against the current source; never commit the
-                    // stale preview.
-                    final preview = rawContent != null
-                        ? await configService.previewSaveRaw(
-                            config,
-                            rawContent,
-                            allowRewrite: allowRewrite ?? false,
-                          )
-                        : await configService.previewSaveConfig(
-                            config,
-                            allowRewrite: allowRewrite ?? false,
-                          );
-                    updated = await configService.commitSavePreview(preview);
-                  }
-                  ref.invalidate(backupListProvider(config.filePath));
-                  if (mounted) {
-                    setState(() {
-                      _activeConfig = updated;
-                      // A successful save re-parses the content, so the full
-                      // editor can take over again.
-                      _rawRecoveryMode = false;
-                    });
-                  }
-                  return updated;
-                },
+            onSave: (config, {rawContent, allowRewrite}) async {
+              final updated = rawContent != null
+                  ? await configService.saveRawConfig(
+                      config,
+                      rawContent,
+                      allowRewrite: allowRewrite ?? false,
+                    )
+                  : await configService.saveConfig(
+                      config,
+                      allowRewrite: allowRewrite ?? false,
+                    );
+              ref.invalidate(backupListProvider(config.filePath));
+              if (mounted) {
+                setState(() {
+                  _activeConfig = updated;
+                  // A successful save re-parses the content, so the full
+                  // editor can take over again.
+                  _rawRecoveryMode = false;
+                });
+              }
+              return updated;
+            },
             resolvePath: configService.resolvePath,
             hasUsableBaseline: configService.hasUsableBaseline,
             rawContentParsedAsJsonc: configService.rawContentParsedAsJsonc,
@@ -592,8 +569,15 @@ class _MainShellState extends ConsumerState<MainShell>
                 configService.currentSourceParsedAsJsonc,
             previewSaveContent: (config, {rawContent}) async {
               return rawContent != null
-                  ? await configService.previewSaveRaw(config, rawContent)
-                  : await configService.previewSaveConfig(config);
+                  ? await configService.previewSaveRaw(
+                      config,
+                      rawContent,
+                      allowRewrite: true,
+                    )
+                  : await configService.previewSaveConfig(
+                      config,
+                      allowRewrite: true,
+                    );
             },
             onShowHistory: showHistoryModal,
             allowOpenDirectory: ref.watch(testRootPathProvider) == null,

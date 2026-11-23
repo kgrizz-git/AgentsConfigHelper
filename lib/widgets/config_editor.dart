@@ -54,7 +54,6 @@ class ConfigEditor extends StatefulWidget {
     ToolConfig config, {
     String? rawContent,
     bool? allowRewrite,
-    bool? overwriteConfirmed,
   })
   onSave;
 
@@ -382,6 +381,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
           });
         }
       },
+      onRepreview: () => unawaited(_showDiffModal()),
     );
   }
 

@@ -130,28 +130,28 @@ class ToolDescriptorRegistry {
         // VS Code-style user settings, one path per OS (docs/supported-tools.md).
         ConfigTarget(
           relativePath: 'Library/Application Support/Cursor/User/settings.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
           platform: ConfigPlatform.macOS,
         ),
         ConfigTarget(
           relativePath: '.config/Cursor/User/settings.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
           platform: ConfigPlatform.linux,
         ),
         ConfigTarget(
           relativePath: 'AppData/Roaming/Cursor/User/settings.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
           platform: ConfigPlatform.windows,
         ),
         ConfigTarget(
           relativePath: '.cursor/settings.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),

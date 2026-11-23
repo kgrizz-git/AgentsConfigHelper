@@ -75,6 +75,12 @@ void main() {
           normalizedHomePath: homePath,
         );
         expect(devin.format, ConfigFormat.jsonc);
+
+        final cursorSettings = ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(homePath, '.config/Cursor/User/settings.json')),
+          normalizedHomePath: homePath,
+        );
+        expect(cursorSettings.format, ConfigFormat.jsonc);
       },
     );
 

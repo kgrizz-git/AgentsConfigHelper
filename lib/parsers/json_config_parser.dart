@@ -22,12 +22,12 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
 
   /// Parses raw JSON or JSONC content into a [ToolConfig].
   ///
-  /// If strict JSON decoding fails, the content is first run through
-  /// [JsoncCleaner] to strip comments and trailing commas before retrying,
-  /// and the returned config carries a [ToolConfig.parseWarnings] entry so
-  /// the caller can surface the fallback. Empty or entirely-whitespace
-  /// content preserves `content` as `originalContent` and returns an
-  /// otherwise-empty [ToolConfig].
+  /// For [ConfigFormat.jsonc], a strict decode failure retries through
+  /// [JsoncCleaner] and records a [ToolConfig.parseWarnings] entry. A strict
+  /// [ConfigFormat.json] target instead rejects comments and trailing commas,
+  /// so the app never writes JSONC to a tool that requires strict JSON. Empty
+  /// or entirely-whitespace content preserves `content` as `originalContent`
+  /// and returns an otherwise-empty [ToolConfig].
   @override
   ToolConfig parse(
     String content, {
