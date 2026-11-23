@@ -251,7 +251,25 @@ that PR is unmerged and will be rebased onto `main` before review.
 - Provide a recovery path for files that no longer conform (existing JSONC content, or a
   reclassified target): load failure must offer a raw editor against the file so the user
   can correct it, and saving that raw content is validated strictly before writing. The
-  structured editor must not be offered for a file that cannot be parsed strictly.
+  structured editor must not be offered for a file that cannot be parsed strictly. This
+  path already exists (`RecoveryAction.openRawEditor` reads the file without parsing and
+  sets `rawRecoveryMode`); Phase 3 only needs to keep it and prove the save validates.
+- Catalog audit result — every `.json` target was checked; strict remains the default and
+  each exception cites a vendor doc:
+
+  | Targets | Format | Basis |
+  | --- | --- | --- |
+  | Claude `settings.json` | strict | Claude documents strict JSON |
+  | Cursor `permissions.json` | JSONC | Cursor documents comments there |
+  | Cursor IDE `settings.json` | strict | Catalog docs classify it JSON; Cursor publishes no schema for the inherited VS Code format |
+  | Antigravity CLI/IDE/App `settings.json` | strict | Catalog docs classify them JSON; the IDE/App paths are not vendor-documented |
+  | Devin `config.json` | JSONC | Devin documents JSON-with-comments |
+  | Opencode, Copilot CLI/repo settings, Kilo `.jsonc` | JSONC | Documented comments |
+  | Paseo, Agy-ACP sessions, Kilo `.json`, Cline, LM Studio, Copilot `config.json`/`mcp-config.json` | strict | Documented JSON |
+
+- `rawContentParsedAsJsonc` and `currentSourceParsedAsJsonc` return false for strict
+  targets by design: JSONC syntax is rejected outright, so there is no fallback to
+  disclose. The structured-save JSONC notice therefore applies only to `jsonc` targets.
 - Update `docs/supported-tools.md` where a classification changes.
 
 ### Phase 3 checks

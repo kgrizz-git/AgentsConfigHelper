@@ -163,13 +163,13 @@ class ToolDescriptorRegistry {
       targets: [
         ConfigTarget(
           relativePath: '.cursor/permissions.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
         ),
         ConfigTarget(
           relativePath: '.cursor/permissions.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),
@@ -223,13 +223,13 @@ class ToolDescriptorRegistry {
         ),
         ConfigTarget(
           relativePath: '.config/devin/config.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.user,
           kind: ConfigSourceKind.structuredConfig,
         ),
         ConfigTarget(
           relativePath: '.devin/config.json',
-          format: ConfigFormat.json,
+          format: ConfigFormat.jsonc,
           scope: ConfigLocationScope.project,
           kind: ConfigSourceKind.structuredConfig,
         ),

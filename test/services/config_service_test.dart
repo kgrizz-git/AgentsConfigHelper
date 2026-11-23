@@ -410,8 +410,8 @@ void main() {
     test('rawContentParsedAsJsonc detects JSONC added in the raw editor', () {
       final config = ToolConfig(
         toolName: 'Test',
-        filePath: '${tempDir.path}/settings.json',
-        format: ConfigFormat.json,
+        filePath: '${tempDir.path}/settings.jsonc',
+        format: ConfigFormat.jsonc,
         originalContent: '{"rules": []}',
       );
 
@@ -431,7 +431,7 @@ void main() {
     test(
       'currentSourceParsedAsJsonc detects JSONC added after a config opened',
       () async {
-        final jsonFile = File(p.join(tempDir.path, 'settings.json'));
+        final jsonFile = File(p.join(tempDir.path, 'settings.jsonc'));
         await jsonFile.writeAsString('{"rules": []}');
         final config = await _load(configService, jsonFile.path);
 

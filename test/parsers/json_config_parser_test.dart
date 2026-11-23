@@ -162,6 +162,7 @@ void main() {
           input,
           filePath: 'opencode.json',
           toolName: 'Opencode',
+          format: ConfigFormat.jsonc,
         );
 
         expect(config.rules, ['a', 'b']);
@@ -183,7 +184,7 @@ void main() {
 ''';
       final config = parser.parse(
         original,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
 
@@ -205,7 +206,7 @@ void main() {
       // Parse it back to verify it's still valid
       final roundTrip = parser.parse(
         serialized,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       expect(roundTrip.rules, ['a', 'c']);
@@ -300,11 +301,23 @@ void main() {
       }
     });
 
-    test('JSONC fallback adds parseWarnings for .json with comments', () {
+    test('rejects JSONC syntax in a strict .json target', () {
+      const jsonc = '{\n  // comment\n  "rules": ["a"]\n}';
+      expect(
+        () => parser.parse(
+          jsonc,
+          filePath: 'test.json',
+          toolName: 'Test',
+        ),
+        throwsA(isA<ConfigParseException>()),
+      );
+    });
+
+    test('JSONC fallback adds parseWarnings for .jsonc', () {
       const jsonc = '{\n  // comment\n  "rules": ["a"]\n}';
       final config = parser.parse(
         jsonc,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       expect(config.parseWarnings, isNotEmpty);
@@ -316,7 +329,7 @@ void main() {
       const jsonc = '{\n  // comment\n  "rules": ["a"]\n}';
       final config = parser.parse(
         jsonc,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       expect(config.parseWarnings, isNotEmpty);
@@ -330,7 +343,7 @@ void main() {
       const jsonc = '{\n  "rules": ["a",],\n}';
       final config = parser.parse(
         jsonc,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       expect(config.parseWarnings, isNotEmpty);
@@ -390,7 +403,7 @@ void main() {
 ''';
       final config = parser.parse(
         original,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       final mutated = config.copyWith(rules: ['new']);

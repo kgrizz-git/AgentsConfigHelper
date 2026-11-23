@@ -54,8 +54,31 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
     var jsoncFallbackUsed = false;
     try {
       decoded = jsonDecode(content);
-    } on FormatException {
-      // If strict JSON fails, try cleaning as JSONC
+    } on FormatException catch (strictError) {
+      if (resolvedFormat != ConfigFormat.jsonc) {
+        // A strict target must stay strict: report a precise error instead of
+        // silently accepting JSONC and writing a file the tool would reject.
+        try {
+          jsonDecode(JsoncCleaner.clean(content));
+        } on FormatException {
+          final position = _lineColumnFromOffset(content, strictError.offset);
+          throw ConfigParseException(
+            'Invalid JSON syntax: ${strictError.message}',
+            line: position?.$1,
+            column: position?.$2,
+          );
+        } on Exception {
+          // The cleaner failed for a non-syntax reason; the strictness message
+          // below is still the accurate explanation for this target.
+        }
+        final position = _lineColumnFromOffset(content, strictError.offset);
+        throw ConfigParseException(
+          'This file must be strict JSON: comments and trailing commas are '
+          'not allowed. Remove them or edit the file as raw text.',
+          line: position?.$1,
+          column: position?.$2,
+        );
+      }
       try {
         final cleanContent = JsoncCleaner.clean(content);
         decoded = jsonDecode(cleanContent);
@@ -63,7 +86,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
       } on FormatException catch (e) {
         final position = _lineColumnFromOffset(content, e.offset);
         throw ConfigParseException(
-          'Invalid JSON/JSONC syntax: ${e.message}',
+          'Invalid JSONC syntax: ${e.message}',
           line: position?.$1,
           column: position?.$2,
         );
@@ -204,7 +227,9 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
     FieldEditMask edits,
   ) {
     try {
-      final cleanContent = JsoncCleaner.clean(originalContent);
+      final cleanContent = config.format == ConfigFormat.jsonc
+          ? JsoncCleaner.clean(originalContent)
+          : originalContent;
       final ast = json_ast.parse(cleanContent, json_ast.Settings());
 
       if (ast is json_ast.ObjectNode) {
@@ -353,7 +378,11 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
           );
         }
 
-        jsonDecode(JsoncCleaner.clean(result));
+        jsonDecode(
+          config.format == ConfigFormat.jsonc
+              ? JsoncCleaner.clean(result)
+              : result,
+        );
         return SerializeOutcome(content: result, usedFallback: false);
       }
     } on StructuredEditRefusedException {
@@ -374,7 +403,7 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
     // survive the collapse is refused.
     final sourceFields =
         originalContent != null && originalContent.trim().isNotEmpty
-        ? _sourceOwnedFields(originalContent)
+        ? _sourceOwnedFields(originalContent, config.format)
         : null;
 
     final outputMap = Map<String, Object?>.from(config.rawSettings);
@@ -421,16 +450,22 @@ class JsonConfigParser with ConfigParserMixin implements ConfigParser {
   /// values. Refuses a rewrite when an owned field cannot be represented.
   static Map<String, List<String>?> _sourceOwnedFields(
     String originalContent,
+    ConfigFormat format,
   ) {
     final json_ast.Node ast;
     try {
       ast = json_ast.parse(
-        JsoncCleaner.clean(originalContent),
+        format == ConfigFormat.jsonc
+            ? JsoncCleaner.clean(originalContent)
+            : originalContent,
         json_ast.Settings(),
       );
     } on Object {
-      throw const StructuredEditRefusedException(
-        'Cannot rewrite the file: its current content is not valid JSON.',
+      throw StructuredEditRefusedException(
+        format == ConfigFormat.jsonc
+            ? 'Cannot rewrite the file: its current content is not valid JSONC.'
+            : 'Cannot rewrite the file: its current content is not valid '
+                  'strict JSON (comments and trailing commas are not allowed).',
       );
     }
     if (ast is! json_ast.ObjectNode) {

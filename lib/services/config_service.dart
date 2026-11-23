@@ -118,18 +118,18 @@ class ConfigService {
       );
     }
 
+    // Validate the exact bytes that will be written before any backup or
+    // write. A strict target must never be written as JSONC and fail only
+    // afterwards.
+    final parsed = _validateSerialized(parser, outcome.content, config);
+
     if (await _fileOperations.fileExists(expandedPath)) {
       await backupService.createBackup(expandedPath);
     }
 
     await _fileOperations.writeTextAtomically(expandedPath, outcome.content);
 
-    return parser.parse(
-      outcome.content,
-      filePath: config.filePath,
-      toolName: config.toolName,
-      format: config.format,
-    );
+    return parsed;
   }
 
   /// Whether `config.originalContent` is a usable baseline for a structured
@@ -265,12 +265,7 @@ class ConfigService {
         );
       }
       contentToWrite = mergeOutcome.content;
-      parsedConfig = parser.parse(
-        contentToWrite,
-        filePath: config.filePath,
-        toolName: config.toolName,
-        format: config.format,
-      );
+      parsedConfig = _validateSerialized(parser, contentToWrite, config);
     } else {
       contentToWrite = rawContent;
       parsedConfig = parsedFromRaw;
@@ -301,6 +296,32 @@ class ConfigService {
         return _textParser;
       case ConfigFormat.unknown:
         throw UnsupportedError('Unsupported config format: $format');
+    }
+  }
+
+  /// Parses the exact content a save will write, before any backup or write.
+  ///
+  /// This is the last gate: a strict target must never be written as JSONC and
+  /// reported invalid only after the live file has already changed.
+  ToolConfig _validateSerialized(
+    ConfigParser parser,
+    String content,
+    ToolConfig config,
+  ) {
+    try {
+      return parser.parse(
+        content,
+        filePath: config.filePath,
+        toolName: config.toolName,
+        format: config.format,
+      );
+    } on ConfigParseException catch (error) {
+      throw ConfigParseException(
+        'The generated ${_formatLabel(config.format)} content is not valid: '
+        '${error.message}',
+        line: error.line,
+        column: error.column,
+      );
     }
   }
 

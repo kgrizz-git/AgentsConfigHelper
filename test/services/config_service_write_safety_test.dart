@@ -142,6 +142,59 @@ void main() {
       );
       expect(await file.readAsString(), original);
     });
+    test(
+      'saveConfig refuses a strict JSON source with comments before writing',
+      () async {
+        final file = File(
+          p.join(tempDir.path, '.claude', 'settings.json'),
+        );
+        await file.parent.create(recursive: true);
+        const original = '{\n  // comment\n  "rules": ["a"]\n}';
+        await file.writeAsString(original);
+        final config = ToolConfig(
+          toolName: 'Claude Code',
+          filePath: file.path,
+          format: ConfigFormat.json,
+          rules: const ['a'],
+          rawSettings: const {
+            'rules': ['a'],
+          },
+          originalContent: original,
+        );
+
+        await expectLater(
+          configService.saveConfig(config.copyWith(rules: const ['b'])),
+          throwsA(isA<ConfigParseException>()),
+        );
+
+        expect(await file.readAsString(), original);
+        expect(await backupService.listBackups(file.path), isEmpty);
+      },
+    );
+
+    test(
+      'saveRawConfig refuses JSONC for a strict target before writing',
+      () async {
+        final file = File(
+          p.join(tempDir.path, '.claude', 'settings.json'),
+        );
+        await file.parent.create(recursive: true);
+        const original = '{"rules": ["a"]}';
+        await file.writeAsString(original);
+        final config = await _load(configService, file.path);
+
+        await expectLater(
+          configService.saveRawConfig(
+            config,
+            '// comment\n{"rules": ["a"]}',
+          ),
+          throwsA(isA<ConfigParseException>()),
+        );
+
+        expect(await file.readAsString(), original);
+        expect(await backupService.listBackups(file.path), isEmpty);
+      },
+    );
   });
 }
 
