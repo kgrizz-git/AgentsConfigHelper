@@ -1,7 +1,7 @@
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
 import 'package:agents_config_helper/widgets/cursor_permissions_card.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   CursorPermissionsPresentation presentation({

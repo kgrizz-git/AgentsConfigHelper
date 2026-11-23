@@ -12,9 +12,9 @@ import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/discovery_preferences_store.dart';
 import 'package:agents_config_helper/services/discovery_service.dart';
 import 'package:agents_config_helper/state/providers.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 class _StubDiscoveryService extends DiscoveryService {
   new(this._result);

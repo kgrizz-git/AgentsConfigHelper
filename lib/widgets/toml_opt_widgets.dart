@@ -1,5 +1,5 @@
 import 'package:agents_config_helper/widgets/toml_opt_in_banner.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The TOML structured-save opt-in/opt-out widgets for `ConfigEditor`.
 ///

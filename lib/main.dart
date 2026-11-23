@@ -13,8 +13,8 @@ import 'package:agents_config_helper/services/macos_test_root_file_operations.da
 import 'package:agents_config_helper/state/providers.dart';
 import 'package:agents_config_helper/testing/test_root_configuration.dart';
 import 'package:agents_config_helper/theme/app_theme.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:screen_retriever/screen_retriever.dart';

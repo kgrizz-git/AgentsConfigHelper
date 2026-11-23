@@ -1,6 +1,6 @@
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Banner shown when a TOML file is opened but structured saves are disabled.
 class TomlOptInBanner extends StatelessWidget {

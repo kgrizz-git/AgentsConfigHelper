@@ -279,7 +279,7 @@ final class DiscoveryControllerProvider
 }
 
 String _$discoveryControllerHash() =>
-    r'cf9981a46eea0fd499a088e9d53a781b446ea2c5';
+    r'e53f168e288f0bb3f37b68daf296221a4221c703';
 
 /// Notifier that runs filesystem discovery and exposes the resulting
 /// [DiscoveryResult], combining stored preferences (manual paths, project

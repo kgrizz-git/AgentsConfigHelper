@@ -9,8 +9,8 @@ import 'package:agents_config_helper/widgets/codex_permissions_card.dart';
 import 'package:agents_config_helper/widgets/cursor_permissions_card.dart';
 import 'package:agents_config_helper/widgets/opencode_permissions_card.dart';
 import 'package:agents_config_helper/widgets/policy_card_widget_registry.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 class _OtherPresentation extends PolicyCardPresentation {
   const new();

@@ -7,7 +7,7 @@ import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/codex_permissions_card.dart';
 import 'package:agents_config_helper/widgets/cursor_permissions_card.dart';
 import 'package:agents_config_helper/widgets/opencode_permissions_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Flutter-side mapping from adapter id to card widget.
 ///

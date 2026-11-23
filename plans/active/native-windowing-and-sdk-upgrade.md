@@ -85,7 +85,7 @@ Each row is an independent PR against `main`. Only Phase 0 lives on this branch.
 | PR | Branch | Contents | Depends on |
 | --- | --- | --- | --- |
 | 1 | `plan/windowing-and-sdk-upgrade` (this branch) | This plan, the `TO_DO.md` entry, `CHANGELOG.dev.md`, the `.github/dependabot.yml` carve-out, and the stale-lockfile correction | — |
-| 2 | `chore/flutter-350-upgrade` | Toolchain only: CI pins, SDK floor, lockfile, formatting/analyzer/scaffolding fallout | PR 1 |
+| 2 | `chore/flutter-350-upgrade` | Toolchain: CI pins, SDK floor, lockfile, and the SDK-mandated import/analyzer fallout | PR 1 |
 | 3 | `feat/native-windowing-migration` | `window_manager 0.7.1` + `screen_retriever 0.4.1`, native rewrite with the final adapter seam, regenerated registrants, Linux CI prerequisites | PR 2 |
 | 4 | `test/window-layer-coverage` | Unit tests against the Phase 2 adapter seam; no restructuring of the migrated code | PR 3 |
 
@@ -182,8 +182,10 @@ month with no other updates should produce only the dedicated group, or nothing 
 
 ## Phase 1 — Flutter 3.50.x pin only (PR 2)
 
-This PR changes the toolchain and nothing else. Keeping the SDK bump separate makes any
-Phase 2 regression unambiguously attributable to the windowing migration.
+This PR changes the toolchain and the code changes that toolchain forces (Material imports,
+analyzer-plugin syntax, new lints), but not the windowing packages. Keeping the SDK bump
+separate still makes any Phase 2 regression unambiguously attributable to the windowing
+migration.
 
 ### Phase 1 changes
 
@@ -194,6 +196,14 @@ Phase 2 regression unambiguously attributable to the windowing migration.
 - Apply whatever the new SDK requires: formatting reflow, analyzer fixes, Riverpod output
   regeneration (`dart run build_runner build --delete-conflicting-outputs`, then review
   `lib/state/providers.g.dart`), or a Flutter-recommended platform scaffolding migration.
+  In practice Flutter 3.50 forced three of these:
+  - `package:flutter/material.dart` is deprecated, so every import moves to
+    `package:material_ui/material_ui.dart` (42 files) and `material_ui` becomes a direct
+    dependency; it was already transitive through `flutter_riverpod`.
+  - Dart 3.14 deprecates the legacy analyzer-plugin declaration, so `dart_code_linter`
+    moves from `analyzer: plugins: [...]` to the top-level `plugins:` map.
+  - New lints must be cleared: `unnecessary_unawaited` (`showDialog` is
+    `@awaitNotRequired` in 3.50) and `avoid_types_on_closure_parameters`.
 - Update the toolchain versions advertised outside the changelogs: `README.md:12`
   (Flutter badge) and `README.md:99-100` (Flutter/Dart minimums).
 
@@ -212,6 +222,8 @@ Phase 2 regression unambiguously attributable to the windowing migration.
   `.github/workflows/ci.yml:236-240`), and Windows.
 - macOS entitlements job: App Sandbox must remain absent.
 - `flutter pub outdated` review; record any deliberately deferred major in this plan.
+- No legacy Material import remains:
+  `if rg -n "package:flutter/material.dart" lib test; then exit 1; fi`.
 - Generated-drift gate: after all gates, `git diff --exit-code` must pass, and a second
   `flutter pub get` must leave `pubspec.lock` and the committed platform generated files
   unchanged. CI regenerates these on the runner but does not fail for a dirty checkout, so
@@ -432,6 +444,12 @@ re-extract or restructure the same code a second time.
    does not use, so the dependency does not newly "arrive" with this migration.
 8. **Unknown Flutter 3.50 scaffolding changes.** Phase 1 includes a discovery step; if a
    platform migration is required, apply it there rather than in Phase 2.
+9. **Material namespace split.** Flutter 3.50's `material_ui` is a separate library from the
+   deprecated `flutter/material.dart`, so `material_ui`'s `Theme` is a distinct type.
+   Third-party widgets that still import `flutter/material.dart` and call `Theme.of(context)`
+   will not see this app's `ThemeData` and will fall back to a default. Audit UI
+   dependencies when upgrading; `multi_split_view` is unaffected because it uses its own
+   `MultiSplitViewTheme`.
 
 ## Rejected and deferred options
 

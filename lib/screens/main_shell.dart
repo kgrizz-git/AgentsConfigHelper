@@ -17,8 +17,8 @@ import 'package:agents_config_helper/widgets/add_path_dialog.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/history_modal.dart';
 import 'package:agents_config_helper/widgets/sidebar_item.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 
 /// The split-pane shell for selecting and editing configurations.
@@ -234,55 +234,53 @@ class _MainShellState extends ConsumerState<MainShell>
   void showHistoryModal() {
     if (_activeConfig == null) return;
 
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (context) {
-          final configService = ref.read(configServiceProvider);
-          return HistoryModal(
-            config: _activeConfig!,
-            onRestore: (backupPath) async {
-              // Capture before any await: _loadConfig can null out
-              // _activeConfig while the discard dialog is open.
-              final activeConfig = _activeConfig;
-              if (activeConfig == null) return;
-              if (_hasUnsavedChanges) {
-                final shouldDiscard = await _confirmDiscardChanges();
-                if (!shouldDiscard || !mounted) {
-                  return;
-                }
-                setState(() {
-                  _hasUnsavedChanges = false;
-                });
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final configService = ref.read(configServiceProvider);
+        return HistoryModal(
+          config: _activeConfig!,
+          onRestore: (backupPath) async {
+            // Capture before any await: _loadConfig can null out
+            // _activeConfig while the discard dialog is open.
+            final activeConfig = _activeConfig;
+            if (activeConfig == null) return;
+            if (_hasUnsavedChanges) {
+              final shouldDiscard = await _confirmDiscardChanges();
+              if (!shouldDiscard || !mounted) {
+                return;
               }
-              final targetPath = configService.resolvePath(
-                activeConfig.filePath,
-              );
-              // Read the backup content first — createBackup prunes entries
-              // beyond the 10-backup cap, which could delete the very backup
-              // being restored if it's the oldest. Reading first avoids the
-              // race.
-              final backupContent = await configService.backupService
-                  .readBackupBytes(backupPath);
-              // Preserve the current on-disk file before overwriting it with
-              // the restored snapshot, matching saveConfig/saveRawConfig. The
-              // exists-check keeps a deleted target (restore-as-recreate) from
-              // failing the backup step.
-              if (await configService.fileExists(targetPath)) {
-                await configService.backupService.createBackup(targetPath);
-              }
-              await configService.backupService.writeRestoredFile(
-                targetPath,
-                backupContent,
-              );
-              final configItem = _activeDiscoveredConfig;
-              if (configItem != null && mounted) {
-                await _loadConfig(configItem);
-              }
-            },
-          );
-        },
-      ),
+              setState(() {
+                _hasUnsavedChanges = false;
+              });
+            }
+            final targetPath = configService.resolvePath(
+              activeConfig.filePath,
+            );
+            // Read the backup content first — createBackup prunes entries
+            // beyond the 10-backup cap, which could delete the very backup
+            // being restored if it's the oldest. Reading first avoids the
+            // race.
+            final backupContent = await configService.backupService
+                .readBackupBytes(backupPath);
+            // Preserve the current on-disk file before overwriting it with
+            // the restored snapshot, matching saveConfig/saveRawConfig. The
+            // exists-check keeps a deleted target (restore-as-recreate) from
+            // failing the backup step.
+            if (await configService.fileExists(targetPath)) {
+              await configService.backupService.createBackup(targetPath);
+            }
+            await configService.backupService.writeRestoredFile(
+              targetPath,
+              backupContent,
+            );
+            final configItem = _activeDiscoveredConfig;
+            if (configItem != null && mounted) {
+              await _loadConfig(configItem);
+            }
+          },
+        );
+      },
     );
   }
 
@@ -329,18 +327,16 @@ class _MainShellState extends ConsumerState<MainShell>
   }
 
   void _showManageProjectRootsDialog() {
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (context) => _ManageProjectRootsDialog(
-          onRemove: (path) {
-            unawaited(
-              ref
-                  .read(discoveryControllerProvider.notifier)
-                  .removeProjectRoot(path),
-            );
-          },
-        ),
+    showDialog<void>(
+      context: context,
+      builder: (context) => _ManageProjectRootsDialog(
+        onRemove: (path) {
+          unawaited(
+            ref
+                .read(discoveryControllerProvider.notifier)
+                .removeProjectRoot(path),
+          );
+        },
       ),
     );
   }

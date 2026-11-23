@@ -1,6 +1,6 @@
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shows the before/after raw file content in the review dialog, truncating
 /// each side to a preview of 20 lines until the user expands it.

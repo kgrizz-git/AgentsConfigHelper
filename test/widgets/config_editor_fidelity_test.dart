@@ -7,8 +7,8 @@ import 'package:agents_config_helper/parsers/json_config_parser.dart';
 import 'package:agents_config_helper/widgets/config_editor.dart';
 import 'package:agents_config_helper/widgets/formatting_fidelity_notice.dart';
 import 'package:agents_config_helper/widgets/string_list_editor.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 Widget _editor(
   ToolConfig config, {
@@ -32,8 +32,7 @@ Widget _editor(
         rawOnly: rawOnly,
         onSave:
             onSave ??
-            (updatedConfig, {rawContent, bool? allowRewrite}) async =>
-                updatedConfig,
+            (updatedConfig, {rawContent, allowRewrite}) async => updatedConfig,
         resolvePath: (path) => path,
         hasUsableBaseline: hasUsableBaseline,
         rawContentParsedAsJsonc: rawContentParsedAsJsonc,
