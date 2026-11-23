@@ -58,8 +58,22 @@ Internal / developer-facing changes that do not belong in the public
   `test/reports/config_overview_relevance_test.dart`. The host platform is read
   from an overridable `hostConfigPlatformProvider` so widget tests inject a
   fixed platform instead of depending on the test runner OS.
+- **Config write-safety coverage ([plan](plans/active/config-write-safety.md)):**
+  new `test/services/file_operations_atomic_test.dart`,
+  `test/services/config_service_write_safety_test.dart`,
+  `test/widgets/save_conflict_flow_test.dart`, and
+  `test/widgets/serialized_preview_test.dart` cover atomic text/byte writes,
+  permission preservation, symlink handling, stale-load and
+  post-preview conflicts, deliberate overwrite, fallback-rewrite previews,
+  and the review/confirm UI. The macOS test-root bridge refuses symlink
+  destinations and preserves modes. Test fixtures no longer write into the
+  real home directory.
 
 ### Changed
+- **Config editor save orchestration:** the save/preview callback signatures
+  live as typedefs in `structured_save_flow.dart`, and the save-point diff
+  builders were already moved there; `config_editor.dart` stays within the
+  700-line hook cap.
 - **Flutter 3.50.1 / Dart 3.14.0 toolchain ([windowing plan Phase 1](plans/active/native-windowing-and-sdk-upgrade.md)):** all three CI jobs
   pin Flutter 3.50.1 and `pubspec.yaml` declares `sdk: ^3.14.0`. The lockfile is
   regenerated on the new pin: `test_api` returns to 0.7.14 because 3.50.1's `flutter_test`
