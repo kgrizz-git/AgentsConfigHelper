@@ -587,12 +587,6 @@ void main() {
                     (c, {rawContent, allowRewrite, overwriteConfirmed}) async {
                       saveCalls++;
                       sawOverwrite = overwriteConfirmed;
-                      if (saveCalls == 1) {
-                        throw SaveConflictException.stale(
-                          config.filePath,
-                          '{"rules": ["external"]}',
-                        );
-                      }
                       return c;
                     },
                 resolvePath: (path) => path,
@@ -619,10 +613,6 @@ void main() {
 
         await tester.tap(find.text('Save Changes'));
         await tester.pumpAndSettle();
-        expect(find.text('Serialized result'), findsNothing);
-
-        await tester.tap(find.text('Confirm & Save'));
-        await tester.pumpAndSettle();
         expect(find.text('File changed on disk'), findsOneWidget);
 
         await tester.tap(find.text('Overwrite'));
@@ -632,7 +622,7 @@ void main() {
 
         await tester.tap(find.text('Confirm & Save'));
         await tester.pumpAndSettle();
-        expect(saveCalls, 2);
+        expect(saveCalls, 1);
         expect(sawOverwrite, isTrue);
         expect(
           find.textContaining('Settings saved successfully.'),

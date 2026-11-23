@@ -25,15 +25,8 @@ extension _ConfigEditorSaveFlow on _ConfigEditorState {
     _overwriteApproved = false;
     final shown = _shownPreview;
     if (widget.previewSaveContent != null && shown == null) {
-      // A stale-load conflict still needs the save attempt so the conflict
-      // dialog can offer an explicit overwrite. Every other missing preview
-      // (including a failed re-preview after overwrite) is fail-closed.
-      final conflictCanBeShown =
-          !overwrite && _previewError is SaveConflictException;
-      if (!conflictCanBeShown) {
-        _showPreviewUnavailable();
-        return;
-      }
+      _showPreviewUnavailable(_previewError);
+      return;
     }
     if (shown != null && widget.previewSaveContent != null) {
       final fresh = await _pendingSavePreview(overwrite: overwrite);
@@ -88,13 +81,14 @@ extension _ConfigEditorSaveFlow on _ConfigEditorState {
     );
   }
 
-  void _showPreviewUnavailable() {
+  void _showPreviewUnavailable([Object? error]) {
     if (!mounted) return;
+    final detail = error == null ? 'Reload the file and try again.' : '$error';
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(
           'Could not compute a preview of this save, so nothing was written. '
-          'Reload the file and try again.',
+          '$detail',
         ),
         backgroundColor: AppColors.error,
       ),
@@ -105,6 +99,26 @@ extension _ConfigEditorSaveFlow on _ConfigEditorState {
     _overwriteApproved = overwrite;
     _shownPreview = await _pendingSavePreview(overwrite: overwrite);
     if (!mounted) return;
+    if (widget.previewSaveContent != null && _shownPreview == null) {
+      final error = _previewError;
+      if (!overwrite && error is SaveConflictException) {
+        final confirmed = await StructuredSaveFlow.showConflictDialog(
+          context,
+          error,
+        );
+        if (confirmed != true || !mounted) return;
+        _overwriteApproved = true;
+        _shownPreview = await _pendingSavePreview(overwrite: true);
+        if (!mounted) return;
+        if (_shownPreview == null) {
+          _showPreviewUnavailable(_previewError);
+          return;
+        }
+      } else {
+        _showPreviewUnavailable(error);
+        return;
+      }
+    }
     final editRevision = _editRevision;
     final confirmed = await StructuredSaveFlow.showDiffModal(
       context: context,

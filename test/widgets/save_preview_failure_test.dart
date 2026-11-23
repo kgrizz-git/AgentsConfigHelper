@@ -49,10 +49,6 @@ void main() {
     await _makeDirty(tester);
     await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
-    expect(find.text('Serialized result'), findsNothing);
-
-    await tester.tap(find.text('Confirm & Save'));
-    await tester.pumpAndSettle();
 
     expect(saveCalls, isZero);
     expect(find.textContaining('Could not compute a preview'), findsOneWidget);
@@ -85,8 +81,6 @@ void main() {
 
     await _makeDirty(tester);
     await tester.tap(find.text('Save Changes'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Confirm & Save'));
     await tester.pumpAndSettle();
 
     expect(saveCalls, isZero);
@@ -123,18 +117,81 @@ void main() {
     await _makeDirty(tester);
     await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
+    expect(find.text('File changed on disk'), findsOneWidget);
+
+    await tester.tap(find.text('Overwrite'));
+    await tester.pumpAndSettle();
+
+    expect(overwriteValues, isEmpty);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.textContaining('Could not compute a preview'), findsOneWidget);
+  });
+
+  testWidgets('a commit-time conflict re-reviews the fresh output', (
+    tester,
+  ) async {
+    final config = _config();
+    final overwriteValues = <bool?>[];
+    final initialPreview = SavePreview(
+      config: config,
+      content: '{"rules": ["mine"]}',
+      sourceContent: '{"rules": ["initial"]}',
+      sourceExists: true,
+      parsed: config,
+      usedFallback: false,
+    );
+    final refreshedPreview = SavePreview(
+      config: config,
+      content: '{"rules": ["mine"]}',
+      sourceContent: '{"rules": ["external"]}',
+      sourceExists: true,
+      parsed: config,
+      usedFallback: false,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ConfigEditor(
+            config: config,
+            onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) async {
+              overwriteValues.add(overwriteConfirmed);
+              if (overwriteValues.length == 1) {
+                throw SaveConflictException.stale(config.filePath, 'external');
+              }
+              return c;
+            },
+            resolvePath: (path) => path,
+            onShowHistory: () {},
+            previewSaveContent:
+                (c, {rawContent, overwriteConfirmed = false}) async {
+                  return overwriteConfirmed ? refreshedPreview : initialPreview;
+                },
+          ),
+        ),
+      ),
+    );
+
+    await _makeDirty(tester);
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Serialized result'), findsOneWidget);
+
     await tester.tap(find.text('Confirm & Save'));
     await tester.pumpAndSettle();
     expect(find.text('File changed on disk'), findsOneWidget);
 
     await tester.tap(find.text('Overwrite'));
     await tester.pumpAndSettle();
-    expect(find.text('Serialized result'), findsNothing);
+    expect(find.text('Serialized result'), findsOneWidget);
 
     await tester.tap(find.text('Confirm & Save'));
     await tester.pumpAndSettle();
 
-    expect(overwriteValues, [false]);
-    expect(find.textContaining('Could not compute a preview'), findsOneWidget);
+    expect(overwriteValues, [false, true]);
+    expect(
+      find.textContaining('Settings saved successfully.'),
+      findsOneWidget,
+    );
   });
 }
