@@ -145,6 +145,10 @@ class ConfigService {
   /// Automatically creates a backup of the existing file using [BackupService],
   /// then overwrites the file with the serialized config and re-parses it
   /// so the returned [ToolConfig] has an up-to-date `originalContent`.
+  ///
+  /// Set [overwriteConfirmed] only after the user explicitly chose to discard
+  /// external changes. It bypasses the load-baseline check, never the
+  /// immediately-before-replacement source guard.
   Future<ToolConfig> saveConfig(
     ToolConfig config, {
     bool allowRewrite = false,
@@ -160,6 +164,10 @@ class ConfigService {
 
   /// Computes the exact content a structured save will write without touching
   /// disk, capturing the source it was computed from.
+  ///
+  /// [overwriteConfirmed] bypasses only the load-baseline check; the preview
+  /// still captures the current source so [commitSavePreview] can refuse a
+  /// later change.
   Future<SavePreview> previewSaveConfig(
     ToolConfig config, {
     bool allowRewrite = false,
@@ -318,6 +326,10 @@ class ConfigService {
   }
 
   /// Computes the exact content a raw save will write without touching disk.
+  ///
+  /// [overwriteConfirmed] bypasses only the load-baseline check; the preview
+  /// still captures the current source so [commitSavePreview] can refuse a
+  /// later change.
   ///
   /// [config] carries the rules/permissions from the structured editor, which
   /// may have been edited independently of [rawContent]. If they diverge from
