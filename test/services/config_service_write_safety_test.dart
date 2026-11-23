@@ -301,6 +301,73 @@ void main() {
       expect(preview.usedFallback, isTrue);
       expect(preview.content, contains('new'));
     });
+
+    test(
+      'confirmed overwrite commits over a changed structured source',
+      () async {
+        final file = File(p.join(tempDir.path, 'overwrite.json'));
+        await file.writeAsString('{"rules": ["old"]}');
+        final config = await _load(configService, file.path);
+        await file.writeAsString('{"rules": ["external"]}');
+
+        await expectLater(
+          configService.previewSaveConfig(config.copyWith(rules: ['mine'])),
+          throwsA(isA<SaveConflictException>()),
+        );
+
+        final preview = await configService.previewSaveConfig(
+          config.copyWith(rules: ['mine']),
+          overwriteConfirmed: true,
+        );
+        expect(preview.sourceContent, '{"rules": ["external"]}');
+        expect(preview.content, contains('mine'));
+        expect(preview.content, isNot(contains('external')));
+
+        final saved = await configService.commitSavePreview(preview);
+        expect(saved.rules, ['mine']);
+        expect(await file.readAsString(), isNot(contains('external')));
+      },
+    );
+
+    test(
+      'confirmed overwrite commits raw content over a changed source',
+      () async {
+        final file = File(p.join(tempDir.path, 'overwrite-raw.json'));
+        await file.writeAsString('{"rules": ["old"]}');
+        final config = await _load(configService, file.path);
+        await file.writeAsString('{"rules": ["external"]}');
+
+        final preview = await configService.previewSaveRaw(
+          config,
+          '{"rules": ["raw"]}',
+          overwriteConfirmed: true,
+        );
+        expect(preview.sourceContent, '{"rules": ["external"]}');
+
+        await configService.commitSavePreview(preview);
+        expect(await file.readAsString(), '{"rules": ["raw"]}');
+      },
+    );
+
+    test('confirmed overwrite recreates a deleted source', () async {
+      final file = File(p.join(tempDir.path, 'overwrite-deleted.json'));
+      await file.writeAsString('{"rules": ["old"]}');
+      final config = await _load(configService, file.path);
+      await file.delete();
+
+      await expectLater(
+        configService.previewSaveConfig(config.copyWith(rules: ['mine'])),
+        throwsA(isA<SaveConflictException>()),
+      );
+
+      final preview = await configService.previewSaveConfig(
+        config.copyWith(rules: ['mine']),
+        overwriteConfirmed: true,
+      );
+      expect(preview.sourceExists, isFalse);
+      await configService.commitSavePreview(preview);
+      expect(await file.readAsString(), contains('mine'));
+    });
   });
 }
 

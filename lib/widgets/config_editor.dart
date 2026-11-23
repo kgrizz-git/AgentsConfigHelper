@@ -50,12 +50,7 @@ class ConfigEditor extends StatefulWidget {
   final DiscoveredConfig? discoveredConfig;
 
   /// Persists a confirmed edited configuration.
-  final Future<ToolConfig> Function(
-    ToolConfig config, {
-    String? rawContent,
-    bool? allowRewrite,
-  })
-  onSave;
+  final SaveConfigCallback onSave;
 
   /// Resolves the configuration path before opening its directory.
   final String Function(String path) resolvePath;
@@ -79,8 +74,7 @@ class ConfigEditor extends StatefulWidget {
 
   /// Computes the exact serialized content a save will write, for the review
   /// dialog. Optional; without it the dialog shows only list diffs.
-  final Future<SavePreview?> Function(ToolConfig config, {String? rawContent})?
-  previewSaveContent;
+  final PreviewSaveContent? previewSaveContent;
 
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
@@ -123,6 +117,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late TextEditingController _rawContentController;
   late String _rawContent;
   bool _saving = false;
+  bool _overwriteApproved = false;
   SavePreview? _shownPreview;
   int _editRevision = 0;
   late final PolicyCardRegistry _registry;
@@ -227,7 +222,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
     );
   }
 
-  Future<SavePreview?> _pendingSavePreview() async {
+  Future<SavePreview?> _pendingSavePreview({bool overwrite = false}) async {
     final callback = widget.previewSaveContent;
     if (callback == null) return null;
     try {
@@ -236,6 +231,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
         rawContent: _rawContent != _currentConfig.originalContent
             ? _rawContent
             : null,
+        overwriteConfirmed: overwrite,
       );
     } on Object catch (error) {
       debugPrint('Save preview unavailable: $error');
@@ -332,15 +328,17 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   Future<void> _saveChanges() async {
+    final overwrite = _overwriteApproved;
+    _overwriteApproved = false;
     final shown = _shownPreview;
     if (shown != null && widget.previewSaveContent != null) {
-      final fresh = await _pendingSavePreview();
+      final fresh = await _pendingSavePreview(overwrite: overwrite);
       if (!mounted) return;
       if (fresh == null ||
           fresh.content != shown.content ||
           fresh.sourceContent != shown.sourceContent ||
           fresh.sourceExists != shown.sourceExists) {
-        await _showDiffModal();
+        await _showDiffModal(overwrite: overwrite);
         return;
       }
     }
@@ -355,6 +353,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
         permissions: _permissions,
       ),
       onSave: widget.onSave,
+      overwriteConfirmed: overwrite,
       onSuccess: (savedConfig) {
         setState(() {
           _currentConfig = savedConfig;
@@ -381,16 +380,16 @@ class _ConfigEditorState extends State<ConfigEditor> {
           });
         }
       },
-      onRepreview: () => unawaited(_showDiffModal()),
+      onRepreview: () => unawaited(_showDiffModal(overwrite: true)),
     );
   }
 
-  Future<void> _showDiffModal() async {
-    final preview = await _pendingSavePreview();
+  Future<void> _showDiffModal({bool overwrite = false}) async {
+    _overwriteApproved = overwrite;
+    _shownPreview = await _pendingSavePreview(overwrite: overwrite);
     if (!mounted) return;
-    _shownPreview = preview;
     final editRevision = _editRevision;
-    return await StructuredSaveFlow.showDiffModal(
+    final confirmed = await StructuredSaveFlow.showDiffModal(
       context: context,
       isMounted: () => mounted,
       isCurrentRevision: () => _editRevision == editRevision,
@@ -409,6 +408,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
       saving: _saving,
       onSaveChanges: _saveChanges,
     );
+    if (!confirmed && mounted) _overwriteApproved = false;
   }
 
   @override

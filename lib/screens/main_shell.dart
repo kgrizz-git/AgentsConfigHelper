@@ -540,45 +540,51 @@ class _MainShellState extends ConsumerState<MainShell>
             // ConfigEditor itself; this callback only persists the change
             // and updates the active config. Errors propagate to
             // ConfigEditor's own try/catch.
-            onSave: (config, {rawContent, allowRewrite}) async {
-              final updated = rawContent != null
-                  ? await configService.saveRawConfig(
-                      config,
-                      rawContent,
-                      allowRewrite: allowRewrite ?? false,
-                    )
-                  : await configService.saveConfig(
-                      config,
-                      allowRewrite: allowRewrite ?? false,
-                    );
-              ref.invalidate(backupListProvider(config.filePath));
-              if (mounted) {
-                setState(() {
-                  _activeConfig = updated;
-                  // A successful save re-parses the content, so the full
-                  // editor can take over again.
-                  _rawRecoveryMode = false;
-                });
-              }
-              return updated;
-            },
+            onSave:
+                (config, {rawContent, allowRewrite, overwriteConfirmed}) async {
+                  final updated = rawContent != null
+                      ? await configService.saveRawConfig(
+                          config,
+                          rawContent,
+                          allowRewrite: allowRewrite ?? false,
+                          overwriteConfirmed: overwriteConfirmed ?? false,
+                        )
+                      : await configService.saveConfig(
+                          config,
+                          allowRewrite: allowRewrite ?? false,
+                          overwriteConfirmed: overwriteConfirmed ?? false,
+                        );
+                  ref.invalidate(backupListProvider(config.filePath));
+                  if (mounted) {
+                    setState(() {
+                      _activeConfig = updated;
+                      // A successful save re-parses the content, so the full
+                      // editor can take over again.
+                      _rawRecoveryMode = false;
+                    });
+                  }
+                  return updated;
+                },
             resolvePath: configService.resolvePath,
             hasUsableBaseline: configService.hasUsableBaseline,
             rawContentParsedAsJsonc: configService.rawContentParsedAsJsonc,
             currentSourceParsedAsJsonc:
                 configService.currentSourceParsedAsJsonc,
-            previewSaveContent: (config, {rawContent}) async {
-              return rawContent != null
-                  ? await configService.previewSaveRaw(
-                      config,
-                      rawContent,
-                      allowRewrite: true,
-                    )
-                  : await configService.previewSaveConfig(
-                      config,
-                      allowRewrite: true,
-                    );
-            },
+            previewSaveContent:
+                (config, {rawContent, overwriteConfirmed = false}) async {
+                  return rawContent != null
+                      ? await configService.previewSaveRaw(
+                          config,
+                          rawContent,
+                          allowRewrite: true,
+                          overwriteConfirmed: overwriteConfirmed,
+                        )
+                      : await configService.previewSaveConfig(
+                          config,
+                          allowRewrite: true,
+                          overwriteConfirmed: overwriteConfirmed,
+                        );
+                },
             onShowHistory: showHistoryModal,
             allowOpenDirectory: ref.watch(testRootPathProvider) == null,
             rawOnly: _rawRecoveryMode,

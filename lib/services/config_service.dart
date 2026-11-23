@@ -148,10 +148,12 @@ class ConfigService {
   Future<ToolConfig> saveConfig(
     ToolConfig config, {
     bool allowRewrite = false,
+    bool overwriteConfirmed = false,
   }) async {
     final preview = await previewSaveConfig(
       config,
       allowRewrite: allowRewrite,
+      overwriteConfirmed: overwriteConfirmed,
     );
     return await commitSavePreview(preview);
   }
@@ -161,6 +163,7 @@ class ConfigService {
   Future<SavePreview> previewSaveConfig(
     ToolConfig config, {
     bool allowRewrite = false,
+    bool overwriteConfirmed = false,
   }) async {
     final expandedPath = resolvePath(config.filePath);
     final sourceExists = await _fileOperations.fileExists(expandedPath);
@@ -169,12 +172,14 @@ class ConfigService {
         : null;
 
     final loadedContent = config.originalContent;
-    if (sourceExists) {
-      if (originalContent != loadedContent) {
-        throw SaveConflictException.stale(config.filePath, originalContent);
-      }
-    } else if (loadedContent.trim().isNotEmpty) {
-      throw SaveConflictException.stale(config.filePath, null);
+    final sourceMatchesLoad = sourceExists
+        ? originalContent == loadedContent
+        : loadedContent.trim().isEmpty;
+    if (!sourceMatchesLoad && !overwriteConfirmed) {
+      throw SaveConflictException.stale(
+        config.filePath,
+        sourceExists ? originalContent : null,
+      );
     }
 
     final parser = _getParserForFormat(config.format);
@@ -301,11 +306,13 @@ class ConfigService {
     ToolConfig config,
     String rawContent, {
     bool allowRewrite = false,
+    bool overwriteConfirmed = false,
   }) async {
     final preview = await previewSaveRaw(
       config,
       rawContent,
       allowRewrite: allowRewrite,
+      overwriteConfirmed: overwriteConfirmed,
     );
     return await commitSavePreview(preview);
   }
@@ -321,6 +328,7 @@ class ConfigService {
     ToolConfig config,
     String rawContent, {
     bool allowRewrite = false,
+    bool overwriteConfirmed = false,
   }) async {
     final expandedPath = resolvePath(config.filePath);
     final sourceExists = await _fileOperations.fileExists(expandedPath);
@@ -329,12 +337,14 @@ class ConfigService {
         : '';
 
     final loadedContent = config.originalContent;
-    if (sourceExists) {
-      if (sourceContent != loadedContent) {
-        throw SaveConflictException.stale(config.filePath, sourceContent);
-      }
-    } else if (loadedContent.trim().isNotEmpty) {
-      throw SaveConflictException.stale(config.filePath, null);
+    final sourceMatchesLoad = sourceExists
+        ? sourceContent == loadedContent
+        : loadedContent.trim().isEmpty;
+    if (!sourceMatchesLoad && !overwriteConfirmed) {
+      throw SaveConflictException.stale(
+        config.filePath,
+        sourceExists ? sourceContent : null,
+      );
     }
 
     final parser = _getParserForFormat(config.format);

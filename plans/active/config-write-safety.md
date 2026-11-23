@@ -293,11 +293,20 @@ that PR is unmerged and will be rebased onto `main` before review.
   consumes that result and never re-serializes. The commit sink is the atomic text/byte
   write, encoding once.
 - Before replacement, verify the current source still matches the captured content and
-  existence. On mismatch, throw `SaveConflictException` with the current content; reload
-  and deliberate-overwrite flows regenerate a **fresh** preview against the new source.
+  existence. A preview also refuses when the source no longer matches
+  `config.originalContent`, so an edit between load and Review Changes is surfaced instead
+  of being absorbed as the new baseline. On mismatch, throw `SaveConflictException` with
+  the current content. Reload recomputes from the new source. Deliberate overwrite
+  re-renders the preview computed from the user's loaded baseline (discarding the external
+  edits) while capturing the new source as the commit guard; neither path reuses stale
+  bytes.
 - Render the preview in Review Changes as a real diff against the loaded content, under
   "Serialized result", in addition to the structured list diffs. The shell supplies a
-  `previewSaveContent` callback; recovery/raw-only paths use the same preview object.
+  `previewSaveContent` callback; recovery/raw-only paths use the same preview object. The
+  preview is computed with the rewrite allowed so a fallback rewrite is displayed before
+  its separate consent, and a conflict overwrite reopens Review Changes with a fresh
+  preview before a second confirmation; a one-shot overwrite consent covers only that
+  save attempt.
 - Document the residual race: compare-then-replace cannot be a hard guarantee against a
   non-cooperating external writer with portable Dart. Perform a final source check
   immediately before replacement to narrow the window, and state that the guarantee is
@@ -310,6 +319,9 @@ that PR is unmerged and will be rebased onto `main` before review.
   structured saves.
 - Reload and deliberate-overwrite both regenerate a preview; overwrite cannot reuse stale
   bytes computed against a superseded source.
+- A load-to-preview external edit produces a conflict instead of becoming the new
+  baseline, and both the fallback rewrite and conflict-overwrite outputs are displayed
+  before their writes.
 - External file creation and deletion are handled, not only modification.
 - The structured-save preview test uses an allowed edit; a lossy/refused save asserts zero
   bytes written (Phase 2 policy).

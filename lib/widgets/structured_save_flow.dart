@@ -11,6 +11,21 @@ import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
+/// Persists an edited configuration.
+typedef SaveConfigCallback = Future<ToolConfig> Function(
+  ToolConfig config, {
+  String? rawContent,
+  bool? allowRewrite,
+  bool? overwriteConfirmed,
+});
+
+/// Computes the exact content a save will write, for the review dialog.
+typedef PreviewSaveContent = Future<SavePreview?> Function(
+  ToolConfig config, {
+  String? rawContent,
+  bool overwriteConfirmed,
+});
+
 /// Encapsulates the fallback-rewrite save flow so the editor only needs a
 /// thin entrypoint.
 class StructuredSaveFlow {
@@ -89,22 +104,19 @@ class StructuredSaveFlow {
     required bool Function() isMounted,
     required String? Function() rawContent,
     required ToolConfig Function() buildUpdatedConfig,
-    required Future<ToolConfig> Function(
-      ToolConfig config, {
-      String? rawContent,
-      bool? allowRewrite,
-    })
-    onSave,
+    required SaveConfigCallback onSave,
     required void Function(ToolConfig savedConfig) onSuccess,
     required void Function(Object error) onError,
     required void Function() setSavingFalse,
     required VoidCallback onRepreview,
+    bool overwriteConfirmed = false,
   }) async {
     try {
       final savedConfig = await onSave(
         buildUpdatedConfig(),
         rawContent: rawContent(),
         allowRewrite: false,
+        overwriteConfirmed: overwriteConfirmed,
       );
       if (!isMounted()) return;
       onSuccess(savedConfig);
@@ -124,6 +136,7 @@ class StructuredSaveFlow {
           buildUpdatedConfig(),
           rawContent: rawContent(),
           allowRewrite: true,
+          overwriteConfirmed: overwriteConfirmed,
         );
         if (!isMounted()) return;
         onSuccess(savedConfig);
@@ -191,7 +204,7 @@ class StructuredSaveFlow {
   }
 
   /// Shows the review modal for unsaved changes.
-  static Future<void> showDiffModal({
+  static Future<bool> showDiffModal({
     required BuildContext context,
     required bool Function() isMounted,
     required bool Function() isCurrentRevision,
@@ -213,9 +226,9 @@ class StructuredSaveFlow {
   }) async {
     final assessment = await pendingFidelityAssessment();
     final preview = await pendingSavePreview();
-    if (!context.mounted || !isCurrentRevision()) return;
+    if (!context.mounted || !isCurrentRevision()) return false;
 
-    await showDialog<void>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -275,7 +288,7 @@ class StructuredSaveFlow {
               onPressed: saving
                   ? null
                   : () {
-                      Navigator.of(context).pop();
+                      Navigator.of(context).pop(true);
                       unawaited(onSaveChanges());
                     },
               style: ElevatedButton.styleFrom(
@@ -288,5 +301,6 @@ class StructuredSaveFlow {
         );
       },
     );
+    return confirmed ?? false;
   }
 }
