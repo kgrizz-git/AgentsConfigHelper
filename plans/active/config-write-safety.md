@@ -304,9 +304,9 @@ that PR is unmerged and will be rebased onto `main` before review.
 - The preview compares source existence as well as content. Load paths record
   `originalFileExisted`, so deleting a loaded empty or whitespace-only file — or
   externally creating an empty file where a new file was expected — is a conflict.
-- Review Changes fails closed when it cannot obtain a preview: Confirm & Save writes
-  nothing. A stale-load conflict is the only missing-preview case that proceeds, so the
-  conflict dialog can still offer an explicit overwrite.
+- Review Changes opens only with a displayed preview when the shell supplies one. A
+  stale-load conflict is prompted before the modal; Overwrite recomputes the preview and
+  displays it, and any preview failure (including a failed re-preview) writes nothing.
 - Render the preview in Review Changes as a real diff against the loaded content, under
   "Serialized result", in addition to the structured list diffs. The shell supplies a
   `previewSaveContent` callback; recovery/raw-only paths use the same preview object. The
