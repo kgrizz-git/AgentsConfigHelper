@@ -232,16 +232,16 @@ void main() {
       () async {
         final jsonFile = File(p.join(tempDir.path, 'raw_config_stale.json'));
         await jsonFile.create(recursive: true);
-        await jsonFile.writeAsString('{"rules": ["disk"]}');
+        // The unparseable baseline is also the current disk content, so this
+        // exercises raw repair rather than a stale-snapshot conflict.
+        const staleContent = '{ not valid json';
+        await jsonFile.writeAsString(staleContent);
 
-        // A stale in-memory snapshot whose originalContent no longer parses.
-        // The internal baseline reparse must not turn a valid raw save into
-        // an "invalid raw content" failure.
         final config = ToolConfig(
           toolName: 'Test',
           filePath: jsonFile.path,
           format: ConfigFormat.json,
-          originalContent: '{ not valid json',
+          originalContent: staleContent,
         );
 
         const validRaw = '{"rules": ["new"]}';
@@ -258,14 +258,14 @@ void main() {
       () async {
         final tomlFile = File(p.join(tempDir.path, 'raw_config_stale.toml'));
         await tomlFile.create(recursive: true);
-        const diskContent = '# disk comment\nrules = ["disk"]\n';
-        await tomlFile.writeAsString(diskContent);
+        const staleContent = 'rules = [';
+        await tomlFile.writeAsString(staleContent);
 
         final config = ToolConfig(
           toolName: 'Test',
           filePath: tomlFile.path,
           format: ConfigFormat.toml,
-          originalContent: 'rules = [',
+          originalContent: staleContent,
           rules: const ['structured-change'],
         );
         const rawEdit = '# raw comment\nrules = ["raw"]\n';
@@ -410,8 +410,8 @@ void main() {
     test('rawContentParsedAsJsonc detects JSONC added in the raw editor', () {
       final config = ToolConfig(
         toolName: 'Test',
-        filePath: '${tempDir.path}/settings.json',
-        format: ConfigFormat.json,
+        filePath: '${tempDir.path}/settings.jsonc',
+        format: ConfigFormat.jsonc,
         originalContent: '{"rules": []}',
       );
 
@@ -431,7 +431,7 @@ void main() {
     test(
       'currentSourceParsedAsJsonc detects JSONC added after a config opened',
       () async {
-        final jsonFile = File(p.join(tempDir.path, 'settings.json'));
+        final jsonFile = File(p.join(tempDir.path, 'settings.jsonc'));
         await jsonFile.writeAsString('{"rules": []}');
         final config = await _load(configService, jsonFile.path);
 
@@ -452,14 +452,13 @@ void main() {
     });
 
     test('saveConfig expands bare ~ and saves correctly', () async {
-      final homeStr =
-          Platform.environment['HOME'] ??
-          Platform.environment['USERPROFILE'] ??
-          tempDir.path;
-      final fileName =
-          'config_service_expand_${DateTime.now().microsecondsSinceEpoch}.json';
-      final configPath = '~/$fileName';
-      final file = File(p.join(homeStr, fileName));
+      final serviceWithHome = ConfigService(
+        backupService: backupService,
+        homeDirectoryResolver: () => tempDir.path,
+      );
+      const fileName = 'config_service_expand.json';
+      const configPath = '~/$fileName';
+      final file = File(p.join(tempDir.path, fileName));
       addTearDown(() async {
         // Synchronous existence checks keep this cleanup concise.
         // ignore: avoid_slow_async_io
@@ -475,7 +474,7 @@ void main() {
         rawSettings: const <String, dynamic>{},
       );
 
-      await configService.saveConfig(config);
+      await serviceWithHome.saveConfig(config);
       expect(file.existsSync(), isTrue);
     });
 

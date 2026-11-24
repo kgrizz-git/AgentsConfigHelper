@@ -391,4 +391,23 @@ class _RootBoundedLocalFileOperations implements FileOperations {
     _ensureWithinRoot(absolutePath);
     await _inner.writeTextAtomically(absolutePath, text);
   }
+
+  @override
+  Future<void> writeBytesAtomically(
+    String absolutePath,
+    List<int> bytes,
+  ) async {
+    _ensureWithinRoot(absolutePath);
+    await _inner.writeBytesAtomically(absolutePath, bytes);
+  }
+
+  @override
+  Future<void> copyFileAtomically(
+    String sourcePath,
+    String destinationPath,
+  ) async {
+    _ensureWithinRoot(sourcePath);
+    _ensureWithinRoot(destinationPath);
+    await _inner.copyFileAtomically(sourcePath, destinationPath);
+  }
 }

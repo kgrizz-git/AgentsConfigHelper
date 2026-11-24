@@ -162,6 +162,7 @@ void main() {
           input,
           filePath: 'opencode.json',
           toolName: 'Opencode',
+          format: ConfigFormat.jsonc,
         );
 
         expect(config.rules, ['a', 'b']);
@@ -183,7 +184,7 @@ void main() {
 ''';
       final config = parser.parse(
         original,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
 
@@ -205,7 +206,7 @@ void main() {
       // Parse it back to verify it's still valid
       final roundTrip = parser.parse(
         serialized,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       expect(roundTrip.rules, ['a', 'c']);
@@ -258,9 +259,9 @@ void main() {
     test('deletes JSONC properties with comments before their commas', () {
       const originals = <String>[
         '''
-{"rules": [] /* note */, "other": true}''',
+{"rules": ["old"] /* note */, "other": true}''',
         '''
-{"rules": [] // note
+{"rules": ["old"] // note
 , "other": true}''',
       ];
 
@@ -271,7 +272,7 @@ void main() {
           toolName: 'Test',
         );
         final serialized = parser.serialize(
-          config,
+          config.copyWith(rules: const []),
           originalContent: original,
         );
         final reparsed = parser.parse(
@@ -300,11 +301,23 @@ void main() {
       }
     });
 
-    test('JSONC fallback adds parseWarnings for .json with comments', () {
+    test('rejects JSONC syntax in a strict .json target', () {
+      const jsonc = '{\n  // comment\n  "rules": ["a"]\n}';
+      expect(
+        () => parser.parse(
+          jsonc,
+          filePath: 'test.json',
+          toolName: 'Test',
+        ),
+        throwsA(isA<ConfigParseException>()),
+      );
+    });
+
+    test('JSONC fallback adds parseWarnings for .jsonc', () {
       const jsonc = '{\n  // comment\n  "rules": ["a"]\n}';
       final config = parser.parse(
         jsonc,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       expect(config.parseWarnings, isNotEmpty);
@@ -316,7 +329,7 @@ void main() {
       const jsonc = '{\n  // comment\n  "rules": ["a"]\n}';
       final config = parser.parse(
         jsonc,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       expect(config.parseWarnings, isNotEmpty);
@@ -330,7 +343,7 @@ void main() {
       const jsonc = '{\n  "rules": ["a",],\n}';
       final config = parser.parse(
         jsonc,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       expect(config.parseWarnings, isNotEmpty);
@@ -390,7 +403,7 @@ void main() {
 ''';
       final config = parser.parse(
         original,
-        filePath: 'test.json',
+        filePath: 'test.jsonc',
         toolName: 'Test',
       );
       final mutated = config.copyWith(rules: ['new']);
@@ -425,5 +438,57 @@ void main() {
       expect(outcome.content, contains('"rules"'));
       expect(outcome.content, contains('"new"'));
     });
+
+    test('refuses a rewrite when the loaded source has an unrepresentable '
+        'owned field', () {
+      final config = parser.parse(
+        '{"rules": {"nested": true}, "permissions": ["p"], "model": "x"}',
+        filePath: testPath,
+        toolName: testTool,
+      );
+
+      expect(
+        () => parser.serializeWithOutcome(config),
+        throwsA(isA<StructuredEditRefusedException>()),
+      );
+    });
+
+    test(
+      'refuses a rewrite when the loaded source duplicates an owned key',
+      () {
+        final config = ToolConfig(
+          toolName: testTool,
+          filePath: testPath,
+          format: ConfigFormat.json,
+          originalContent: '{"rules": ["a"], "rules": ["b"]}',
+          rawSettings: const {
+            'rules': ['a'],
+          },
+        );
+
+        expect(
+          () => parser.serializeWithOutcome(config),
+          throwsA(isA<StructuredEditRefusedException>()),
+        );
+      },
+    );
+
+    test(
+      'retains the loaded source for a rewrite without a source argument',
+      () {
+        final config = parser.parse(
+          '{"rules": ["old"], "permissions": [], "model": "x"}',
+          filePath: testPath,
+          toolName: testTool,
+        );
+
+        final outcome = parser.serializeWithOutcome(
+          config.copyWith(rules: ['new']),
+        );
+
+        expect(outcome.content, contains('"model": "x"'));
+        expect(outcome.content, contains('"new"'));
+      },
+    );
   });
 }

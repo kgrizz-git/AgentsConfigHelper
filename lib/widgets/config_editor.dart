@@ -5,6 +5,7 @@ import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/schemas/policy_card_registry.dart';
+import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -17,6 +18,8 @@ import 'package:agents_config_helper/widgets/toml_opt_widgets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
+
+part 'config_editor_save_flow.dart';
 
 /// Edits the supported flat configuration fields and confirms saves.
 class ConfigEditor extends StatefulWidget {
@@ -31,6 +34,8 @@ class ConfigEditor extends StatefulWidget {
     this.hasUsableBaseline,
     this.rawContentParsedAsJsonc,
     this.currentSourceParsedAsJsonc,
+    this.previewSaveContent,
+    this.commitPreview,
     this.allowOpenDirectory = true,
     this.rawOnly = false,
     this.tomlStructuredSaveEnabled = false,
@@ -48,12 +53,11 @@ class ConfigEditor extends StatefulWidget {
   final DiscoveredConfig? discoveredConfig;
 
   /// Persists a confirmed edited configuration.
-  final Future<ToolConfig> Function(
-    ToolConfig config, {
-    String? rawContent,
-    bool? allowRewrite,
-  })
-  onSave;
+  final SaveConfigCallback onSave;
+
+  /// Commits the preview the user reviewed without re-serializing it.
+  /// Optional; without it saves go through [onSave].
+  final Future<ToolConfig> Function(SavePreview preview)? commitPreview;
 
   /// Resolves the configuration path before opening its directory.
   final String Function(String path) resolvePath;
@@ -74,6 +78,10 @@ class ConfigEditor extends StatefulWidget {
   /// Reports whether the current on-disk JSON source needs JSONC parsing, so
   /// a structured-save disclosure reflects the source `saveConfig` will use.
   final Future<bool> Function(ToolConfig config)? currentSourceParsedAsJsonc;
+
+  /// Computes the exact serialized content a save will write, for the review
+  /// dialog. Optional; without it the dialog shows only list diffs.
+  final PreviewSaveContent? previewSaveContent;
 
   /// Triggered when the user requests to view the history and backups.
   final VoidCallback onShowHistory;
@@ -104,24 +112,27 @@ class ConfigEditor extends StatefulWidget {
 
   /// Widget mapping registry. Defaults to [PolicyCardWidgetRegistry.shared].
   final PolicyCardWidgetRegistry? widgetRegistry;
-
   @override
   State<ConfigEditor> createState() => _ConfigEditorState();
 }
 
 class _ConfigEditorState extends State<ConfigEditor> {
   static const _fidelityAssessor = FidelityAssessor();
-
   late ToolConfig _currentConfig;
   late List<String> _rules;
   late List<String> _permissions;
   late TextEditingController _rawContentController;
   late String _rawContent;
   bool _saving = false;
+  bool _reviewing = false;
+  bool _overwriteApproved = false;
+  Object? _previewError;
+
+  void _updateUi(VoidCallback update) => setState(update);
+  SavePreview? _shownPreview;
   int _editRevision = 0;
   late final PolicyCardRegistry _registry;
   late final PolicyCardWidgetRegistry _widgetRegistry;
-
   @override
   void initState() {
     super.initState();
@@ -307,68 +318,6 @@ class _ConfigEditorState extends State<ConfigEditor> {
           ),
         ],
       ],
-    );
-  }
-
-  Future<void> _saveChanges() {
-    setState(() => _saving = true);
-    return StructuredSaveFlow.run(
-      context: context,
-      isMounted: () => mounted,
-      rawContent: () =>
-          _rawContent != _currentConfig.originalContent ? _rawContent : null,
-      buildUpdatedConfig: () => _currentConfig.copyWith(
-        rules: _rules,
-        permissions: _permissions,
-      ),
-      onSave: widget.onSave,
-      onSuccess: (savedConfig) {
-        setState(() {
-          _currentConfig = savedConfig;
-          _initLocalState(_currentConfig);
-        });
-        _notifyDirtyChanged();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settings saved successfully.')),
-        );
-      },
-      onError: (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving: $error'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      },
-      setSavingFalse: () {
-        if (mounted) {
-          setState(() {
-            _saving = false;
-          });
-        }
-      },
-    );
-  }
-
-  Future<void> _showDiffModal() {
-    final editRevision = _editRevision;
-    return StructuredSaveFlow.showDiffModal(
-      context: context,
-      isMounted: () => mounted,
-      isCurrentRevision: () => _editRevision == editRevision,
-      pendingFidelityAssessment: _pendingFidelityAssessment,
-      supportsStructuredFields: _supportsStructuredFields,
-      rawOnly: widget.rawOnly,
-      currentRules: _currentConfig.rules,
-      currentPermissions: _currentConfig.permissions,
-      rules: _rules,
-      permissions: _permissions,
-      originalContent: _currentConfig.originalContent,
-      rawContent: _rawContent,
-      buildDiffSection: StructuredSaveFlow.buildDiffSection,
-      buildRawDiffSection: StructuredSaveFlow.buildRawDiffSection,
-      saving: _saving,
-      onSaveChanges: _saveChanges,
     );
   }
 

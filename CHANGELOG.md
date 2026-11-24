@@ -38,14 +38,36 @@ uses [Semantic Versioning](https://semver.org/).
   of warning as missing, and a **Show all** audit control reveals every
   suppressed catalog target with its reason. Markdown and HTML exports follow
   the selected view and state how many targets were hidden.
+- **Review Changes before every save.** The save dialog now shows the exact
+  serialized document that will be written, including fallback rewrites, and
+  warns when a structured save must rebuild the file.
+- **External-change protection.** A config file that changed on disk after it
+  was loaded, previewed, or confirmed produces a conflict instead of being
+  silently overwritten. Deliberate overwrite re-opens Review Changes with a
+  fresh preview and requires a second confirmation. A missing preview or a
+  failed overwrite re-preview blocks the save, and deleting a loaded empty
+  file is also a conflict.
 
 ### Changed
+- **Lossless structured saves.** Saving rules or permissions preserves
+  untouched setting values for JSON, JSONC, YAML, and TOML, and refuses
+  shapes it cannot represent instead of dropping them. Formatting, comments,
+  and layout may still change when a format requires a rebuild.
+- **Cursor IDE settings are JSONC.** Cursor `settings.json` files may contain
+  comments and trailing commas, matching VS Code's settings format.
+- **Strict JSON stays strict.** Tools that require strict JSON reject comments
+  and trailing commas; JSONC tools continue to accept them.
 - **Interactive config overview.** The app now presents one grouped, action-first
   file overview instead of repeating a Markdown preview and a separate file list.
   Secret warnings appear only on the affected file rows.
 - UI typeface is now Manrope (code and paths stay JetBrains Mono).
 
 ### Fixed
+- **Atomic, mode-preserving writes.** Config saves and backup restores replace
+  files atomically and keep their permission bits, including read-only files.
+- **Raw saves no longer discard external edits.** Raw edits are checked against
+  the loaded file, and structured changes are merged onto the loaded document
+  instead of overwriting the whole file.
 - **Dock icon on macOS source runs.** At launch the app pins its Dock tile to
   the bundled app icon when a full-size rendition (at least 512px) is available,
   and leaves the catalog icon unchanged when it is not.

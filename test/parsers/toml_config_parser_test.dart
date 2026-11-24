@@ -269,5 +269,24 @@ key = "value"
         (config.rawSettings['permissions']! as Map)['profx'],
       );
     });
+    test('refuses to edit a map-shaped rules table', () {
+      const originalToml = '''
+[rules]
+key = "value"
+''';
+      final config = parser.parse(
+        originalToml,
+        filePath: testPath,
+        toolName: testTool,
+      );
+
+      expect(
+        () => parser.serialize(
+          config.copyWith(rules: ['new']),
+          originalContent: originalToml,
+        ),
+        throwsA(isA<StructuredEditRefusedException>()),
+      );
+    });
   });
 }

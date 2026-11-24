@@ -4,6 +4,7 @@ import 'package:agents_config_helper/catalog/tool_descriptor_registry.dart';
 import 'package:agents_config_helper/models/discovered_config.dart';
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/models/tool_descriptor.dart';
+import 'package:agents_config_helper/parsers/config_parser.dart';
 import 'package:agents_config_helper/parsers/json_config_parser.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
@@ -105,19 +106,11 @@ void main() {
     });
 
     test(
-      'comment-bearing JSON retains raw content and warns about JSONC fallback',
+      'comment-bearing JSON is rejected for strict Claude settings',
       () {
-        final config = parseFixture(
-          'edge_cases/claude_permissions_comments.jsonc',
-        );
-
-        expect(config.parseWarnings, isNotEmpty);
-        expect(config.originalContent, contains('A comment must remain'));
         expect(
-          adapter
-              .interpret(config: config, discoveredConfig: discoveredConfig)
-              .status,
-          PolicyCardStatus.available,
+          () => parseFixture('edge_cases/claude_permissions_comments.jsonc'),
+          throwsA(isA<ConfigParseException>()),
         );
       },
     );

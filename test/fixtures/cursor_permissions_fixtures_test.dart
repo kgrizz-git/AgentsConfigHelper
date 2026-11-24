@@ -29,7 +29,7 @@ void main() {
     descriptor: descriptor,
     scope: ConfigLocationScope.user,
     kind: ConfigSourceKind.structuredConfig,
-    format: ConfigFormat.json,
+    format: ConfigFormat.jsonc,
     sourceLabel: 'Cursor Agent',
     fromCatalog: true,
   );
@@ -41,7 +41,7 @@ void main() {
       content,
       filePath: discoveredConfig.filePath,
       toolName: 'Cursor Agent',
-      format: ConfigFormat.json,
+      format: ConfigFormat.jsonc,
     );
   }
 

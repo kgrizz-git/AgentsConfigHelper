@@ -16,12 +16,15 @@ class FakeConfigService extends ConfigService {
   new(BackupService backupService) : super(backupService: backupService);
 
   final savedConfigs = <ToolConfig>[];
+  bool? lastOverwriteConfirmed;
 
   @override
   Future<ToolConfig> saveConfig(
     ToolConfig config, {
     bool allowRewrite = false,
+    bool overwriteConfirmed = false,
   }) async {
+    lastOverwriteConfirmed = overwriteConfirmed;
     savedConfigs.add(config);
     await Future<void>.delayed(Duration.zero);
     return config;
@@ -49,7 +52,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) =>
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) =>
                   configService.saveConfig(
                     c,
                     allowRewrite: allowRewrite ?? false,
@@ -103,7 +106,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) {
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) {
                 sawRawArg = true;
                 capturedRaw = rawContent;
                 return configService.saveConfig(
@@ -152,7 +155,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) {
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) {
                 capturedRaw = rawContent;
                 return configService.saveConfig(
                   c,
@@ -199,7 +202,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) =>
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) =>
                   configService.saveConfig(
                     c,
                     allowRewrite: allowRewrite ?? false,
@@ -250,7 +253,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) =>
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) =>
                   configService.saveConfig(
                     c,
                     allowRewrite: allowRewrite ?? false,
@@ -289,7 +292,7 @@ void main() {
           home: Scaffold(
             body: ConfigEditor(
               config: config,
-              onSave: (c, {rawContent, allowRewrite}) =>
+              onSave: (c, {rawContent, allowRewrite, overwriteConfirmed}) =>
                   configService.saveConfig(
                     c,
                     allowRewrite: allowRewrite ?? false,
@@ -342,7 +345,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -391,7 +399,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -450,7 +463,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -504,10 +522,16 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async {
-                  capturedRawContent = rawContent;
-                  return config;
-                },
+                onSave:
+                    (
+                      config, {
+                      rawContent,
+                      allowRewrite,
+                      overwriteConfirmed,
+                    }) async {
+                      capturedRawContent = rawContent;
+                      return config;
+                    },
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -530,6 +554,80 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(capturedRawContent, updatedRawContent);
+      },
+    );
+
+    testWidgets(
+      'conflict overwrite re-reviews the fresh output before saving',
+      (tester) async {
+        final config = ToolConfig(
+          toolName: 'Test Tool',
+          filePath: '${Directory.systemTemp.path}/conflict_review.json',
+          format: ConfigFormat.json,
+          originalContent: '{"rules": ["disk"]}',
+          rules: const ['mine'],
+        );
+        var saveCalls = 0;
+        bool? sawOverwrite;
+        final preview = SavePreview(
+          config: config,
+          content: '{"rules": ["mine"]}',
+          sourceContent: '{"rules": ["external"]}',
+          sourceExists: true,
+          parsed: config,
+          usedFallback: false,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ConfigEditor(
+                config: config,
+                onSave:
+                    (c, {rawContent, allowRewrite, overwriteConfirmed}) async {
+                      saveCalls++;
+                      sawOverwrite = overwriteConfirmed;
+                      return c;
+                    },
+                resolvePath: (path) => path,
+                onShowHistory: () {},
+                previewSaveContent:
+                    (c, {rawContent, overwriteConfirmed = false}) async {
+                      if (!overwriteConfirmed) {
+                        throw SaveConflictException.stale(
+                          c.filePath,
+                          '{"rules": ["external"]}',
+                        );
+                      }
+                      return preview;
+                    },
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Add Item').first);
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField).at(1), 'new rule');
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Save Changes'));
+        await tester.pumpAndSettle();
+        expect(find.text('File changed on disk'), findsOneWidget);
+
+        await tester.tap(find.text('Overwrite'));
+        await tester.pumpAndSettle();
+        expect(find.text('Review Changes'), findsWidgets);
+        expect(find.text('Serialized result'), findsOneWidget);
+
+        await tester.tap(find.text('Confirm & Save'));
+        await tester.pumpAndSettle();
+        expect(saveCalls, 1);
+        expect(sawOverwrite, isTrue);
+        expect(
+          find.textContaining('Settings saved successfully.'),
+          findsOneWidget,
+        );
       },
     );
   });

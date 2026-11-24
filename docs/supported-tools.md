@@ -24,9 +24,9 @@ to auto-detect, parse, visualize, and edit settings across tools.
 | Opencode | JSONC | `~/.config/opencode/opencode.json` | `.opencode/opencode.json` | `~/.config/opencode/AGENTS.md` (+ shared) | per-tool allow/ask/deny |
 | Paseo | JSON | `~/.paseo/config.json` | `paseo.json` | skills | delegated to provider |
 | Cursor Agent | JSON | `~/.cursor/permissions.json` | `.cursor/permissions.json` | `.cursor/rules/*.mdc` + `.cursorrules` + `CLAUDE.md` (+ shared) | allowlist + classifier (read-only card) |
-| Cursor IDE | JSON | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
+| Cursor IDE | JSONC | `~/.config/Cursor/User/settings.json` (or OS equiv) | `.cursor/settings.json` | — | — |
 | Kiro | YAML | `~/.kiro/settings/permissions.yaml` | — | `.kiro/steering/*.md` (+ shared) | capability-based |
-| Devin | JSON | `~/.config/devin/config.json` | `.devin/config.json` | `~/.config/devin/AGENTS.md` (+ shared) | scope-based allow/deny |
+| Devin | JSONC | `~/.config/devin/config.json` | `.devin/config.json` | `~/.config/devin/AGENTS.md` (+ shared) | scope-based allow/deny |
 | Antigravity CLI | JSON | `~/.gemini/antigravity-cli/settings.json` | — | `~/.gemini/GEMINI.md` + `.agents/rules/*.md` + `GEMINI.md` | action(target) + presets |
 | Antigravity IDE | JSON | `~/.gemini/antigravity-ide/settings.json` | — | — | — |
 | Antigravity App | JSON | `~/.gemini/antigravity-app/settings.json` | — | — | — |
@@ -359,11 +359,11 @@ Multiple JSON files for different concerns.
 ```
 
 > **JSONC:** Cursor accepts JSONC in `permissions.json` (comments and trailing commas)
-> even though the filename ends in `.json`. This app parses such a file via its JSONC
-> fallback, and the formatting-fidelity notice follows the parsed content (labeling it
-> "JSONC") rather than the `.json` filename. The app renders this file as a read-only
-> policy card showing its stored entries; it does not compute Cursor's effective policy
-> (user and project files are combined, and team-admin or in-app settings can take
+> even though the filename ends in `.json`. The catalog classifies this target as JSONC,
+> so the app parses it directly instead of treating it as a fallback, and the
+> formatting-fidelity notice follows the parsed content. The app renders this file as a
+> read-only policy card showing its stored entries; it does not compute Cursor's effective
+> policy (user and project files are combined, and team-admin or in-app settings can take
 > precedence).
 
 **`cli-config.json`:**
@@ -714,10 +714,14 @@ agent frontmatter.
 
 | Format | Tools | Parser approach |
 | --- | --- | --- |
-| JSON/JSONC | Claude, Cursor, Paseo, Devin, Antigravity, Opencode, Agy-ACP, Kilo, Cline, Copilot CLI (`settings.json`), LM Studio | `dart:convert` + `json_ast`; source-offset patch when supported, full-document rewrite fallback. A fallback rewrite is fail-closed: the save is blocked and the user must explicitly choose Rewrite document (default is Edit raw instead) |
+| JSON / JSONC | Claude (`settings.json`, strict JSON), Cursor `permissions.json` (JSONC), Paseo, Devin (JSONC), Antigravity (strict JSON), Opencode (JSONC), Agy-ACP, Kilo, Cline, Copilot CLI (`settings.json`), LM Studio | `dart:convert` + `json_ast`; comments and trailing commas are accepted only for catalog targets marked JSONC; strict targets reject them before any backup or write; source-offset patch when supported, full-document rewrite fallback. A fallback rewrite is fail-closed: the save is blocked and the user must explicitly choose Rewrite document (default is Edit raw instead) |
 | TOML | Codex | `toml` Dart package; structured serialization normalizes the document and can discard comments/layout. Structured TOML editing is opt-in (off by default) with a persistent warning while enabled |
 | YAML | Kiro (permissions), Paseo (hub/workflows), LM Studio (`model.yaml`) | `yaml` + `yaml_edit`; in-place update when supported, fresh-document fallback. In-place edits preserve adjacent comments and nested maps/lists, but drop comments inside an edited map, rewrite adjacent block scalars as quoted strings, and cannot update anchors/aliases (a fallback rewrite is used instead). A fallback rewrite is fail-closed like JSON/JSONC |
 | Markdown | All tools' rules files (`.md`/`.mdc`/`.cursorrules`) — raw-text editor | raw-text editor |
+
+> Manual `.json` paths are treated as strict JSON by default; comments and trailing
+> commas are accepted only for catalog targets classified as JSONC. A catalog
+> reclassification is required if a tool documents JSONC support.
 
 ## Deferred / not yet supported
 

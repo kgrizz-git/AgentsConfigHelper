@@ -258,5 +258,24 @@ void main() {
 
       expect(await nestedTarget.readAsString(), equals('{"key": "value"}'));
     });
+    test('createBackup publishes nothing when the copy cannot start', () async {
+      if (Platform.isWindows || _isRootUser()) return;
+      await backupDir.create(recursive: true);
+      expect(Process.runSync('chmod', ['500', backupDir.path]).exitCode, 0);
+      addTearDown(() => Process.runSync('chmod', ['700', backupDir.path]));
+
+      await expectLater(
+        backupService.createBackup(originalFile.path),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      expect(await backupDir.list().toList(), isEmpty);
+      expect(await backupService.listBackups(originalFile.path), isEmpty);
+    });
   });
+}
+
+bool _isRootUser() {
+  final result = Process.runSync('id', ['-u']);
+  return result.exitCode == 0 && '${result.stdout}'.trim() == '0';
 }

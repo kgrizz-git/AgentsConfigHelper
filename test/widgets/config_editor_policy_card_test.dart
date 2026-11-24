@@ -50,7 +50,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -105,7 +110,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -166,7 +176,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
                 widgetRegistry: widgetRegistry,
@@ -230,7 +245,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
                 widgetRegistry: widgetRegistry,
@@ -287,7 +307,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -342,7 +367,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -397,10 +427,16 @@ void main() {
             body: ConfigEditor(
               config: config,
               discoveredConfig: discoveredConfig,
-              onSave: (config, {rawContent, allowRewrite}) async {
-                saveCount++;
-                return config;
-              },
+              onSave:
+                  (
+                    config, {
+                    rawContent,
+                    allowRewrite,
+                    overwriteConfirmed,
+                  }) async {
+                    saveCount++;
+                    return config;
+                  },
               resolvePath: (path) => path,
               onShowHistory: () {},
             ),
@@ -459,7 +495,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -513,7 +554,12 @@ void main() {
               body: ConfigEditor(
                 config: config,
                 discoveredConfig: discoveredConfig,
-                onSave: (config, {rawContent, allowRewrite}) async => config,
+                onSave: (
+                  config, {
+                  rawContent,
+                  allowRewrite,
+                  overwriteConfirmed,
+                }) async => config,
                 resolvePath: (path) => path,
                 onShowHistory: () {},
               ),
@@ -567,10 +613,16 @@ void main() {
             body: ConfigEditor(
               config: config,
               discoveredConfig: discoveredConfig,
-              onSave: (config, {rawContent, allowRewrite}) async {
-                saveCount++;
-                return config;
-              },
+              onSave:
+                  (
+                    config, {
+                    rawContent,
+                    allowRewrite,
+                    overwriteConfirmed,
+                  }) async {
+                    saveCount++;
+                    return config;
+                  },
               resolvePath: (path) => path,
               onShowHistory: () {},
             ),

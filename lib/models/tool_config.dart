@@ -37,6 +37,7 @@ class ToolConfig extends Equatable {
     this.permissions = const [],
     Map<String, Object?> rawSettings = const {},
     this.originalContent = '',
+    this.originalFileExisted,
     this.parseWarnings = const [],
     this.parsedAsJsonc = false,
   }) : rawSettings = UnmodifiableMapView(rawSettings);
@@ -62,6 +63,13 @@ class ToolConfig extends Equatable {
   /// The original raw string content of the configuration file.
   final String originalContent;
 
+  /// Whether the source file existed when this config was loaded.
+  ///
+  /// Null means unknown (use the content to infer). Load paths set this so an
+  /// external deletion of an empty file is still a conflict. Metadata only:
+  /// excluded from value equality so reloads do not spuriously differ.
+  final bool? originalFileExisted;
+
   /// Non-blocking warnings produced while parsing the file, e.g. that the
   /// content was treated as JSONC after strict JSON decoding failed.
   final List<String> parseWarnings;
@@ -80,6 +88,7 @@ class ToolConfig extends Equatable {
     List<String>? permissions,
     Map<String, Object?>? rawSettings,
     String? originalContent,
+    bool? originalFileExisted,
     List<String>? parseWarnings,
     bool? parsedAsJsonc,
   }) {
@@ -91,6 +100,7 @@ class ToolConfig extends Equatable {
       permissions: permissions ?? this.permissions,
       rawSettings: rawSettings ?? this.rawSettings,
       originalContent: originalContent ?? this.originalContent,
+      originalFileExisted: originalFileExisted ?? this.originalFileExisted,
       parseWarnings: parseWarnings ?? this.parseWarnings,
       parsedAsJsonc: parsedAsJsonc ?? this.parsedAsJsonc,
     );

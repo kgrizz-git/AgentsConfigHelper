@@ -39,6 +39,7 @@ void main() {
         ToolConfig config, {
         String? rawContent,
         bool? allowRewrite,
+        bool? overwriteConfirmed,
       })?
       onSave,
     }) {
@@ -51,7 +52,12 @@ void main() {
               tomlStructuredSaveEnabled: tomlStructuredSaveEnabled,
               onSave:
                   onSave ??
-                  (config, {rawContent, allowRewrite}) async => config,
+                  (
+                    config, {
+                    rawContent,
+                    allowRewrite,
+                    overwriteConfirmed,
+                  }) async => config,
               resolvePath: (path) => path,
               onShowHistory: () {},
             ),
@@ -220,7 +226,7 @@ void main() {
         tester,
         config,
         discoveredConfig,
-        onSave: (config, {rawContent, allowRewrite}) async {
+        onSave: (config, {rawContent, allowRewrite, overwriteConfirmed}) async {
           saveCount++;
           return config;
         },
@@ -402,10 +408,11 @@ void main() {
           config,
           discoveredConfig,
           tomlStructuredSaveEnabled: true,
-          onSave: (updated, {rawContent, allowRewrite}) async {
-            savedConfig = updated;
-            return updated;
-          },
+          onSave:
+              (updated, {rawContent, allowRewrite, overwriteConfirmed}) async {
+                savedConfig = updated;
+                return updated;
+              },
         );
 
         // Diverge the structured rules through the Rules editor so the

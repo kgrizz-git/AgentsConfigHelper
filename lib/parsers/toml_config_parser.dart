@@ -59,24 +59,30 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
     );
   }
 
-  /// Writes a flat-editor-owned list key without destroying other shapes.
-  ///
-  /// List-shaped raw values are managed exactly as before (set when the new
-  /// list is non-empty, removed when emptied). User additions onto an absent
-  /// key still write. Map, scalar, and other non-list shapes are left
-  /// untouched so structured saves preserve tables the flat editor cannot
-  /// represent. Adds no new write capability.
+  /// Writes a dirty flat-editor-owned list key without destroying other
+  /// shapes. A dirty field whose current value is not a list of strings is
+  /// refused rather than silently left unchanged.
   void _writeFlatListKey(
     Map<String, Object?> outputMap,
     ToolConfig config,
     String key,
     List<String> values,
+    bool dirty,
+    StructuredField field,
   ) {
+    if (!dirty) return;
     if (!config.rawSettings.containsKey(key)) {
       if (values.isNotEmpty) outputMap[key] = values;
       return;
     }
-    if (config.rawSettings[key] is! List) return;
+    final current = config.rawSettings[key];
+    if (current is! List || current.any((item) => item is! String)) {
+      throw StructuredEditRefusedException(
+        'Cannot safely update "$key": its current value is not a list of '
+        'strings. Use the raw editor to change it.',
+        field: field,
+      );
+    }
     if (values.isNotEmpty) {
       outputMap[key] = values;
     } else {
@@ -97,10 +103,15 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
   /// (notably a surgical text-splice mirroring the JSON path) and the trigger
   /// for revisiting it.
   @override
-  String serialize(ToolConfig config, {String? originalContent}) {
+  String serialize(
+    ToolConfig config, {
+    String? originalContent,
+    FieldEditMask? edits,
+  }) {
     return serializeWithOutcome(
       config,
       originalContent: originalContent,
+      edits: edits,
     ).content;
   }
 
@@ -108,15 +119,26 @@ class TomlConfigParser with ConfigParserMixin implements ConfigParser {
   SerializeOutcome serializeWithOutcome(
     ToolConfig config, {
     String? originalContent,
+    FieldEditMask? edits,
   }) {
+    final effectiveEdits = resolveEdits(config, originalContent, edits);
     final outputMap = Map<String, Object?>.from(config.rawSettings);
 
-    _writeFlatListKey(outputMap, config, 'rules', config.rules);
+    _writeFlatListKey(
+      outputMap,
+      config,
+      'rules',
+      config.rules,
+      effectiveEdits.rules,
+      StructuredField.rules,
+    );
     _writeFlatListKey(
       outputMap,
       config,
       'permissions',
       config.permissions,
+      effectiveEdits.permissions,
+      StructuredField.permissions,
     );
 
     try {

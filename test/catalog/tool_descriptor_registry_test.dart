@@ -54,6 +54,36 @@ void main() {
       expect(match.format, ConfigFormat.json);
     });
 
+    test(
+      'Cursor permissions.json is JSONC while Claude settings stay strict',
+      () {
+        const homePath = 'home_test';
+        final cursor = ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(homePath, '.cursor/permissions.json')),
+          normalizedHomePath: homePath,
+        );
+        expect(cursor.format, ConfigFormat.jsonc);
+
+        final claude = ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(homePath, '.claude/settings.json')),
+          normalizedHomePath: homePath,
+        );
+        expect(claude.format, ConfigFormat.json);
+
+        final devin = ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(homePath, '.config/devin/config.json')),
+          normalizedHomePath: homePath,
+        );
+        expect(devin.format, ConfigFormat.jsonc);
+
+        final cursorSettings = ToolDescriptorRegistry.matchPath(
+          p.normalize(p.join(homePath, '.config/Cursor/User/settings.json')),
+          normalizedHomePath: homePath,
+        );
+        expect(cursorSettings.format, ConfigFormat.jsonc);
+      },
+    );
+
     test('matches project target successfully', () {
       const projectRoot = 'home_test/project';
       final path = p.normalize(p.join(projectRoot, '.codex/config.toml'));

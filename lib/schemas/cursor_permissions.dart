@@ -211,8 +211,10 @@ class CursorPermissionsAdapter implements PolicyCardAdapter {
         !discoveredConfig.fromCatalog ||
         discoveredConfig.descriptor?.id != ToolId.cursor ||
         discoveredConfig.kind != ConfigSourceKind.structuredConfig ||
-        discoveredConfig.format != ConfigFormat.json ||
-        config.format != ConfigFormat.json ||
+        (discoveredConfig.format != ConfigFormat.json &&
+            discoveredConfig.format != ConfigFormat.jsonc) ||
+        (config.format != ConfigFormat.json &&
+            config.format != ConfigFormat.jsonc) ||
         (discoveredConfig.scope != ConfigLocationScope.user &&
             discoveredConfig.scope != ConfigLocationScope.project)) {
       return false;

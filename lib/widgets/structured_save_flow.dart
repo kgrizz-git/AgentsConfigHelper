@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:agents_config_helper/models/tool_config.dart';
 import 'package:agents_config_helper/parsers/config_parser.dart';
+import 'package:agents_config_helper/services/config_service.dart';
 import 'package:agents_config_helper/services/fidelity_assessor.dart';
 import 'package:agents_config_helper/theme/app_colors.dart';
 import 'package:agents_config_helper/theme/app_text_styles.dart';
@@ -10,10 +11,52 @@ import 'package:agents_config_helper/widgets/raw_diff_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
+/// Persists an edited configuration.
+typedef SaveConfigCallback = Future<ToolConfig> Function(
+  ToolConfig config, {
+  String? rawContent,
+  bool? allowRewrite,
+  bool? overwriteConfirmed,
+});
+
+/// Computes the exact content a save will write, for the review dialog.
+typedef PreviewSaveContent = Future<SavePreview?> Function(
+  ToolConfig config, {
+  String? rawContent,
+  bool overwriteConfirmed,
+});
+
 /// Encapsulates the fallback-rewrite save flow so the editor only needs a
 /// thin entrypoint.
 class StructuredSaveFlow {
   /// Shows the fallback-rewrite confirmation dialog.
+  /// Asks whether to overwrite a file that changed after the preview.
+  static Future<bool?> showConflictDialog(
+    BuildContext context,
+    SaveConflictException conflict,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('File changed on disk'),
+        content: const Text(
+          'This file changed after you opened it. Overwrite those changes? '
+          'Cancel and reopen the file to reload instead.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Overwrite'),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Future<bool?> showFallbackRewriteDialog(
     BuildContext context,
     SerializationFallbackException e,
@@ -61,24 +104,29 @@ class StructuredSaveFlow {
     required bool Function() isMounted,
     required String? Function() rawContent,
     required ToolConfig Function() buildUpdatedConfig,
-    required Future<ToolConfig> Function(
-      ToolConfig config, {
-      String? rawContent,
-      bool? allowRewrite,
-    })
-    onSave,
+    required SaveConfigCallback onSave,
     required void Function(ToolConfig savedConfig) onSuccess,
     required void Function(Object error) onError,
     required void Function() setSavingFalse,
+    required VoidCallback onRepreview,
+    bool overwriteConfirmed = false,
   }) async {
     try {
       final savedConfig = await onSave(
         buildUpdatedConfig(),
         rawContent: rawContent(),
         allowRewrite: false,
+        overwriteConfirmed: overwriteConfirmed,
       );
       if (!isMounted()) return;
       onSuccess(savedConfig);
+    } on SaveConflictException catch (conflict) {
+      if (!context.mounted) return;
+      final overwrite = await showConflictDialog(context, conflict);
+      if (overwrite != true || !context.mounted) return;
+      // Re-open Review Changes so the freshly computed output is displayed
+      // before anything is written.
+      onRepreview();
     } on SerializationFallbackException catch (e) {
       if (!context.mounted) return;
       final proceed = await showFallbackRewriteDialog(context, e);
@@ -88,9 +136,15 @@ class StructuredSaveFlow {
           buildUpdatedConfig(),
           rawContent: rawContent(),
           allowRewrite: true,
+          overwriteConfirmed: overwriteConfirmed,
         );
         if (!isMounted()) return;
         onSuccess(savedConfig);
+      } on SaveConflictException catch (conflict) {
+        if (!context.mounted) return;
+        final overwrite = await showConflictDialog(context, conflict);
+        if (overwrite != true || !context.mounted) return;
+        onRepreview();
       } on Object catch (error) {
         if (!isMounted()) return;
         onError(error);
@@ -155,11 +209,12 @@ class StructuredSaveFlow {
   }
 
   /// Shows the review modal for unsaved changes.
-  static Future<void> showDiffModal({
+  static Future<bool> showDiffModal({
     required BuildContext context,
     required bool Function() isMounted,
     required bool Function() isCurrentRevision,
     required Future<FidelityAssessment?> Function() pendingFidelityAssessment,
+    required Future<String?> Function() pendingSavePreview,
     required bool supportsStructuredFields,
     required bool rawOnly,
     required List<String> currentRules,
@@ -175,9 +230,10 @@ class StructuredSaveFlow {
     required Future<void> Function() onSaveChanges,
   }) async {
     final assessment = await pendingFidelityAssessment();
-    if (!context.mounted || !isCurrentRevision()) return;
+    final preview = await pendingSavePreview();
+    if (!context.mounted || !isCurrentRevision()) return false;
 
-    await showDialog<void>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -204,6 +260,17 @@ class StructuredSaveFlow {
                     ),
                   ],
                 ],
+                if (preview != null &&
+                    supportsStructuredFields &&
+                    !rawOnly) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Serialized result',
+                    style: AppTextStyles.uiSubheader,
+                  ),
+                  const SizedBox(height: 8),
+                  buildRawDiffSection(originalContent, preview),
+                ],
                 if (rawContent != originalContent) ...[
                   const SizedBox(height: 16),
                   buildRawDiffSection(
@@ -226,7 +293,7 @@ class StructuredSaveFlow {
               onPressed: saving
                   ? null
                   : () {
-                      Navigator.of(context).pop();
+                      Navigator.of(context).pop(true);
                       unawaited(onSaveChanges());
                     },
               style: ElevatedButton.styleFrom(
@@ -239,5 +306,6 @@ class StructuredSaveFlow {
         );
       },
     );
+    return confirmed ?? false;
   }
 }

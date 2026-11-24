@@ -216,6 +216,7 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
         filePath: configItem.filePath,
         format: configItem.format,
         originalContent: rawContent,
+        originalFileExisted: true,
       );
       hasUnsavedChanges = false;
       rawRecoveryMode = true;
@@ -229,8 +230,10 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     final configService = ref.read(configServiceProvider);
     final resolvedPath = configService.resolvePath(configItem.filePath);
     var rawContent = '';
+    var sourceExists = false;
     try {
       rawContent = await configService.readRawText(resolvedPath);
+      sourceExists = true;
     } on Object {
       // A deleted file still allows browsing backups.
     }
@@ -243,6 +246,7 @@ mixin RecoveryHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
         filePath: configItem.filePath,
         format: configItem.format,
         originalContent: rawContent,
+        originalFileExisted: sourceExists,
       );
       hasUnsavedChanges = false;
       rawRecoveryMode = true;
