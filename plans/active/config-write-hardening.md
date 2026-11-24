@@ -108,8 +108,12 @@ ownership seam.
   retry `write`/`fsync` on `EINTR` as appropriate; do not blindly retry
   `close` on an unknown descriptor state.
 - `fsync` the temp descriptor, close it, then open the parent directory
-  **before** publication. A parent-open failure occurs pre-publication and
-  aborts with the original untouched and the temp removed.
+  **before** publication with read-only directory semantics (`O_RDONLY`, plus
+  `O_DIRECTORY` where the platform defines it; verify the descriptor is a
+  directory if not). Hold that descriptor across the rename for the
+  post-rename `fsync`; the rename itself remains path-based and no second
+  parent open happens after publication. A parent-open failure occurs
+  pre-publication and aborts with the original untouched and the temp removed.
 - Rename onto the resolved target, then `fsync` and close the parent directory.
   Every operation after the successful rename is best-effort and logged,
   including parent `fsync` and `close` failures; the save reports success, the
