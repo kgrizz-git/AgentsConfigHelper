@@ -49,7 +49,6 @@ class PosixAtomicWriter {
 
   static const _eintr = 4;
   static const _defaultMode = 0x180;
-  static final _random = Random();
 
   /// Writes [bytes] to [destination] and publishes them atomically.
   ///
@@ -59,9 +58,10 @@ class PosixAtomicWriter {
   /// destination has already been replaced.
   Future<void> write(File destination, List<int> bytes, int? mode) async {
     final tempPath =
-        temporaryFile?.call(destination) ?? _defaultTemporaryPath(destination);
+        temporaryFile?.call(destination) ??
+        defaultAtomicTemporaryPath(destination);
     final data = Uint8List.fromList(bytes);
-    final effectiveMode = mode ?? _defaultMode;
+    final effectiveMode = (mode ?? _defaultMode) & 0x1FF;
     var fd = -1;
     var dirFd = -1;
     var created = false;
@@ -176,15 +176,16 @@ class PosixAtomicWriter {
       path,
     );
   }
+}
 
-  static String _defaultTemporaryPath(File destination) {
-    final unique = _random.nextInt(1 << 31).toRadixString(16);
-    return p.join(
-      destination.parent.path,
-      '.agents-config-helper-'
-      '${pid}_${DateTime.now().microsecondsSinceEpoch}_$unique.tmp',
-    );
-  }
+/// Returns the default short temporary path for [destination].
+String defaultAtomicTemporaryPath(File destination) {
+  final unique = Random().nextInt(1 << 31).toRadixString(16);
+  return p.join(
+    destination.parent.path,
+    '.agents-config-helper-'
+    '${pid}_${DateTime.now().microsecondsSinceEpoch}_$unique.tmp',
+  );
 }
 
 /// libc-backed implementation for macOS and Linux.
@@ -239,6 +240,8 @@ class LibcPosixFileSystem implements PosixFileSystem {
         Platform.isMacOS ? '__error' : '__errno_location',
       );
 
+  /// Captured per instance; a fresh instance is created for each native write,
+  /// so a stale errno cannot cross writes.
   int _lastErrno = 0;
 
   @override

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:agents_config_helper/services/posix_atomic_writer.dart';
 import 'package:path/path.dart' as p;
@@ -70,8 +69,6 @@ class LocalFileOperations implements FileOperations {
 
   /// Opens the temporary file for writing, or null for the default handle.
   final RandomAccessFile Function(File file)? openFile;
-
-  static final _random = Random();
 
   @override
   Future<void> validatePath(String absolutePath) async {
@@ -209,7 +206,8 @@ class LocalFileOperations implements FileOperations {
       return;
     }
     final temporary = File(
-      temporaryFile?.call(destination) ?? _defaultTemporaryPath(destination),
+      temporaryFile?.call(destination) ??
+          defaultAtomicTemporaryPath(destination),
     );
     var created = false;
     var published = false;
@@ -282,14 +280,5 @@ class LocalFileOperations implements FileOperations {
         }
       }
     }
-  }
-
-  static String _defaultTemporaryPath(File destination) {
-    final unique = _random.nextInt(1 << 31).toRadixString(16);
-    return p.join(
-      destination.parent.path,
-      '.agents-config-helper-'
-      '${pid}_${DateTime.now().microsecondsSinceEpoch}_$unique.tmp',
-    );
   }
 }

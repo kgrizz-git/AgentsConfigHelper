@@ -17,6 +17,7 @@ class _FakeFileSystem implements PosixFileSystem {
   int openTemporaryResult = _fileDescriptor;
   int openDirectoryResult = _directoryDescriptor;
   int fchmodResult = 0;
+  final fchmodResults = <int>[];
   int fsyncFileResult = 0;
   int fsyncDirectoryResult = 0;
   int closeFileResult = 0;
@@ -44,8 +45,11 @@ class _FakeFileSystem implements PosixFileSystem {
   @override
   int fchmod(int fd, int mode) {
     calls.add('fchmod:$mode');
-    if (fchmodResult != 0) errno = nextErrno ?? 13;
-    return fchmodResult;
+    final result = fchmodResults.isNotEmpty
+        ? fchmodResults.removeAt(0)
+        : fchmodResult;
+    if (result != 0) errno = nextErrno ?? 13;
+    return result;
   }
 
   @override
@@ -167,6 +171,31 @@ void main() {
       expect(files.renamed, isEmpty);
       expect(files.unlinked, [tempPath]);
       expect(files.calls, contains('close:10'));
+    });
+
+    test('aborts when the temporary file cannot be opened', () async {
+      files
+        ..openTemporaryResult = -1
+        ..nextErrno = 13;
+
+      await expectLater(write(), throwsA(isA<FileSystemException>()));
+
+      expect(files.calls, ['openTemporary']);
+      expect(files.unlinked, isEmpty);
+    });
+
+    test('retries fchmod after EINTR', () async {
+      files
+        ..fchmodResults.addAll([-1, 0])
+        ..nextErrno = 4;
+
+      await write();
+
+      expect(
+        files.calls.where((call) => call.startsWith('fchmod:')),
+        hasLength(2),
+      );
+      expect(files.renamed, hasLength(1));
     });
 
     test('aborts when fchmod fails', () async {
