@@ -235,6 +235,9 @@ jobs:
 
       - run: flutter pub get
 
+      - if: matrix.os == 'windows-latest'
+        run: flutter test test/services/file_operations_atomic_windows_test.dart
+
       - if: matrix.os == 'macos-latest'
         run: flutter build macos --release
 

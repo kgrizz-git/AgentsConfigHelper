@@ -153,6 +153,45 @@ void main() {
       },
     );
 
+    test(
+      'does not delete a foreign file at a collided temporary path',
+      () async {
+        final target = path('config.json');
+        await File(target).writeAsString('old');
+        final temporary = path('fixed.tmp');
+        await File(temporary).writeAsString('foreign');
+        final operations = LocalFileOperations(
+          temporaryFile: (_) => temporary,
+        );
+
+        await expectLater(
+          operations.writeTextAtomically(target, 'new'),
+          throwsA(isA<FileSystemException>()),
+        );
+
+        expect(await File(temporary).readAsString(), 'foreign');
+        expect(await File(target).readAsString(), 'old');
+      },
+    );
+
+    test('a non-FileSystemException close failure still cleans up', () async {
+      final target = path('close.json');
+      await File(target).writeAsString('old');
+      final temporary = path('close.tmp');
+      final operations = LocalFileOperations(
+        temporaryFile: (_) => temporary,
+        openFile: (_) => _CloseThrowingFile(),
+      );
+
+      await expectLater(
+        operations.writeTextAtomically(target, 'new'),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(await File(target).readAsString(), 'old');
+      expect(File(temporary).existsSync(), isFalse);
+    });
+
     test('uses a short temporary basename for a long destination', () async {
       if (Platform.isWindows) return;
       final longName = '${'a' * 240}.json';
@@ -181,6 +220,20 @@ void main() {
       expect(await target.readAsString(), 'original');
     });
   });
+}
+
+class _CloseThrowingFile implements RandomAccessFile {
+  @override
+  void closeSync() => throw StateError('close failed');
+
+  @override
+  void flushSync() {}
+
+  @override
+  void writeFromSync(List<int> buffer, [int start = 0, int? end]) {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 bool _isRoot() {
