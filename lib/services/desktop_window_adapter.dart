@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -235,7 +237,13 @@ class NativeDesktopWindowSource implements DesktopWindowSource {
       if (afterRegistration != null && !completer.isCompleted) {
         completer.complete(NativeDesktopWindow(afterRegistration));
       }
-      return await completer.future.timeout(timeout, onTimeout: () => null);
+      return await completer.future.timeout(
+        timeout,
+        onTimeout: () {
+          debugPrint('Desktop window did not appear within $timeout.');
+          return null;
+        },
+      );
     } finally {
       WindowManager.instance.removeListener(listener);
     }

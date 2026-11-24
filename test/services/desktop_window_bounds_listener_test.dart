@@ -39,6 +39,27 @@ void main() {
       });
     });
 
+    test('re-arms the debounce on rapid moves', () {
+      fakeAsync((async) {
+        final window = FakeDesktopWindow();
+        final saves = <Rect>[];
+        final boundsListener = listener(window, saves)..endStartup();
+
+        window.rect = const Rect.fromLTWH(1, 1, 100, 100);
+        unawaited(boundsListener.onEvent(const DesktopWindowMoved()));
+        async.elapse(const Duration(milliseconds: 200));
+        window.rect = const Rect.fromLTWH(2, 2, 200, 200);
+        unawaited(boundsListener.onEvent(const DesktopWindowMoved()));
+        async.elapse(const Duration(milliseconds: 399));
+        expect(saves, isEmpty);
+        async
+          ..elapse(const Duration(milliseconds: 1))
+          ..flushMicrotasks();
+        expect(saves, [window.rect]);
+        boundsListener.dispose();
+      });
+    });
+
     test('suppresses geometry until startup completes', () {
       fakeAsync((async) {
         final window = FakeDesktopWindow();
@@ -159,6 +180,7 @@ void main() {
 
         pending[0].complete();
         async.flushMicrotasks();
+        expect(closed, isFalse);
         expect(pending, hasLength(2));
         expect(saves, [
           const Rect.fromLTWH(1, 1, 100, 100),
