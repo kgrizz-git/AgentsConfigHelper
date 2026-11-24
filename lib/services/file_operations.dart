@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:path/path.dart' as p;
 
@@ -58,6 +59,8 @@ abstract interface class FileOperations {
 /// The ordinary production filesystem implementation.
 class LocalFileOperations implements FileOperations {
   const new();
+
+  static final _random = Random();
 
   @override
   Future<void> validatePath(String absolutePath) async {
@@ -188,17 +191,20 @@ class LocalFileOperations implements FileOperations {
     List<int> bytes,
     int? mode,
   ) async {
+    final unique = _random.nextInt(1 << 31).toRadixString(16);
     final temporary = File(
       p.join(
         destination.parent.path,
         '.agents-config-helper-'
-        '${pid}_${DateTime.now().microsecondsSinceEpoch}.tmp',
+        '${pid}_${DateTime.now().microsecondsSinceEpoch}_$unique.tmp',
       ),
     );
+    var created = false;
     var published = false;
     RandomAccessFile? handle;
     try {
       temporary.createSync(exclusive: true);
+      created = true;
       if (FileSystemEntity.isLinkSync(temporary.path)) {
         throw FileSystemException(
           'Refusing to write through a symlink',
@@ -212,9 +218,9 @@ class LocalFileOperations implements FileOperations {
       handle = temporary.openSync(mode: FileMode.writeOnly);
       try {
         // Dart has no public fchmod. The mode is therefore applied by path
-        // while the exclusive, PID-and-timestamp-named temporary descriptor is
-        // open. New files default to owner-only so a first save never widens
-        // access.
+        // while the exclusive, PID/timestamp/random-named temporary descriptor
+        // is open. New files default to owner-only so a first save never
+        // widens access.
         final effectiveMode = mode ?? (Platform.isWindows ? null : 0x180);
         if (effectiveMode != null && !Platform.isWindows) {
           final ProcessResult result;
@@ -251,7 +257,7 @@ class LocalFileOperations implements FileOperations {
       } on FileSystemException {
         // The handle is already closed.
       }
-      if (!published && temporary.existsSync()) {
+      if (created && !published && temporary.existsSync()) {
         try {
           temporary.deleteSync();
         } on FileSystemException {

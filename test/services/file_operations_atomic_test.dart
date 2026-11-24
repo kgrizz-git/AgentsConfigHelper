@@ -138,6 +138,21 @@ void main() {
       expect((await FileStat.stat(target)).mode & 0x1FF, 0x180);
     });
 
+    test(
+      'concurrent writes to one destination leave no temporary files',
+      () async {
+        final target = path('concurrent.json');
+
+        await Future.wait([
+          operations.writeTextAtomically(target, 'one'),
+          operations.writeTextAtomically(target, 'two'),
+        ]);
+
+        expect(await File(target).readAsString(), anyOf('one', 'two'));
+        expect(await entries(), ['concurrent.json']);
+      },
+    );
+
     test('uses a short temporary basename for a long destination', () async {
       if (Platform.isWindows) return;
       final longName = '${'a' * 240}.json';
