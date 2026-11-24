@@ -9,17 +9,19 @@ Tracking: `TO_DO.md` → Config write-safety hardening
 ## Goal
 
 Close the residual write-safety deviations recorded by the archived
-[config write-safety plan](../archive/config-write-safety.md) and its review follow-ups:
+[config write-safety plan](../archive/config-write-safety.md) and its review
+follow-ups:
 
 - apply POSIX modes with `fchmod` on the descriptor instead of path-based `chmod`;
 - fsync the parent directory after publishing a replacement;
-- replace the Windows build-only assumption with runtime coverage of the atomic
-  replacement primitive;
+- replace the Windows build-only assumption with runtime evidence that Dart's
+  replace primitive is atomic for regular files;
 - make temporary-file ownership and cleanup deterministic to test.
 
-The user-visible guarantee stays the same: a failed save leaves the original
-untouched, and a successful save publishes the exact reviewed bytes with the
-destination's mode.
+**Save guarantee.** A failure before publication leaves the original untouched.
+Once the temporary file has been renamed onto the destination, the save is
+published: remaining directory maintenance is best-effort and logged, never
+reported as a failed save and never rolled back.
 
 ## Current state
 
@@ -39,117 +41,155 @@ The archived plan's deviations are the source of this work:
 - review nits around deterministic temp naming and a non-`FileSystemException`
   close path that can skip cleanup.
 
+Dart SDK 3.14.0's `runtime/bin/file_win.cc` implements regular-file rename with
+`MoveFileExW(..., MOVEFILE_WRITE_THROUGH | MOVEFILE_REPLACE_EXISTING)`. Because
+the temp and destination are in the same directory, no cross-volume copy
+fallback is involved. H1 therefore needs runtime proof, not a native Windows
+replacement.
+
 ## Scope
 
-### H1 — Windows atomic-replace runtime proof
+### H3 — Deterministic temp ownership and cleanup (first)
 
-- Establish whether Dart's `File.rename` on Windows already uses a
-  replace-existing OS primitive. If it does, document that and test it; if it
-  does not, add a native `MoveFileExW`/`ReplaceFileW` path behind the same
-  `FileOperations` boundary. Never delete the live file to make replacement
-  easier.
-- Add Windows test execution (the Windows build job may run the focused atomic
-  test, or a dedicated `tests-windows` job will). Cover:
-  - replacing an existing destination;
-  - a destination that cannot be replaced while open/locked: abort, keep the
-    original bytes, remove only this call's temp;
-  - no temporary leftovers after success or failure.
-- Keep Windows out of POSIX mode/fsync claims.
-
-### H2 — POSIX descriptor-relative mode and directory fsync
-
-- Add a small FFI-backed POSIX atomic writer behind the existing
-  `FileOperations` boundary; Windows keeps the Dart path.
-- Open the exclusive temp with the platform's `O_EXCL | O_NOFOLLOW | O_CLOEXEC`
-  flags, apply the destination mode with `fchmod` on the descriptor before
-  writing, write all bytes (EINTR/partial-write safe), `fsync` the descriptor,
-  close, rename onto the resolved target, then open/`fsync`/close the parent
-  directory.
-- New files still default to `0600`. Existing destination modes are read before
-  the write and applied verbatim. Symlink-target resolution stays in Dart; the
-  temp lives in the resolved target's directory.
-- Use libc's `__error` (macOS) / `__errno_location` (Linux) for error codes and
-  map failures to `FileSystemException`. A failure before publication removes
-  only the temp this call created. A directory-fsync failure after publication
-  is logged rather than reported as a failed save, because the bytes are
-  already in place and cannot be rolled back; state that policy.
-- Keep an injectable native seam so unit tests can assert call order, partial
-  writes, EINTR retry, mode application, close-on-error, and fsync failures.
-  Exercise the real path in integration tests on macOS and Linux, including
-  mode `0400`/`0664`, symlink targets, and failed replacements.
-- Add macOS test execution for the FFI path (the current Tests job is Ubuntu
-  only); Linux continues to run the same tests in CI.
-- Add `ffi` as a direct dependency if it is not already declared.
-
-### H3 — Cleanup and deterministic test seams
+Land this before the FFI writer so the native path starts from the finished
+ownership seam.
 
 - Inject the temporary-name factory into `LocalFileOperations` for tests; keep
   the production PID/timestamp/random default.
-- Add the deterministic foreign-file test: a pre-existing file at the would-be
-  temp path that this call did not create must not be deleted on cleanup.
-- Widen the fallback close handler to catch all close failures so temp cleanup
-  cannot be skipped by a non-`FileSystemException`.
-- Optionally render the changed path in the conflict dialog; this is clarity,
-  not a data-safety requirement.
+- Track ownership with the existing `created` flag: set it only after the
+  exclusive create succeeds and never delete a file this call did not create.
+- Add a deterministic foreign-file test: pre-create a file at the would-be temp
+  path, force the create to collide, and assert the foreign file is untouched.
+- Widen the fallback close catch to `Object` so an exceptional close cannot
+  skip cleanup. Preserve abort semantics: a close failure before publication
+  still aborts the save after cleanup and rethrows the original error; it must
+  not be converted to success.
+- Add an injected close failure of type `StateError` (not only
+  `FileSystemException`) and assert cleanup runs and the save fails.
+
+### H1 — Windows replace proof (no native code)
+
+- Add a dedicated atomic-write test file for Windows and run it from the
+  existing Windows build job; keep the broader suite and its symlink-privilege
+  variability out of that focused run.
+- Cover:
+  - replacing an existing destination;
+  - no temporary leftovers after success;
+  - a destination held with a sharing mode that omits `FILE_SHARE_DELETE`
+    (a PowerShell/.NET `FileShare.None` holder is the intended mechanism; a
+    byte-range `File.lockSync` is not sufficient): the save aborts, the
+    original bytes remain, and only this call's temp is removed.
+- Do not add a native Windows replacement path. If the pinned Dart SDK changes
+  the implementation, revisit; an FFI `MoveFileExW` contingency would stay
+  in-Dart, not become a plugin.
+- If the deny-share holder cannot be made reliable on the hosted runner, record
+  the locked-file gap explicitly rather than weakening the test.
+
+### H2 — POSIX native writer with descriptor mode and directory fsync
+
+- Add a small libc-FFI writer behind `FileOperations`; Windows keeps the Dart
+  path. Use plain `open`, not `openat`: the production path resolves symlinks
+  in Dart and creates a fresh random temp in the target's directory, so there
+  is no pinned parent descriptor to be relative to. Only the post-rename parent
+  `fsync` needs a directory open.
+- FFI contract:
+  - `open` is variadic; bind the mode argument with `VarArgs<(Int,)>`.
+  - Use the platform-correct `mode_t` for `fchmod`; return types for `write`
+    use the platform `ssize_t` width.
+  - Read errno immediately after a failure via `__error` (macOS) or
+    `__errno_location` (Linux). If the errno symbol cannot be resolved, fail
+    closed: abort, clean this call's temp, and do not write.
+- Open the exclusive temp with `O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW |
+  O_CLOEXEC`, initial mode `0600`.
+- Apply the destination mode with `fchmod` **before** writing. Preserve
+  `st_mode & 0777` only; do not pass file-type bits or newly preserve
+  setuid/setgid/sticky bits.
+- Write all bytes with a loop: a zero-byte write before completion is an error;
+  retry `write`/`fsync` on `EINTR` as appropriate; do not blindly retry
+  `close` on an unknown descriptor state.
+- `fsync` the temp descriptor, close it, then open the parent directory
+  **before** publication. A parent-open failure occurs pre-publication and
+  aborts with the original untouched and the temp removed.
+- Rename onto the resolved target, then `fsync` and close the parent directory.
+  Every operation after the successful rename is best-effort and logged,
+  including parent `fsync` and `close` failures; the save reports success, the
+  destination keeps the new bytes, and no rollback or destination unlink is
+  attempted.
+- Keep symlink resolution in Dart. This closes the temp-path `chmod` race, not
+  hostile parent/path replacement races; those remain explicitly outside the
+  durability claim.
+- Tests:
+  - injectable native seam: call order, partial writes, `EINTR`, zero-byte
+    write, `fchmod`, file `fsync`, parent-open failure pre-publication, and
+    parent `fsync`/`close` failure post-publication;
+  - real macOS/Linux integration: mode `0400`/`0664`, new-file `0600`, symlink
+    targets, failed replacement leaves the original and removes the temp;
+  - post-publication failures: new bytes remain, no failed-save result, no
+    temp, no rollback;
+  - path-resolution TOCTOU is documented as out of scope.
 
 ### H4 — Documentation and completion
 
-- Update `CHANGELOG.dev.md` with the native/CI details; update `CHANGELOG.md`
-  only for behavior users can observe (mode/directory durability semantics).
-- Update the archived plan's deviations or add a short follow-up note so the
-  record matches the shipped hardening.
+- `CHANGELOG.dev.md` always records the native/CI details. `CHANGELOG.md` gets
+  an entry only for observable behavior changes.
+- Do not rewrite the archived plan; it is read-only history. Record that this
+  work resolves its `fchmod`/directory-`fsync`/Windows-verification deviations
+  in this plan and in `CHANGELOG.dev.md`.
 - Archive this plan on the final hardening branch and remove its `TO_DO.md`
-  entry when implementation, review, CI, and the recorded follow-through are
-  complete.
+  entry when implementation, review, CI, and follow-through are complete.
 
 ## Non-goals
 
 - Cross-instance locking; concurrent instances remain last-writer-wins.
-- Windows ACL/owner preservation; Windows has no POSIX mode equivalent in this
-  app, and the plan only claims replace-abort semantics there.
+- Windows ACL/owner preservation; H1 claims replace-abort semantics only.
 - Changing backup naming, pruning, or the backup directory layout.
 - Replacing the macOS test-root bridge.
+- `F_FULLFSYNC`/hardware-cache flushing claims beyond POSIX `fsync`.
+- Defending against hostile parent-directory/path replacement races.
 
-## Risks and decisions to confirm
+## Risks and decisions
 
-1. **FFI portability.** POSIX flag values and errno access differ between macOS
-   and Linux. Keep constants and the errno lookup platform-scoped and test both
-   platforms in CI.
-2. **Directory-fsync failure policy.** Logging after publication avoids
-   reporting a failed save for bytes already written; the plan does not claim a
-   rollback that POSIX cannot provide.
-3. **Windows primitive.** If Dart's rename is not the replace-existing OS
-   primitive, the native replacement is a larger change; do not ship H1 by
-   weakening the no-delete rule.
-4. **Tests on Windows.** The current suite runs on Ubuntu only; the targeted
-   Windows run must not be flaky on locked-file tests. If a reliable lock test
-   is not possible, record that gap rather than asserting a behavior the test
-   does not prove.
-5. **CI cost.** A macOS test job/step and a Windows test run add CI minutes;
-   keep both focused on the atomic-write tests rather than the full suite on
-   every platform.
+1. **FFI portability.** Flags, `mode_t`, `ssize_t`, and errno access differ
+   between macOS and Linux. Keep them platform-scoped and test both platforms.
+2. **Post-publication policy.** Parent open happens before publication; after
+   rename, `fsync`/`close` are logged and the save succeeds. This is the only
+   policy consistent with "published bytes are not rolled back".
+3. **Windows holder.** The deny-share holder must omit `FILE_SHARE_DELETE`;
+   byte-range locks do not model rename sharing. Hosted-runner reliability is a
+   test-infrastructure risk; record the gap if it cannot be made reliable.
+4. **CI cost.** Use focused test steps in the existing macOS and Windows build
+   jobs, not new jobs. Linux keeps the full suite and coverage gate.
+5. **Close semantics.** A pre-publication close failure aborts; a
+   post-publication parent close failure is logged. Do not retry a descriptor
+   whose close state is unknown.
 
 ## Checks
 
 - `dart format --output=none --set-exit-if-changed .`
 - `flutter analyze --fatal-infos`
-- `flutter test --coverage` + 80% gate
+- `flutter test --coverage` + 80% gate on Linux
+- Focused atomic-write tests on macOS and Windows in their existing build jobs
 - macOS release build
-- Linux and Windows builds
-- New Windows atomic tests and macOS POSIX integration tests
 - `dart_code_linter` metrics
 - Docs link check
 
 ## Acceptance
 
-- [ ] POSIX saves apply the destination mode with `fchmod` on the descriptor
-      and fsync the parent directory after replace.
-- [ ] New files remain owner-only; existing modes are preserved.
+- [ ] POSIX saves apply `st_mode & 0777` with `fchmod` on the descriptor before
+      writing content.
+- [ ] New files are owner-only; existing modes, including `0400` and `0664`,
+      are preserved without file-type or special bits.
+- [ ] The parent directory is opened before publication; its open failure
+      leaves the original untouched and removes this call's temp.
+- [ ] Post-publication parent `fsync`/`close` failures are logged, the save
+      succeeds, the new bytes remain, and no rollback/cleanup of the
+      destination is attempted.
 - [ ] A pre-publication failure leaves the original untouched and removes only
-      this call's temp.
-- [ ] Windows replacement has runtime coverage or a clearly recorded,
-      approved gap; no delete-then-rename fallback exists.
-- [ ] A pre-existing foreign temp file is never deleted by cleanup.
-- [ ] macOS and Linux exercise the native path in CI.
-- [ ] Both changelogs and the archived plan's deviation record match the
-      shipped behavior.
+      this call's temp; a foreign temp at a deterministic collided path is
+      never deleted.
+- [ ] Windows runtime tests prove replace-existing and deny-share abort
+      behavior, or the locked-file gap is explicitly recorded rather than
+      claimed.
+- [ ] macOS and Linux exercise the FFI path in CI.
+- [ ] `CHANGELOG.dev.md` and the new plan record the resolved deviations;
+      `CHANGELOG.md` is updated only for observable behavior.
