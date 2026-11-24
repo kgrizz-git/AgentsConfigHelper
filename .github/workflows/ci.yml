@@ -239,6 +239,10 @@ jobs:
         run: flutter test test/services/file_operations_atomic_windows_test.dart
 
       - if: matrix.os == 'macos-latest'
+        run: |
+          flutter test             test/services/file_operations_atomic_test.dart             test/services/posix_atomic_writer_test.dart
+
+      - if: matrix.os == 'macos-latest'
         run: flutter build macos --release
 
       - if: matrix.os == 'ubuntu-latest'

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:agents_config_helper/services/posix_atomic_writer.dart';
 import 'package:path/path.dart' as p;
 
 /// Filesystem operations used by configuration, backup, and preference
@@ -201,6 +202,12 @@ class LocalFileOperations implements FileOperations {
     List<int> bytes,
     int? mode,
   ) async {
+    if (!Platform.isWindows && temporaryFile == null && openFile == null) {
+      await PosixAtomicWriter(
+        fileSystem: LibcPosixFileSystem(),
+      ).write(destination, bytes, mode);
+      return;
+    }
     final temporary = File(
       temporaryFile?.call(destination) ?? _defaultTemporaryPath(destination),
     );
