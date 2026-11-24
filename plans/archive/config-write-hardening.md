@@ -3,13 +3,13 @@
 Last reviewed: 2026-11-24
 Date: 2026-11-24
 Author: maintainers
-Status: active
-Tracking: `TO_DO.md` → Config write-safety hardening
+Status: archived
+Tracking: completed
 
 ## Goal
 
 Close the residual write-safety deviations recorded by the archived
-[config write-safety plan](../archive/config-write-safety.md) and its review
+[config write-safety plan](config-write-safety.md) and its review
 follow-ups:
 
 - apply POSIX modes with `fchmod` on the descriptor instead of path-based `chmod`;
@@ -181,22 +181,22 @@ ownership seam.
 
 ## Acceptance
 
-- [ ] POSIX saves apply `st_mode & 0777` with `fchmod` on the descriptor before
+- [x] POSIX saves apply `st_mode & 0777` with `fchmod` on the descriptor before
       writing content.
-- [ ] New files are owner-only; existing modes, including `0400` and `0664`,
+- [x] New files are owner-only; existing modes, including `0400` and `0664`,
       are preserved without file-type or special bits.
-- [ ] The parent directory is opened before publication; a non-permission
+- [x] The parent directory is opened before publication; a non-permission
       open failure leaves the original untouched and removes this call's temp.
       Permission denial skips directory fsync, logs, and still publishes.
-- [ ] Post-publication parent `fsync`/`close` failures are logged, the save
+- [x] Post-publication parent `fsync`/`close` failures are logged, the save
       succeeds, the new bytes remain, and no rollback/cleanup of the
       destination is attempted.
-- [ ] A pre-publication failure leaves the original untouched and removes only
+- [x] A pre-publication failure leaves the original untouched and removes only
       this call's temp; a foreign temp at a deterministic collided path is
       never deleted.
-- [ ] Windows runtime tests prove replace-existing and deny-share abort
+- [x] Windows runtime tests prove replace-existing and deny-share abort
       behavior, or the locked-file gap is explicitly recorded rather than
       claimed.
-- [ ] macOS and Linux exercise the FFI path in CI.
-- [ ] `CHANGELOG.dev.md` and the new plan record the resolved deviations;
+- [x] macOS and Linux exercise the FFI path in CI.
+- [x] `CHANGELOG.dev.md` and the new plan record the resolved deviations;
       `CHANGELOG.md` is updated only for observable behavior.

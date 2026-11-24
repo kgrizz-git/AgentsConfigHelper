@@ -50,13 +50,6 @@ its full entry, which remains the source of scope and completion detail.
       Adopt the upstream `automate` default only as a deliberate, formatting-only change;
       see the archived [migration plan](plans/archive/very-good-analysis-11-migration.md).
 
-### Write-safety hardening
-
-- [ ] **Config write-safety hardening (active):** close the archived write-safety
-      plan's residual deviations: POSIX `fchmod` and parent-directory `fsync`, Windows
-      runtime proof for atomic replacement, and deterministic temp-ownership cleanup.
-      See [plans/active/config-write-hardening.md](plans/active/config-write-hardening.md).
-
 ### Windowing and toolchain upgrade
 
 - [ ] **Native windowing migration + Flutter 3.50 (active):** move `window_manager` /
