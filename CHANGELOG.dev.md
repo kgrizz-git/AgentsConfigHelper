@@ -79,7 +79,8 @@ Internal / developer-facing changes that do not belong in the public
 - **Config write-safety hardening:** POSIX atomic saves now use a libc-FFI descriptor
   writer: the destination mode is applied with `fchmod` before content, the file is
   fsynced, the parent directory is opened before the rename, and parent fsync/close are
-  logged best-effort after publication. The Dart path remains for Windows and the
+  logged best-effort after publication; an unreadable parent skips only that
+  optional fsync and still saves. The Dart path remains for Windows and the
   deterministic ownership/close seams. H3 adds foreign-temp and non-`FileSystemException`
   close tests; H1 adds focused Windows replace/deny-share tests.
 - **Native windowing (windowing plan Phase 2/3):** `window_manager` 0.7.1 and

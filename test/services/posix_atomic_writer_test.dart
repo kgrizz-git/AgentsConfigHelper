@@ -230,13 +230,41 @@ void main() {
     });
 
     test('aborts when the parent directory cannot be opened', () async {
-      files.openDirectoryResult = -1;
+      files
+        ..openDirectoryResult = -1
+        ..nextErrno = 5;
 
       await expectLater(write(), throwsA(isA<FileSystemException>()));
 
       expect(files.renamed, isEmpty);
       expect(files.unlinked, [tempPath]);
       expect(files.calls, isNot(contains('fsync:11')));
+    });
+
+    test('skips directory fsync when the parent is not readable', () async {
+      files
+        ..openDirectoryResult = -1
+        ..nextErrno = 13;
+
+      await write();
+
+      expect(files.renamed, hasLength(1));
+      expect(files.calls, isNot(contains('fsync:11')));
+      expect(files.unlinked, isEmpty);
+    });
+
+    test('bounds repeated EINTR retries', () async {
+      files
+        ..nextErrno = 4
+        ..writeResults.addAll(List<int>.filled(9, -1));
+
+      await expectLater(write(), throwsA(isA<FileSystemException>()));
+
+      expect(
+        files.calls.where((call) => call == 'write'),
+        hasLength(9),
+      );
+      expect(files.unlinked, [tempPath]);
     });
 
     test('aborts and cleans up when rename fails', () async {

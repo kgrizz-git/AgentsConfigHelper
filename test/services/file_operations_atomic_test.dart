@@ -174,6 +174,28 @@ void main() {
       },
     );
 
+    test('a write failure is not masked by a close failure', () async {
+      final target = path('write-close.json');
+      await File(target).writeAsString('old');
+      final temporary = path('write-close.tmp');
+      final operations = LocalFileOperations(
+        temporaryFile: (_) => temporary,
+        openFile: (_) => _WriteAndCloseThrowingFile(),
+      );
+
+      await expectLater(
+        operations.writeTextAtomically(target, 'new'),
+        throwsA(
+          predicate<Object>(
+            (error) => '$error'.contains('write failed'),
+          ),
+        ),
+      );
+
+      expect(await File(target).readAsString(), 'old');
+      expect(File(temporary).existsSync(), isFalse);
+    });
+
     test('a non-FileSystemException close failure still cleans up', () async {
       final target = path('close.json');
       await File(target).writeAsString('old');
@@ -220,6 +242,22 @@ void main() {
       expect(await target.readAsString(), 'original');
     });
   });
+}
+
+class _WriteAndCloseThrowingFile implements RandomAccessFile {
+  @override
+  void writeFromSync(List<int> buffer, [int start = 0, int? end]) {
+    throw StateError('write failed');
+  }
+
+  @override
+  void flushSync() {}
+
+  @override
+  void closeSync() => throw StateError('close failed');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _CloseThrowingFile implements RandomAccessFile {

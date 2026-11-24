@@ -112,8 +112,10 @@ ownership seam.
   `O_DIRECTORY` where the platform defines it; verify the descriptor is a
   directory if not). Hold that descriptor across the rename for the
   post-rename `fsync`; the rename itself remains path-based and no second
-  parent open happens after publication. A parent-open failure occurs
-  pre-publication and aborts with the original untouched and the temp removed.
+  parent open happens after publication. A parent-open failure other than
+  permission denial aborts pre-publication with the original untouched and the
+  temp removed; `EACCES`/`EPERM` skips the optional directory fsync, logs it,
+  and still publishes the save.
 - Rename onto the resolved target, then `fsync` and close the parent directory.
   Every operation after the successful rename is best-effort and logged,
   including parent `fsync` and `close` failures; the save reports success, the
@@ -183,8 +185,9 @@ ownership seam.
       writing content.
 - [ ] New files are owner-only; existing modes, including `0400` and `0664`,
       are preserved without file-type or special bits.
-- [ ] The parent directory is opened before publication; its open failure
-      leaves the original untouched and removes this call's temp.
+- [ ] The parent directory is opened before publication; a non-permission
+      open failure leaves the original untouched and removes this call's temp.
+      Permission denial skips directory fsync, logs, and still publishes.
 - [ ] Post-publication parent `fsync`/`close` failures are logged, the save
       succeeds, the new bytes remain, and no rollback/cleanup of the
       destination is attempted.

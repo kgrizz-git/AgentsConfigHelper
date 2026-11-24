@@ -48,7 +48,10 @@ class PosixAtomicWriter {
   final String Function(File destination)? temporaryFile;
 
   static const _eintr = 4;
+  static const _eacces = 13;
+  static const _eperm = 1;
   static const _defaultMode = 0x180;
+  static const int _maxWriteChunk = 64 * 1024;
 
   /// Writes [bytes] to [destination] and publishes them atomically.
   ///
@@ -60,7 +63,7 @@ class PosixAtomicWriter {
     final tempPath =
         temporaryFile?.call(destination) ??
         defaultAtomicTemporaryPath(destination);
-    final data = Uint8List.fromList(bytes);
+    final data = bytes is Uint8List ? bytes : Uint8List.fromList(bytes);
     final effectiveMode = (mode ?? _defaultMode) & 0x1FF;
     var fd = -1;
     var dirFd = -1;
@@ -101,14 +104,27 @@ class PosixAtomicWriter {
       }
 
       final parent = destination.parent.path;
-      dirFd = _retry(() => fileSystem.openDirectory(parent));
-      if (dirFd < 0) throw _error('open parent directory', parent);
+      final parentFd = _retry(() => fileSystem.openDirectory(parent));
+      if (parentFd < 0) {
+        final code = fileSystem.errnoCode;
+        if (code != _eacces && code != _eperm) {
+          throw _error('open parent directory', parent);
+        }
+        debugPrint(
+          'Parent directory is not readable (errno $code); '
+          'skipping directory fsync.',
+        );
+      } else {
+        dirFd = parentFd;
+      }
 
       fileSystem.rename(tempPath, destination.path);
       published = true;
 
-      _finishPublishedParent(dirFd);
-      dirFd = -1;
+      if (dirFd >= 0) {
+        _finishPublishedParent(dirFd);
+        dirFd = -1;
+      }
     } on Object {
       if (fd >= 0) {
         try {
@@ -163,10 +179,13 @@ class PosixAtomicWriter {
   }
 
   int _retry(int Function() operation) {
+    var attempts = 0;
     while (true) {
       final result = operation();
-      if (result < 0 && fileSystem.errnoCode == _eintr) continue;
-      return result;
+      if (result >= 0 || fileSystem.errnoCode != _eintr || attempts == 8) {
+        return result;
+      }
+      attempts++;
     }
   }
 
@@ -258,12 +277,16 @@ class LibcPosixFileSystem implements PosixFileSystem {
 
   @override
   int write(int fd, Uint8List bytes, int offset, int length) {
-    final buffer = calloc<Uint8>(length);
+    final chunk = length > PosixAtomicWriter._maxWriteChunk
+        ? PosixAtomicWriter._maxWriteChunk
+        : length;
+    final buffer = calloc<Uint8>(chunk);
     try {
-      buffer
-          .asTypedList(length)
-          .setAll(0, bytes.sublist(offset, offset + length));
-      return _record(_write(fd, buffer, length));
+      final target = buffer.asTypedList(chunk);
+      for (var index = 0; index < chunk; index++) {
+        target[index] = bytes[offset + index];
+      }
+      return _record(_write(fd, buffer, chunk));
     } finally {
       calloc.free(buffer);
     }

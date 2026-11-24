@@ -229,37 +229,45 @@ class LocalFileOperations implements FileOperations {
       handle = opener != null
           ? opener(temporary)
           : temporary.openSync(mode: FileMode.writeOnly);
-      try {
-        // Dart has no public fchmod. The mode is therefore applied by path
-        // while the exclusive, PID/timestamp/random-named temporary descriptor
-        // is open. New files default to owner-only so a first save never
-        // widens access.
-        final effectiveMode = mode ?? (Platform.isWindows ? null : 0x180);
-        if (effectiveMode != null && !Platform.isWindows) {
-          final ProcessResult result;
-          try {
-            result = await Process.run('chmod', [
-              effectiveMode.toRadixString(8),
-              temporary.path,
-            ]);
-          } on ProcessException catch (error) {
-            throw FileSystemException(
-              'Could not apply the destination file mode: ${error.message}',
-              destination.path,
-            );
-          }
-          if (result.exitCode != 0) {
-            throw FileSystemException(
-              'Could not preserve the destination file mode',
-              destination.path,
-            );
-          }
+      // Dart has no public fchmod. The mode is therefore applied by path
+      // while the exclusive, PID/timestamp/random-named temporary descriptor
+      // is open. New files default to owner-only so a first save never
+      // widens access.
+      final effectiveMode = mode ?? (Platform.isWindows ? null : 0x180);
+      if (effectiveMode != null && !Platform.isWindows) {
+        final ProcessResult result;
+        try {
+          result = await Process.run('chmod', [
+            effectiveMode.toRadixString(8),
+            temporary.path,
+          ]);
+        } on ProcessException catch (error) {
+          throw FileSystemException(
+            'Could not apply the destination file mode: ${error.message}',
+            destination.path,
+          );
         }
+        if (result.exitCode != 0) {
+          throw FileSystemException(
+            'Could not preserve the destination file mode',
+            destination.path,
+          );
+        }
+      }
+      var writeFailed = false;
+      try {
         handle
           ..writeFromSync(bytes)
           ..flushSync();
+      } on Object {
+        writeFailed = true;
+        rethrow;
       } finally {
-        handle.closeSync();
+        try {
+          handle.closeSync();
+        } on Object {
+          if (!writeFailed) rethrow;
+        }
         handle = null;
       }
       temporary.renameSync(destination.path);
