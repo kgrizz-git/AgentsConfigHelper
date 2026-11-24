@@ -17,6 +17,7 @@ void main() {
       return DesktopWindowBoundsListener(
         window: window,
         saveBounds: (bounds) async => saves.add(bounds),
+        settleDelay: Duration.zero,
       );
     }
 
@@ -56,6 +57,117 @@ void main() {
           ..elapse(const Duration(milliseconds: 1))
           ..flushMicrotasks();
         expect(saves, [window.rect]);
+        boundsListener.dispose();
+      });
+    });
+
+    test('suppresses geometry during the post-show settle', () {
+      fakeAsync((async) {
+        final window = FakeDesktopWindow();
+        final saves = <Rect>[];
+        final boundsListener = DesktopWindowBoundsListener(
+          window: window,
+          saveBounds: (bounds) async => saves.add(bounds),
+          settleDelay: const Duration(milliseconds: 50),
+        )..endStartup();
+
+        window.rect = const Rect.fromLTWH(1, 1, 100, 100);
+        unawaited(boundsListener.onEvent(const DesktopWindowMoved()));
+        async
+          ..elapse(const Duration(milliseconds: 400))
+          ..flushMicrotasks();
+        expect(saves, isEmpty);
+
+        window.rect = const Rect.fromLTWH(2, 2, 200, 200);
+        unawaited(boundsListener.onEvent(const DesktopWindowMoved()));
+        async
+          ..elapse(const Duration(milliseconds: 400))
+          ..flushMicrotasks();
+        expect(saves, [window.rect]);
+        boundsListener.dispose();
+      });
+    });
+
+    test('repeated closes await the same drain', () {
+      fakeAsync((async) {
+        final window = FakeDesktopWindow();
+        final pending = <Completer<void>>[];
+        final boundsListener = DesktopWindowBoundsListener(
+          window: window,
+          saveBounds: (_) {
+            final completer = Completer<void>();
+            pending.add(completer);
+            return completer.future;
+          },
+          settleDelay: Duration.zero,
+        )..endStartup();
+
+        window.rect = const Rect.fromLTWH(1, 1, 100, 100);
+        unawaited(boundsListener.onEvent(const DesktopWindowMoved()));
+        async
+          ..elapse(const Duration(milliseconds: 400))
+          ..flushMicrotasks();
+        expect(pending, hasLength(1));
+
+        var firstClosed = false;
+        var secondClosed = false;
+        final first = boundsListener.onEvent(
+          const DesktopWindowCloseRequested(),
+        );
+        final second = boundsListener.onEvent(
+          const DesktopWindowCloseRequested(),
+        );
+        unawaited(first.then((_) => firstClosed = true));
+        unawaited(second.then((_) => secondClosed = true));
+        async.flushMicrotasks();
+        expect(firstClosed, isFalse);
+        expect(secondClosed, isFalse);
+
+        pending[0].complete();
+        async.flushMicrotasks();
+        expect(firstClosed, isFalse);
+        expect(secondClosed, isFalse);
+        expect(pending, hasLength(2));
+
+        pending[1].complete();
+        async.flushMicrotasks();
+        expect(firstClosed, isTrue);
+        expect(secondClosed, isTrue);
+        boundsListener.dispose();
+      });
+    });
+
+    test('a stalled save does not block close forever', () {
+      fakeAsync((async) {
+        final window = FakeDesktopWindow();
+        final stalled = Completer<void>();
+        final boundsListener = DesktopWindowBoundsListener(
+          window: window,
+          saveBounds: (_) => stalled.future,
+          settleDelay: Duration.zero,
+          closeTimeout: const Duration(milliseconds: 10),
+        )..endStartup();
+
+        window.rect = const Rect.fromLTWH(1, 1, 100, 100);
+        unawaited(boundsListener.onEvent(const DesktopWindowMoved()));
+        async
+          ..elapse(const Duration(milliseconds: 400))
+          ..flushMicrotasks();
+
+        var closed = false;
+        final close = boundsListener.onEvent(
+          const DesktopWindowCloseRequested(),
+        );
+        unawaited(close.then((_) => closed = true));
+        async.elapse(const Duration(milliseconds: 9));
+        expect(closed, isFalse);
+        async
+          ..elapse(const Duration(milliseconds: 1))
+          ..flushMicrotasks();
+        expect(closed, isTrue);
+
+        stalled.complete();
+        async.flushMicrotasks();
         boundsListener.dispose();
       });
     });
@@ -152,6 +264,7 @@ void main() {
             pending.add(completer);
             return completer.future;
           },
+          settleDelay: Duration.zero,
         )..endStartup();
 
         window.rect = const Rect.fromLTWH(1, 1, 100, 100);

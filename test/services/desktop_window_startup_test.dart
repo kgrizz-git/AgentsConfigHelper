@@ -116,6 +116,36 @@ void main() {
       expect(window.calls, contains('show'));
     });
 
+    test('fits the minimum size to a smaller restored display', () async {
+      final window = FakeDesktopWindow();
+      const primary = Rect.fromLTWH(0, 0, 1000, 800);
+      const secondary = Rect.fromLTWH(1000, 0, 640, 480);
+      await startup(
+        window: window,
+        areas: const DesktopDisplayWorkAreas(
+          primary: primary,
+          all: [primary, secondary],
+        ),
+        savedBounds: const Rect.fromLTWH(1100, 100, 500, 400),
+      ).configure();
+
+      expect(window.rect, const Rect.fromLTWH(1100, 80, 500, 400));
+      expect(window.minimum, const Size(500, 400));
+    });
+
+    test('still shows the window when geometry setup fails', () async {
+      final window = FakeDesktopWindow()
+        ..setSizeError = StateError('geometry failed');
+
+      await startup(
+        window: window,
+        areas: const DesktopDisplayWorkAreas(primary: null, all: []),
+      ).configure();
+
+      expect(window.calls, contains('listener'));
+      expect(window.calls, containsAllInOrder(['show', 'focus']));
+    });
+
     test('does nothing when the window cannot be resolved', () async {
       final window = FakeDesktopWindow();
       final coordinator = DesktopWindowStartup(

@@ -12,6 +12,7 @@ class FakeDesktopWindow implements DesktopWindow {
   Rect rect;
   Size minimum = Size.zero;
   Size? lastSize;
+  Error? setSizeError;
   bool maximized = false;
   bool minimized = false;
   bool fullScreen = false;
@@ -60,6 +61,8 @@ class FakeDesktopWindow implements DesktopWindow {
 
   @override
   void setSize(Size size) {
+    final error = setSizeError;
+    if (error != null) throw error;
     lastSize = size;
     calls.add('size');
   }

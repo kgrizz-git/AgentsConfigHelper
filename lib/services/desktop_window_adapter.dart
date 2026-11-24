@@ -205,6 +205,39 @@ class NativeDesktopWindow implements DesktopWindow {
   }
 }
 
+/// Native window-manager operations used by the resolver.
+abstract interface class NativeWindowManager {
+  /// Returns the current window, or null while it is hidden/uncreated.
+  Window? getCurrent();
+
+  /// Returns the window with [id], or null when it no longer exists.
+  Window? get(WindowId id);
+
+  /// Registers [callback] for window-creation events.
+  ListenerId addListener(FutureOr<void> Function(WindowEvent) callback);
+
+  /// Unregisters a creation listener.
+  bool removeListener(ListenerId listenerId);
+}
+
+class _SystemNativeWindowManager implements NativeWindowManager {
+  const new();
+
+  @override
+  Window? getCurrent() => WindowManager.instance.getCurrent();
+
+  @override
+  Window? get(WindowId id) => WindowManager.instance.get(id);
+
+  @override
+  ListenerId addListener(FutureOr<void> Function(WindowEvent) callback) =>
+      WindowManager.instance.addListener(callback);
+
+  @override
+  bool removeListener(ListenerId listenerId) =>
+      WindowManager.instance.removeListener(listenerId);
+}
+
 /// Resolves the app's main window, including a hidden startup window.
 abstract interface class DesktopWindowSource {
   /// Resolves the current window, or null when it cannot be found in time.
@@ -214,26 +247,33 @@ abstract interface class DesktopWindowSource {
 /// Resolves nativeapi's current window and waits briefly for creation.
 class NativeDesktopWindowSource implements DesktopWindowSource {
   /// Creates a source backed by nativeapi's window manager.
-  const new();
+  const new({
+    NativeWindowManager? manager,
+    this.timeout = defaultTimeout,
+  }) : _manager = manager ?? const _SystemNativeWindowManager();
 
   /// The default bounded wait for a hidden startup window.
   static const defaultTimeout = Duration(seconds: 5);
 
+  /// The bounded wait for a hidden startup window.
+  final Duration timeout;
+
+  final NativeWindowManager _manager;
+
   @override
   Future<DesktopWindow?> resolve() async {
-    const timeout = defaultTimeout;
-    final current = WindowManager.instance.getCurrent();
+    final current = _manager.getCurrent();
     if (current != null) return NativeDesktopWindow(current);
 
     final completer = Completer<DesktopWindow?>();
-    final listener = WindowManager.instance.addListener((event) {
+    final listener = _manager.addListener((event) {
       if (event is WindowCreatedEvent && !completer.isCompleted) {
-        final window = WindowManager.instance.get(event.windowId);
+        final window = _manager.get(event.windowId);
         if (window != null) completer.complete(NativeDesktopWindow(window));
       }
     });
     try {
-      final afterRegistration = WindowManager.instance.getCurrent();
+      final afterRegistration = _manager.getCurrent();
       if (afterRegistration != null && !completer.isCompleted) {
         completer.complete(NativeDesktopWindow(afterRegistration));
       }
@@ -245,7 +285,7 @@ class NativeDesktopWindowSource implements DesktopWindowSource {
         },
       );
     } finally {
-      WindowManager.instance.removeListener(listener);
+      _manager.removeListener(listener);
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:agents_config_helper/services/desktop_window_adapter.dart';
@@ -66,20 +67,38 @@ class DesktopWindowStartup {
       startupGrace: startupGrace,
     );
 
-    if (window.isFullScreen) window.isFullScreen = false;
-    if (window.isMaximized) window.unmaximize();
-    if (window.isMinimized) window.restore();
-    window
-      ..setSize(configuration.size)
-      ..minimumSize = configuration.minimumSize;
-    if (restored != null) {
-      window.bounds = restored;
-    } else {
-      window.center();
+    final minimum = restored == null
+        ? configuration.minimumSize
+        : Size(
+            math.min(configuration.minimumSize.width, restored.width),
+            math.min(configuration.minimumSize.height, restored.height),
+          );
+    try {
+      if (window.isFullScreen) window.isFullScreen = false;
+      if (window.isMaximized) window.unmaximize();
+      if (window.isMinimized) window.restore();
+      window
+        ..setSize(configuration.size)
+        ..minimumSize = minimum;
+      if (restored != null) {
+        window.bounds = restored;
+      } else {
+        window.center();
+      }
+      window.setTitle('Agents Config Helper');
+    } on Object catch (error, stackTrace) {
+      debugPrint(
+        'Desktop window geometry setup failed; showing default geometry: '
+        '$error\n$stackTrace',
+      );
     }
-    window
-      ..setTitle('Agents Config Helper')
-      ..addListener(listener.onEvent);
+    try {
+      window.addListener(listener.onEvent);
+    } on Object catch (error, stackTrace) {
+      debugPrint(
+        'Desktop window listener registration failed: $error\n$stackTrace',
+      );
+    }
     listener.beginStartup();
     try {
       window
@@ -101,6 +120,8 @@ class DesktopWindowBoundsListener {
     required this.saveBounds,
     this.saveDelay = const Duration(milliseconds: 400),
     this.startupGrace = const Duration(seconds: 3),
+    this.settleDelay = const Duration(milliseconds: 250),
+    this.closeTimeout = const Duration(seconds: 5),
   });
 
   /// The window whose move, resize, and close events are observed.
@@ -115,26 +136,46 @@ class DesktopWindowBoundsListener {
   /// How long a hidden startup may suppress geometry persistence.
   final Duration startupGrace;
 
+  /// How long geometry stays suppressed after `show()` so late startup events
+  /// cannot overwrite restored placement.
+  final Duration settleDelay;
+
+  /// The maximum time a close waits for the bounds chain before proceeding.
+  final Duration closeTimeout;
+
   Timer? _saveTimer;
   Timer? _startupTimer;
+  Timer? _settleTimer;
   Future<void> _chain = Future<void>.value();
+  Future<void>? _closeDrain;
   bool _startupComplete = false;
   bool _closing = false;
   bool _disposed = false;
 
   /// Starts the bounded grace period for geometry events during startup.
   void beginStartup() {
+    _startupComplete = false;
     _startupTimer?.cancel();
     _startupTimer = Timer(startupGrace, () {
+      _startupTimer = null;
       _startupComplete = true;
     });
   }
 
-  /// Marks startup complete and cancels the grace timer.
+  /// Starts the post-show settle period or enables geometry immediately.
   void endStartup() {
-    _startupComplete = true;
     _startupTimer?.cancel();
     _startupTimer = null;
+    _settleTimer?.cancel();
+    _settleTimer = null;
+    if (settleDelay <= Duration.zero) {
+      _startupComplete = true;
+      return;
+    }
+    _settleTimer = Timer(settleDelay, () {
+      _settleTimer = null;
+      _startupComplete = true;
+    });
   }
 
   /// Handles a window event. Close requests wait for the write chain to drain.
@@ -157,6 +198,8 @@ class DesktopWindowBoundsListener {
     _saveTimer = null;
     _startupTimer?.cancel();
     _startupTimer = null;
+    _settleTimer?.cancel();
+    _settleTimer = null;
   }
 
   void _scheduleSave() {
@@ -194,17 +237,34 @@ class DesktopWindowBoundsListener {
     });
   }
 
-  Future<void> _handleClose() async {
-    if (_closing) return;
+  Future<void> _handleClose() {
+    final pending = _closeDrain;
+    if (pending != null) return pending;
+    final drain = _beginClose();
+    _closeDrain = drain;
+    return drain;
+  }
+
+  Future<void> _beginClose() async {
     _closing = true;
     _saveTimer?.cancel();
     _saveTimer = null;
     _startupTimer?.cancel();
     _startupTimer = null;
+    _settleTimer?.cancel();
+    _settleTimer = null;
     final bounds = _snapshot();
     if (bounds != null) _enqueue(bounds);
     try {
-      await _chain;
+      await _chain.timeout(
+        closeTimeout,
+        onTimeout: () {
+          debugPrint(
+            'Desktop window close save exceeded $closeTimeout; '
+            'continuing close.',
+          );
+        },
+      );
     } on Object catch (error, stackTrace) {
       debugPrint('Desktop window close save failed: $error\n$stackTrace');
     }
