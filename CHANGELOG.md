@@ -70,6 +70,10 @@ uses [Semantic Versioning](https://semver.org/).
 - UI typeface is now Manrope (code and paths stay JetBrains Mono).
 
 ### Fixed
+- **Descriptor-based POSIX saves.** On macOS and Linux, config saves apply the
+  destination mode directly on the open temporary file and fsync the parent
+  directory after the atomic replace, closing the path-based mode window and
+  improving crash durability.
 - **Atomic, mode-preserving writes.** Config saves and backup restores replace
   files atomically and keep their permission bits, including read-only files.
 - **Raw saves no longer discard external edits.** Raw edits are checked against
