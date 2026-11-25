@@ -309,6 +309,15 @@ migration.
   toolchain/CI side. Do not claim broader platform corrections than were verified — display
   identifiers are not consumed by this app, and Wayland remains unverified.
 
+### Implementation status (2026-11-24)
+
+Phase 2 and Phase 3 are implemented on `fix/native-windowing`: the dependencies resolve
+nativeapi 0.6.2, `lib/main.dart` delegates to the adapter/startup/bounds coordinator, the
+platform registrants are regenerated, and the Phase 3 unit tests cover the adapter seam.
+macOS smoke verified the centered 75% first-launch geometry, exact restored bounds, and
+close-time bounds persistence. Windows and Linux X11/Wayland smoke, multi-monitor mixing,
+and the full matrix remain before Phase 2 acceptance and plan archival.
+
 ### Phase 2 checks
 
 - Static gates: `dart format --output=none --set-exit-if-changed .`,

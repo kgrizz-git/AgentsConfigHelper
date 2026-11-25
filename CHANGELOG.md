@@ -49,6 +49,13 @@ uses [Semantic Versioning](https://semver.org/).
   file is also a conflict.
 
 ### Changed
+- **Native window geometry.** The window now uses the native windowing API for startup
+  size, restored bounds, and close-time persistence. First launch uses 75% of the usable
+  display, restored bounds are clamped to a connected display, and close normally waits
+  for pending bounds writes to drain before returning, up to five seconds. If that
+  bounded wait expires, close logs and proceeds without guaranteeing that the
+  timed-out save persisted. macOS smoke passed; Windows/Linux smoke remains tracked in
+  the windowing plan.
 - **Lossless structured saves.** Saving rules or permissions preserves
   untouched setting values for JSON, JSONC, YAML, and TOML, and refuses
   shapes it cannot represent instead of dropping them. Formatting, comments,

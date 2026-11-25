@@ -76,6 +76,18 @@ Internal / developer-facing changes that do not belong in the public
   shell's post-save active-config, recovery-mode, and backup-list bookkeeping.
 
 ### Changed
+- **Native windowing (windowing plan Phase 2/3):** `window_manager` 0.7.1 and
+  `screen_retriever` 0.4.1 now resolve nativeapi 0.6.2. `main.dart` delegates to
+  `DesktopWindowStartup` and `DesktopWindowBoundsListener` adapters: startup resolves
+  the current/deferred window, resets full-screen/maximized/minimized state, applies
+  size/minimum/bounds-or-center and title before showing, and registers the listener
+  before `show()`. Bounds writes are debounced, serialized through a FIFO chain, and
+  latched on close. Close normally waits for the chain to drain before returning, but
+  the wait is bounded to five seconds; if it expires, close logs and proceeds, so a
+  timed-out save is not guaranteed to persist. New tests cover null-primary fallback,
+  deferred window resolution, clamping, startup suppression, debounce, state
+  suppression, close-before-startup, and in-flight/queued close ordering. The Linux
+  Tests and Build jobs install nativeapi's GTK/X11/Xi prerequisites.
 - **Config editor save orchestration:** the save/preview callback signatures
   live as typedefs in `structured_save_flow.dart`, the save orchestration is a
   `config_editor_save_flow.dart` part extension, and the save-point diff
