@@ -81,8 +81,10 @@ Internal / developer-facing changes that do not belong in the public
   `DesktopWindowStartup` and `DesktopWindowBoundsListener` adapters: startup resolves
   the current/deferred window, resets full-screen/maximized/minimized state, applies
   size/minimum/bounds-or-center and title before showing, and registers the listener
-  before `show()`. Bounds writes are debounced, serialized through a FIFO chain, latched
-  on close, and drained before the close returns. New tests cover null-primary fallback,
+  before `show()`. Bounds writes are debounced, serialized through a FIFO chain, and
+  latched on close. Close normally waits for the chain to drain before returning, but
+  the wait is bounded to five seconds; if it expires, close logs and proceeds, so a
+  timed-out save is not guaranteed to persist. New tests cover null-primary fallback,
   deferred window resolution, clamping, startup suppression, debounce, state
   suppression, close-before-startup, and in-flight/queued close ordering. The Linux
   Tests and Build jobs install nativeapi's GTK/X11/Xi prerequisites.
