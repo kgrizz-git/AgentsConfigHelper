@@ -39,6 +39,7 @@ void main() {
       final script = File(p.join(tempDir.path, 'hold.ps1'));
       await script.writeAsString(r'''
 param([string]$Target, [string]$Ready)
+$ErrorActionPreference = 'Stop'
 $stream = [System.IO.File]::Open(
   $Target,
   [System.IO.FileMode]::Open,
@@ -46,7 +47,7 @@ $stream = [System.IO.File]::Open(
   [System.IO.FileShare]::None
 )
 try {
-  Set-Content -Path $Ready -Value 'ready'
+  Set-Content -LiteralPath $Ready -Value 'ready' -ErrorAction Stop
   Start-Sleep -Seconds 60
 } finally {
   $stream.Close()

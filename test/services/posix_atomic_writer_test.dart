@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -286,6 +287,42 @@ void main() {
 
       expect(files.renamed, hasLength(1));
       expect(files.unlinked, isEmpty);
+    });
+  });
+
+  group('LibcPosixFileSystem open flags', () {
+    test('uses arm64 Linux directory and no-follow flags', () {
+      expect(
+        LibcPosixFileSystem.temporaryFlagsFor(
+          macOS: false,
+          abi: Abi.linuxArm64,
+        ),
+        0x880C1,
+      );
+      expect(
+        LibcPosixFileSystem.directoryFlagsFor(
+          macOS: false,
+          abi: Abi.linuxArm64,
+        ),
+        0x84000,
+      );
+    });
+
+    test('keeps the existing x64 Linux flag values', () {
+      expect(
+        LibcPosixFileSystem.temporaryFlagsFor(
+          macOS: false,
+          abi: Abi.linuxX64,
+        ),
+        0xA00C1,
+      );
+      expect(
+        LibcPosixFileSystem.directoryFlagsFor(
+          macOS: false,
+          abi: Abi.linuxX64,
+        ),
+        0x90000,
+      );
     });
   });
 }

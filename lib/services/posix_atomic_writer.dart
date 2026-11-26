@@ -214,13 +214,33 @@ class LibcPosixFileSystem implements PosixFileSystem {
 
   static final DynamicLibrary _lib = DynamicLibrary.process();
 
-  static final int _tempFlags = Platform.isMacOS
-      ? 0x1 | 0x200 | 0x800 | 0x100 | 0x1000000
-      : 0x1 | 0x40 | 0x80 | 0x20000 | 0x80000;
+  /// Returns the `open(2)` flags for an exclusive temporary file.
+  @visibleForTesting
+  static int temporaryFlagsFor({required bool macOS, required Abi abi}) {
+    if (macOS) return 0x1 | 0x200 | 0x800 | 0x100 | 0x1000000;
+    return 0x1 |
+        0x40 |
+        0x80 |
+        (abi == Abi.linuxArm64 ? 0x8000 : 0x20000) |
+        0x80000;
+  }
 
-  static final int _directoryFlags = Platform.isMacOS
-      ? 0x100000 | 0x1000000
-      : 0x10000 | 0x80000;
+  /// Returns the `open(2)` flags for a directory.
+  @visibleForTesting
+  static int directoryFlagsFor({required bool macOS, required Abi abi}) {
+    if (macOS) return 0x100000 | 0x1000000;
+    return (abi == Abi.linuxArm64 ? 0x4000 : 0x10000) | 0x80000;
+  }
+
+  static final int _tempFlags = temporaryFlagsFor(
+    macOS: Platform.isMacOS,
+    abi: Abi.current(),
+  );
+
+  static final int _directoryFlags = directoryFlagsFor(
+    macOS: Platform.isMacOS,
+    abi: Abi.current(),
+  );
 
   static final int Function(Pointer<Utf8>, int, int) _open = _lib
       .lookupFunction<
