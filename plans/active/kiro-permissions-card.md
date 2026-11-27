@@ -3,7 +3,7 @@
 Last reviewed: 2026-11-26
 Date: 2026-11-26
 Author: maintainers
-Status: active — revised for Sourcery data-loss mitigation; re-review pending
+Status: active — cleared by independent review; implementation pending
 Tracking: `TO_DO.md` → Structured configuration presentation → Kiro read-only permissions card
 Linked issue/PR: n/a (planning branch `plan/kiro-permissions-card`)
 Parent roadmap: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
@@ -423,12 +423,13 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
 
 ## Review record
 
-- 2026-11-26 — prior clearance at revision `2f40f50`; superseded by the Sourcery
-  data-loss mitigation.
-- 2026-11-26 — pending re-review: `opencode` / `nvidia/moonshotai/kimi-k3.1-pro`.
-- 2026-11-26 — pending re-review: `kilo` / `baidu/ernie-5.5-flash-preview:free`.
-
-Do not mark this plan cleared again until both reviewers approve the revised plan.
+- 2026-11-26 — CLEARED: `opencode` / `nvidia/moonshotai/kimi-k3.1-pro`, including the
+  Sourcery generic Rules-editor mitigation.
+- 2026-11-26 — CLEARED: `kilo` / `baidu/ernie-5.5-flash-preview:free`, including the
+  Sourcery generic Rules-editor mitigation.
+- Prior clearance at revision `2f40f50` was superseded by the mitigation; both reviewers
+  re-cleared revision `144ff62`. This status/review update is the only change after that
+  review.
 
 ## Completion
 
