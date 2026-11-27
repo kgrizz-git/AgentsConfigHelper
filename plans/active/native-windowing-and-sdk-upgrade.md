@@ -1,6 +1,6 @@
 # Plan: Native Windowing Migration and Flutter 3.50 Upgrade
 
-Last reviewed: 2026-11-22
+Last reviewed: 2026-11-26
 Date: 2026-11-22
 Author: maintainers
 Status: active

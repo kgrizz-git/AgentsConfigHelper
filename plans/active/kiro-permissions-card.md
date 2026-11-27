@@ -16,7 +16,8 @@ Add one read-only Kiro permissions card for the catalog-discovered user file
 focused, understandable view while the raw editor remains the source of truth. This slice
 does not add editing, does not calculate Kiro's effective policy, and does not change any
 bytes in the file. It also suppresses the legacy generic YAML Rules editor for this target
-so the map-shaped capability list cannot be rewritten through the string-list path.
+so the map-shaped capability list cannot be represented or edited through the string-list
+path.
 
 ## Why this slice
 
@@ -129,8 +130,10 @@ The existing catalog evidence row predates several of these documented details, 
   `permissions` map). It must become a valid, token-free Kiro example.
 - Kiro's top-level `rules` is a YAML list, so the pre-existing generic `Rules`
   `StringListEditor` currently renders for a Kiro file. `extractStringList` drops the
-  map-shaped entries, and a generic save can replace the stored capability policies with
-  a string list. This slice must suppress that editor for the Kiro target.
+  map-shaped entries, so the editor cannot represent them. A dirty generic rules save is
+  refused by `_assertYamlFieldSafe` with `StructuredEditRefusedException`; this is not a
+  silent overwrite, but the editor is misleading and unusable. This slice suppresses it
+  for the Kiro target so `rules` stays raw-editor-only.
 - `test/services/config_service_test.dart` uses `rules:\n  - r1` only to verify YAML
   loading by known target; it is not a schema fixture and does not need to become valid
   Kiro policy.
@@ -159,6 +162,8 @@ Implement `KiroPermissionsAdapter` with:
 - `rawSettings['rules']` interpretation:
   - absent or an empty list: available empty state;
   - a present `null` value: unsupported (raw-editor-first), per resolved question 4;
+    detect it with `rawSettings.containsKey('rules') && rawSettings['rules'] == null`,
+    not from `ToolConfig.rules`, which the parser normalizes to an empty list;
   - a non-list value: unsupported;
   - every list entry must be a map with only the known keys;
   - `capability` and `effect` must be strings in the documented sets;
@@ -383,15 +388,18 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
   duplicated in the UI.
 - **Unknown rule keys are fail-closed.** A rule with an undocumented key can change
   semantics, so the whole card falls back to raw content rather than displaying a
-  partial rule. Unknown top-level keys are non-semantic siblings and only trigger the
-  unclassified-content notice.
+  partial rule. Top-level keys outside this card's presentation scope, including
+  `policies`, do not invalidate a valid `rules` subtree; they trigger the
+  unclassified-content notice. `policies` is semantic to Kiro, but preset expansion is
+  out of scope.
 - **Fixture change.** The existing staging Kiro fixture is not a valid example; replacing
   it must keep discovery tests and the recreated test-root workflow green.
 - **Legacy generic Rules editor.** The pre-existing YAML `StringListEditor` drops
-  map-shaped rule entries and its save path can replace the stored capabilities with a
-  string list. The shared suppression flag removes that editor for the Kiro target; test
-  both available and unsupported selections and a no-edit save. Do not leave this path
-  reachable for Kiro.
+  map-shaped rule entries and cannot represent them. A dirty save is refused by
+  `_assertYamlFieldSafe` with `StructuredEditRefusedException`, so the risk is a
+  misleading, unusable editor rather than a silent overwrite. The shared suppression flag
+  removes that editor for the Kiro target; test both available and unsupported selections
+  and a no-edit save. Do not leave this path reachable for Kiro.
 - **No write path.** The card adds no structured write behavior. The only `ConfigEditor`
   change is suppressing the unsafe legacy Rules editor for this target; the raw editor
   and existing fidelity warnings remain authoritative.
@@ -428,8 +436,10 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
 - 2026-11-26 — CLEARED: `kilo` / `baidu/ernie-5.5-flash-preview:free`, including the
   Sourcery generic Rules-editor mitigation.
 - Prior clearance at revision `2f40f50` was superseded by the mitigation; both reviewers
-  re-cleared revision `144ff62`. This status/review update is the only change after that
-  review.
+  re-cleared revision `144ff62`.
+- 2026-11-27 — post-clearance accuracy clarifications: explicit `rawSettings` detection
+  for `rules: null`, precise fail-closed wording for the legacy generic Rules save path,
+  and precise `policies` semantics. These do not change scope, tests, or acceptance.
 
 ## Completion
 
