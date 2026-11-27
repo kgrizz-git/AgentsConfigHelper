@@ -3,7 +3,7 @@
 Last reviewed: 2026-11-26
 Date: 2026-11-26
 Author: maintainers
-Status: active — cleared by independent review; implementation pending
+Status: active — revised for Sourcery data-loss mitigation; re-review pending
 Tracking: `TO_DO.md` → Structured configuration presentation → Kiro read-only permissions card
 Linked issue/PR: n/a (planning branch `plan/kiro-permissions-card`)
 Parent roadmap: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
@@ -15,7 +15,8 @@ Add one read-only Kiro permissions card for the catalog-discovered user file
 `~/.kiro/settings/permissions.yaml`. The card shows the stored capability rules in a
 focused, understandable view while the raw editor remains the source of truth. This slice
 does not add editing, does not calculate Kiro's effective policy, and does not change any
-bytes in the file.
+bytes in the file. It also suppresses the legacy generic YAML Rules editor for this target
+so the map-shaped capability list cannot be rewritten through the string-list path.
 
 ## Why this slice
 
@@ -94,6 +95,9 @@ The existing catalog evidence row predates several of these documented details, 
   still showing a valid `rules` list.
 - Raw-editor fallback whenever the recognized `rules` subtree is malformed or
   unrepresentable.
+- A shared policy-card ownership flag that suppresses the legacy generic YAML `Rules`
+  `StringListEditor` for the Kiro target, keeping `rules` reachable only through the raw
+  editor.
 - Reviewed plain-language help and a link to the Kiro permissions documentation.
 - Token-free fixtures, adapter tests, widget tests, registry tests, and ConfigEditor
   integration tests.
@@ -109,9 +113,8 @@ The existing catalog evidence row predates several of these documented details, 
 - Kiro MCP, agents, steering, specs, or other undocumented targets.
 - Devin, Antigravity, or any other schema.
 - Automatic schema inference from arbitrary YAML files.
-- Suppressing or redesigning the pre-existing generic YAML `Rules` `StringListEditor`
-  when a schema card is present; this is a separate generic-editor follow-up tracked in
-  `TO_DO.md`.
+- Redesigning or suppressing the generic Rules editor for other schemas; this slice adds
+  a shared ownership flag and uses it for Kiro only.
 
 ## Current-state baseline (as of plan start)
 
@@ -124,6 +127,10 @@ The existing catalog evidence row predates several of these documented details, 
 - `test/fixtures/staging_home/.kiro/settings/permissions.yaml` currently contains a
   non-conforming placeholder (`rules` of strings plus an undocumented top-level
   `permissions` map). It must become a valid, token-free Kiro example.
+- Kiro's top-level `rules` is a YAML list, so the pre-existing generic `Rules`
+  `StringListEditor` currently renders for a Kiro file. `extractStringList` drops the
+  map-shaped entries, and a generic save can replace the stored capability policies with
+  a string list. This slice must suppress that editor for the Kiro target.
 - `test/services/config_service_test.dart` uses `rules:\n  - r1` only to verify YAML
   loading by known target; it is not a schema fixture and does not need to become valid
   Kiro policy.
@@ -145,6 +152,10 @@ Implement `KiroPermissionsAdapter` with:
   - normalized path components ending in `.kiro`, `settings`, `permissions.yaml`.
     Use path-component checks, not a loose suffix or basename alone, so a manual path
     with the same shape does not receive a card.
+- Add `bool suppressGenericRulesSection` (default `false`) to `PolicyCardSelection` and
+  include it in value equality. The Kiro adapter sets it true for every matching Kiro
+  target selection, including `unsupported`; it stays false for `notApplicable` and for
+  all existing adapters.
 - `rawSettings['rules']` interpretation:
   - absent or an empty list: available empty state;
   - a present `null` value: unsupported (raw-editor-first), per resolved question 4;
@@ -205,14 +216,13 @@ stored absence and explains only what the primary source documents.
   `PolicyCardWidgetRegistry.shared`.
 - Do not add Kiro branches to `ConfigEditor`. Unsupported selections continue through the
   existing raw-editor-first path.
-- Keep `ConfigEditor`'s card rendering and raw fallback unchanged except for any shared
-  test seam already used by the existing cards.
-- Kiro's top-level `rules` is a YAML list, so the pre-existing generic `Rules`
-  `StringListEditor` may render alongside the card. That legacy editor predates this
-  slice and is not part of the read-only card; do not add a Kiro branch to suppress it
-  here. The integration test must assert the Kiro card renders, that card interaction
-  leaves bytes unchanged, and must not attribute the generic editor to the card. A
-  separate follow-up is tracked in `TO_DO.md`.
+- `ConfigEditor` must skip `_buildRulesSection` when the selected policy card has
+  `suppressGenericRulesSection == true`. This is a shared ownership seam, not a Kiro
+  branch; the raw editor remains available.
+- The Kiro card remains read-only. The suppression prevents the legacy string-list
+  editor from replacing map-shaped rules; it does not add a write path.
+- Existing adapters default the flag false, so their generic Rules behavior is unchanged.
+  Keep the existing card rendering and raw fallback intact except for this shared flag.
 
 ## Fixtures
 
@@ -250,6 +260,8 @@ Document the fixture contract in the fixture test and keep the safe-testing inta
 - Missing/unknown capability or effect; non-map entry; unknown rule key; invalid
   `match`/`exclude` element types.
 - Unknown top-level keys and `policies`: available card plus unclassified flag.
+- `PolicyCardSelection.suppressGenericRulesSection`: defaults false; true for Kiro
+  available and unsupported selections; false for Kiro notApplicable and other adapters.
 - Help metadata and documentation URI; no mutation of the input map.
 
 ### Fixture tests (`test/fixtures/kiro_permissions_fixtures_test.dart`)
@@ -257,6 +269,8 @@ Document the fixture contract in the fixture test and keep the safe-testing inta
 - Parse the valid staging and edge fixtures through the adapter.
 - Assert malformed fixtures produce `unsupported`, not `available`.
 - Assert the unclassified-top-level fixture remains available with the notice flag.
+- Assert the valid fixture round-trips through a no-edit save with the map-shaped `rules`
+  intact.
 - Assert fixtures contain no secret-like content.
 
 ### Widget tests (`test/widgets/kiro_permissions_card_test.dart`)
@@ -276,7 +290,12 @@ Document the fixture contract in the fixture test and keep the safe-testing inta
 - Extend or add a ConfigEditor integration test proving a valid Kiro fixture renders the
   card while a malformed fixture renders the raw fallback, and opening/interacting with
   the card never changes file bytes.
-- Run the existing full suite; the new card must not change existing selection order.
+- Assert `ConfigEditor` omits the legacy generic Rules `StringListEditor` for valid and
+  unsupported Kiro targets, while the card/unsupported reason and raw editor remain.
+- Add a no-edit save regression proving the map-shaped Kiro `rules` survive byte-for-byte;
+  the card itself never saves.
+- Run the existing full suite; the new card must not change existing selection order or
+  the generic Rules behavior of the Claude/Cursor/Opencode/Codex cards.
 
 ## Docs and metadata
 
@@ -323,6 +342,8 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
       disclosed without hiding a valid rules list.
 - [ ] The card is read-only: no write controls, no save calls, and no file mutation from
       opening or interacting with it.
+- [ ] The legacy generic Rules editor is not rendered for the Kiro target; map-shaped
+      capability rules survive a no-edit save unchanged.
 - [ ] Help and documentation are reviewed, accessible, and scoped to stored rules rather
       than Kiro's effective policy.
 - [ ] Fixtures, adapter/widget/registry/integration tests, docs, changelogs, and the
@@ -366,8 +387,14 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
   unclassified-content notice.
 - **Fixture change.** The existing staging Kiro fixture is not a valid example; replacing
   it must keep discovery tests and the recreated test-root workflow green.
-- **No write path.** This slice cannot regress write safety because it adds no structured
-  write behavior; the raw editor and existing fidelity warnings remain authoritative.
+- **Legacy generic Rules editor.** The pre-existing YAML `StringListEditor` drops
+  map-shaped rule entries and its save path can replace the stored capabilities with a
+  string list. The shared suppression flag removes that editor for the Kiro target; test
+  both available and unsupported selections and a no-edit save. Do not leave this path
+  reachable for Kiro.
+- **No write path.** The card adds no structured write behavior. The only `ConfigEditor`
+  change is suppressing the unsafe legacy Rules editor for this target; the raw editor
+  and existing fidelity warnings remain authoritative.
 
 ## Resolved questions
 
@@ -389,14 +416,19 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
    stored in this file; the help text states that Kiro evaluates the effective policy.
 8. Should the workspace permissions file be discovered? No, not in this slice. Its path
    is outside the repository and it is not a registered target.
+9. Should the generic Rules editor remain for Kiro? No. A shared
+   `PolicyCardSelection.suppressGenericRulesSection` flag lets the Kiro adapter tell
+   `ConfigEditor` to omit only that legacy section; the raw editor remains. A no-edit save
+   must preserve the map-shaped rules.
 
 ## Review record
 
-- 2026-11-26 — CLEARED: `opencode` / `nvidia/moonshotai/kimi-k3.1-pro`.
-- 2026-11-26 — CLEARED: `kilo` / `baidu/ernie-5.5-flash-preview:free`.
+- 2026-11-26 — prior clearance at revision `2f40f50`; superseded by the Sourcery
+  data-loss mitigation.
+- 2026-11-26 — pending re-review: `opencode` / `nvidia/moonshotai/kimi-k3.1-pro`.
+- 2026-11-26 — pending re-review: `kilo` / `baidu/ernie-5.5-flash-preview:free`.
 
-Both reviewers approved the plan content at revision `2f40f50`; this status and review
-record update is the only change after that review.
+Do not mark this plan cleared again until both reviewers approve the revised plan.
 
 ## Completion
 

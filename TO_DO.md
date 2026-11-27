@@ -124,14 +124,10 @@ The durable sequence and architecture decisions are in the
       [Kiro permissions card plan](plans/active/kiro-permissions-card.md) for the
       catalog-discovered user `~/.kiro/settings/permissions.yaml`: display stored
       capability rules, effects, and match/exclude patterns read-only; keep malformed or
-      unknown rule shapes raw-editor-first; add no write path. The parent structured
-      configuration roadmap remains active.
-
-- [ ] **Legacy generic Rules editor vs schema cards:** Kiro's map-shaped top-level
-      `rules` also triggers the pre-existing generic YAML `StringListEditor`. The
-      read-only Kiro card does not depend on it; separately decide whether a schema card
-      should suppress the legacy section for the field it owns, with regression coverage,
-      before relying on the generic editor for any schema-owned field.
+      unknown rule shapes raw-editor-first; suppress the legacy generic Rules editor for
+      this target so its string-list save path cannot overwrite map-shaped capability
+      rules; add no write path. The parent structured configuration roadmap remains
+      active.
 
 - [ ] **Permissions-kind classification for the overview report:** the report
       model has an `OverviewKind.permissions` badge but nothing produces it —
