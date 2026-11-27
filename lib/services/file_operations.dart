@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
+import 'package:agents_config_helper/services/posix_atomic_writer.dart';
 import 'package:path/path.dart' as p;
 
 /// Filesystem operations used by configuration, backup, and preference
@@ -58,9 +58,17 @@ abstract interface class FileOperations {
 
 /// The ordinary production filesystem implementation.
 class LocalFileOperations implements FileOperations {
-  const new();
+  /// Creates the production filesystem implementation.
+  ///
+  /// [temporaryFile] and [openFile] are test seams; production uses the
+  /// short PID/timestamp/random temp name and the platform file handle.
+  const new({this.temporaryFile, this.openFile});
 
-  static final _random = Random();
+  /// Returns the temporary path for the destination, or null for the default.
+  final String Function(File destination)? temporaryFile;
+
+  /// Opens the temporary file for writing, or null for the default handle.
+  final RandomAccessFile Function(File file)? openFile;
 
   @override
   Future<void> validatePath(String absolutePath) async {
@@ -191,13 +199,15 @@ class LocalFileOperations implements FileOperations {
     List<int> bytes,
     int? mode,
   ) async {
-    final unique = _random.nextInt(1 << 31).toRadixString(16);
+    if (!Platform.isWindows && temporaryFile == null && openFile == null) {
+      await PosixAtomicWriter(
+        fileSystem: LibcPosixFileSystem(),
+      ).write(destination, bytes, mode);
+      return;
+    }
     final temporary = File(
-      p.join(
-        destination.parent.path,
-        '.agents-config-helper-'
-        '${pid}_${DateTime.now().microsecondsSinceEpoch}_$unique.tmp',
-      ),
+      temporaryFile?.call(destination) ??
+          defaultAtomicTemporaryPath(destination),
     );
     var created = false;
     var published = false;
@@ -215,38 +225,49 @@ class LocalFileOperations implements FileOperations {
       // file whose preserved mode lacks owner-write (for example 0400) would
       // fail, so the mode is applied while the writable descriptor is already
       // open; writes through that descriptor are not re-checked.
-      handle = temporary.openSync(mode: FileMode.writeOnly);
-      try {
-        // Dart has no public fchmod. The mode is therefore applied by path
-        // while the exclusive, PID/timestamp/random-named temporary descriptor
-        // is open. New files default to owner-only so a first save never
-        // widens access.
-        final effectiveMode = mode ?? (Platform.isWindows ? null : 0x180);
-        if (effectiveMode != null && !Platform.isWindows) {
-          final ProcessResult result;
-          try {
-            result = await Process.run('chmod', [
-              effectiveMode.toRadixString(8),
-              temporary.path,
-            ]);
-          } on ProcessException catch (error) {
-            throw FileSystemException(
-              'Could not apply the destination file mode: ${error.message}',
-              destination.path,
-            );
-          }
-          if (result.exitCode != 0) {
-            throw FileSystemException(
-              'Could not preserve the destination file mode',
-              destination.path,
-            );
-          }
+      final opener = openFile;
+      handle = opener != null
+          ? opener(temporary)
+          : temporary.openSync(mode: FileMode.writeOnly);
+      // Dart has no public fchmod. The mode is therefore applied by path
+      // while the exclusive, PID/timestamp/random-named temporary descriptor
+      // is open. New files default to owner-only so a first save never
+      // widens access.
+      final effectiveMode = mode ?? (Platform.isWindows ? null : 0x180);
+      if (effectiveMode != null && !Platform.isWindows) {
+        final ProcessResult result;
+        try {
+          result = await Process.run('chmod', [
+            effectiveMode.toRadixString(8),
+            temporary.path,
+          ]);
+        } on ProcessException catch (error) {
+          throw FileSystemException(
+            'Could not apply the destination file mode: ${error.message}',
+            destination.path,
+          );
         }
+        if (result.exitCode != 0) {
+          throw FileSystemException(
+            'Could not preserve the destination file mode',
+            destination.path,
+          );
+        }
+      }
+      var writeFailed = false;
+      try {
         handle
           ..writeFromSync(bytes)
           ..flushSync();
+      } on Object {
+        writeFailed = true;
+        rethrow;
       } finally {
-        handle.closeSync();
+        try {
+          handle.closeSync();
+        } on Object {
+          if (!writeFailed) rethrow;
+        }
         handle = null;
       }
       temporary.renameSync(destination.path);
@@ -254,8 +275,10 @@ class LocalFileOperations implements FileOperations {
     } finally {
       try {
         handle?.closeSync();
-      } on FileSystemException {
-        // The handle is already closed.
+      } on Object {
+        // The handle may already be closed, including a post-publication close
+        // failure; cleanup must still run and the original failure must
+        // rethrow.
       }
       if (created && !published && temporary.existsSync()) {
         try {
