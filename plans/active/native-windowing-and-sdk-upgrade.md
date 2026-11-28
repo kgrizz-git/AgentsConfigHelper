@@ -1,6 +1,6 @@
 # Plan: Native Windowing Migration and Flutter 3.50 Upgrade
 
-Last reviewed: 2026-11-22
+Last reviewed: 2026-11-26
 Date: 2026-11-22
 Author: maintainers
 Status: active
@@ -309,14 +309,17 @@ migration.
   toolchain/CI side. Do not claim broader platform corrections than were verified — display
   identifiers are not consumed by this app, and Wayland remains unverified.
 
-### Implementation status (2026-11-24)
+### Implementation status (2026-11-26)
 
-Phase 2 and Phase 3 are implemented on `fix/native-windowing`: the dependencies resolve
+Phase 2 and Phase 3 are implemented and merged via PR #91: the dependencies resolve
 nativeapi 0.6.2, `lib/main.dart` delegates to the adapter/startup/bounds coordinator, the
 platform registrants are regenerated, and the Phase 3 unit tests cover the adapter seam.
 macOS smoke verified the centered 75% first-launch geometry, exact restored bounds, and
 close-time bounds persistence. Windows and Linux X11/Wayland smoke, multi-monitor mixing,
-and the full matrix remain before Phase 2 acceptance and plan archival.
+and the full matrix remain before Phase 2 acceptance and plan archival. The remaining
+matrix is logged as a deferred `TO_DO.md` item because the current environment is
+macOS-only; do not mark Phase 2 accepted or archive this plan until it is signed off or
+the acceptance criteria are formally amended.
 
 ### Phase 2 checks
 

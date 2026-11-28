@@ -52,14 +52,21 @@ its full entry, which remains the source of scope and completion detail.
 
 ### Windowing and toolchain upgrade
 
-- [ ] **Native windowing migration + Flutter 3.50 (active):** move `window_manager` /
-      `screen_retriever` off the deprecated federated plugins onto the nativeapi releases
-      (`0.7.1` / `0.4.1`), which requires raising the pinned toolchain to Flutter 3.50 /
-      Dart 3.14. Delivered as separate PRs for the Dependabot carve-out, the toolchain
-      bump, the windowing rewrite, and window-layer test coverage. The `0.6.0`/`0.3.1`
-      interim is rejected because its Windows startup window cannot be resolved while
-      hidden, silently discarding restored bounds. See
+- [ ] **Native windowing migration + Flutter 3.50 (active; implementation merged in
+      #91):** move `window_manager` / `screen_retriever` off the deprecated federated
+      plugins onto the nativeapi releases (`0.7.1` / `0.4.1`), which requires raising the
+      pinned toolchain to Flutter 3.50 / Dart 3.14. Delivered as separate PRs for the
+      Dependabot carve-out, the toolchain bump, the windowing rewrite, and window-layer
+      test coverage. The `0.6.0`/`0.3.1` interim is rejected because its Windows startup
+      window cannot be resolved while hidden, silently discarding restored bounds. See
       [plans/active/native-windowing-and-sdk-upgrade.md](plans/active/native-windowing-and-sdk-upgrade.md).
+- [ ] **Manual windowing smoke matrix (deferred; Windows/Linux X11/Wayland and
+      multi-monitor):** #91 merged, but the plan's 16-case matrix remains unrun beyond
+      the macOS basic cases (verified 2026-11-24). Run the matrix on real or
+      CI-provisioned Windows, Linux X11, Linux Wayland, and multi-monitor mixed-DPI
+      setups, including the close-before/during-debounce cases, before marking Phase 2
+      acceptance or archiving the windowing plan. See the
+      [manual smoke matrix](plans/active/native-windowing-and-sdk-upgrade.md#manual-smoke-matrix).
 
 ## Product follow-ups (prioritized)
 
@@ -112,6 +119,15 @@ The durable sequence and architecture decisions are in the
       fixture coverage, then add parser/UI tests per schema. (See gap analysis in
       [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md)
       and [implementation roadmap](plans/active/structured-configuration-roadmap.md).)
+
+- [ ] **First bounded slice — Kiro read-only permissions card:** implement the focused
+      [Kiro permissions card plan](plans/active/kiro-permissions-card.md) for the
+      catalog-discovered user `~/.kiro/settings/permissions.yaml`: display stored
+      capability rules, effects, and match/exclude patterns read-only; keep malformed or
+      unknown rule shapes raw-editor-first; suppress the legacy generic Rules editor for
+      this target so its string-list save path cannot overwrite map-shaped capability
+      rules; add no write path. The parent structured configuration roadmap remains
+      active.
 
 - [ ] **Permissions-kind classification for the overview report:** the report
       model has an `OverviewKind.permissions` badge but nothing produces it —
