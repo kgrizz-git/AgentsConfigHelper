@@ -1,9 +1,9 @@
 # Plan: Structured Configuration Roadmap
 
-Last reviewed: 2026-08-24
+Last reviewed: 2026-11-28
 Date: 2026-08-23
 Author: maintainers
-Status: active — Claude Code read-only presentation and reviewed help shipped; structured editing and further schemas remain planned
+Status: active — Claude Code and Kiro read-only presentation shipped; structured editing and further schemas remain planned
 Linked issue/PR: n/a
 Research: [configuration structured-editing gap](../../docs/research/config-structured-editing-gap.md)
 
@@ -197,7 +197,10 @@ A likely later progression is:
 
 1. [x] Opencode's per-tool allow/ask/deny maps, as a distinct nested-map adapter (implemented 2026-09-08; shared-interface box stays done).
 2. [x] Codex TOML permission profiles as a read-only card (implemented 2026-09-10; shared-interface box stays done). No TOML write path; Codex editing stays gated on the AST-preserving TOML strategy (item 4).
-3. Kiro's YAML capability model and Devin's scope-based model.
+3. [ ] Kiro's YAML capability model and Devin's scope-based model.
+   - [x] Kiro's YAML capability model as a read-only card (implemented 2026-11-28;
+         [archived plan](../archive/kiro-permissions-card.md)).
+   - [ ] Devin's scope-based model.
 4. Codex structured editing, only after an AST-preserving TOML edit strategy exists.
 
 Each schema gets its own acceptance contract, fixtures, raw fallback, and focused plan or
