@@ -1,12 +1,12 @@
 # Plan: Kiro Permissions Card (roadmap Phase 4, read-only)
 
-Last reviewed: 2026-11-26
+Last reviewed: 2026-11-28
 Date: 2026-11-26
 Author: maintainers
-Status: active — cleared by independent review; implementation pending
-Tracking: `TO_DO.md` → Structured configuration presentation → Kiro read-only permissions card
-Linked issue/PR: n/a (planning branch `plan/kiro-permissions-card`)
-Parent roadmap: [Structured Configuration Roadmap](structured-configuration-roadmap.md)
+Status: implemented and archived 2026-11-28 — read-only Kiro permissions card shipped; no write path
+Tracking: completed; focused `TO_DO.md` entry removed; parent roadmap remains active
+Linked issue/PR: #93 (plan), #94 (implementation)
+Parent roadmap: [Structured Configuration Roadmap](../active/structured-configuration-roadmap.md)
 Research: [configuration structured-editing gap](../../docs/research/config-structured-editing-gap.md)
 
 ## Outcome
@@ -338,22 +338,22 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
 
 ## Acceptance criteria
 
-- [ ] The card appears only for the catalog-discovered Kiro user
+- [x] The card appears only for the catalog-discovered Kiro user
       `.kiro/settings/permissions.yaml`; manual paths and near-misses do not match.
-- [ ] A valid `rules` list renders every recognized rule in file order, including all
+- [x] A valid `rules` list renders every recognized rule in file order, including all
       documented effects, capabilities, and optional `match`/`exclude` lists.
-- [ ] Absent/empty rules show a clear empty state; malformed recognized content is
+- [x] Absent/empty rules show a clear empty state; malformed recognized content is
       unsupported and raw-editor-first; unknown top-level content is preserved and
       disclosed without hiding a valid rules list.
-- [ ] The card is read-only: no write controls, no save calls, and no file mutation from
+- [x] The card is read-only: no write controls, no save calls, and no file mutation from
       opening or interacting with it.
-- [ ] The legacy generic Rules editor is not rendered for the Kiro target; map-shaped
+- [x] The legacy generic Rules editor is not rendered for the Kiro target; map-shaped
       capability rules survive a no-edit save unchanged.
-- [ ] Help and documentation are reviewed, accessible, and scoped to stored rules rather
+- [x] Help and documentation are reviewed, accessible, and scoped to stored rules rather
       than Kiro's effective policy.
-- [ ] Fixtures, adapter/widget/registry/integration tests, docs, changelogs, and the
+- [x] Fixtures, adapter/widget/registry/integration tests, docs, changelogs, and the
       roadmap update are complete.
-- [ ] Format, analyze, tests, docs-link, and full CI are green; the plan has been cleared
+- [x] Format, analyze, tests, docs-link, and full CI are green; the plan has been cleared
       by the two requested reviewers.
 
 ## Implementation steps
@@ -429,8 +429,27 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
    `ConfigEditor` to omit only that legacy section; the raw editor remains. A no-edit save
    must preserve the map-shaped rules.
 
+## Implementation record
+
+- Implemented in PR #94. Re-checked the live Kiro permissions documentation on
+  2026-11-28; the documented capabilities, effects, meta-capabilities, `match`/`exclude`,
+  and `policies` behavior had not drifted from the plan.
+- Shipped `KiroPermissionsAdapter`, `KiroPermissionsPresentation`/`KiroPermissionRule`,
+  `KiroPermissionsCard`, registry wiring, the shared
+  `PolicyCardSelection.suppressGenericRulesSection` seam, valid/malformed fixtures, and
+  adapter/widget/registry/ConfigEditor coverage.
+- Added a file-backed no-edit `ConfigService` save test after review to prove map-shaped
+  rules survive byte-for-byte; parser-level round-trip coverage remains as well.
+- Local format, analyze, full suite, docs-link, pre-commit, and CI gates passed on the
+  implementation head. The final archival commit moved this plan, updated roadmap Phase 4,
+  and removed the focused `TO_DO.md` entry.
+
 ## Review record
 
+- 2026-11-28 — IMPLEMENTATION CLEARED: `opencode` / `nvidia/moonshotai/kimi-k3.1-pro`;
+  optional test-hardening nits only, addressed afterward without production changes.
+- 2026-11-28 — IMPLEMENTATION CLEARED: `kilo` / `baidu/ernie-5.5-flash-preview:free`;
+  no blocking findings, only defensive-code/convention nits.
 - 2026-11-26 — CLEARED: `opencode` / `nvidia/moonshotai/kimi-k3.1-pro`, including the
   Sourcery generic Rules-editor mitigation.
 - 2026-11-26 — CLEARED: `kilo` / `baidu/ernie-5.5-flash-preview:free`, including the
@@ -442,6 +461,9 @@ Opencode, and Codex card tests; Kiro must not regress their selection or fallbac
   and precise `policies` semantics. These do not change scope, tests, or acceptance.
 
 ## Completion
+
+Completed and archived 2026-11-28 in PR #94. The checklist below records the final
+feature-branch commit that rode in that PR:
 
 Before merging, as the final feature-branch commit:
 

@@ -1,0 +1,6 @@
+# Synthetic malformed fixture: match is a scalar, not a list.
+rules:
+  - capability: shell
+    effect: allow
+    match: "git *"
+    exclude: "git push *"

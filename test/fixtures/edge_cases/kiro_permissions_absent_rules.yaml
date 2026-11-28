@@ -1,0 +1,4 @@
+# Synthetic fixture with no rules key and unrelated top-level settings.
+model: fixture-model
+workspaceTrust:
+  fixture: true

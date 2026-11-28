@@ -1,12 +1,14 @@
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/schemas/codex_permissions.dart';
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
+import 'package:agents_config_helper/schemas/kiro_permissions.dart';
 import 'package:agents_config_helper/schemas/opencode_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/schemas/policy_card_registry.dart';
 import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/codex_permissions_card.dart';
 import 'package:agents_config_helper/widgets/cursor_permissions_card.dart';
+import 'package:agents_config_helper/widgets/kiro_permissions_card.dart';
 import 'package:agents_config_helper/widgets/opencode_permissions_card.dart';
 import 'package:agents_config_helper/widgets/policy_card_widget_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,6 +56,15 @@ void main() {
       sandboxMode: 'workspace-write',
       hasSandboxWorkspaceWriteTable: false,
       hasConfiguredPermissions: true,
+    );
+  }
+
+  KiroPermissionsPresentation kiroPresentation() {
+    return KiroPermissionsPresentation(
+      rules: [
+        KiroPermissionRule(capability: 'shell', effect: 'allow'),
+      ],
+      hasUnclassifiedSettings: false,
     );
   }
 
@@ -175,6 +186,42 @@ void main() {
         'presentation without throwing', () {
       const selection = PolicyCardSelection(
         adapterId: CodexPermissionsAdapter.adapterId,
+        status: PolicyCardStatus.available,
+      );
+
+      expect(PolicyCardWidgetRegistry.shared.buildCard(selection), isNull);
+    });
+
+    testWidgets('maps a known adapterId to the Kiro card', (tester) async {
+      final selection = PolicyCardSelection(
+        adapterId: KiroPermissionsAdapter.adapterId,
+        status: PolicyCardStatus.available,
+        presentation: kiroPresentation(),
+      );
+
+      final card = PolicyCardWidgetRegistry.shared.buildCard(selection);
+
+      expect(card, isA<KiroPermissionsCard>());
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: card)));
+      expect(find.text('Kiro permissions'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    test('returns null when the Kiro builder receives a wrong-type '
+        'presentation', () {
+      const selection = PolicyCardSelection(
+        adapterId: KiroPermissionsAdapter.adapterId,
+        status: PolicyCardStatus.available,
+        presentation: _OtherPresentation(),
+      );
+
+      expect(PolicyCardWidgetRegistry.shared.buildCard(selection), isNull);
+    });
+
+    test('returns null for an available Kiro selection with a null '
+        'presentation without throwing', () {
+      const selection = PolicyCardSelection(
+        adapterId: KiroPermissionsAdapter.adapterId,
         status: PolicyCardStatus.available,
       );
 

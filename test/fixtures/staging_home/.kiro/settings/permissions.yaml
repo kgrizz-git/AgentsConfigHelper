@@ -1,6 +1,18 @@
+# Synthetic Kiro permissions example for tests.
 rules:
-  - Keep fixture edits reviewable.
-permissions:
-  filesystem:
-    - read:fixture
-    - write:fixture
+  - capability: shell
+    match:
+      - "git *"
+      - "npm *"
+    exclude:
+      - "git push *"
+    effect: allow
+  - capability: fs_read
+    match:
+      - "**/.env"
+      - "**/*.pem"
+    effect: deny
+  - capability: web_fetch
+    effect: ask
+  - capability: context
+    effect: evaluate

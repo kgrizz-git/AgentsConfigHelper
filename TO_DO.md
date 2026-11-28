@@ -120,15 +120,6 @@ The durable sequence and architecture decisions are in the
       [docs/research/config-structured-editing-gap.md](docs/research/config-structured-editing-gap.md)
       and [implementation roadmap](plans/active/structured-configuration-roadmap.md).)
 
-- [ ] **First bounded slice — Kiro read-only permissions card:** implement the focused
-      [Kiro permissions card plan](plans/active/kiro-permissions-card.md) for the
-      catalog-discovered user `~/.kiro/settings/permissions.yaml`: display stored
-      capability rules, effects, and match/exclude patterns read-only; keep malformed or
-      unknown rule shapes raw-editor-first; suppress the legacy generic Rules editor for
-      this target so its string-list save path cannot overwrite map-shaped capability
-      rules; add no write path. The parent structured configuration roadmap remains
-      active.
-
 - [ ] **Permissions-kind classification for the overview report:** the report
       model has an `OverviewKind.permissions` badge but nothing produces it —
       known permission files (Cursor `.cursor/permissions.json`, Kiro

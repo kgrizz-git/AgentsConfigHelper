@@ -1,0 +1,4 @@
+# Synthetic malformed fixture: a rule uses an undocumented capability.
+rules:
+  - capability: network
+    effect: allow

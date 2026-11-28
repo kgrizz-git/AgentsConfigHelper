@@ -1,0 +1,11 @@
+# Synthetic all-effects and meta-capability fixture.
+rules:
+  - capability: all
+    effect: deny
+  - capability: builtin
+    effect: ask
+  - capability: filesystem
+    effect: allow
+  - capability: sandbox_network
+    effect: evaluate
+    match: ["api.example.com"]

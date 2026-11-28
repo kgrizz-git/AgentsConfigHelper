@@ -5,6 +5,7 @@ import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/schemas/codex_permissions.dart';
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
+import 'package:agents_config_helper/schemas/kiro_permissions.dart';
 import 'package:agents_config_helper/schemas/opencode_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/schemas/policy_card_registry.dart';
@@ -96,6 +97,21 @@ void main() {
       format: ConfigFormat.toml,
       sourceLabel: 'Codex',
       fromCatalog: true,
+    );
+  }
+
+  DiscoveredConfig kiroConfig({bool fromCatalog = true}) {
+    final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+      (item) => item.id == ToolId.kiro,
+    );
+    return DiscoveredConfig.fromPath(
+      filePath: '/fixture/.kiro/settings/permissions.yaml',
+      descriptor: descriptor,
+      scope: ConfigLocationScope.user,
+      kind: ConfigSourceKind.structuredConfig,
+      format: ConfigFormat.yaml,
+      sourceLabel: 'Kiro',
+      fromCatalog: fromCatalog,
     );
   }
 
@@ -434,5 +450,61 @@ void main() {
         expect(empty.adapterId, CodexPermissionsAdapter.adapterId);
       },
     );
+
+    test(
+      'resolves a Kiro config to the Kiro adapter when all five adapters '
+      'are registered',
+      () {
+        final registry = PolicyCardRegistry([
+          ClaudeCodePermissionsAdapter(),
+          CursorPermissionsAdapter(),
+          OpencodePermissionsAdapter(),
+          CodexPermissionsAdapter(),
+          KiroPermissionsAdapter(),
+        ]);
+        final kiro = kiroConfig();
+        final toolConfig = ToolConfig(
+          toolName: 'Kiro',
+          filePath: kiro.filePath,
+          format: ConfigFormat.yaml,
+          rawSettings: const {
+            'rules': [
+              {'capability': 'shell', 'effect': 'allow'},
+            ],
+          },
+        );
+
+        final selection = registry.select(
+          config: toolConfig,
+          discoveredConfig: kiro,
+        );
+
+        expect(selection.status, PolicyCardStatus.available);
+        expect(selection.adapterId, KiroPermissionsAdapter.adapterId);
+        expect(
+          selection.presentation,
+          isA<KiroPermissionsPresentation>(),
+        );
+        expect(selection.suppressGenericRulesSection, isTrue);
+      },
+    );
+
+    test('does not resolve a manually added Kiro path', () {
+      final registry = PolicyCardRegistry([KiroPermissionsAdapter()]);
+      final kiro = kiroConfig(fromCatalog: false);
+      final toolConfig = ToolConfig(
+        toolName: 'Kiro',
+        filePath: kiro.filePath,
+        format: ConfigFormat.yaml,
+      );
+
+      final selection = registry.select(
+        config: toolConfig,
+        discoveredConfig: kiro,
+      );
+
+      expect(selection.status, PolicyCardStatus.notApplicable);
+      expect(selection.adapterId, PolicyCardRegistry.noAdapterId);
+    });
   });
 }

@@ -1,0 +1,5 @@
+# Synthetic malformed fixture: a rule has an undocumented key.
+rules:
+  - capability: shell
+    effect: allow
+    mode: strict
