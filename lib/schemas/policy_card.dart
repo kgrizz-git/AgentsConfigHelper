@@ -31,6 +31,7 @@ class PolicyCardSelection extends Equatable {
     required this.status,
     this.presentation,
     this.unsupportedReason,
+    this.suppressGenericRulesSection = false,
   });
 
   /// Stable key of the adapter that produced this selection.
@@ -46,6 +47,14 @@ class PolicyCardSelection extends Equatable {
   /// A concise reason to show when the subtree is unsupported.
   final String? unsupportedReason;
 
+  /// Whether `ConfigEditor` must omit its legacy generic Rules editor for
+  /// this selection.
+  ///
+  /// A schema sets this when its `rules` shape is not a flat string list and
+  /// the generic editor cannot represent it. The raw editor remains available.
+  /// Defaults to false so existing adapters keep their generic Rules behavior.
+  final bool suppressGenericRulesSection;
+
   /// Whether a card is safe to show.
   bool get isAvailable => status == PolicyCardStatus.available;
 
@@ -58,6 +67,7 @@ class PolicyCardSelection extends Equatable {
     status,
     presentation,
     unsupportedReason,
+    suppressGenericRulesSection,
   ];
 }
 

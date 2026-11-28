@@ -1,0 +1,3 @@
+# Synthetic malformed fixture: a rule has no effect.
+rules:
+  - capability: shell

@@ -1,0 +1,4 @@
+# Synthetic malformed fixture: a rule uses an undocumented effect.
+rules:
+  - capability: shell
+    effect: permit

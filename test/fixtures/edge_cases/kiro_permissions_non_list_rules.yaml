@@ -1,0 +1,2 @@
+# Synthetic malformed fixture: rules is not a list.
+rules: not-a-list

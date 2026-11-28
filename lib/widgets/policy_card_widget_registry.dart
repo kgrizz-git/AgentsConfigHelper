@@ -1,11 +1,13 @@
 import 'package:agents_config_helper/schemas/claude_code_permissions.dart';
 import 'package:agents_config_helper/schemas/codex_permissions.dart';
 import 'package:agents_config_helper/schemas/cursor_permissions.dart';
+import 'package:agents_config_helper/schemas/kiro_permissions.dart';
 import 'package:agents_config_helper/schemas/opencode_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
 import 'package:agents_config_helper/widgets/claude_code_permissions_card.dart';
 import 'package:agents_config_helper/widgets/codex_permissions_card.dart';
 import 'package:agents_config_helper/widgets/cursor_permissions_card.dart';
+import 'package:agents_config_helper/widgets/kiro_permissions_card.dart';
 import 'package:agents_config_helper/widgets/opencode_permissions_card.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -29,6 +31,7 @@ class PolicyCardWidgetRegistry {
     CursorPermissionsAdapter.adapterId: _buildCursorCard,
     OpencodePermissionsAdapter.adapterId: _buildOpencodeCard,
     CodexPermissionsAdapter.adapterId: _buildCodexCard,
+    KiroPermissionsAdapter.adapterId: _buildKiroCard,
   });
 
   /// Returns the card for [selection], or `null` when there is no card.
@@ -81,5 +84,14 @@ class PolicyCardWidgetRegistry {
       return null;
     }
     return CodexPermissionsCard(presentation: presentation);
+  }
+
+  /// Builds the Kiro card with its default documentation launcher.
+  static Widget? _buildKiroCard(PolicyCardSelection selection) {
+    final presentation = selection.presentation;
+    if (presentation is! KiroPermissionsPresentation) {
+      return null;
+    }
+    return KiroPermissionsCard(presentation: presentation);
   }
 }

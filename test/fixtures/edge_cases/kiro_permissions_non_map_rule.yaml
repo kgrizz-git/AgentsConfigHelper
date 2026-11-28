@@ -1,0 +1,3 @@
+# Synthetic malformed fixture: a rule entry is a scalar.
+rules:
+  - shell

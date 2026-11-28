@@ -1,0 +1,7 @@
+# Synthetic malformed fixture: a match entry is not a string.
+rules:
+  - capability: shell
+    effect: allow
+    match:
+      - "git *"
+      - 42

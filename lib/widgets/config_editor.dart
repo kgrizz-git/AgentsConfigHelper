@@ -333,6 +333,10 @@ class _ConfigEditorState extends State<ConfigEditor> {
         _currentConfig.rawSettings['permissions'] is! List &&
         _currentConfig.rawSettings.containsKey('permissions');
     final card = _widgetRegistry.buildCard(selection);
+    final showGenericRulesSection =
+        _supportsStructuredFields &&
+        !widget.rawOnly &&
+        !selection.suppressGenericRulesSection;
     return ColoredBox(
       color: AppColors.backgroundDark,
       child: Stack(
@@ -488,7 +492,7 @@ class _ConfigEditorState extends State<ConfigEditor> {
                           bottom: 80,
                         ), // padding for floating bar
                         children: [
-                          if (_supportsStructuredFields && !widget.rawOnly) ...[
+                          if (showGenericRulesSection) ...[
                             ..._buildRulesSection(),
                           ],
                           if (!widget.rawOnly &&

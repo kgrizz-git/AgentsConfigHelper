@@ -1,0 +1,7 @@
+# Synthetic fixture with a valid rules list and an unexpanded policies list.
+policies:
+  - read-workspace
+rules:
+  - capability: fs_read
+    effect: allow
+    match: ["src/**"]

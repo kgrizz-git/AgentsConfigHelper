@@ -10,6 +10,11 @@ uses [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Added
+- **Kiro permissions card.** The editor now shows the capability rules stored
+  in a catalog-discovered `~/.kiro/settings/permissions.yaml` — capability,
+  effect, and optional match/exclude patterns — in a read-only card. Malformed
+  or unknown rule shapes fall back to the raw editor, and the generic
+  string-list Rules editor is no longer offered for this file.
 - **macOS double-click launcher.** Double-click
   `Launch_AgentsConfigHelper.command` at the repo root to open the built app
   from Finder (Release preferred, Debug fallback, builds Release when neither
