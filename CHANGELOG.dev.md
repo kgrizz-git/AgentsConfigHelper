@@ -10,7 +10,7 @@ Internal / developer-facing changes that do not belong in the public
   catalog-discovered user `.kiro/settings/permissions.yaml`, a read-only
   `KiroPermissionsCard`, registry wiring, and adapter/widget/ConfigEditor
   coverage. A shared `PolicyCardSelection.suppressGenericRulesSection` flag
-  lets the adapter suppress the unsafe legacy YAML Rules `StringListEditor`
+  lets the adapter suppress the misleading legacy YAML Rules `StringListEditor`
   for Kiro without changing the other cards. Added token-free staging and
   edge fixtures, including map-shaped-rule no-edit serialization coverage.
 - **Relative launcher invocation:** guarded child shells source the launcher by

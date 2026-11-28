@@ -7,6 +7,8 @@ import 'package:agents_config_helper/models/tool_descriptor.dart';
 import 'package:agents_config_helper/parsers/yaml_config_parser.dart';
 import 'package:agents_config_helper/schemas/kiro_permissions.dart';
 import 'package:agents_config_helper/schemas/policy_card.dart';
+import 'package:agents_config_helper/services/backup_service.dart';
+import 'package:agents_config_helper/services/config_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -172,6 +174,49 @@ void main() {
       expect(outcome.content, original);
       expect(outcome.content, contains('- capability: shell'));
       expect(outcome.content, contains('effect: evaluate'));
+    });
+
+    test('a no-edit ConfigService save preserves map-shaped rules', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'kiro_permissions_save_',
+      );
+      addTearDown(() async {
+        if (tempDir.existsSync()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final original = readFixture(stagingPath);
+      final target = File(
+        p.join(tempDir.path, '.kiro', 'settings', 'permissions.yaml'),
+      );
+      await target.parent.create(recursive: true);
+      await target.writeAsString(original);
+
+      final service = ConfigService(
+        backupService: BackupService(
+          backupDirectory: Directory(p.join(tempDir.path, 'backups')),
+        ),
+        homeDirectoryResolver: () => tempDir.path,
+      );
+      final descriptor = ToolDescriptorRegistry.catalog.firstWhere(
+        (item) => item.id == ToolId.kiro,
+      );
+      final discovered = DiscoveredConfig.fromPath(
+        filePath: target.path,
+        descriptor: descriptor,
+        scope: ConfigLocationScope.user,
+        kind: ConfigSourceKind.structuredConfig,
+        format: ConfigFormat.yaml,
+        sourceLabel: 'Kiro',
+        fromCatalog: true,
+      );
+
+      final loaded = await service.loadDiscoveredConfig(discovered);
+      final saved = await service.saveConfig(loaded);
+
+      expect(await target.readAsString(), original);
+      expect(saved.originalContent, original);
     });
 
     test('all Kiro fixtures contain no secret-like content', () {

@@ -414,6 +414,18 @@ void main() {
 
       expect(emptyKey.status, PolicyCardStatus.unsupported);
       expect(emptyKey.unsupportedReason, contains('unknown key'));
+
+      final nonStringKey = adapter.interpret(
+        config: config({
+          'rules': [
+            <Object?, Object?>{1: 'shell', 'effect': 'allow'},
+          ],
+        }),
+        discoveredConfig: kiroConfig(),
+      );
+
+      expect(nonStringKey.status, PolicyCardStatus.unsupported);
+      expect(nonStringKey.unsupportedReason, contains('key is not a string'));
     });
 
     test('rejects scalar and non-string pattern lists', () {
@@ -453,8 +465,25 @@ void main() {
         }),
         discoveredConfig: kiroConfig(),
       );
+      final nonStringExclude = adapter.interpret(
+        config: config({
+          'rules': [
+            {
+              'capability': 'shell',
+              'effect': 'allow',
+              'exclude': ['git push *', 42],
+            },
+          ],
+        }),
+        discoveredConfig: kiroConfig(),
+      );
 
-      for (final selection in [scalarMatch, nonStringMatch, scalarExclude]) {
+      for (final selection in [
+        scalarMatch,
+        nonStringMatch,
+        scalarExclude,
+        nonStringExclude,
+      ]) {
         expect(selection.status, PolicyCardStatus.unsupported);
         expect(selection.unsupportedReason, contains('must be a list'));
       }
